@@ -2,10 +2,8 @@ version: "2"
 
 services:
   srs-origin:
-    container_name: ${COMPOSE_PROJECT_NAME}-srs-origin
-    image: ${IMAGE_NAME}:${IMAGE_TAG}
-    build:
-      context: .
+    container_name: ephyr-srs-origin
+    image: allatra/ephyr:mixer
     ports:
       - 1935:1935      # rtmp  srs-origin
       - 60001:60001    # zmq   "original" audio filter
