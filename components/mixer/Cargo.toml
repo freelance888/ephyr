@@ -1,6 +1,6 @@
 [package]
 name = "ephyr-mixer"
-version = "0.3.6"
+version = "0.4.0"
 edition = "2018"
 authors = ["Kai Ren <tyranron@gmail.com>"]
 publish = false

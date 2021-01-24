@@ -7,9 +7,9 @@ All user visible changes to this project will be documented in this file. This p
 
 
 ## [0.4.0] · 2021-01-24
-[0.4.0]: /../../tree/mixer-v0.4.0
+[0.4.0]: /../../tree/mixer-v0.4.0/components/mixer
 
-[Diff](https://github.com/ALLATRA-IT/ephyr/compare/v0.3.0..mixer-v0.4.0)
+[Diff](/../../compare/v0.3.0..mixer-v0.4.0)
 
 ### BC Breaks
 
@@ -22,7 +22,7 @@ All user visible changes to this project will be documented in this file. This p
 ## [0.3.0] · 2020-08-01
 [0.3.0]: /../../tree/v0.3.0
 
-[Diff](https://github.com/ALLATRA-IT/ephyr/compare/v0.2.0..v0.3.0)
+[Diff](/../../compare/v0.2.0..v0.3.0)
 
 ### BC Breaks
 
@@ -35,7 +35,7 @@ All user visible changes to this project will be documented in this file. This p
 ## [0.2.0] · 2020-07-11
 [0.2.0]: /../../tree/v0.2.0
 
-[Diff](https://github.com/ALLATRA-IT/ephyr/compare/v0.1.0..v0.2.0)
+[Diff](/../../compare/v0.1.0..v0.2.0)
 
 ### BC Breaks
 

@@ -1,7 +1,7 @@
 Ephyr mixer
 ===========
 
-[Changelog](https://github.com/ALLATRA-IT/ephyr/blob/master/components/mixer/CHANGELOG.md)
+[Changelog](CHANGELOG.md)
 
 Wrapper over [FFmpeg] binary, which performs mixing according to specified schema (see [example][1]). At the moment, it's intended to be called as [SRS] `exec.publish` directive, so performs mixing on-demand (when [RTMP] stream is pushed to [SRS]).
 
@@ -64,4 +64,4 @@ As for any pre-built image usage, it is the image user's responsibility to ensur
 [SRS]: https://github.com/ossrs/srs
 [TeamSpeak]: https://teamspeak.com
 
-[1]: https://github.com/ALLATRA-IT/ephyr/blob/master/components/mixer/example.mix.spec.json
+[1]: example.mix.spec.json

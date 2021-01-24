@@ -2,8 +2,6 @@
 /*.iml
 .DS_Store
 
-/.cache/
-
 /target/
 
 /mix.spec.json

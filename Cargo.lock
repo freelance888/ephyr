@@ -1144,7 +1144,7 @@ dependencies = [
 
 [[package]]
 name = "ephyr-mixer"
-version = "0.3.6"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "backoff",
@@ -1215,7 +1215,7 @@ dependencies = [
 
 [[package]]
 name = "ephyr-vod-meta-server"
-version = "0.3.6"
+version = "0.4.0"
 dependencies = [
  "actix-web",
  "actix-web-httpauth",

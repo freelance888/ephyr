@@ -2,20 +2,16 @@ version: "2"
 
 services:
   vod-meta:
-    container_name: ${COMPOSE_PROJECT_NAME}-vod-meta
-    image: ${IMAGE_NAME}:${IMAGE_TAG}
-    build:
-      context: .
-    entrypoint: ["ephyr"]
-    command: ["-v", "INFO", "serve", "vod-meta"]
-    working_dir: /
+    container_name: ephyr-vod-meta
+    image: allatra/ephyr:vod-meta-server
+    command: ["-v", "INFO"]
     volumes:
       - ./example.vod.meta.json:/state.vod-meta.json
       - ./.cache/vod/video/:/var/lib/ephyr/vod/cache/
       - ./.cache/vod/ephyr/tmp/:/tmp/
     network_mode: service:nginx
   nginx:
-    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    container_name: ephyr-nginx
     image: nytimes/nginx-vod-module:1.4
     ports:
       - 80:80          # http  nginx

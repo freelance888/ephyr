@@ -8,8 +8,6 @@ comma := ,
 eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
                                 $(findstring $(2),$(1))),1)
 
-OS_NAME := $(shell uname -s)
-
 
 
 
@@ -17,8 +15,8 @@ OS_NAME := $(shell uname -s)
 # Project parameters #
 ######################
 
-IMAGE_NAME ?= $(strip $(shell grep 'IMAGE_NAME=' .env | cut -d '=' -f2))
-IMAGE_TAG ?= $(strip $(shell grep 'IMAGE_TAG=' .env | cut -d '=' -f2))
+IMAGE_NAME ?= allatra/ephyr
+IMAGE_TAG ?= dev
 
 
 
@@ -27,79 +25,10 @@ IMAGE_TAG ?= $(strip $(shell grep 'IMAGE_TAG=' .env | cut -d '=' -f2))
 # Aliases #
 ###########
 
-down: docker.down
-
-
 fmt: cargo.fmt
 
 
 image: docker.image
-
-
-up: docker.up
-
-
-
-
-########################
-# Interaction commands #
-########################
-
-# List to STDOUT available audio/video devices with FFmpeg.
-#
-# Usage:
-#	make devices.list
-
-devices.list:
-ifeq ($(OS_NAME),Darwin)
-	-ffmpeg -f avfoundation -list_devices true -i ''
-else
-	$(error "'devices.list' command is not implemented for your OS")
-endif
-
-
-# Play mixed RTMP stream from Origin SRS.
-#
-# Usage:
-#	make play [stream=(output/musicify_mic|<app>/<stream>)]
-
-play-stream = $(if $(call eq,$(stream),),output/musicify_mic,$(stream))
-
-play:
-	ffplay -rtmp_live 1 rtmp://127.0.0.1:1935/$(play-stream)
-
-
-# Publish raw local camera RTMP stream to Origin SRS.
-#
-# Usage:
-#	make publish [stream=(input/mic|<app>/<stream>)]
-
-publish-stream = $(if $(call eq,$(stream),),input/trance,$(stream))
-
-publish:
-ifeq ($(OS_NAME),Darwin)
-	ffmpeg -f avfoundation -video_device_index 0 -audio_device_index 0 -i '' \
-	       -f flv rtmp://127.0.0.1:1935/$(publish-stream)
-else
-	$(error "'publish' command is not implemented for your OS")
-endif
-
-
-# Tune audio filters on-fly for mixed RTMP stream.
-#
-# Usage:
-#	make tune volume=<volume-rate> [track=(music|original)]
-
-tune-track = $(if $(call eq,$(track),),music,$(track))
-tune-volume-port = $(if $(call eq,$(tune-track),music),60002,60001)
-
-tune:
-ifneq ($(volume),)
-	docker run --rm --network=host --entrypoint sh \
-		$(IMAGE_NAME):$(IMAGE_TAG) -c \
-			'echo "volume@$(tune-track) volume $(volume)" \
-			 | zmqsend -b tcp://127.0.0.1:$(tune-volume-port)'
-endif
 
 
 
@@ -124,8 +53,6 @@ cargo.fmt:
 ###################
 
 docker-comp = $(if $(call eq,$(comp),),restreamer,$(comp))
-
-docker-compose-file = docker-compose.$(if $(call eq,$(app),),mix,vod).yml
 
 
 # Stop project in Docker Compose development environment
@@ -221,28 +148,12 @@ docker.untar:
 	docker load -i $(if $(call eq,$(from-file),),.cache/image.tar,$(from-file))
 
 
-# Run project in Docker Compose development environment.
-#
-# Usage:
-#	make docker.up [app=(mix|vod)] [rebuild=(no|yes)] [background=(no|yes)]
-
-docker.up: docker.down
-ifeq ($(rebuild),yes)
-	@make docker.image
-endif
-	docker-compose --file=$(docker-compose-file) up \
-		$(if $(call eq,$(background),yes),-d,--abort-on-container-exit)
-
-
 
 
 ##################
 # .PHONY section #
 ##################
 
-.PHONY: down fmt image up \
-        play publish tune \
+.PHONY: fmt image \
         cargo.fmt \
-        devices.list \
-        docker.down docker.image docker.push \
-        	docker.tag docker.tar docker.untar docker.up
+        docker.image docker.push docker.tag docker.tar docker.untar
