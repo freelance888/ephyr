@@ -6,10 +6,10 @@ All user visible changes to this project will be documented in this file. This p
 
 
 
-## [0.2.0-alpha.3] · 2021-??-?? · To-be-done
-[0.2.0-alpha.3]: /../../tree/restreamer-v0.2.0-alpha.3
+## [0.2.0-beta.1] · 2021-03-09
+[0.2.0-beta.1]: /../../tree/restreamer-v0.2.0-beta.1
 
-[Diff](/../../compare/restreamer-v0.1.2...restreamer-v0.2.0-alpha.3)
+[Diff](/../../compare/restreamer-v0.1.2...restreamer-v0.2.0-beta.1)
 
 ### BC Breaks
 
@@ -40,7 +40,7 @@ All user visible changes to this project will be documented in this file. This p
     - Input:
         - Optional backup endpoint (push or pull) ([a3236808], [9e1ac1c7]);
         - Ability to export/import as JSON spec ([9e1ac1c7]);
-        - Optional [HLS] endpoint ([rev]).
+        - Optional [HLS] endpoint ([65f8b86e]).
     - Output:
         - Specifying [TeamSpeak] URL for mixing ([77d25dd7], [#23]);
         - Tuning volume rate of tracks ([77d25dd7], [#23]);
@@ -55,7 +55,7 @@ All user visible changes to this project will be documented in this file. This p
         - `InputSrcUrl`, `OutputDstUrl` and `MixinSrcUrl` scalars ([5dabcfdc], [9e1ac1c7]);
         - `RestreamKey` and `InputKey` scalars ([9e1ac1c7]);
         - `InputSrc` union with `RemoteInputSrc` and `FailoverInputSrc` variants ([9e1ac1c7]);
-        - `InputEndpoint` object, `InputEndpointKind` enum and `EndpointId` scalar ([rev]).
+        - `InputEndpoint` object, `InputEndpointKind` enum and `EndpointId` scalar ([65f8b86e]).
     - Mutations:
         - `enableRestream` and `disableRestream` ([9e1ac1c7]);
         - `tuneVolume` and `tuneDelay` ([77d25dd7], [#23]);
@@ -67,18 +67,18 @@ All user visible changes to this project will be documented in this file. This p
 - Spec (export/import):
     - `v1` version ([9e1ac1c7]).
 - Config:
-    - `--srs-http-dir` CLI option and `EPHYR_RESTREAMER_SRS_HTTP_DIR` env var ([rev]).
+    - `--srs-http-dir` CLI option and `EPHYR_RESTREAMER_SRS_HTTP_DIR` env var ([65f8b86e]).
 - Deployment:
     - Provision script for [Ubuntu] 20.04:
         - Optional [firewalld] installation via `WITH_FIREWALLD` env var ([bbccc004]).
 
 [#23]: /../../issues/23
 [5dabcfdc]: /../../commit/5dabcfdce2420fdd43a8f4c20c2eff497e884ac3
+[65f8b86e]: /../../commit/65f8b86eebad0396ef37f1df27548e70952eef63
 [77d25dd7]: /../../commit/77d25dd739d4f05b319769eddd83c01bd3a490a4
 [9e1ac1c7]: /../../commit/9e1ac1c7e576c22f6234777bf01d054adb9fe5db
 [a3236808]: /../../commit/a3236808c43d1c5667cac4b3037d7c83edccc48f
 [bbccc004]: /../../commit/bbccc0040d95d47a72c3bf7c6fc0908f32c89bd4
-[rev]: /../../commit/rev
 
 
 
