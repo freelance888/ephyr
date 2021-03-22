@@ -86,7 +86,8 @@ impl MutationsRoot {
                             "JSON spec should contain exactly one Restream",
                         )
                 })?;
-            #[allow(clippy::find_map)] // due to moving `spec` inside closure
+            #[allow(clippy::manual_find_map)]
+            // due to moving `spec` inside closure
             context
                 .state()
                 .restreams

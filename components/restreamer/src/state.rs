@@ -218,7 +218,7 @@ impl State {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        #[allow(clippy::find_map)] // due to consuming `spec`
+        #[allow(clippy::manual_find_map)] // due to consuming `spec`
         Ok(restreams
             .iter_mut()
             .find(|r| r.id == id)
@@ -361,7 +361,7 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        #[allow(clippy::find_map)] // due to consuming `spec`
+        #[allow(clippy::manual_find_map)] // due to consuming `spec`
         Ok(outputs
             .iter_mut()
             .find(|o| o.id == id)
