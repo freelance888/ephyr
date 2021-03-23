@@ -23,7 +23,7 @@ dependencies = [
  "smallvec",
  "tokio 0.2.25",
  "tokio-util 0.3.1",
- "trust-dns-proto",
+ "trust-dns-proto 0.19.7",
  "trust-dns-resolver",
 ]
 
@@ -58,7 +58,7 @@ dependencies = [
  "futures-util",
  "http",
  "log",
- "trust-dns-proto",
+ "trust-dns-proto 0.19.7",
  "trust-dns-resolver",
 ]
 
@@ -802,7 +802,7 @@ dependencies = [
  "ansi_term",
  "atty",
  "bitflags",
- "strsim",
+ "strsim 0.8.0",
  "textwrap",
  "unicode-width",
  "vec_map",
@@ -1083,6 +1083,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d706e75d87e35569db781a9b5e2416cff1236a47ed380831f959382ccd5f858"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0c960ae2da4de88a91b2d920c2a7233b400bc33cb28453a2987822d8392519b"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote 1.0.9",
+ "strsim 0.9.3",
+ "syn 1.0.64",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
+dependencies = [
+ "darling_core",
+ "quote 1.0.9",
+ "syn 1.0.64",
+]
+
+[[package]]
 name = "dashmap"
 version = "3.11.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1106,6 +1141,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37e797687b5f09528a48fcb63b6914d0255b8a6c760699a919af37042f09d9b3"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn 1.0.64",
+]
+
+[[package]]
+name = "derive_builder"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2658621297f2cf68762a6f7dc0bb7e1ff2cfd6583daef8ee0fed6f7ec468ec0"
+dependencies = [
+ "darling",
+ "derive_builder_core",
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn 1.0.64",
+]
+
+[[package]]
+name = "derive_builder_core"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2791ea3e372c8495c0bc2033991d76b512cd799d07491fbd6890124db9458bef"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn 1.0.64",
 ]
 
 [[package]]
@@ -1166,6 +1237,18 @@ name = "discard"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "212d0f5754cb6769937f4501cc0e67f4f4483c8d2c3e1e922ee9edbe4ab4c7c0"
+
+[[package]]
+name = "dns-lookup"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093d88961fd18c4ecacb8c80cd0b356463ba941ba11e0e01f9cf5271380b79dc"
+dependencies = [
+ "cfg-if 1.0.0",
+ "libc",
+ "socket2",
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "eax"
@@ -1815,6 +1898,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-system-resolver"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12f3e7696766b62825bf735a1df9d8b727525b83ae5427ee955258800858bd73"
+dependencies = [
+ "derivative",
+ "derive_builder",
+ "dns-lookup",
+ "hyper 0.14.4",
+ "tokio 1.4.0",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
 name = "hyper-tls"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1826,6 +1924,12 @@ dependencies = [
  "tokio 0.2.25",
  "tokio-tls",
 ]
+
+[[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
@@ -2244,9 +2348,12 @@ dependencies = [
 
 [[package]]
 name = "nibble_vec"
-version = "0.0.4"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8d77f3db4bce033f4d04db08079b2ef1c3d02b44e86f25d08886fafa7756ffa"
+checksum = "77a5d83df9f36fe23f0c3648c6bbb8b0298bb5f1939c8f2704431371f4b84d43"
+dependencies = [
+ "smallvec",
+]
 
 [[package]]
 name = "nom"
@@ -2596,18 +2703,22 @@ dependencies = [
 
 [[package]]
 name = "public-ip"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cda7cf449bab8662859dcaee1639e4a61e6dcd786ca0a43a8389bef80d96646"
+checksum = "ba5e48e5087711724b4536dfe11a201a20ae91a7f1b08e3e17a1053459e20580"
 dependencies = [
- "futures",
+ "dns-lookup",
+ "futures-core",
+ "futures-util",
  "http",
- "hyper 0.13.10",
- "once_cell",
- "regex",
- "tokio 0.2.25",
+ "hyper 0.14.4",
+ "hyper-system-resolver",
+ "pin-project-lite 0.2.6",
+ "thiserror",
+ "tokio 1.4.0",
+ "tracing",
  "trust-dns-client",
- "trust-dns-proto",
+ "trust-dns-proto 0.20.1",
 ]
 
 [[package]]
@@ -2650,9 +2761,9 @@ checksum = "941ba9d78d8e2f7ce474c015eea4d9c6d25b6a3327f9832ee29a4de27f91bbb8"
 
 [[package]]
 name = "radix_trie"
-version = "0.1.6"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d3681b28cd95acfb0560ea9441f82d6a4504fa3b15b97bd7b6e952131820e95"
+checksum = "c069c179fcdc6a2fe24d8d18305cf085fdbd4f922c041943e203685d6a1c58fd"
 dependencies = [
  "endian-type",
  "nibble_vec",
@@ -3414,6 +3525,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
+name = "strsim"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
+
+[[package]]
 name = "structopt"
 version = "0.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3678,6 +3795,7 @@ dependencies = [
  "libc",
  "memchr",
  "mio 0.7.11",
+ "num_cpus",
  "pin-project-lite 0.2.6",
 ]
 
@@ -3755,7 +3873,19 @@ dependencies = [
  "cfg-if 1.0.0",
  "log",
  "pin-project-lite 0.2.6",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c42e6fa53307c8a17e4ccd4dc81cf5ec38db9209f59b222210375b54ee40d1e2"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.9",
+ "syn 1.0.64",
 ]
 
 [[package]]
@@ -3779,21 +3909,22 @@ dependencies = [
 
 [[package]]
 name = "trust-dns-client"
-version = "0.19.7"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e935ae5a26a2745fb5a6b95f0e206e1cfb7f00066892d2cf78a8fee87bc2e0c6"
+checksum = "87b05ceb7459ea5c9242da2b92cc221b65b2849d4ff3c19313485ce468c62096"
 dependencies = [
  "cfg-if 1.0.0",
  "chrono",
  "data-encoding",
- "futures",
+ "futures-channel",
+ "futures-util",
  "lazy_static",
  "log",
  "radix_trie",
- "rand 0.7.3",
+ "rand 0.8.3",
  "thiserror",
- "tokio 0.2.25",
- "trust-dns-proto",
+ "tokio 1.4.0",
+ "trust-dns-proto 0.20.1",
 ]
 
 [[package]]
@@ -3805,7 +3936,6 @@ dependencies = [
  "async-trait",
  "backtrace",
  "cfg-if 1.0.0",
- "data-encoding",
  "enum-as-inner",
  "futures",
  "idna",
@@ -3815,6 +3945,31 @@ dependencies = [
  "smallvec",
  "thiserror",
  "tokio 0.2.25",
+ "url",
+]
+
+[[package]]
+name = "trust-dns-proto"
+version = "0.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d57e219ba600dd96c2f6d82eb79645068e14edbc5c7e27514af40436b88150c"
+dependencies = [
+ "async-trait",
+ "cfg-if 1.0.0",
+ "data-encoding",
+ "enum-as-inner",
+ "futures-channel",
+ "futures-io",
+ "futures-util",
+ "idna",
+ "ipnet",
+ "lazy_static",
+ "log",
+ "rand 0.8.3",
+ "smallvec",
+ "thiserror",
+ "tinyvec",
+ "tokio 1.4.0",
  "url",
 ]
 
@@ -3834,7 +3989,7 @@ dependencies = [
  "smallvec",
  "thiserror",
  "tokio 0.2.25",
- "trust-dns-proto",
+ "trust-dns-proto 0.19.7",
 ]
 
 [[package]]
@@ -3885,7 +4040,7 @@ dependencies = [
  "thiserror",
  "time 0.2.26",
  "tokio 0.2.25",
- "trust-dns-proto",
+ "trust-dns-proto 0.19.7",
  "trust-dns-resolver",
  "ts-bookkeeping",
  "tsproto",
