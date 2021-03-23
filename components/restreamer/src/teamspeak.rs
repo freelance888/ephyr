@@ -17,7 +17,7 @@ use std::{
     time::Duration,
 };
 
-use backoff::{future::FutureOperation as _, ExponentialBackoff};
+use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
 use derive_more::{Display, Error};
 use ephyr_log::log;
@@ -161,14 +161,14 @@ impl Input {
         let audio = self.audio.clone();
         let is_conn_unrecoverable = self.is_conn_unrecoverable.clone();
 
-        let capturing = (move || {
-            AudioCapture::run(cfg.clone(), audio.clone())
-                .map_err(AudioCaptureError::into_backoff)
-        })
-        .retry_notify(
+        let capturing = retry_notify(
             ExponentialBackoff {
                 max_elapsed_time: None,
                 ..ExponentialBackoff::default()
+            },
+            move || {
+                AudioCapture::run(cfg.clone(), audio.clone())
+                    .map_err(AudioCaptureError::into_backoff)
             },
             |err, dur| {
                 log::error!(
