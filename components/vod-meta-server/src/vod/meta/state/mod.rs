@@ -547,8 +547,8 @@ impl<'de> Deserialize<'de> for PlaylistSlug {
         D: Deserializer<'de>,
     {
         use serde::de::Error as _;
-        Ok(Self::new(<Cow<'_, str>>::deserialize(deserializer)?)
-            .ok_or_else(|| D::Error::custom("not a valid URL slug"))?)
+        Self::new(<Cow<'_, str>>::deserialize(deserializer)?)
+            .ok_or_else(|| D::Error::custom("not a valid URL slug"))
     }
 }
 
@@ -826,8 +826,8 @@ impl<'de> Deserialize<'de> for SegmentDuration {
         D: Deserializer<'de>,
     {
         use serde::de::Error as _;
-        Ok(Self::new(serde_humantime::deserialize(deserializer)?)
-            .ok_or_else(|| D::Error::custom("not a valid segment duration"))?)
+        Self::new(serde_humantime::deserialize(deserializer)?)
+            .ok_or_else(|| D::Error::custom("not a valid segment duration"))
     }
 }
 
