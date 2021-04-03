@@ -329,12 +329,9 @@ pub struct AudioCapture {
 impl AudioCapture {
     /// Creates new [`AudioCapture`] from the given [`Connection`] and for
     /// the given [`AudioHandler`].
-    ///
-    /// # Panics
-    ///
-    /// If failed to lock [`Arc<Mutex<AudioHandler>>`] which shouldn't happen.
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn new(conn: Connection, audio: Arc<Mutex<AudioHandler>>) -> Self {
         audio.lock().unwrap().reset();
         Self {

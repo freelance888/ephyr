@@ -20,12 +20,17 @@ use std::{
     time::Duration,
 };
 
+use crate::{
+    api::{self, allatra, nginx},
+    vod::file,
+};
 use anyhow::anyhow;
 use chrono::{
     DateTime, Datelike as _, Duration as DateDuration, FixedOffset as TimeZone,
     Utc, Weekday,
 };
 use derive_more::{Deref, DerefMut, Display, Into};
+use ephyr_log::log;
 use ephyr_serde::{timelike, timezone};
 use futures::{stream, StreamExt as _, TryFutureExt as _, TryStreamExt as _};
 use isolang::Language;
@@ -35,11 +40,6 @@ use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize};
 use smart_default::SmartDefault;
 use url::Url;
-
-use crate::{
-    api::{self, allatra, nginx},
-    vod::file,
-};
 
 pub use crate::api::allatra::video::{Resolution, YoutubeId};
 
@@ -320,10 +320,6 @@ impl Playlist {
     /// without any gaps, basing on the provided [`PlaylistInitialPosition`] and
     /// updating it whenever it's feasible.
     ///
-    /// # Panics
-    ///
-    /// If [`Clip`] duration is out of range.
-    ///
     /// [1]: https://github.com/kaltura/nginx-vod-module
     /// [2]: crate::api::nginx::vod_module::mapping::Set::MAX_DURATIONS_LEN
     #[allow(clippy::too_many_lines)]
@@ -405,7 +401,13 @@ impl Playlist {
                         let next_time = time
                             + match DateDuration::from_std(clip_duration) {
                                 Ok(dd) => dd,
-                                Err(e) => panic!("{}", e),
+                                Err(e) => {
+                                    log::error!(
+                                        "Failed to convert  clip duration: {}",
+                                        e
+                                    );
+                                    continue;
+                                }
                             };
 
                         // There is no sense to return clips, which have been

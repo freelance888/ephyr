@@ -1966,12 +1966,9 @@ impl Delay {
     }
 
     /// Returns milliseconds of this [`Delay`].
-    ///
-    /// # Panics
-    ///
-    /// If convert of [`Delay`] into [`i32`] has failed which shouldn't happen.
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn as_millis(&self) -> i32 {
         self.0.as_millis().try_into().unwrap()
     }
