@@ -430,7 +430,7 @@ impl RestreamerKind {
     #[must_use]
     fn dst_url(output: &state::Output) -> Url {
         (output.dst.scheme() == "file")
-            .then(|| dvr::Storage::global().file_url(output))
+            .then(|| dvr::Storage::global().file_url(output).unwrap())
             .unwrap_or_else(|| output.dst.clone().into())
     }
 

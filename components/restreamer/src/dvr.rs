@@ -64,13 +64,15 @@ impl Storage {
 
     /// Forms a correct [`Url`] pointing to the file for recording a live stream
     /// by the given [`state::Output`].
-    #[must_use]
-    #[allow(clippy::missing_panics_doc)]
-    pub fn file_url(&self, output: &state::Output) -> Url {
+    ///
+    /// # Errors
+    /// If failed to convert path to [`Url`]
+    pub fn file_url(&self, output: &state::Output) -> anyhow::Result<Url> {
         let mut full = self.root_path.clone();
         full.push(output.id.to_string());
         full.push(output.dst.path().trim_start_matches('/'));
-        Url::from_file_path(full).unwrap()
+        Url::from_file_path(full)
+            .map_err(|e| anyhow!("Failed convert path to URL: {:?}", e))
     }
 
     /// Lists stored [DVR] files of the given [`state::Output`].
