@@ -24,6 +24,7 @@ use crate::{
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
 };
+use std::result::Result::Err;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -76,8 +77,16 @@ impl RestreamersPool {
                 continue;
             }
 
-            let input_url = r.main_input_rtmp_endpoint_url();
-
+            let input_url = match r.main_input_rtmp_endpoint_url() {
+                Ok(input_url) => input_url,
+                Err(e) => {
+                    log::error!(
+                        "Failed to get main input RTMP endpoint: {}",
+                        e
+                    );
+                    continue;
+                }
+            };
             for o in &r.outputs {
                 let _ = self.apply_output(&input_url, o, &mut new_pool);
             }

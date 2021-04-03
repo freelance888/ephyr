@@ -653,15 +653,16 @@ impl Restream {
     /// Returns an URL on a local [SRS] server of the endpoint representing a
     /// main [`Input`] in this [`Restream`].
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// No panics, because all [`Input`] are validated.
+    /// If not found any RTMP [`Input`] endpoint
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[must_use]
-    pub fn main_input_rtmp_endpoint_url(&self) -> Url {
-        let main = self.input.endpoints.iter().find(|e| e.is_rtmp()).unwrap();
-        main.kind.rtmp_url(&self.key, &self.input.key)
+    pub fn main_input_rtmp_endpoint_url(&self) -> anyhow::Result<Url> {
+        match self.input.endpoints.iter().find(|e| e.is_rtmp()) {
+            Some(main) => Ok(main.kind.rtmp_url(&self.key, &self.input.key)),
+            None => Err(anyhow!("Not found any RTMP endpoint")),
+        }
     }
 }
 
