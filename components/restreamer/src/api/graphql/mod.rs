@@ -43,6 +43,7 @@ impl Context {
     /// [`cli::Opts`]: crate::cli::Opts
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn config(&self) -> &crate::cli::Opts {
         self.app_data::<crate::cli::Opts>().unwrap()
     }
@@ -52,6 +53,7 @@ impl Context {
     /// [`State`]: crate::State
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn state(&self) -> &crate::State {
         self.app_data::<crate::State>().unwrap()
     }

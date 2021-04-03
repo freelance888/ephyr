@@ -65,6 +65,7 @@ impl Storage {
     /// Forms a correct [`Url`] pointing to the file for recording a live stream
     /// by the given [`state::Output`].
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn file_url(&self, output: &state::Output) -> Url {
         let mut full = self.root_path.clone();
         full.push(output.id.to_string());
@@ -170,6 +171,7 @@ impl Storage {
 ///
 /// If cannot create a file path from the given [`Url`], or fails to create its
 /// parent directory.
+#[allow(clippy::missing_panics_doc)]
 pub async fn new_file_path(url: &Url) -> io::Result<PathBuf> {
     let mut path = url.to_file_path().map_err(|_| {
         io::Error::new(io::ErrorKind::Other, "File URL contains bad file path")

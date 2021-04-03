@@ -653,6 +653,10 @@ impl Restream {
     /// Returns an URL on a local [SRS] server of the endpoint representing a
     /// main [`Input`] in this [`Restream`].
     ///
+    /// # Panics
+    ///
+    /// No panics, because all [`Input`] are validated.
+    ///
     /// [SRS]: https://github.com/ossrs/srs
     #[must_use]
     pub fn main_input_rtmp_endpoint_url(&self) -> Url {
@@ -1044,6 +1048,9 @@ pub enum InputEndpointKind {
 impl InputEndpointKind {
     /// Returns RTMP URL on a local [SRS] server of this [`InputEndpointKind`]
     /// for the given `restream` and `input`.
+    ///
+    /// # Panics
+    /// No panics, because [`RestreamKey`] and [`InputKey`] are validated.
     ///
     /// [SRS]: https://github.com/ossrs/srs
     #[must_use]
@@ -1958,6 +1965,10 @@ impl Delay {
     }
 
     /// Returns milliseconds of this [`Delay`].
+    ///
+    /// # Panics
+    ///
+    /// If convert of [`Delay`] into [`i32`] has failed which shouldn't happen.
     #[inline]
     #[must_use]
     pub fn as_millis(&self) -> i32 {

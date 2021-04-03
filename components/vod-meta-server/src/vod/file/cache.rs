@@ -95,9 +95,14 @@ impl Manager {
                     anyhow!("Unsupported downloading URL: {}", url)
                 })?);
         match fs::metadata(&full).await {
-            Ok(m) if m.is_file() => {
-                Ok(Some(full.strip_prefix(&self.cache_dir).unwrap().to_owned()))
-            }
+            Ok(m) if m.is_file() => match full.strip_prefix(&self.cache_dir) {
+                Ok(m) => Ok(Some(m.to_owned())),
+                Err(e) => Err(anyhow!(
+                    "Failed to strip prefix of '{}' path: {}",
+                    full.display(),
+                    e
+                )),
+            },
             Err(e) if e.kind() != io::ErrorKind::NotFound => Err(anyhow!(
                 "Failed to check '{}' file existence: {}",
                 full.display(),

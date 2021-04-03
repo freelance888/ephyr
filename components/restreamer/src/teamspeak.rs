@@ -329,6 +329,10 @@ pub struct AudioCapture {
 impl AudioCapture {
     /// Creates new [`AudioCapture`] from the given [`Connection`] and for
     /// the given [`AudioHandler`].
+    ///
+    /// # Panics
+    ///
+    /// If failed to lock [`Arc<Mutex<AudioHandler>>`] which shouldn't happen.
     #[inline]
     #[must_use]
     pub fn new(conn: Connection, audio: Arc<Mutex<AudioHandler>>) -> Self {
@@ -340,6 +344,11 @@ impl AudioCapture {
     }
 
     /// Generates a new random HWID (hardware identification string).
+    ///
+    /// # Panics
+    ///
+    /// No panics, because we guarantee to pass proper range to
+    /// the [`hex::encode_to_slice`].
     #[must_use]
     pub fn new_hwid() -> String {
         const BYTES: usize = 16;
@@ -535,6 +544,7 @@ static IN_PROGRESS_DISCONNECTS: Lazy<Arc<Mutex<HashMap<u64, JoinHandle<()>>>>> =
 ///
 /// All disconnects can be awaited for completion via
 /// [`finish_all_disconnects()`].
+#[allow(clippy::missing_panics_doc)]
 fn spawn_waiter(waiter: JoinHandle<()>) {
     let mut disconnects = IN_PROGRESS_DISCONNECTS.lock().unwrap();
 
@@ -606,6 +616,7 @@ fn spawn_disconnect(mut conn: Connection) {
 ///
 /// [TeamSpeak]: https://teamspeak.com
 /// [1]: https://github.com/tokio-rs/tokio/issues/2053
+#[allow(clippy::missing_panics_doc)]
 pub async fn finish_all_disconnects() {
     let disconnects = {
         IN_PROGRESS_DISCONNECTS

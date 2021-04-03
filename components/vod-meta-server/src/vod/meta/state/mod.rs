@@ -320,6 +320,10 @@ impl Playlist {
     /// without any gaps, basing on the provided [`PlaylistInitialPosition`] and
     /// updating it whenever it's feasible.
     ///
+    /// # Panics
+    ///
+    /// If [`Clip`] duration is out of range.
+    ///
     /// [1]: https://github.com/kaltura/nginx-vod-module
     /// [2]: crate::api::nginx::vod_module::mapping::Set::MAX_DURATIONS_LEN
     #[allow(clippy::too_many_lines)]
@@ -399,7 +403,10 @@ impl Playlist {
                     for clip in day_clips {
                         let clip_duration = clip.view.to - clip.view.from;
                         let next_time = time
-                            + DateDuration::from_std(clip_duration).unwrap();
+                            + match DateDuration::from_std(clip_duration) {
+                                Ok(dd) => dd,
+                                Err(e) => panic!("{}", e),
+                            };
 
                         // There is no sense to return clips, which have been
                         // already finished. Instead, we start from the first

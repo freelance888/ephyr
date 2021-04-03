@@ -236,6 +236,11 @@ impl SourceClip {
     /// Transforms the given source file URL into a [`SourceClip::path`]
     /// acceptable by the [`nginx-vod-module`][1].
     ///
+    /// # Panics
+    ///
+    /// - If unsupported remote source URL host for [`nginx-vod-module`][1];
+    /// - If unsupported source URL schema for [`nginx-vod-module`][1].
+    ///
     /// [1]: https://github.com/kaltura/nginx-vod-module
     #[must_use]
     pub fn get_url_path(url: &Url) -> PathBuf {
