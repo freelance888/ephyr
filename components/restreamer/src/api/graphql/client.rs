@@ -614,9 +614,9 @@ impl MutationsRoot {
         static HASH_CFG: Lazy<argon2::Config<'static>> =
             Lazy::new(argon2::Config::default);
 
-        let mut current = context.state().password_hash.lock_mut();
+        let mut settings = context.state().settings.lock_mut();
 
-        if let Some(hash) = &*current {
+        if let Some(hash) = &settings.password_hash {
             match old {
                 None => {
                     return Err(graphql::Error::new("NO_OLD_PASSWORD")
@@ -633,11 +633,11 @@ impl MutationsRoot {
             }
         }
 
-        if current.is_none() && new.is_none() {
+        if settings.password_hash.is_none() && new.is_none() {
             return Ok(false);
         }
 
-        *current = new.map(|v| {
+        settings.password_hash = new.map(|v| {
             argon2::hash_encoded(
                 v.as_bytes(),
                 &rand::thread_rng().gen::<[u8; 32]>(),
@@ -645,6 +645,23 @@ impl MutationsRoot {
             )
             .unwrap()
         });
+
+        Ok(true)
+    }
+
+    /// Sets title for this server in order to differentiate it on UI side if multiple servers are used.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if title has been set, otherwise `false`
+    #[graphql(arguments(title(description = "Title for the server"),))]
+    fn set_title(
+        title: Option<String>,
+        context: &Context,
+    ) -> Result<bool, graphql::Error> {
+        let mut settings = context.state().settings.lock_mut();
+
+        settings.title = title;
         Ok(true)
     }
 }
@@ -659,9 +676,11 @@ pub struct QueriesRoot;
 impl QueriesRoot {
     /// Returns the current `Info` parameters of this server.
     fn info(context: &Context) -> Info {
+        let settings = context.state().settings.get_cloned();
         Info {
             public_host: context.config().public_host.clone().unwrap(),
-            password_hash: context.state().password_hash.get_cloned(),
+            password_hash: settings.password_hash,
+            title: settings.title,
         }
     }
 
@@ -737,12 +756,13 @@ impl SubscriptionsRoot {
         let public_host = context.config().public_host.clone().unwrap();
         context
             .state()
-            .password_hash
+            .settings
             .signal_cloned()
             .dedupe_cloned()
             .map(move |h| Info {
                 public_host: public_host.clone(),
-                password_hash: h,
+                password_hash: h.password_hash,
+                title: h.title,
             })
             .to_stream()
             .boxed()
@@ -769,6 +789,9 @@ pub struct Info {
     ///
     /// Use it for constructing URLs to this server.
     pub public_host: String,
+
+    /// Title of the server
+    pub title: Option<String>,
 
     /// [Argon2] hash of the password that this server's GraphQL API is
     /// protected with, if any.

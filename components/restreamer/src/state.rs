@@ -28,14 +28,26 @@ use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 
+/// Server's settings.
+/// It keeps different settings not related to restreams but to whole server
+///
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
+pub struct Settings {
+    /// [`argon2`] hash of password which protects access to this application's
+    /// public APIs.
+    pub password_hash: Option<String>,
+
+    /// Title for the server
+    pub title: Option<String>,
+}
+
 /// Reactive application's state.
 ///
 /// Any changes to it automatically propagate to the appropriate subscribers.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct State {
-    /// [`argon2`] hash of password which protects access to this application's
-    /// public APIs.
-    pub password_hash: Mutable<Option<String>>,
+    /// Global [`Settings`] of server
+    pub settings: Mutable<Settings>,
 
     /// All [`Restream`]s performed by this application.
     pub restreams: Mutable<Vec<Restream>>,
@@ -95,8 +107,8 @@ impl State {
             persist_state1()
         });
         Self::on_change(
-            "persist_password_hash",
-            &state.password_hash,
+            "persist_settings",
+            &state.settings,
             move |_| persist_state2(),
         );
 

@@ -29,6 +29,7 @@
 
   import * as PageAll from './pages/All.svelte';
   import * as PageOutput from './pages/Output.svelte';
+  import TitleModal from './TitleModal.svelte';
 
   UIkit.use(Icons);
 
@@ -71,11 +72,15 @@
         } else if (!!newHash && newHash !== currentHash) {
           window.location.reload();
         }
+
+        const title = i.data.info.title;
+        document.title = title || 'Ephyr re-streamer';
       }
     })
   );
 
   let openPasswordModal = false;
+  let openTitleModal = false;
 
   async function openExportModal() {
     let resp;
@@ -166,6 +171,10 @@
           />
         </a>
       {/key}
+      <TitleModal
+        title={$info.data.info.title}
+        bind:visible={openTitleModal}
+      />
       <PasswordModal
         current_hash={$info.data.info.passwordHash}
         bind:visible={openPasswordModal}
@@ -198,6 +207,13 @@
       <img src="logo.jpg" alt="Logo" />
       <h3>Creative Society</h3>
       <small>Ephyr re-streamer {process.env.VERSION}</small>
+    </a>
+    <a
+      href="#"
+      class="set-title"
+      on:click|preventDefault={() => (openTitleModal = true)}
+    >
+      <i class="fas fa-edit" title="Set title" />
     </a>
   </header>
 
@@ -238,11 +254,11 @@
 
     button
       float: right
-    .set-password
+    .set-password, .set-title
       margin-right: 30px
     .back-to-all
       margin-top: 2px
-    .set-password, .back-to-all
+    .set-password, .set-title, .back-to-all
       float: right
       font-size: 26px
       color: #666
@@ -256,6 +272,7 @@
       position: relative
       white-space: nowrap
       display: inline-block
+
       &:hover
         text-decoration: none
 
@@ -284,10 +301,12 @@
       transition: opacity .3s ease
       color: #666
       outline: none
+
       &:hover
         text-decoration: none
         color: #444
         opacity: 1
+
     &:hover
       .export-import-all
         opacity: 1
@@ -300,6 +319,7 @@
 
   .uk-button-primary
     background-color: #08c
+
     &:not([disabled]):hover
       background-color: #046
 

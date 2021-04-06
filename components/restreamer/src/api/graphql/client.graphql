@@ -1,6 +1,7 @@
 subscription Info {
     info {
         publicHost
+        title
         passwordHash
     }
 }
@@ -175,4 +176,8 @@ mutation RemoveDvrFile($path: String!) {
 
 mutation SetPassword($new: String, $old: String) {
     setPassword(new: $new, old: $old)
+}
+
+mutation SetTitle($title: String!) {
+    setTitle(title: $title)
 }

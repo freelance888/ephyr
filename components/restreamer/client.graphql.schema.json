@@ -799,6 +799,33 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "setTitle",
+            "description": "Sets title for this server in order to differentiate it on UI side if multiple servers are used.\n\n### Result\n\nReturns `true` if title has been set, otherwise `false`",
+            "args": [
+              {
+                "name": "title",
+                "description": "Title for the server",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -2021,6 +2048,18 @@
                 "name": "String",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "title",
+            "description": "Title of the server",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
