@@ -650,11 +650,13 @@ impl MutationsRoot {
         Ok(true)
     }
 
-    /// Sets title for this server in order to differentiate it on UI side if multiple servers are used.
+    /// Sets title for this server in order to differentiate it on UI side
+    /// if multiple servers are used.
     ///
     /// ### Result
     ///
-    /// Returns `true` if title has been set and it has length less or equal 70 chars, otherwise returns `false`
+    /// Returns `true` if title has been set and it has length less or
+    /// equal 70 chars, otherwise returns `false`
     #[graphql(arguments(title(description = "Title for the server"),))]
     fn set_title(
         title: Option<String>,

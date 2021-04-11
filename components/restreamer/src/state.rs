@@ -29,8 +29,8 @@ use uuid::Uuid;
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 
 /// Server's settings.
-/// It keeps different settings not related to restreams but to whole server
 ///
+/// It keeps different settings not related to restreams but to whole server
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Settings {
     /// [`argon2`] hash of password which protects access to this application's
