@@ -16,9 +16,8 @@
 
   async function submit_change() {
     try {
-      await setTitleMutation({ variables: { title }});
+      await setTitleMutation({ variables: { title } });
       close();
-      //window.location.reload();
     } catch (e) {
       showError(e.message);
     }

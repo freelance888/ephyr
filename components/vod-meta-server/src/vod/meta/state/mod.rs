@@ -20,12 +20,17 @@ use std::{
     time::Duration,
 };
 
+use crate::{
+    api::{self, allatra, nginx},
+    vod::file,
+};
 use anyhow::anyhow;
 use chrono::{
     DateTime, Datelike as _, Duration as DateDuration, FixedOffset as TimeZone,
     Utc, Weekday,
 };
 use derive_more::{Deref, DerefMut, Display, Into};
+use ephyr_log::log;
 use ephyr_serde::{timelike, timezone};
 use futures::{stream, StreamExt as _, TryFutureExt as _, TryStreamExt as _};
 use isolang::Language;
@@ -35,11 +40,6 @@ use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize};
 use smart_default::SmartDefault;
 use url::Url;
-
-use crate::{
-    api::{self, allatra, nginx},
-    vod::file,
-};
 
 pub use crate::api::allatra::video::{Resolution, YoutubeId};
 
@@ -399,7 +399,16 @@ impl Playlist {
                     for clip in day_clips {
                         let clip_duration = clip.view.to - clip.view.from;
                         let next_time = time
-                            + DateDuration::from_std(clip_duration).unwrap();
+                            + match DateDuration::from_std(clip_duration) {
+                                Ok(dd) => dd,
+                                Err(e) => {
+                                    log::error!(
+                                        "Failed to convert  clip duration: {}",
+                                        e
+                                    );
+                                    continue;
+                                }
+                            };
 
                         // There is no sense to return clips, which have been
                         // already finished. Instead, we start from the first
@@ -547,8 +556,8 @@ impl<'de> Deserialize<'de> for PlaylistSlug {
         D: Deserializer<'de>,
     {
         use serde::de::Error as _;
-        Ok(Self::new(<Cow<'_, str>>::deserialize(deserializer)?)
-            .ok_or_else(|| D::Error::custom("not a valid URL slug"))?)
+        Self::new(<Cow<'_, str>>::deserialize(deserializer)?)
+            .ok_or_else(|| D::Error::custom("not a valid URL slug"))
     }
 }
 
@@ -826,8 +835,8 @@ impl<'de> Deserialize<'de> for SegmentDuration {
         D: Deserializer<'de>,
     {
         use serde::de::Error as _;
-        Ok(Self::new(serde_humantime::deserialize(deserializer)?)
-            .ok_or_else(|| D::Error::custom("not a valid segment duration"))?)
+        Self::new(serde_humantime::deserialize(deserializer)?)
+            .ok_or_else(|| D::Error::custom("not a valid segment duration"))
     }
 }
 

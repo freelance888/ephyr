@@ -17,7 +17,7 @@ use std::{
     time::Duration,
 };
 
-use backoff::{future::FutureOperation as _, ExponentialBackoff};
+use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
 use derive_more::{Display, Error};
 use ephyr_log::log;
@@ -161,14 +161,14 @@ impl Input {
         let audio = self.audio.clone();
         let is_conn_unrecoverable = self.is_conn_unrecoverable.clone();
 
-        let capturing = (move || {
-            AudioCapture::run(cfg.clone(), audio.clone())
-                .map_err(AudioCaptureError::into_backoff)
-        })
-        .retry_notify(
+        let capturing = retry_notify(
             ExponentialBackoff {
                 max_elapsed_time: None,
                 ..ExponentialBackoff::default()
+            },
+            move || {
+                AudioCapture::run(cfg.clone(), audio.clone())
+                    .map_err(AudioCaptureError::into_backoff)
             },
             |err, dur| {
                 log::error!(
@@ -331,6 +331,7 @@ impl AudioCapture {
     /// the given [`AudioHandler`].
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn new(conn: Connection, audio: Arc<Mutex<AudioHandler>>) -> Self {
         audio.lock().unwrap().reset();
         Self {
@@ -340,6 +341,11 @@ impl AudioCapture {
     }
 
     /// Generates a new random HWID (hardware identification string).
+    ///
+    /// # Panics
+    ///
+    /// No panics, because we guarantee to pass proper range to
+    /// the [`hex::encode_to_slice`].
     #[must_use]
     pub fn new_hwid() -> String {
         const BYTES: usize = 16;
@@ -535,6 +541,7 @@ static IN_PROGRESS_DISCONNECTS: Lazy<Arc<Mutex<HashMap<u64, JoinHandle<()>>>>> =
 ///
 /// All disconnects can be awaited for completion via
 /// [`finish_all_disconnects()`].
+#[allow(clippy::missing_panics_doc)]
 fn spawn_waiter(waiter: JoinHandle<()>) {
     let mut disconnects = IN_PROGRESS_DISCONNECTS.lock().unwrap();
 
@@ -606,6 +613,7 @@ fn spawn_disconnect(mut conn: Connection) {
 ///
 /// [TeamSpeak]: https://teamspeak.com
 /// [1]: https://github.com/tokio-rs/tokio/issues/2053
+#[allow(clippy::missing_panics_doc)]
 pub async fn finish_all_disconnects() {
     let disconnects = {
         IN_PROGRESS_DISCONNECTS

@@ -81,8 +81,8 @@ where
     let total_secs = i32::try_from(hours * 3600 + mins * 60 + secs)
         .map_err(|_| D::Error::custom(format!("invalid timezone: {}", s)))?;
 
-    Ok(TimeZone::east_opt(sign * total_secs)
-        .ok_or_else(|| D::Error::custom(format!("invalid timezone: {}", s)))?)
+    TimeZone::east_opt(sign * total_secs)
+        .ok_or_else(|| D::Error::custom(format!("invalid timezone: {}", s)))
 }
 
 /// [`Option`] support.

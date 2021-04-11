@@ -64,12 +64,15 @@ impl Storage {
 
     /// Forms a correct [`Url`] pointing to the file for recording a live stream
     /// by the given [`state::Output`].
-    #[must_use]
-    pub fn file_url(&self, output: &state::Output) -> Url {
+    ///
+    /// # Errors
+    /// If failed to convert path to [`Url`]
+    pub fn file_url(&self, output: &state::Output) -> anyhow::Result<Url> {
         let mut full = self.root_path.clone();
         full.push(output.id.to_string());
         full.push(output.dst.path().trim_start_matches('/'));
-        Url::from_file_path(full).unwrap()
+        Url::from_file_path(full)
+            .map_err(|e| anyhow!("Failed convert path to URL: {:?}", e))
     }
 
     /// Lists stored [DVR] files of the given [`state::Output`].
@@ -170,6 +173,7 @@ impl Storage {
 ///
 /// If cannot create a file path from the given [`Url`], or fails to create its
 /// parent directory.
+#[allow(clippy::missing_panics_doc)]
 pub async fn new_file_path(url: &Url) -> io::Result<PathBuf> {
     let mut path = url.to_file_path().map_err(|_| {
         io::Error::new(io::ErrorKind::Other, "File URL contains bad file path")

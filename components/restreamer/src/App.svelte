@@ -171,10 +171,7 @@
           />
         </a>
       {/key}
-      <TitleModal
-        title={$info.data.info.title}
-        bind:visible={openTitleModal}
-      />
+      <TitleModal title={$info.data.info.title} bind:visible={openTitleModal} />
       <PasswordModal
         current_hash={$info.data.info.passwordHash}
         bind:visible={openPasswordModal}
@@ -209,7 +206,7 @@
       <small>Ephyr re-streamer {process.env.VERSION}</small>
     </a>
     <a
-      href="#"
+      href="/"
       class="set-title"
       on:click|preventDefault={() => (openTitleModal = true)}
     >

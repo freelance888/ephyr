@@ -210,11 +210,16 @@ pub mod client {
     ///
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
     fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
-        let hash =
-            match req.app_data::<State>().unwrap().settings.get_cloned().password_hash {
-                Some(h) => h,
-                None => return Ok(req),
-            };
+        let hash = match req
+            .app_data::<State>()
+            .unwrap()
+            .settings
+            .get_cloned()
+            .password_hash
+        {
+            Some(h) => h,
+            None => return Ok(req),
+        };
 
         let err = || {
             AuthenticationError::new(

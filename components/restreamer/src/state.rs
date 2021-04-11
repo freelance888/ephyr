@@ -106,11 +106,9 @@ impl State {
         Self::on_change("persist_restreams", &state.restreams, move |_| {
             persist_state1()
         });
-        Self::on_change(
-            "persist_settings",
-            &state.settings,
-            move |_| persist_state2(),
-        );
+        Self::on_change("persist_settings", &state.settings, move |_| {
+            persist_state2()
+        });
 
         Ok(state)
     }
@@ -230,7 +228,7 @@ impl State {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        #[allow(clippy::find_map)] // due to consuming `spec`
+        #[allow(clippy::manual_find_map)] // due to consuming `spec`
         Ok(restreams
             .iter_mut()
             .find(|r| r.id == id)
@@ -373,7 +371,7 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        #[allow(clippy::find_map)] // due to consuming `spec`
+        #[allow(clippy::manual_find_map)] // due to consuming `spec`
         Ok(outputs
             .iter_mut()
             .find(|o| o.id == id)
@@ -665,11 +663,16 @@ impl Restream {
     /// Returns an URL on a local [SRS] server of the endpoint representing a
     /// main [`Input`] in this [`Restream`].
     ///
+    /// # Errors
+    ///
+    /// If not found any RTMP [`Input`] endpoint
+    ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[must_use]
-    pub fn main_input_rtmp_endpoint_url(&self) -> Url {
-        let main = self.input.endpoints.iter().find(|e| e.is_rtmp()).unwrap();
-        main.kind.rtmp_url(&self.key, &self.input.key)
+    pub fn main_input_rtmp_endpoint_url(&self) -> anyhow::Result<Url> {
+        match self.input.endpoints.iter().find(|e| e.is_rtmp()) {
+            Some(main) => Ok(main.kind.rtmp_url(&self.key, &self.input.key)),
+            None => Err(anyhow!("Not found any RTMP endpoint")),
+        }
     }
 }
 
@@ -1056,6 +1059,9 @@ pub enum InputEndpointKind {
 impl InputEndpointKind {
     /// Returns RTMP URL on a local [SRS] server of this [`InputEndpointKind`]
     /// for the given `restream` and `input`.
+    ///
+    /// # Panics
+    /// No panics, because [`RestreamKey`] and [`InputKey`] are validated.
     ///
     /// [SRS]: https://github.com/ossrs/srs
     #[must_use]
@@ -1972,6 +1978,7 @@ impl Delay {
     /// Returns milliseconds of this [`Delay`].
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn as_millis(&self) -> i32 {
         self.0.as_millis().try_into().unwrap()
     }

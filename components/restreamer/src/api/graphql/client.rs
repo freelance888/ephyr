@@ -86,7 +86,8 @@ impl MutationsRoot {
                             "JSON spec should contain exactly one Restream",
                         )
                 })?;
-            #[allow(clippy::find_map)] // due to moving `spec` inside closure
+            #[allow(clippy::manual_find_map)]
+            // due to moving `spec` inside closure
             context
                 .state()
                 .restreams
@@ -653,15 +654,21 @@ impl MutationsRoot {
     ///
     /// ### Result
     ///
-    /// Returns `true` if title has been set, otherwise `false`
+    /// Returns `true` if title has been set and it has length less or equal 70 chars, otherwise returns `false`
     #[graphql(arguments(title(description = "Title for the server"),))]
     fn set_title(
         title: Option<String>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
-        let mut settings = context.state().settings.lock_mut();
+        let value = title.unwrap_or_default();
+        if value.len() > 70 {
+            return Err(graphql::Error::new("WRONG_TITLE_LENGTH")
+                .status(StatusCode::BAD_REQUEST)
+                .message("Title exceeds max allowed length of 70 characters"));
+        }
 
-        settings.title = title;
+        let mut settings = context.state().settings.lock_mut();
+        settings.title = Some(value);
         Ok(true)
     }
 }
