@@ -38,12 +38,6 @@
     }
   }
 
-  function onAreaClick(event) {
-    if (event.target.classList.contains('uk-modal')) {
-      value.close();
-    }
-  }
-
   async function submit(replace) {
     if (!submitable) return;
     const v = get(value);
@@ -58,7 +52,7 @@
 </script>
 
 <template>
-  <div class="uk-modal" class:uk-open={$value.visible} on:click={onAreaClick}>
+  <div class="uk-modal" class:uk-open={$value.visible}>
     <div class="uk-modal-dialog uk-modal-body">
       <h2 class="uk-modal-title">Export or import as JSON</h2>
       <button

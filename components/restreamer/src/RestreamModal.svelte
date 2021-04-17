@@ -49,12 +49,6 @@
     })
   );
 
-  function onAreaClick(event) {
-    if (event.target.classList.contains('uk-modal')) {
-      value.close();
-    }
-  }
-
   async function submit() {
     if (!submitable) return;
     const v = get(value);
@@ -86,7 +80,7 @@
 </script>
 
 <template>
-  <div class="uk-modal" class:uk-open={$value.visible} on:click={onAreaClick}>
+  <div class="uk-modal" class:uk-open={$value.visible}>
     <div class="uk-modal-dialog uk-modal-body">
       <h2 class="uk-modal-title">
         {#if $value.edit_id}Edit{:else}Add new{/if} input source for re-streaming

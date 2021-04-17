@@ -78,12 +78,6 @@
     });
   }
 
-  function onAreaClick(event) {
-    if (event.target.classList.contains('uk-modal')) {
-      value.close();
-    }
-  }
-
   async function submit() {
     revalidateList();
     if (!submitable) return;
@@ -158,7 +152,7 @@
 </script>
 
 <template>
-  <div class="uk-modal" class:uk-open={$value.visible} on:click={onAreaClick}>
+  <div class="uk-modal" class:uk-open={$value.visible}>
     <div class="uk-modal-dialog uk-modal-body" class:is-multi={$value.multi}>
       <h2 class="uk-modal-title">
         {#if !$value.edit_id}

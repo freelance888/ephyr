@@ -44,19 +44,13 @@
 
     await open();
   }
-
-  function onAreaClick(event) {
-    if (event.target.classList.contains('uk-modal')) {
-      files = [];
-    }
-  }
 </script>
 
 <template>
   <slot {open} />
 
   {#if files.length > 0}
-    <div class="uk-modal uk-open" on:click={onAreaClick}>
+    <div class="uk-modal uk-open">
       <div class="uk-modal-dialog uk-modal-body">
         <h2 class="uk-modal-title">Recorded files</h2>
         <button

@@ -19,12 +19,6 @@
     ((old_password !== '' && !!current_hash) || !current_hash);
   $: remove_submitable = !!current_hash && old_password !== '';
 
-  function onAreaClick(event) {
-    if (event.target.classList.contains('uk-modal')) {
-      close();
-    }
-  }
-
   function close() {
     visible = false;
     new_password = '';
@@ -61,7 +55,7 @@
 </script>
 
 <template>
-  <div class="uk-modal" class:uk-open={visible} on:click={onAreaClick}>
+  <div class="uk-modal" class:uk-open={visible}>
     <div class="uk-modal-dialog uk-modal-body">
       <h2 class="uk-modal-title">
         {#if !current_hash}
