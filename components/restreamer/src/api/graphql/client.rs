@@ -509,6 +509,34 @@ impl MutationsRoot {
         context.state().disable_all_outputs(restream_id)
     }
 
+    /// Disables all `Output`s in all `Restream`s.
+    ///
+    /// Disabled `Output`s stop re-streaming a live stream to their
+    /// destinations.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if at least one `Output` has been disabled, `false` if
+    /// all `Output`s have been disabled already or there are no outputs
+    #[graphql(arguments())]
+    fn disable_all_outputs_of_restreams(context: &Context) -> bool {
+        context.state().disable_all_outputs_of_restreams()
+    }
+
+    /// Enables all `Output`s in all `Restream`s.
+    ///
+    /// Enabled `Output`s start re-streaming a live stream to their
+    /// destinations.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if at least one `Output` has been enabled, `false` if all
+    /// `Output`s have been enabled already or there are no outputs
+    #[graphql(arguments())]
+    fn enables_all_outputs_of_restreams(context: &Context) -> bool {
+        context.state().enable_all_outputs_of_restreams()
+    }
+
     /// Tunes a `Volume` rate of the specified `Output` or one of its `Mixin`s.
     ///
     /// ### Result

@@ -599,6 +599,38 @@
             "deprecationReason": null
           },
           {
+            "name": "disableAllOutputsOfRestreams",
+            "description": "Disables all `Output`s in all `Restream`s.\n\nDisabled `Output`s stop re-streaming a live stream to their\ndestinations.\n\n### Result\n\nReturns `true` if at least one `Output` has been disabled, `false` if\nall `Output`s have been disabled already or there are no outputs",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "enablesAllOutputsOfRestreams",
+            "description": "Enables all `Output`s in all `Restream`s.\n\nEnabled `Output`s start re-streaming a live stream to their\ndestinations.\n\n### Result\n\nReturns `true` if at least one `Output` has been enabled, `false` if all\n`Output`s have been enabled already or there are not outputs",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "tuneVolume",
             "description": "Tunes a `Volume` rate of the specified `Output` or one of its `Mixin`s.\n\n### Result\n\nReturns `true` if a `Volume` rate has been changed, `false` if it has\nthe same value already, or `null` if the specified `Output` or `Mixin`\ndoesn't exist.",
             "args": [
@@ -802,7 +834,7 @@
           },
           {
             "name": "setTitle",
-            "description": "Sets title for this server in order to differentiate it on UI side if multiple servers are used.\n\n### Result\n\nReturns `true` if title has been set, otherwise `false`",
+            "description": "Sets title for this server in order to differentiate it on UI side\nif multiple servers are used.\n\n### Result\n\nReturns `true` if title has been set and it has length less or\nequal 70 chars, otherwise returns `false`",
             "args": [
               {
                 "name": "title",

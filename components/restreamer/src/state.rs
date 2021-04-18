@@ -459,19 +459,7 @@ impl State {
     /// with such `restream_id` exists.
     #[must_use]
     pub fn enable_all_outputs(&self, restream_id: RestreamId) -> Option<bool> {
-        let mut restreams = self.restreams.lock_mut();
-        Some(
-            restreams
-                .iter_mut()
-                .find(|r| r.id == restream_id)?
-                .outputs
-                .iter_mut()
-                .filter(|o| !o.enabled)
-                .fold(false, |_, o| {
-                    o.enabled = true;
-                    true
-                }),
-        )
+        self.set_state_of_all_outputs(restream_id, true)
     }
 
     /// Disables all [`Output`]s in the specified [`Restream`] of this
@@ -482,19 +470,25 @@ impl State {
     /// [`Restream`] with such `restream_id` exists.
     #[must_use]
     pub fn disable_all_outputs(&self, restream_id: RestreamId) -> Option<bool> {
-        let mut restreams = self.restreams.lock_mut();
-        Some(
-            restreams
-                .iter_mut()
-                .find(|r| r.id == restream_id)?
-                .outputs
-                .iter_mut()
-                .filter(|o| o.enabled)
-                .fold(false, |_, o| {
-                    o.enabled = false;
-                    true
-                }),
-        )
+        self.set_state_of_all_outputs(restream_id, false)
+    }
+
+    /// Enables all [`Output`]s in all [`Restream`]s of this [`State`].
+    ///
+    /// Returns `true` if at least one [`Output`] has been enabled, or `false`
+    /// if all of them already have been enabled or there are no outputs
+    #[must_use]
+    pub fn enable_all_outputs_of_restreams(&self) -> bool {
+        self.set_state_of_all_outputs_of_restreams(true)
+    }
+
+    /// Disables all [`Output`]s in ALL [`Restream`]s of this [`State`].
+    ///
+    /// Returns `true` if at least one [`Output`] has been disabled, or `false`
+    /// if all of them already have been disabled or there are no outputs
+    #[must_use]
+    pub fn disable_all_outputs_of_restreams(&self) -> bool {
+        self.set_state_of_all_outputs_of_restreams(false)
     }
 
     /// Tunes a [`Volume`] rate of the specified [`Output`] or its [`Mixin`] in
@@ -565,6 +559,43 @@ impl State {
 
         mixin.delay = delay;
         Some(true)
+    }
+
+    /// Disables/Enables all [`Output`]s in the specified [`Restream`] of this
+    /// [`State`].
+    #[must_use]
+    fn set_state_of_all_outputs(
+        &self,
+        restream_id: RestreamId,
+        enabled: bool,
+    ) -> Option<bool> {
+        let mut restreams = self.restreams.lock_mut();
+        Some(
+            restreams
+                .iter_mut()
+                .find(|r| r.id == restream_id)?
+                .outputs
+                .iter_mut()
+                .filter(|o| o.enabled != enabled)
+                .fold(false, |_, o| {
+                    o.enabled = enabled;
+                    true
+                }),
+        )
+    }
+
+    /// Disables/Enables all [`Output`]s in ALL [`Restream`]s of this [`State`].
+    #[must_use]
+    fn set_state_of_all_outputs_of_restreams(&self, enabled: bool) -> bool {
+        let mut restreams = self.restreams.lock_mut();
+        restreams
+            .iter_mut()
+            .flat_map(|r| r.outputs.iter_mut())
+            .filter(|o| o.enabled != enabled)
+            .fold(false, |_, o| {
+                o.enabled = enabled;
+                true
+            })
     }
 }
 

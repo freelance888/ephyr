@@ -21,7 +21,7 @@
 
   {#if showDialog}
     <div class="uk-modal uk-open">
-      <div class="uk-modal-dialog uk-modal-body">
+      <div class="uk-modal-dialog uk-modal-body uk-text-left">
         <h2 class="uk-modal-title">
           <slot name="title">
             Are you sure you want to perform this action?

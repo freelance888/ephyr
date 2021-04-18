@@ -142,6 +142,14 @@ mutation DisableAllOutputs($restream_id: RestreamId!) {
     disableAllOutputs(restreamId: $restream_id)
 }
 
+mutation EnableAllOutputsOfRestreams {
+    enablesAllOutputsOfRestreams
+}
+
+mutation DisableAllOutputsOfRestreams {
+    disableAllOutputsOfRestreams
+}
+
 mutation TuneVolume(
     $restream_id: RestreamId!
     $output_id: OutputId!
