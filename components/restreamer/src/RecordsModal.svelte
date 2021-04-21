@@ -92,7 +92,7 @@
 
   .record
     a
-      color: #666
+      color: var(--primary-text-color)
 
     button
       margin-left: 15px

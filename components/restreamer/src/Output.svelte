@@ -244,7 +244,7 @@
     a.edit-output
       left: -16px
       top: 6px
-      color: #666
+      color: var(--primary-text-color)
       &:hover
         color: #444
         opacity: 1
@@ -288,5 +288,5 @@
       margin-top: -1px
 
   a.dvr-link
-    color: #666
+    color: var(--primary-text-color)
 </style>
