@@ -269,8 +269,10 @@
     button
     .set-password, .set-title
       margin-right: 26px
+
     .back-to-all
       margin-top: 2px
+
     .set-password, .set-title, .back-to-all
       font-size: 26px
       color: var(--primary-text-color)
@@ -278,6 +280,7 @@
       &:hover
         text-decoration: none
         color: #444
+
     .add-input
       position: relative
       display: inline-block
@@ -287,7 +290,6 @@
       outline: none
       position: relative
       white-space: nowrap
-
       &:hover
         text-decoration: none
 
@@ -314,7 +316,6 @@
       transition: opacity .3s ease
       color: var(--primary-text-color)
       outline: none
-
       &:hover
         text-decoration: none
         color: #444
@@ -330,7 +331,6 @@
 
   .uk-button-primary
     background-color: #08c
-
     &:not([disabled]):hover
       background-color: #046
 
@@ -338,4 +338,18 @@
     padding-top: 10px
     padding-bottom: 3px
     font-size: 12px
+
+  .uk-notification-message
+    pointer-events: none
+    font-size: 1rem
+    & > div
+      padding-right: 14px
+
+    .uk-notification-close
+      display: inherit
+      pointer-events: all
+
+    .uk-icon-link
+      pointer-events: all
+
 </style>

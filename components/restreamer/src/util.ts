@@ -7,7 +7,28 @@ import UIkit from 'uikit';
  * @param message    Error message to be displayed.
  */
 export function showError(message: string) {
-  UIkit.notification(message, { status: 'danger', pos: 'top-center' });
+  // Register global 'copy to clipboard' function
+  const win = window as any;
+  if (!Boolean(win.copyToClipboard)) {
+    win.copyToClipboard = async (message) => {
+      await copyToClipboard(unescape(message));
+    };
+  }
+
+  const maxAllowedLength = 300;
+  let escapedMessage = escape(message);
+
+  message =
+    message.length > maxAllowedLength
+      ? `${message.substring(0, maxAllowedLength)} ...`
+      : message;
+
+  const htmlMessage = `${message}<button class="uk-icon-link uk-margin-small-left" uk-icon="copy" onclick="copyToClipboard('${escapedMessage}');"></button>`;
+  UIkit.notification(htmlMessage, {
+    status: 'danger',
+    pos: 'top-right',
+    timeout: 300_000 /* 5 min */,
+  });
 }
 
 /**
@@ -21,7 +42,7 @@ export async function copyToClipboard(text: string) {
   UIkit.notification('Copied', {
     status: 'success',
     pos: 'top-center',
-    timeout: 300,
+    timeout: 1500,
   });
 }
 
