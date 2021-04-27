@@ -58,7 +58,7 @@
         <Confirm let:confirm>
           <button
             class="uk-button uk-button-default"
-            title="Start all outputs of all inputs"
+            title="Start all outputs of all restreams"
             on:click={() => confirm(enableAllOutputsOfRestreams)}
             ><span class="uk-visible@m">Start All</span><span
               class="uk-hidden@m">Start</span
@@ -74,7 +74,7 @@
         <Confirm let:confirm>
           <button
             class="uk-button uk-button-default"
-            title="Start all outputs of all restreams"
+            title="Stop all outputs of all restreams"
             on:click={() => confirm(disableAllOutputsOfRestreams)}
             value=""
             ><span class="uk-visible@m">Stop All</span><span class="uk-hidden@m"

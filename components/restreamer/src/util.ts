@@ -7,7 +7,7 @@ import UIkit from 'uikit';
  * @param message    Error message to be displayed.
  */
 export function showError(message: string) {
-  // Register global 'copy to clipboard' function
+  // Register global 'copy to clipboard' function. It's used in onclick handler of notification message
   const win = window as any;
   if (!Boolean(win.copyToClipboard)) {
     win.copyToClipboard = async (message) => {
