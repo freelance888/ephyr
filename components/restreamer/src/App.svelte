@@ -342,6 +342,7 @@
   .uk-notification-message
     pointer-events: none
     font-size: 1rem
+    overflow-wrap: anywhere
     & > div
       padding-right: 14px
 
