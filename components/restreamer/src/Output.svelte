@@ -10,7 +10,7 @@
     TuneVolume,
   } from './api/graphql/client.graphql';
 
-  import { showError, isOutputPage, copyToClipboard } from './util';
+  import { showError, isOutputPage } from './util';
 
   import { outputModal } from './stores';
 
@@ -18,6 +18,7 @@
   import Toggle from './Toggle.svelte';
   import Mixin from './Mixin.svelte';
   import RecordsModal from './RecordsModal.svelte';
+  import Url from './Url.svelte';
 
   const disableOutputMutation = mutation(DisableOutput);
   const enableOutputMutation = mutation(EnableOutput);
@@ -104,7 +105,7 @@
 
 <template>
   <div
-    class="uk-card uk-card-default uk-card-body"
+    class="uk-card uk-card-default uk-card-body uk-flex"
     class:hidden
     class:grouped={!isOutputPage($location)}
     class:uk-margin-left={!isOutputPage($location)}
@@ -142,74 +143,72 @@
       <i class="far fa-edit" title="Edit output" />
     </a>
 
-    <Toggle
-      id="output-toggle-{value.id}"
-      classes="small"
-      checked={value.enabled}
-      on:change={toggle}
-    />
-    {#if value.status === 'ONLINE'}
-      <span><i class="fas fa-circle uk-alert-success" /></span>
-    {:else if value.status === 'INITIALIZING'}
-      <span><i class="fas fa-dot-circle uk-alert-warning" /></span>
-    {:else}
-      <span><i class="far fa-dot-circle uk-alert-danger" /></span>
-    {/if}
-    {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
-      <RecordsModal let:open id={value.id} {public_host}>
-        <a
-          class="dvr-link"
-          href="/"
-          on:click|preventDefault={open}
-          title="Download records">{value.dst}</a
-        >
-      </RecordsModal>
-    {:else}
-      <span
-        class="overflow-wrap"
-        on:dblclick|preventDefault={() => copyToClipboard(value.dst)}
-        title="Double-click to copy">{value.dst}</span
-      >
-      {#if value.previewUrl}
-        &nbsp;[<a href={value.previewUrl} target="_blank">Preview</a>]
-      {/if}
-    {/if}
+    <div>
+      <Toggle
+        id="output-toggle-{value.id}"
+        classes="small"
+        checked={value.enabled}
+        on:change={toggle}
+      />
+    </div>
 
-    {#if value.mixins.length > 0}
-      {#if !isOutputPage($location)}
-        <a
-          class="single-view"
-          href="/restream/{restream_id}/output/{value.id}"
-          use:link
-          title="Open in a separate window"
-          ><i class="fas fa-external-link-alt" />
-        </a>
+    <div class="output-mixes">
+      {#if value.status === 'ONLINE'}
+        <span><i class="fas fa-circle uk-alert-success" /></span>
+      {:else if value.status === 'INITIALIZING'}
+        <span><i class="fas fa-dot-circle uk-alert-warning" /></span>
+      {:else}
+        <span><i class="far fa-dot-circle uk-alert-danger" /></span>
+      {/if}
+      {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
+        <RecordsModal let:open id={value.id} {public_host}>
+          <a
+            class="dvr-link"
+            href="/"
+            on:click|preventDefault={open}
+            title="Download records">{value.dst}</a
+          >
+        </RecordsModal>
+      {:else}
+        <Url url={value.dst} previewUrl={value.previewUrl} />
       {/if}
 
-      <div class="volume orig">
-        <a href="/" on:click|preventDefault={toggleVolume}>
-          {#if volume > 0}
-            <span><i class="fas fa-volume-up" title="Volume" /></span>
-          {:else}
-            <span><i class="fas fa-volume-mute" title="Muted" /></span>
-          {/if}
-        </a>
-        <input
-          class="uk-range"
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-          bind:value={volume}
-          on:change={tuneVolume}
-        />
-        <span>{volume}%</span>
-      </div>
+      {#if value.mixins.length > 0}
+        {#if !isOutputPage($location)}
+          <a
+            class="single-view"
+            href="/restream/{restream_id}/output/{value.id}"
+            use:link
+            title="Open in a separate window"
+            ><i class="fas fa-external-link-alt" />
+          </a>
+        {/if}
 
-      {#each value.mixins as mixin}
-        <Mixin {restream_id} output_id={value.id} value={mixin} />
-      {/each}
-    {/if}
+        <div class="volume orig">
+          <a href="/" on:click|preventDefault={toggleVolume}>
+            {#if volume > 0}
+              <span><i class="fas fa-volume-up" title="Volume" /></span>
+            {:else}
+              <span><i class="fas fa-volume-mute" title="Muted" /></span>
+            {/if}
+          </a>
+          <input
+            class="uk-range"
+            type="range"
+            min="0"
+            max="200"
+            step="1"
+            bind:value={volume}
+            on:change={tuneVolume}
+          />
+          <span>{volume}%</span>
+        </div>
+
+        {#each value.mixins as mixin}
+          <Mixin {restream_id} output_id={value.id} value={mixin} />
+        {/each}
+      {/if}
+    </div>
   </div>
 </template>
 
@@ -228,8 +227,9 @@
       display: none
 
     .uk-close
-      float: right
-      margin-top: 3px
+      position: absolute;
+      right: 6px;
+      top: 9px;
 
     .label
       position: absolute
@@ -281,9 +281,6 @@
     padding-left: 17px
     font-size: 10px
 
-    &.orig
-      margin-left: 34px
-
     a
       color: #d9d9d9
       outline: none
@@ -296,9 +293,13 @@
       height: 12px
     .uk-range
       display: inline-block
-      width: 70%
+      width: 74%
       margin-top: -1px
 
   a.dvr-link
     color: var(--primary-text-color)
+
+  .output-mixes
+    width: calc(100% - 56px);
+    margin-left: 4px
 </style>

@@ -3,7 +3,9 @@
 
   import { TuneDelay, TuneVolume } from './api/graphql/client.graphql';
 
-  import { showError, copyToClipboard } from './util';
+  import { showError } from './util';
+
+  import Url from './Url.svelte';
 
   const tuneDelayMutation = mutation(TuneDelay);
   const tuneVolumeMutation = mutation(TuneVolume);
@@ -72,10 +74,7 @@
 <template>
   <div class="mixin">
     <i class="fas fa-wave-square" title="Mixed audio" />
-    <span
-      on:dblclick|preventDefault={() => copyToClipboard(value.src)}
-      title="Double-click to copy">{value.src}</span
-    >
+    <Url url={value.src} />
     <div class="volume">
       <a href="/" on:click|preventDefault={toggleVolume}>
         {#if volume > 0}
@@ -119,7 +118,6 @@
 
   .mixin
     margin-top: 6px
-    padding-left: 34px
 
   .volume
     padding-left: 17px
@@ -137,7 +135,7 @@
       height: 12px
     .uk-range
       display: inline-block
-      width: 70%
+      width: 74%
       margin-top: -1px
 
   .delay

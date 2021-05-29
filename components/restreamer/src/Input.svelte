@@ -6,11 +6,12 @@
   import { showError } from './util';
 
   import Toggle from './Toggle.svelte';
-  import InputUrl from './InputUrl.svelte';
+  import Url from './Url.svelte';
 
   const disableInputMutation = mutation(DisableInput);
   const enableInputMutation = mutation(EnableInput);
 
+  export let public_host = 'localhost';
   export let restream_id;
   export let restream_key;
   export let value;
@@ -30,6 +31,13 @@
       showError(e.message);
     }
   }
+
+  function getInputUrl(endpoint) {
+    if (endpoint.kind === 'HLS')
+      return `http://${public_host}:8000/hls/${restream_key}/${value.key}.m3u8`;
+    else if (isPull) return value.src.url;
+    else return `rtmp://${public_host}/${restream_key}/${value.key}`;
+  }
 </script>
 
 <template>
@@ -40,68 +48,63 @@
       on:change={toggle}
     />
     <div class="endpoints">
-    {#each value.endpoints as endpoint}
-      <div class="endpoint">
-        <div
-          class:endpoint-status-icon={true}
-          class:uk-alert-danger={endpoint.status === 'OFFLINE'}
-          class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
-          class:uk-alert-success={endpoint.status === 'ONLINE'}
-        >
-          {#if isFailover || endpoint.kind !== 'RTMP'}
-            {#if endpoint.status === 'ONLINE'}
+      {#each value.endpoints as endpoint}
+        <div class="endpoint">
+          <div
+            class:endpoint-status-icon={true}
+            class:uk-alert-danger={endpoint.status === 'OFFLINE'}
+            class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
+            class:uk-alert-success={endpoint.status === 'ONLINE'}
+          >
+            {#if isFailover || endpoint.kind !== 'RTMP'}
+              {#if endpoint.status === 'ONLINE'}
+                <span
+                  ><i
+                    class="fas fa-circle"
+                    title="Serves {isFailover
+                      ? 'failover '
+                      : ''}live {endpoint.kind} stream"
+                  /></span
+                >
+              {:else if endpoint.status === 'INITIALIZING'}
+                <span
+                  ><i
+                    class="fas fa-dot-circle"
+                    title="Serves {isFailover
+                      ? 'failover '
+                      : ''} live {endpoint.kind} stream"
+                  /></span
+                >
+              {:else}
+                <span
+                  ><i
+                    class="far fa-dot-circle"
+                    title="Serves {isFailover
+                      ? 'failover '
+                      : ''} live {endpoint.kind} stream"
+                  /></span
+                >
+              {/if}
+            {:else if isPull}
               <span
                 ><i
-                  class="fas fa-circle"
-                  title="Serves {isFailover
-                    ? 'failover '
-                    : ''}live {endpoint.kind} stream"
-                /></span
-              >
-            {:else if endpoint.status === 'INITIALIZING'}
-              <span
-                ><i
-                  class="fas fa-dot-circle"
-                  title="Serves {isFailover
-                    ? 'failover '
-                    : ''} live {endpoint.kind} stream"
-                /></span
-              >
+                  class="fas fa-arrow-down"
+                  title="Pulls {value.key} live {endpoint.kind} stream"
+                />
+              </span>
             {:else}
               <span
                 ><i
-                  class="far fa-dot-circle"
-                  title="Serves {isFailover
-                    ? 'failover '
-                    : ''} live {endpoint.kind} stream"
-                /></span
-              >
+                  class="fas fa-arrow-right"
+                  title="Accepts {value.key} live {endpoint.kind} stream"
+                />
+              </span>
             {/if}
-          {:else if isPull}
-            <span
-              ><i
-                class="fas fa-arrow-down"
-                title="Pulls {value.key} live {endpoint.kind} stream"
-              />
-            </span>
-          {:else}
-            <span
-              ><i
-                class="fas fa-arrow-right"
-                title="Accepts {value.key} live {endpoint.kind} stream"
-              />
-            </span>
-          {/if}
-        </div>
+          </div>
 
-        <InputUrl
-          endpoint={endpoint}
-          is_pull={isPull}
-          restream_key={restream_key}
-          value={value}
-        />
-      </div>
-    {/each}
+          <Url url={getInputUrl(endpoint)} />
+        </div>
+      {/each}
     </div>
   </div>
 </template>
