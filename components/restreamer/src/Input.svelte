@@ -3,14 +3,14 @@
 
   import { DisableInput, EnableInput } from './api/graphql/client.graphql';
 
-  import { showError, copyToClipboard } from './util';
+  import { showError } from './util';
 
   import Toggle from './Toggle.svelte';
+  import InputUrl from './InputUrl.svelte';
 
   const disableInputMutation = mutation(DisableInput);
   const enableInputMutation = mutation(EnableInput);
 
-  export let public_host = 'localhost';
   export let restream_id;
   export let restream_key;
   export let value;
@@ -39,9 +39,11 @@
       checked={value.enabled}
       on:change={toggle}
     />
+    <div class="endpoints">
     {#each value.endpoints as endpoint}
-      <span class="endpoint">
-        <span
+      <div class="endpoint">
+        <div
+          class:endpoint-status-icon={true}
           class:uk-alert-danger={endpoint.status === 'OFFLINE'}
           class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
           class:uk-alert-success={endpoint.status === 'ONLINE'}
@@ -90,22 +92,17 @@
               />
             </span>
           {/if}
-        </span>
-        <span
-          on:dblclick|preventDefault={(e) =>
-            copyToClipboard(e.target.innerText)}
-          title="Double-click to copy"
-        >
-          {#if endpoint.kind === 'HLS'}
-            http://{public_host}:8000/hls/{restream_key}/{value.key}.m3u8
-          {:else if isPull}
-            {value.src.url}
-          {:else}
-            rtmp://{public_host}/{restream_key}/{value.key}
-          {/if}
-        </span>
-      </span>
+        </div>
+
+        <InputUrl
+          endpoint={endpoint}
+          is_pull={isPull}
+          restream_key={restream_key}
+          value={value}
+        />
+      </div>
     {/each}
+    </div>
   </div>
 </template>
 
@@ -117,7 +114,13 @@
     font-size: 13px
     cursor: help
 
-  .endpoint + .endpoint
-    display: block
-    margin-left: 45px
+  .input
+    display: flex;
+    align-items: baseline;
+  .endpoints
+    margin-left: 4px
+  .endpoint
+    display: flex
+  .endpoint .endpoint-status-icon
+    margin-right: 5px
 </style>
