@@ -192,7 +192,7 @@ mutation SetPassword($new: String, $old: String) {
 }
 
 mutation SetSettings(
-    $title: String!
+    $title: String
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
 ) {
