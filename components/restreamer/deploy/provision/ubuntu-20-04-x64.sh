@@ -10,14 +10,22 @@ else
   EPHYR_VER="-$EPHYR_VER"
 fi
 
+WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
+if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
+    apt-get -y update
+    DEBIAN_FRONTEND=noninteractive \
+        apt-get -qy -o "Dpkg::Options::=--force-confdef" \
+                    -o "Dpkg::Options::=--force-confold" upgrade
+fi
 
 # Install Podman for running containers.
-echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
+echo "deb https://download.opensu se.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
   | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
 curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key \
   | apt-key add -
 apt-get -y update
 apt-get -y install podman
+
 
 WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 if [ "$WITH_FIREWALLD" == "1" ]; then
