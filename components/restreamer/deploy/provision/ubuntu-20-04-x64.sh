@@ -10,6 +10,7 @@ else
   EPHYR_VER="-$EPHYR_VER"
 fi
 
+
 # Install Podman for running containers.
 echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
   | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
@@ -29,6 +30,7 @@ if [ "$WITH_FIREWALLD" == "1" ]; then
                --add-port=80/tcp --add-port=1935/tcp --add-port=8000/tcp
   firewall-cmd --reload
 fi
+
 
 # Install Ephyr re-streamer runner wrapper which detect directory for DVR.
 cat <<'EOF' > /usr/local/bin/detect-ephyr-restreamer-volume.sh
@@ -52,7 +54,23 @@ exec "$@"
 EOF
 chmod +x /usr/local/bin/detect-ephyr-restreamer-volume.sh
 
-# Install Ephyr re-streamer.
+
+# Install Ephyr-restreamer runner (need pass $EPHYR_WWW_DIR).
+cat <<'EOF' > /usr/local/bin/run-ephyr-restreamer.sh
+#!/usr/bin/env bash
+
+/usr/bin/podman run \\
+  --network=host \\
+  -v /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf:/usr/local/srs/conf/srs.conf \\
+  -v /var/lib/\${EPHYR_CONTAINER_NAME}/state.json:/state.json \\
+  -v \${EPHYR_WWW_DIR}/:/var/www/srs/ \\
+  --name=\${EPHYR_CONTAINER_NAME} \\
+  \${EPHYR_IMAGE_NAME}:\${EPHYR_IMAGE_TAG} ${EPHYR_CLI_ARGS}
+EOF
+chmod +x /usr/local/bin/run-ephyr-restreamer.sh
+
+
+# Install Ephyr re-streamer SystemD Service.
 cat <<EOF > /etc/systemd/system/ephyr-restreamer.service
 [Unit]
 Description=Ephyr service for re-streaming RTMP streams
@@ -73,14 +91,7 @@ ExecStartPre=-/usr/bin/podman pull \${EPHYR_IMAGE_NAME}:\${EPHYR_IMAGE_TAG}
 ExecStartPre=-/usr/bin/podman stop \${EPHYR_CONTAINER_NAME}
 ExecStartPre=-/usr/bin/podman rm --volumes \${EPHYR_CONTAINER_NAME}
 ExecStart=/usr/local/bin/detect-ephyr-restreamer-volume.sh \\
-  /usr/bin/podman run \\
-  --network=host \\
-  -v /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf:/usr/local/srs/conf/srs.conf \\
-  -v /var/lib/\${EPHYR_CONTAINER_NAME}/state.json:/state.json \\
-  -v \${EPHYR_WWW_DIR}/:/var/www/srs/ \\
-  --name=\${EPHYR_CONTAINER_NAME} \\
-  \${EPHYR_IMAGE_NAME}:\${EPHYR_IMAGE_TAG} ${EPHYR_CLI_ARGS}
-
+  /usr/local/bin/run-ephyr-restreamer.sh
 ExecStop=-/usr/bin/podman stop \${EPHYR_CONTAINER_NAME}
 ExecStop=-/usr/bin/podman rm --volumes \${EPHYR_CONTAINER_NAME}
 
@@ -90,6 +101,7 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
+
 systemctl daemon-reload
 systemctl unmask ephyr-restreamer.service
 systemctl enable ephyr-restreamer.service
