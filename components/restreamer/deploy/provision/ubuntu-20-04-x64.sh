@@ -19,7 +19,7 @@ if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
 fi
 
 # Install Podman for running containers.
-echo "deb https://download.opensu se.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
+echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
   | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
 curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key \
   | apt-key add -
