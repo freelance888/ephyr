@@ -99,7 +99,7 @@ FROM ossrs/srs:3 AS build-srs
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.3-centos7 AS runtime
+FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 
