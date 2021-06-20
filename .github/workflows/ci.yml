@@ -233,13 +233,15 @@ jobs:
   docker:
     if: ${{ github.ref == 'refs/heads/master'
             || startsWith(github.ref, 'refs/tags/')
+            || contains(github.event.head_commit.message, '[release]')
             || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             export: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                        || github.ref == 'refs/heads/master' }}
+                        || github.ref == 'refs/heads/master'
+                        || contains(github.event.head_commit.message, '[release]') }}
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
           - component: vod-meta-server
@@ -358,6 +360,9 @@ jobs:
           script: |
             if (${{ github.ref == 'refs/heads/master' }}) {
               return 'edge';
+            }
+            if (${{ contains(github.event.head_commit.message, '[release]') }}) {
+              return 'dev';
             }
 
             let versions = '${{ steps.semver.outputs.group1 }}';
