@@ -104,6 +104,8 @@ source .envrc
 ```
 
 
+
+
 ## Release process
 
 By default, each commit in `master` branch deploys to `restreamer-edge` image on [ALLATRA IT Docker Hub].
@@ -116,6 +118,21 @@ For release specific version we need to:
 4. Add tag `restreamer-v0.0.0` or so;
 5. Push branch with tags.
 6. Add announce in https://t.me/ephyr_updates
+
+
+
+
+## Commit message commands
+By default we run all steps on CI except release. Release happens only if branch is `master` or commit pushed with tags `restreamer-v` and `vod-meta-server-v`.
+
+We have configured several actions for CI that could be triggered by adding specific command in the beginning of the commit message.
+
+Supported commands:
+1. `[release]` -- release current commit version to `restreamer-dev` image;
+2. `[skip ci]` -- skip run of all steps on GitHub CI;
+3. `[fresh ci]` -- clean all previous cache and run CI.
+
+
 
 
 [DigitalOcean]: https://digitalocean.com
