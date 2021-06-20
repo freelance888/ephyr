@@ -3,7 +3,7 @@
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.3-centos7 AS build-ephyr
+FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
 
 
 # Install Rust.
