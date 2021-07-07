@@ -67,6 +67,24 @@
       .join('\n');
   }
 
+  // Wraps list of objects into square brackets.
+  // This is used when we paste formatted list of objects into multi-json tab
+  function fixJsonArray() {
+    let json = $value.json;
+    const len = $value.json.length;
+    json.trim();
+
+    const isArrayOfObjects =
+      json && json.charAt(0) === '{' && json.charAt(len - 1) === '}';
+    if (isArrayOfObjects) {
+      json = json
+        .trim()
+        .split(/\r\n|\r|\n/)
+        .join(',');
+      $value.json = `[${json}]`;
+    }
+  }
+
   function revalidateJson() {
     const v = value.get();
     invalidJson = '';
@@ -385,6 +403,7 @@
             class:uk-form-danger={!!invalidJson}
             bind:value={$value.json}
             on:change={revalidateJson}
+            on:input={fixJsonArray}
             placeholder={multiJsonPlaceholderText}
           />
           {#if !!invalidJson}
