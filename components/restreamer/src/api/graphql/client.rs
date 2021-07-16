@@ -642,7 +642,7 @@ impl MutationsRoot {
     fn set_password(
         new: Option<String>,
         old: Option<String>,
-        kind: PasswordKind,
+        kind: Option<PasswordKind>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         static HASH_CFG: Lazy<argon2::Config<'static>> =
@@ -650,8 +650,8 @@ impl MutationsRoot {
 
         let settings = context.state().settings.get_cloned();
         let hash = match kind {
-            PasswordKind::Main => settings.password_hash,
-            PasswordKind::Output => settings.password_output_hash,
+            None | Some(PasswordKind::Main) => settings.password_hash,
+            Some(PasswordKind::Output) => settings.password_output_hash,
         };
 
         if let Some(hash) = &hash {
@@ -686,8 +686,12 @@ impl MutationsRoot {
 
         let mut settings = context.state().settings.lock_mut();
         match kind {
-            PasswordKind::Main => settings.password_hash = new_hash,
-            PasswordKind::Output => settings.password_output_hash = new_hash,
+            None | Some(PasswordKind::Main) => {
+                settings.password_hash = new_hash
+            }
+            Some(PasswordKind::Output) => {
+                settings.password_output_hash = new_hash
+            }
         };
 
         Ok(true)

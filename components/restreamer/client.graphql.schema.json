@@ -833,13 +833,9 @@
                 "name": "kind",
                 "description": null,
                 "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "ENUM",
-                    "name": "PasswordKind",
-                    "ofType": null
-                  }
+                  "kind": "ENUM",
+                  "name": "PasswordKind",
+                  "ofType": null
                 },
                 "defaultValue": null
               }
