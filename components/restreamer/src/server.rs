@@ -190,7 +190,14 @@ pub mod client {
         payload: web::Payload,
         schema: web::Data<api::graphql::client::Schema>,
     ) -> Result<HttpResponse, Error> {
-        graphql(req, payload, schema).await
+        let ctx = api::graphql::Context::new(req.clone());
+        if req.head().upgrade() {
+            let cfg = ConnectionConfig::new(ctx)
+                .with_keep_alive_interval(Duration::from_secs(5));
+            subscriptions_handler(req, payload, schema.into_inner(), cfg).await
+        } else {
+            graphql_handler(&schema, &ctx, req, payload).await
+        }
     }
 
     /// Endpoint serving [`api::`graphql`::client`] for main application
@@ -200,20 +207,6 @@ pub mod client {
         payload: web::Payload,
         schema: web::Data<api::graphql::client::Schema>,
     ) -> Result<HttpResponse, Error> {
-        graphql(req, payload, schema).await
-    }
-
-    /// Endpoint serving [`api::`graphql`::client`] directly
-    ///
-    /// # Errors
-    ///
-    /// If GraphQL operation execution errors or fails.
-    async fn graphql(
-        req: HttpRequest,
-        payload: web::Payload,
-        schema: web::Data<api::graphql::client::Schema>,
-    ) -> Result<HttpResponse, Error> {
-        log::debug!("graphql : {}", req.path());
         let ctx = api::graphql::Context::new(req.clone());
         if req.head().upgrade() {
             let cfg = ConnectionConfig::new(ctx)

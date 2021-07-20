@@ -62,6 +62,24 @@ subscription State {
     }
 }
 
+subscription Output($restreamId: RestreamId!, $outputId: OutputId!) {
+    output(outputId: $outputId, restreamId: $restreamId) {
+        id
+        dst
+        label
+        previewUrl
+        volume
+        mixins {
+            id
+            src
+            volume
+            delay
+        }
+        enabled
+        status
+    }
+}
+
 query DvrFiles($id: OutputId!) {
     dvrFiles(id: $id)
 }
@@ -72,6 +90,24 @@ query ExportRestream($id: RestreamId!) {
 
 query ExportAllRestreams {
     export
+}
+
+query output($restreamId: RestreamId!, $outputId: OutputId!) {
+    output(outputId: $outputId, restreamId: $restreamId) {
+        id
+        dst
+        label
+        previewUrl
+        volume
+        mixins {
+            id
+            src
+            volume
+            delay
+        }
+        enabled
+        status
+    }
 }
 
 mutation Import($restream_id: RestreamId, $replace: Boolean!, $spec: String!) {

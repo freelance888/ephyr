@@ -18,13 +18,12 @@ use crate::{
     state::{
         Delay, InputEndpointKind, InputId, InputKey, InputSrcUrl, Label,
         MixinId, MixinSrcUrl, OutputDstUrl, OutputId, Restream, RestreamId,
-        RestreamKey, Volume,
+        RestreamKey, Volume, PasswordKind, Output
     },
     Spec,
 };
 
 use super::Context;
-use crate::state::PasswordKind;
 use url::Url;
 
 /// Full schema of [`api::graphql::client`].
@@ -37,6 +36,13 @@ pub type Schema =
 #[inline]
 #[must_use]
 pub fn schema() -> Schema {
+    Schema::new(QueriesRoot, MutationsRoot, SubscriptionsRoot)
+}
+
+/// Constructs and returns new [`Schema`], ready for use.
+#[inline]
+#[must_use]
+pub fn schema_out() -> Schema {
     Schema::new(QueriesRoot, MutationsRoot, SubscriptionsRoot)
 }
 
@@ -762,6 +768,17 @@ impl QueriesRoot {
         context.state().restreams.get_cloned()
     }
 
+    /// Returns output for specified restream by output_id.
+    fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Output {
+        let restreams = context.state().restreams.get_cloned();
+        restreams
+            .into_iter()
+            .find(|r| r.id == restream_id).unwrap()
+            .outputs
+            .into_iter()
+            .find(|o| o.id == output_id).unwrap()
+    }
+
     /// Returns list of recorded files of the specified `Output`.
     ///
     /// If returned list is empty, the there is no recorded files for the
@@ -858,6 +875,23 @@ impl SubscriptionsRoot {
             .restreams
             .signal_cloned()
             .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Returns output for specified restream by output_id.
+    async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Output> {
+        context.state().restreams
+            .signal_cloned()
+            .dedupe_cloned()
+            .map(move |restreams| {
+                restreams
+                    .into_iter()
+                    .find(|r| r.id == restream_id).unwrap()
+                    .outputs
+                    .into_iter()
+                    .find(|o| o.id == output_id).unwrap()
+            })
             .to_stream()
             .boxed()
     }

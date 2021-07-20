@@ -1,11 +1,30 @@
 <script lang="js">
   import Output from '../Output.svelte';
+  import { onMount } from "svelte";
+  import { Output as OutputSub } from '../api/graphql/client.graphql';
+  import { subscribe } from 'svelte-apollo';
 
   export let state;
   export let params = {};
+
+  const outputSub = subscribe(OutputSub, {
+    errorPolicy: 'all',
+    variables: {
+      outputId: params.output_id,
+      restreamId: params.restream_id,
+    },
+  });
 </script>
 
 <template>
+  <div>
+    {#if $outputSub.loading}
+      Loading...
+    {:else}
+      {console.log($outputSub.data)}
+    {/if}
+  </div>
+
   {#each $state.data.allRestreams as restream}
     {#if restream.id === params.restream_id}
       {#each restream.outputs as output}
