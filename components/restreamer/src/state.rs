@@ -240,7 +240,7 @@ impl State {
                     "Panicked executing `{}` hook of state: {}",
                     name,
                     display_panic(&p),
-                )
+                );
             })
             .map(|_| Ok(()))
             .forward(sink::drain()),

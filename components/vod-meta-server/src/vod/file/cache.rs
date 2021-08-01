@@ -145,7 +145,7 @@ impl Manager {
                                  cache: {}",
                                 url,
                                 display_panic(&p),
-                            )
+                            );
                         })?
                         .map_err(|e| {
                             log::error!(
@@ -153,7 +153,7 @@ impl Manager {
                                 url,
                                 e,
                             )
-                        })
+                        });
                 }
             })
             .buffer_unordered(Self::CONCURRENT_DOWNLOADS)
