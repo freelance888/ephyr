@@ -687,10 +687,10 @@ impl MutationsRoot {
         let mut settings = context.state().settings.lock_mut();
         match kind {
             None | Some(PasswordKind::Main) => {
-                settings.password_hash = new_hash
+                settings.password_hash = new_hash;
             }
             Some(PasswordKind::Output) => {
-                settings.password_output_hash = new_hash
+                settings.password_output_hash = new_hash;
             }
         };
 

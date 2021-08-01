@@ -144,9 +144,9 @@ impl Playlist {
             for clip in clips {
                 #[allow(clippy::option_if_let_else)]
                 if let Some(m) = &mut mutual {
-                    m.retain(|r| clip.sources.contains_key(r))
+                    m.retain(|r| clip.sources.contains_key(r));
                 } else {
-                    mutual = Some(clip.sources.keys().copied().collect())
+                    mutual = Some(clip.sources.keys().copied().collect());
                 }
             }
         }
@@ -438,7 +438,7 @@ impl Playlist {
                             }
 
                             for (size, seq) in &mut sequences {
-                                if let Some(src) = clip.sources.get(&size) {
+                                if let Some(src) = clip.sources.get(size) {
                                     let path =
                                         mapping::SourceClip::get_url_path(
                                             src.url

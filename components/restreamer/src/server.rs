@@ -26,7 +26,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             detect_public_ip()
                 .await
                 .ok_or_else(|| {
-                    log::error!("Cannot detect server's public IP address")
+                    log::error!("Cannot detect server's public IP address");
                 })?
                 .to_string(),
         );
@@ -34,7 +34,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {}", e)
+            log::error!("Failed to resolve FFmpeg binary path: {}", e);
         })?;
 
     let state = State::try_new(&cfg.state_path)
@@ -228,6 +228,7 @@ pub mod client {
     /// [`api::graphql::client`].
     ///
     /// [1]: https://github.com/graphql/graphql-playground
+    #[allow(clippy::unused_async)]
     #[get("/api/playground")]
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
@@ -320,7 +321,7 @@ pub mod callback {
         .run()
         .await
         .map_err(|e| {
-            log::error!("Failed to run callback HTTP server: {}", e)
+            log::error!("Failed to run callback HTTP server: {}", e);
         })?)
     }
 
@@ -332,6 +333,7 @@ pub mod callback {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+    #[allow(clippy::unused_async)]
     #[post("/")]
     async fn on_callback(
         req: web::Json<callback::Request>,

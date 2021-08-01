@@ -241,7 +241,7 @@ impl Restreamer {
                             log::error!(
                                 "Failed to setup FFmpeg re-streamer: {}",
                                 e,
-                            )
+                            );
                         })
                         .await?;
 
@@ -262,7 +262,7 @@ impl Restreamer {
                                 log::error!(
                                     "Failed to run FFmpeg re-streamer: {}",
                                     e.factor_first().0,
-                                )
+                                );
                             })
                             .map(|r| r.factor_first().0)
                     }
@@ -286,7 +286,7 @@ impl Restreamer {
 
         // Spawn FFmpeg re-streamer as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
-            kind_for_abort.renew_status(Status::Offline, &state_for_abort)
+            kind_for_abort.renew_status(Status::Offline, &state_for_abort);
         })));
 
         Self {
@@ -414,7 +414,7 @@ impl RestreamerKind {
             CopyRestreamer {
                 id: output.id.into(),
                 from_url: from_url.clone(),
-                to_url: Self::dst_url(&output),
+                to_url: Self::dst_url(output),
             }
             .into()
         } else {
@@ -779,7 +779,7 @@ impl MixingRestreamer {
         Self {
             id: output.id.into(),
             from_url: from_url.clone(),
-            to_url: RestreamerKind::dst_url(&output),
+            to_url: RestreamerKind::dst_url(output),
             orig_volume: output.volume,
             orig_zmq_port: new_unique_zmq_port(),
             mixins: output
@@ -1176,7 +1176,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     "Failed to establish ZeroMQ connection with {} : {}",
                     addr,
                     e,
-                )
+                );
             })?;
 
             socket
@@ -1194,7 +1194,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                         "Failed to send ZeroMQ message to {} : {}",
                         addr,
                         e,
-                    )
+                    );
                 })?;
 
             let resp = socket.recv().await.map_err(|e| {
@@ -1202,7 +1202,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     "Failed to receive ZeroMQ response from {} : {}",
                     addr,
                     e,
-                )
+                );
             })?;
 
             if resp.data.as_ref() != "0 Success".as_bytes() {
@@ -1213,7 +1213,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                         |_| Cow::Owned(format!("{:?}", &*resp.data)),
                         Cow::Borrowed,
                     ),
-                )
+                );
             }
 
             <Result<_, ()>>::Ok(())

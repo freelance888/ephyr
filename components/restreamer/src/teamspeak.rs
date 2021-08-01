@@ -176,12 +176,12 @@ impl Input {
                      error: {}",
                     humantime::format_duration(dur),
                     err,
-                )
+                );
             },
         )
         .map_err(move |e| {
             log::error!("Cannot capture audio from TeamSpeak server: {}", e);
-            is_conn_unrecoverable.store(true, Ordering::SeqCst)
+            is_conn_unrecoverable.store(true, Ordering::SeqCst);
         });
 
         let (abort, on_abort) = future::AbortHandle::new_pair();

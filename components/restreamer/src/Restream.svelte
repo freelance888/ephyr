@@ -189,30 +189,36 @@
 
     {#if value.outputs && value.outputs.length > 0}
       <span class="total">
-        {#if offlineCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 4)}
-            class:enabled={showFiltered['OFFLINE']}
-            class="count uk-alert-danger">{offlineCount}</a
-          >
-        {/if}
-        {#if initCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 2)}
-            class:enabled={showFiltered['INITIALIZING']}
-            class="count uk-alert-warning">{initCount}</a
-          >
-        {/if}
-        {#if onlineCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 1)}
-            class:enabled={showFiltered['ONLINE']}
-            class="count uk-alert-success">{onlineCount}</a
-          >
-        {/if}
+        <span class="total-item-wrapper">
+          {#if offlineCount > 0}
+            <a
+              href="/"
+              on:click|preventDefault={() => (enabledBitmask ^= 4)}
+              class:enabled={showFiltered['OFFLINE']}
+              class="count uk-alert-danger">{offlineCount}</a
+            >
+          {/if}
+        </span>
+        <span class="total-item-wrapper">
+          {#if initCount > 0}
+            <a
+              href="/"
+              on:click|preventDefault={() => (enabledBitmask ^= 2)}
+              class:enabled={showFiltered['INITIALIZING']}
+              class="count uk-alert-warning">{initCount}</a
+            >
+          {/if}
+        </span>
+        <span class="total-item-wrapper">
+          {#if onlineCount > 0}
+            <a
+              href="/"
+              on:click|preventDefault={() => (enabledBitmask ^= 1)}
+              class:enabled={showFiltered['ONLINE']}
+              class="count uk-alert-success">{onlineCount}</a
+            >
+          {/if}
+        </span>
 
         <Confirm let:confirm>
           <Toggle
@@ -294,18 +300,22 @@
     .total
       float: right
       margin-right: 20px
-      .count
-        text-align: right
-        margin-right: 2px
-        background-color: inherit
-        padding: 1px 4px
-        border-radius: 2px
-        outline: none
-        &:hover, &.enabled
-          background-color: #cecece
-        &:hover
-          color: inherit
-          text-decoration: none
+      .total-item-wrapper
+        min-width: 32px
+        display: inline-flex
+        .count
+          width: 100%
+          text-align: center
+          margin-right: 2px
+          background-color: inherit
+          padding: 1px 4px
+          border-radius: 2px
+          outline: none
+          &:hover, &.enabled
+            background-color: #cecece
+          &:hover
+            color: inherit
+            text-decoration: none
 
     .edit-input, .export-import, .uk-close
       position: absolute
