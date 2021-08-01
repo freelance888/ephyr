@@ -239,7 +239,8 @@ pub mod client {
         HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(html)
-        // .body(html).await?
+            .await
+            .unwrap()
     }
 
     /// Performs [`HttpRequest`] [Basic authorization][1] as middleware against
@@ -333,6 +334,7 @@ pub mod callback {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+    #[allow(clippy::unused_async)]
     #[post("/")]
     async fn on_callback(
         req: web::Json<callback::Request>,
