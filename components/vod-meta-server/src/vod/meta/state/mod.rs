@@ -438,7 +438,7 @@ impl Playlist {
                             }
 
                             for (size, seq) in &mut sequences {
-                                if let Some(src) = clip.sources.get(&size) {
+                                if let Some(src) = clip.sources.get(size) {
                                     let path =
                                         mapping::SourceClip::get_url_path(
                                             src.url

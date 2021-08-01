@@ -414,7 +414,7 @@ impl RestreamerKind {
             CopyRestreamer {
                 id: output.id.into(),
                 from_url: from_url.clone(),
-                to_url: Self::dst_url(&output),
+                to_url: Self::dst_url(output),
             }
             .into()
         } else {
@@ -779,7 +779,7 @@ impl MixingRestreamer {
         Self {
             id: output.id.into(),
             from_url: from_url.clone(),
-            to_url: RestreamerKind::dst_url(&output),
+            to_url: RestreamerKind::dst_url(output),
             orig_volume: output.volume,
             orig_zmq_port: new_unique_zmq_port(),
             mixins: output
