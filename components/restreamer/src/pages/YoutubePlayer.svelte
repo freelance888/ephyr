@@ -1,5 +1,6 @@
 <script lang="js">
   import { onMount } from 'svelte';
+  import { getYoutubeVideoID } from '../util';
 
   export let restream_id;
   export let preview_url;
@@ -11,8 +12,7 @@
   });
 
   function updateVideoURL() {
-    const VID_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    let videoID = preview_url.match(VID_REGEX)[1];
+    let videoID = getYoutubeVideoID(preview_url);
     return `https://www.youtube.com/embed/${videoID}?autoplay=1&controls=1`;
   }
 </script>
@@ -20,8 +20,6 @@
 <template>
   <div class="wise-iframe-wrapper">
     <iframe
-      width="100%"
-      height="auto"
       src={iframeVideoURL}
       title="YouTube video player"
       frameborder="0"
@@ -44,5 +42,5 @@
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: auto;
 </style>

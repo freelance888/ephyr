@@ -1,6 +1,7 @@
 <script lang="js">
   import Output from '../Output.svelte';
   import YoutubePlayer from './YoutubePlayer.svelte';
+  import { isYoutubeVideo } from '../util';
 
   export let state;
   export let params = {};
@@ -14,7 +15,7 @@
           <section class="uk-section uk-section-muted single-output">
             <Output restream_id={restream.id} value={output} />
           </section>
-          {#if output.previewUrl}
+          {#if isYoutubeVideo(output.previewUrl)}
             <section class="uk-section uk-section-muted video-player">
               <YoutubePlayer
                 restream_id={restream.id}

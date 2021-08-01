@@ -79,3 +79,14 @@ export function isOutputPage(): boolean {
 
   return pathname === '/restream/' && p[3] === 'output';
 }
+
+const YT_VIDEO_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+export const isYoutubeVideo = (url: string): boolean => {
+  return YT_VIDEO_REGEX.test(url);
+};
+
+export const getYoutubeVideoID = (url: string): string | undefined => {
+  const result = url.match(YT_VIDEO_REGEX);
+  return result && result.length ? result[1] : undefined;
+};
