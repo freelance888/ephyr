@@ -158,8 +158,8 @@ impl Storage {
             })
             .await
             .unwrap_or_else(|e| {
-                log::error!("Failed to cleanup DVR files: {}", e)
-            })
+                log::error!("Failed to cleanup DVR files: {}", e);
+            });
     }
 }
 
@@ -189,11 +189,11 @@ pub async fn new_file_path(url: &Url) -> io::Result<PathBuf> {
 
     let mut file_name = OsString::new();
     if let Some(name) = path.file_stem() {
-        file_name.push(name)
+        file_name.push(name);
     }
     file_name.push(format!("_{}.", now.as_micros()));
     if let Some(ext) = path.extension() {
-        file_name.push(ext)
+        file_name.push(ext);
     }
     path.set_file_name(file_name);
 

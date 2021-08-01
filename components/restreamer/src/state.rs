@@ -1226,7 +1226,7 @@ impl InputSrc {
     pub fn apply(&mut self, new: spec::v1::InputSrc) {
         match (self, new) {
             (Self::Remote(old), spec::v1::InputSrc::RemoteUrl(new_url)) => {
-                old.url = new_url
+                old.url = new_url;
             }
             (Self::Failover(src), spec::v1::InputSrc::FailoverInputs(news)) => {
                 let mut olds = mem::replace(

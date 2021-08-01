@@ -95,11 +95,11 @@ impl Server {
                 let cmd = &mut cmd;
                 let _ = AssertUnwindSafe(async move {
                     let process = cmd.spawn().map_err(|e| {
-                        log::crit!("Cannot start SRS server: {}", e)
+                        log::crit!("Cannot start SRS server: {}", e);
                     })?;
                     let out =
                         process.wait_with_output().await.map_err(|e| {
-                            log::crit!("Failed to observe SRS server: {}", e)
+                            log::crit!("Failed to observe SRS server: {}", e);
                         })?;
                     log::crit!(
                         "SRS server stopped with exit code: {}",
@@ -212,7 +212,7 @@ impl Drop for ClientId {
                         "Failed to kickoff client {} from SRS: {}",
                         client_id,
                         e,
-                    )
+                    );
                 }),
             ));
         }

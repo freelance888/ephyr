@@ -26,7 +26,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             detect_public_ip()
                 .await
                 .ok_or_else(|| {
-                    log::error!("Cannot detect server's public IP address")
+                    log::error!("Cannot detect server's public IP address");
                 })?
                 .to_string(),
         );
@@ -34,7 +34,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {}", e)
+            log::error!("Failed to resolve FFmpeg binary path: {}", e);
         })?;
 
     let state = State::try_new(&cfg.state_path)
@@ -239,6 +239,7 @@ pub mod client {
         HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(html)
+        // .body(html).await?
     }
 
     /// Performs [`HttpRequest`] [Basic authorization][1] as middleware against
@@ -320,7 +321,7 @@ pub mod callback {
         .run()
         .await
         .map_err(|e| {
-            log::error!("Failed to run callback HTTP server: {}", e)
+            log::error!("Failed to run callback HTTP server: {}", e);
         })?)
     }
 
