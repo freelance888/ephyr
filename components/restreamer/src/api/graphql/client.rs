@@ -39,13 +39,6 @@ pub fn schema() -> Schema {
     Schema::new(QueriesRoot, MutationsRoot, SubscriptionsRoot)
 }
 
-/// Constructs and returns new [`Schema`], ready for use.
-#[inline]
-#[must_use]
-pub fn schema_out() -> Schema {
-    Schema::new(QueriesRoot, MutationsRoot, SubscriptionsRoot)
-}
-
 /// Root of all [GraphQL mutations][1] in the [`Schema`].
 ///
 /// [1]: https://spec.graphql.org/June2018/#sec-Root-Operation-Types
@@ -750,6 +743,7 @@ pub struct QueriesRoot;
 
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
+
     /// Returns the current `Info` parameters of this server.
     fn info(context: &Context) -> Info {
         let settings = context.state().settings.get_cloned();
@@ -770,13 +764,7 @@ impl QueriesRoot {
 
     /// Returns output for specified restream by output_id.
     fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Output {
-        let restreams = context.state().restreams.get_cloned();
-        restreams
-            .into_iter()
-            .find(|r| r.id == restream_id).unwrap()
-            .outputs
-            .into_iter()
-            .find(|o| o.id == output_id).unwrap()
+        context.state().get_output(restream_id, output_id)
     }
 
     /// Returns list of recorded files of the specified `Output`.
