@@ -146,14 +146,8 @@ impl Manager {
                                 url,
                                 display_panic(&p),
                             );
-                        })?
-                        .map_err(|e| {
-                            log::error!(
-                                "Failed to download '{}' URL to VOD cache: {}",
-                                url,
-                                e,
-                            )
-                        });
+                        })
+                        .unwrap_err();
                 }
             })
             .buffer_unordered(Self::CONCURRENT_DOWNLOADS)

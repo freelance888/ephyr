@@ -313,15 +313,8 @@ async fn refresh_initial_positions(state: state::Manager, period: Duration) {
                              initial positions: {}",
                             display_panic(&p),
                         );
-                        Err
-                    })?
-                    .map_err(|e| {
-                        log::error!(
-                            "Failed to refresh vod::meta::State initial \
-                             positions: {}",
-                            e,
-                        )
-                    });
+                    })
+                    .unwrap_err();
             }
         })
         .map(Ok)
