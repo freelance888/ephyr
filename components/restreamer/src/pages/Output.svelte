@@ -14,11 +14,14 @@
           <section class="uk-section uk-section-muted single-output">
             <Output restream_id={restream.id} value={output} />
           </section>
-            {#if typeof(output.previewUrl) === 'string' }
-              <section class="uk-section uk-section-muted video-player">
-                <YoutubePlayer restream_id={restream.id} preview_url={output.previewUrl} />
-              </section>
-            {/if}
+          {#if output.previewUrl}
+            <section class="uk-section uk-section-muted video-player">
+              <YoutubePlayer
+                restream_id={restream.id}
+                preview_url={output.previewUrl}
+              />
+            </section>
+          {/if}
         {/if}
       {/each}
     {/if}

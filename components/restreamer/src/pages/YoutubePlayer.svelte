@@ -1,29 +1,33 @@
 <script lang="js">
-  import {onMount} from "svelte";
+  import { onMount } from 'svelte';
 
   export let restream_id;
   export let preview_url;
 
-  let iframeVideoURL = "";
+  let iframeVideoURL = '';
 
   onMount(() => {
-      iframeVideoURL = updateVideoURL();
-  })
+    iframeVideoURL = updateVideoURL();
+  });
 
-  function updateVideoURL(){
-      const VID_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-      let videoID = preview_url.match(VID_REGEX)[1];
-      return `https://www.youtube.com/embed/${videoID}?autoplay=1&controls=1`;
+  function updateVideoURL() {
+    const VID_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    let videoID = preview_url.match(VID_REGEX)[1];
+    return `https://www.youtube.com/embed/${videoID}?autoplay=1&controls=1`;
   }
 </script>
 
 <template>
   <div class="wise-iframe-wrapper">
-  <iframe width="100%" height="auto" src="{iframeVideoURL}"
-          title="YouTube video player"
-          frameborder="0"
-          allowfullscreen>
-  </iframe></div>
+    <iframe
+      width="100%"
+      height="auto"
+      src={iframeVideoURL}
+      title="YouTube video player"
+      frameborder="0"
+      allowfullscreen
+    />
+  </div>
 </template>
 
 <style lang="stylus">
