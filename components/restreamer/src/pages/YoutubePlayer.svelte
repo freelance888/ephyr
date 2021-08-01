@@ -13,15 +13,15 @@
   function updateVideoURL(){
       const VID_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
       let videoID = preview_url.match(VID_REGEX)[1];
-      return `https://www.youtube.com/embed/${videoID}`;
+      return `https://www.youtube.com/embed/${videoID}?autoplay=1&controls=1`;
   }
 </script>
 
 <template>
   <div class="wise-iframe-wrapper">
   <iframe width="100%" height="auto" src="{iframeVideoURL}"
-          title="YouTube video player" frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          title="YouTube video player"
+          frameborder="0"
           allowfullscreen>
   </iframe></div>
 </template>
