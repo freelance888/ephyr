@@ -228,6 +228,7 @@ pub mod client {
     /// [`api::graphql::client`].
     ///
     /// [1]: https://github.com/graphql/graphql-playground
+    #[allow(clippy::unused_async)]
     #[get("/api/playground")]
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
@@ -239,8 +240,6 @@ pub mod client {
         HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(html)
-            .await
-            .unwrap()
     }
 
     /// Performs [`HttpRequest`] [Basic authorization][1] as middleware against
