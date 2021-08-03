@@ -161,6 +161,7 @@ impl MutationsRoot {
         let input_src = if with_backup {
             Some(spec::v1::InputSrc::FailoverInputs(vec![
                 spec::v1::Input {
+                    id: None,
                     key: InputKey::new("main").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
@@ -169,6 +170,7 @@ impl MutationsRoot {
                     enabled: true,
                 },
                 spec::v1::Input {
+                    id: None,
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
@@ -191,9 +193,11 @@ impl MutationsRoot {
         }
 
         let spec = spec::v1::Restream {
+            id: None,
             key,
             label,
             input: spec::v1::Input {
+                id: None,
                 key: InputKey::new("origin").unwrap(),
                 endpoints,
                 src: input_src,
@@ -375,6 +379,7 @@ impl MutationsRoot {
         }
 
         let spec = spec::v1::Output {
+            id: None,
             dst,
             label,
             preview_url,
