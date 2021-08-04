@@ -159,7 +159,7 @@ pub mod client {
                     basic::Config::default().realm("Any login is allowed"),
                 )
                 .data(api::graphql::client::schema())
-                .data(api::graphql::mix::schema_mix())
+                .data(api::graphql::mix::schema())
                 .wrap(middleware::Logger::default())
                 .wrap_fn(|req, srv| match authorize(req) {
                     Ok(req) => srv.call(req).left_future(),
@@ -190,7 +190,7 @@ pub mod client {
         Schema(web::Data<api::graphql::client::Schema>),
 
         /// Single output schema for mixing
-        SchemaMix(web::Data<api::graphql::mix::SchemaMix>)
+        SchemaMix(web::Data<api::graphql::mix::Schema>)
     }
 
     /// Endpoint serving [`api::`graphql`::mix`] for single output
@@ -199,7 +199,7 @@ pub mod client {
     async fn graphql_mix(
         req: HttpRequest,
         payload: web::Payload,
-        schema_mix: web::Data<api::graphql::client::SchemaMix>,
+        schema_mix: web::Data<api::graphql::mix::Schema>,
     ) -> Result<HttpResponse, Error> {
         graphql(req, payload, SchemaKind::SchemaMix(schema_mix)).await
     }

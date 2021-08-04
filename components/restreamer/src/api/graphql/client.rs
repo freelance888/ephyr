@@ -18,7 +18,7 @@ use crate::{
     state::{
         Delay, InputEndpointKind, InputId, InputKey, InputSrcUrl, Label,
         MixinId, MixinSrcUrl, OutputDstUrl, OutputId, Restream, RestreamId,
-        RestreamKey, Volume, PasswordKind, Output
+        RestreamKey, Volume, PasswordKind
     },
     Spec,
 };
@@ -762,11 +762,6 @@ impl QueriesRoot {
         context.state().restreams.get_cloned()
     }
 
-    /// Returns output for specified restream by output_id.
-    fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Output {
-        context.state().get_output(restream_id, output_id)
-    }
-
     /// Returns list of recorded files of the specified `Output`.
     ///
     /// If returned list is empty, the there is no recorded files for the
@@ -863,23 +858,6 @@ impl SubscriptionsRoot {
             .restreams
             .signal_cloned()
             .dedupe_cloned()
-            .to_stream()
-            .boxed()
-    }
-
-    /// Returns output for specified restream by output_id.
-    async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Output> {
-        context.state().restreams
-            .signal_cloned()
-            .dedupe_cloned()
-            .map(move |restreams| {
-                restreams
-                    .into_iter()
-                    .find(|r| r.id == restream_id).unwrap()
-                    .outputs
-                    .into_iter()
-                    .find(|o| o.id == output_id).unwrap()
-            })
             .to_stream()
             .boxed()
     }
