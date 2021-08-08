@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { getYoutubeVideoID } from '../util';
 
-  export let restream_id;
   export let preview_url;
 
   let iframeVideoURL = '';

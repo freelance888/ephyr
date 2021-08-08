@@ -6,7 +6,7 @@
   import { onDestroy } from 'svelte';
   import { get } from 'svelte/store';
   import { setClient, subscribe } from 'svelte-apollo';
-  import Router, { link, location, replace } from 'svelte-spa-router';
+  import Router, { replace } from 'svelte-spa-router';
   import { wrap } from 'svelte-spa-router/wrap';
 
   import { Info, State } from './api/graphql/client.graphql';
