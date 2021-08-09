@@ -1,0 +1,22 @@
+subscription Info {
+    title
+}
+
+subscription State {
+    output(outputId: $outputId, restreamId: $restreamId) {
+        id
+        dst
+        label
+        previewUrl
+        volume
+        mixins {
+            id
+            src
+            volume
+            delay
+        }
+        enabled
+        status
+    }
+}
+

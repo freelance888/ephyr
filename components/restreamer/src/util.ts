@@ -1,5 +1,9 @@
 import clipboardCopy from 'clipboard-copy';
 import UIkit from 'uikit';
+import { SubscriptionClient } from 'subscriptions-transport-ws';
+import { ApolloClient } from '@apollo/client/core';
+import { WebSocketLink } from '@apollo/client/link/ws';
+import { InMemoryCache } from '@apollo/client/cache';
 
 /**
  * Displays an error UI popup with the given error `message`.
@@ -78,4 +82,25 @@ export function isOutputPage(): boolean {
   const p = window.location.hash.split('/');
 
   return pathname === '/restream/' && p[3] === 'output';
+}
+
+/**
+ * Creates graphQL client for specified apiUrl
+**/
+export function createGraphQlClient(apiUrl: string, onConnect: Function, onDisconnect: Function): ApolloClient<unknown> {
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsClient = new SubscriptionClient(
+      `${protocol}://${window.location.hostname}${apiUrl}`,
+      { reconnect: true }
+  );
+
+  wsClient.onConnected(() => onConnect());
+  wsClient.onReconnected(() => onConnect());
+  wsClient.onDisconnected(() => onDisconnect());
+
+  return new ApolloClient({
+    link: new WebSocketLink(wsClient),
+    cache: new InMemoryCache(),
+  });
+
 }

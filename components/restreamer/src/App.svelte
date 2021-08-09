@@ -1,67 +1,23 @@
-<script lang="js">
-  import { InMemoryCache } from '@apollo/client/cache';
-  import { ApolloClient } from '@apollo/client/core';
-  import { WebSocketLink } from '@apollo/client/link/ws';
-  import { SubscriptionClient } from 'subscriptions-transport-ws';
-  import { onDestroy } from 'svelte';
-  import { get } from 'svelte/store';
+<script lang="ts">
   import { setClient, subscribe } from 'svelte-apollo';
-  import Router, { link, location, replace } from 'svelte-spa-router';
+  import Router, { replace } from 'svelte-spa-router';
   import { wrap } from 'svelte-spa-router/wrap';
-
   import { Info, State } from './api/graphql/client.graphql';
   import { showError } from './util';
-
-  export let mainComponent;
-  export let toolbarComponent;
-  export let apiUrl;
-
+  import * as PageOutput from './pages/Output.svelte';
   import UIkit from 'uikit';
   import Icons from 'uikit/dist/js/uikit-icons';
 
-  import * as PageOutput from './pages/Output.svelte';
+  export let mainComponent;
+  export let toolbarComponent;
+  export let gqlClient;
+  export let isOnline;
 
-  UIkit.use(Icons);
+  (UIkit as any).use(Icons);
 
-  let isOnline = true;
-
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsClient = new SubscriptionClient(
-    `${protocol}://${window.location.hostname}${apiUrl}`,
-    { reconnect: true }
-  );
-  wsClient.onConnected(() => {
-    isOnline = true;
-  });
-  wsClient.onReconnected(() => {
-    isOnline = true;
-  });
-  wsClient.onDisconnected(() => (isOnline = false));
-  const gqlClient = new ApolloClient({
-    link: new WebSocketLink(wsClient),
-    cache: new InMemoryCache(),
-  });
   setClient(gqlClient);
-
   const info = subscribe(Info, { errorPolicy: 'all' });
   const state = subscribe(State, { errorPolicy: 'all' });
-
-  let currentHash = undefined;
-  onDestroy(
-    info.subscribe((i) => {
-      if (i.data) {
-        const newHash = i.data.info.passwordHash;
-        if (currentHash === undefined) {
-          currentHash = newHash;
-        } else if (!!newHash && newHash !== currentHash) {
-          window.location.reload();
-        }
-
-        const title = i.data.info.title;
-        document.title = title || 'Ephyr re-streamer';
-      }
-    })
-  );
 
   const routes = {
     '/id/:restream_id/output/:output_id': wrap({
@@ -71,19 +27,7 @@
       },
       userData: {
         state,
-      },
-      conditions: [
-        (detail) => {
-          const st = get(detail.userData.state);
-          const p = detail.location.split('/');
-          return (
-            !!st.data &&
-            st.data.allRestreams.some(
-              (r) => r.id === p[2] && r.outputs.some((o) => o.id === p[4])
-            )
-          );
-        },
-      ],
+      }
     }),
     '*': wrap({
       component: mainComponent,

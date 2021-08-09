@@ -1,7 +1,6 @@
 <script lang="js">
   import Output from '../Output.svelte';
-  import { onMount } from "svelte";
-  import { Output as OutputSub } from '../api/graphql/client.graphql';
+    import { Output as OutputSub } from '../api/graphql/mix.graphql';
   import { subscribe } from 'svelte-apollo';
 
   export let state;
@@ -14,6 +13,7 @@
       restreamId: params.restream_id,
     },
   });
+
 </script>
 
 <template>

@@ -9,6 +9,7 @@
   } from '../api/graphql/client.graphql';
   import OutputModal from '../OutputModal.svelte';
   import PasswordModal from '../PasswordModal.svelte';
+  import {onDestroy} from "svelte";
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -43,6 +44,25 @@
   }
 
   let openPasswordOutputModal = false;
+
+  let currentHash = undefined;
+  onDestroy(
+          info.subscribe((i) => {
+            if (i.data) {
+              const newHash = i.data.info.passwordHash;
+              if (currentHash === undefined) {
+                currentHash = newHash;
+              } else if (!!newHash && newHash !== currentHash) {
+                window.location.reload();
+              }
+
+              const title = i.data.info.title;
+              document.title = title || 'Ephyr re-streamer';
+            }
+          })
+  );
+
+
 </script>
 
 <template>

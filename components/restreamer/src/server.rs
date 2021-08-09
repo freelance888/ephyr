@@ -110,7 +110,7 @@ pub mod client {
     };
 
     const OUTPUT_ROUTE: &str = "/restream";
-    const OUTPUT_ROUTE_API: &str = "/api-out";
+    const OUTPUT_ROUTE_API: &str = "/api-mix";
 
     pub mod public_dir {
         #![allow(clippy::must_use_candidate, unused_results)]
@@ -168,7 +168,9 @@ pub mod client {
                 .service(graphql_client)
                 .service(graphql_mix);
             if in_debug_mode {
-                app = app.service(playground);
+                app = app
+                    .service(playground_client)
+                    .service(playground_mix);
             }
             app.service(
                 ResourceFiles::new(OUTPUT_ROUTE, output_dir_files)
@@ -241,6 +243,19 @@ pub mod client {
     ///
     /// [1]: https://github.com/graphql/graphql-playground
     #[get("/api/playground")]
+    async fn playground_client() -> HttpResponse {
+        playground().await
+    }
+
+    /// Endpoint serving [GraphQL Playground][1] for exploring
+    /// [`api::graphql::mix`].
+    ///
+    /// [1]: https://github.com/graphql/graphql-playground
+    #[get("/api-mix/playground")]
+    async fn playground_mix() -> HttpResponse {
+        playground().await
+    }
+
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
         // and authority.

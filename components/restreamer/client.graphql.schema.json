@@ -1461,51 +1461,6 @@
             "deprecationReason": null
           },
           {
-            "name": "output",
-            "description": "Returns output for specified restream by output_id.",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "Output",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
             "name": "dvrFiles",
             "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\n```\n\n[SRS]: https://github.com/ossrs/srs",
             "args": [
@@ -2350,51 +2305,6 @@
                     "ofType": null
                   }
                 }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "output",
-            "description": "Returns output for specified restream by output_id.",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "Output",
-                "ofType": null
               }
             },
             "isDeprecated": false,

@@ -6,7 +6,6 @@ const app = new App({
   props: {
     mainComponent: Empty,
     toolbarComponent: Empty,
-    apiUrl: '/api-out',
   },
 });
 
