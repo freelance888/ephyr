@@ -1,18 +1,14 @@
 import App from './App.svelte';
 import Toolbar from './Toolbar.svelte';
 import PageAll from './pages/All.svelte';
-import { createGraphQlClient } from './util';
-
-let isOnline = true;
-const gqlClient = createGraphQlClient('/api', () => isOnline = true, () => isOnline = false);
+import ClientGqlContext from './ClientGqlContext.svelte';
 
 const app = new App({
   target: document.body,
   props: {
     mainComponent: PageAll,
     toolbarComponent: Toolbar,
-    gqlClient,
-    isOnline
+    graphQlContext: ClientGqlContext
   },
 });
 

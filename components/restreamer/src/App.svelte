@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { setClient, subscribe } from 'svelte-apollo';
-  import Router, { replace } from 'svelte-spa-router';
+  import Router, { replace, RouteDefinition } from 'svelte-spa-router';
   import { wrap } from 'svelte-spa-router/wrap';
-  import { Info, State } from './api/graphql/client.graphql';
   import { showError } from './util';
   import * as PageOutput from './pages/Output.svelte';
   import UIkit from 'uikit';
@@ -10,24 +8,21 @@
 
   export let mainComponent;
   export let toolbarComponent;
-  export let gqlClient;
-  export let isOnline;
+  export let graphQlContext;
+
+  let gqlClient;
+  let isOnline;
+  let info;
+  let state;
 
   (UIkit as any).use(Icons);
 
-  setClient(gqlClient);
-  const info = subscribe(Info, { errorPolicy: 'all' });
-  const state = subscribe(State, { errorPolicy: 'all' });
-
-  const routes = {
+  const createRoutes = (state, info): RouteDefinition => ({
     '/id/:restream_id/output/:output_id': wrap({
       component: PageOutput,
       props: {
         state,
       },
-      userData: {
-        state,
-      }
     }),
     '*': wrap({
       component: mainComponent,
@@ -36,10 +31,17 @@
         state,
       },
     }),
-  };
+  });
 </script>
 
 <template>
+  <svelte:component
+          this={graphQlContext}
+          bind:isOnline={isOnline}
+          bind:gqlClient={gqlClient}
+          bind:info={info}
+          bind:state={state}
+  >
   <div class="page uk-flex uk-flex-column">
     <header class="uk-container">
       <div class="uk-grid uk-grid-small" uk-grid>
@@ -73,7 +75,7 @@
       {#if !isOnline || $state.loading}
         <div class="uk-alert uk-alert-warning loading">Loading...</div>
       {:else if isOnline && $state.data && $info.data}
-        <Router {routes} on:conditionsFailed={() => replace('/')} />
+        <Router routes={createRoutes(state, info)} on:conditionsFailed={() => replace('/')} />
       {/if}
       {#if $state.error}
         {showError($state.error.message) || ''}
@@ -85,6 +87,7 @@
       <a href="https://github.com/ALLATRA-IT" target="_blank">AllatRa IT</a>
     </footer>
   </div>
+  </svelte:component>
 </template>
 
 <style lang="stylus" global>
