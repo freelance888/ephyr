@@ -8,7 +8,8 @@ Ephyr re-streamer
 Simple web application allowing to forward [RTMP] streams in a similar way as [facecast.io] does. It uses [SRS] to accept [RTMP] streams and [FFmpeg] to forward them.
 
 
-
+## Contributing
+Read [CONTRIBUTING.md](https://github.com/ALLATRA-IT/ephyr/blob/master/components/restreamer/CONTRIBUTING.md)
 
 ## License
 
