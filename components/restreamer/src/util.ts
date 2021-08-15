@@ -73,15 +73,11 @@ export function sanitizeUrl(url: string): string {
   return url.replace(/[\s]+/g, '');
 }
 
-/**
- * Checks whether the given location page corresponds to
- * `/restream/#/id/:restream_id/output/:output_id` route.
- */
-export function isOutputPage(): boolean {
+export function isMixPage(): boolean {
   const pathname = window.location.pathname;
   const p = window.location.hash.split('/');
 
-  return pathname === '/restream/' && p[3] === 'output';
+  return pathname === '/restream';
 }
 
 /**

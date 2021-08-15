@@ -9,7 +9,7 @@
     TuneVolume,
   } from './api/graphql/client.graphql';
 
-  import { showError, isOutputPage } from './util';
+  import { showError, isMixPage } from './util';
 
   import { outputModal } from './stores';
 
@@ -112,10 +112,10 @@
   <div
     class="uk-card uk-card-default uk-card-body uk-flex"
     class:hidden
-    class:grouped={!isOutputPage()}
-    class:uk-margin-left={!isOutputPage()}
+    class:grouped={!isMixPage()}
+    class:uk-margin-left={!isMixPage()}
   >
-    {#if !isOutputPage()}
+    {#if !isMixPage()}
       <Confirm let:confirm>
         <button
           type="button"
@@ -141,7 +141,7 @@
       <span class="label">{value.label}</span>
     {/if}
 
-    {#if !isOutputPage()}
+    {#if !isMixPage()}
       <div class="left-buttons-area" />
       <a
         class="edit-output"
@@ -200,10 +200,10 @@
       </div>
 
       {#if value.mixins.length > 0}
-        {#if !isOutputPage()}
+        {#if !isMixPage()}
           <a
             class="single-view"
-            href="/restream/#/id/{restream_id}/output/{value.id}"
+            href="/restream?id={restream_id}&output={value.id}"
             target="_blank"
             title="Open in a separate window"
             ><i class="fas fa-external-link-alt" />

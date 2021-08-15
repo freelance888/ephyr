@@ -52,11 +52,11 @@
   </a>
   {#if openSettingsModal}
     <SettingsModal
-      info={cloneDeep(info.data.info)}
+      info={cloneDeep($info.data.info)}
       bind:visible={openSettingsModal}
     />
   {/if}
-  {#key info.data.info.passwordHash}
+  {#key $info.data.info.passwordHash}
     <a
       href="/"
       class="set-password"
@@ -64,15 +64,15 @@
     >
       <i
         class="fas"
-        class:fa-lock-open={!info.data.info.passwordHash}
-        class:fa-lock={!!info.data.info.passwordHash}
-        title="{!info.data.info.passwordHash ? 'Set' : 'Change'} password"
+        class:fa-lock-open={!$info.data.info.passwordHash}
+        class:fa-lock={!!$info.data.info.passwordHash}
+        title="{!$info.data.info.passwordHash ? 'Set' : 'Change'} password"
       />
     </a>
     {#if openPasswordModal}
       <PasswordModal
         password_kind="MAIN"
-        current_hash={info.data.info.passwordHash}
+        current_hash={$info.data.info.passwordHash}
         bind:visible={openPasswordModal}
       />
     {/if}
@@ -85,7 +85,7 @@
       <i class="fas fa-plus" />&nbsp;<span>Input</span>
     </button>
 
-    {#if isOnline && state.data}
+    {#if isOnline && $state.data}
       <ExportModal />
       <a
         class="export-import-all"
@@ -97,7 +97,7 @@
       </a>
     {/if}
 
-    <RestreamModal public_host={info.data.info.publicHost} />
+    <RestreamModal public_host={$info.data.info.publicHost} />
   </div>
 </template>
 

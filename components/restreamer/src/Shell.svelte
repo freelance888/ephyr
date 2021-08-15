@@ -1,47 +1,17 @@
 <script lang="ts">
-  import Router, { replace, RouteDefinition } from 'svelte-spa-router';
-  import { wrap } from 'svelte-spa-router/wrap';
-  import { showError } from './util';
-  import * as PageOutput from './pages/Output.svelte';
   import UIkit from 'uikit';
   import Icons from 'uikit/dist/js/uikit-icons';
-
-  export let mainComponent;
-  export let toolbarComponent;
-  export let graphQlContext;
-
-  let gqlClient;
-  let isOnline;
-  let info;
-  let state;
-
+  import {showError} from "./util";
   (UIkit as any).use(Icons);
 
-  const createRoutes = (state, info): RouteDefinition => ({
-    '/id/:restream_id/output/:output_id': wrap({
-      component: PageOutput,
-      props: {
-        state,
-      },
-    }),
-    '*': wrap({
-      component: mainComponent,
-      props: {
-        info,
-        state,
-      },
-    }),
-  });
+  export let isStateLoading;
+  export let canRenderToolbar;
+  export let canRenderMainComponent;
+  export let error;
+
 </script>
 
 <template>
-  <svelte:component
-          this={graphQlContext}
-          bind:isOnline={isOnline}
-          bind:gqlClient={gqlClient}
-          bind:info={info}
-          bind:state={state}
-  >
   <div class="page uk-flex uk-flex-column">
     <header class="uk-container">
       <div class="uk-grid uk-grid-small" uk-grid>
@@ -56,29 +26,22 @@
           <small>Ephyr re-streamer {process.env.VERSION}</small>
         </a>
         <div class="uk-margin-auto-left">
-          {#if isOnline && $info.data}
-            <svelte:component
-              this={toolbarComponent}
-              info={$info}
-              state={$state}
-              {isOnline}
-              {gqlClient}
-            />
-          {:else if $info.error}
-            {showError($info.error.message) || ''}
+          {#if canRenderToolbar}
+            <slot name="toolbar"></slot>
           {/if}
+          {#if error}
+            {showError(error.message) || ''}
+          {/if}
+
         </div>
       </div>
     </header>
 
     <main class="uk-container uk-flex-1">
-      {#if !isOnline || $state.loading}
+      {#if isStateLoading}
         <div class="uk-alert uk-alert-warning loading">Loading...</div>
-      {:else if isOnline && $state.data && $info.data}
-        <Router routes={createRoutes(state, info)} on:conditionsFailed={() => replace('/')} />
-      {/if}
-      {#if $state.error}
-        {showError($state.error.message) || ''}
+      {:else if canRenderMainComponent}
+        <slot name="main"></slot>
       {/if}
     </main>
 
@@ -87,7 +50,6 @@
       <a href="https://github.com/ALLATRA-IT" target="_blank">AllatRa IT</a>
     </footer>
   </div>
-  </svelte:component>
 </template>
 
 <style lang="stylus" global>

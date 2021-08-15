@@ -1,16 +1,6 @@
-import App from './App.svelte';
-import Toolbar from './Toolbar.svelte';
-import PageAll from './pages/All.svelte';
-import ClientGqlContext from './ClientGqlContext.svelte';
+import AppClient from './AppClient.svelte';
 
-const app = new App({
-  target: document.body,
-  props: {
-    mainComponent: PageAll,
-    toolbarComponent: Toolbar,
-    graphQlContext: ClientGqlContext
-  },
-});
+const app = new AppClient({target: document.body});
 
 (window as any).app = app;
 export default app;

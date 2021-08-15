@@ -2,7 +2,7 @@ subscription Info {
     title
 }
 
-subscription State {
+subscription Output($restreamId: RestreamId!, $outputId: OutputId!) {
     output(outputId: $outputId, restreamId: $restreamId) {
         id
         dst
@@ -19,4 +19,5 @@ subscription State {
         status
     }
 }
+
 

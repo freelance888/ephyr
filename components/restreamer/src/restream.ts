@@ -1,13 +1,6 @@
-import App from './App.svelte';
-import Empty from './Empty.svelte';
+import AppMix from './AppMix.svelte';
 
-const app = new App({
-  target: document.body,
-  props: {
-    mainComponent: Empty,
-    toolbarComponent: Empty,
-  },
-});
+const app = new AppMix({target: document.body});
 
 (window as any).app = app;
 export default app;
