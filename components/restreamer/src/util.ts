@@ -82,12 +82,16 @@ export function isMixPage(): boolean {
 
 /**
  * Creates graphQL client for specified apiUrl
-**/
-export function createGraphQlClient(apiUrl: string, onConnect: Function, onDisconnect: Function): ApolloClient<unknown> {
+ **/
+export function createGraphQlClient(
+  apiUrl: string,
+  onConnect: Function,
+  onDisconnect: Function
+): ApolloClient<unknown> {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsClient = new SubscriptionClient(
-      `${protocol}://${window.location.hostname}${apiUrl}`,
-      { reconnect: true }
+    `${protocol}://${window.location.hostname}${apiUrl}`,
+    { reconnect: true }
   );
 
   wsClient.onConnected(() => onConnect());
@@ -98,5 +102,4 @@ export function createGraphQlClient(apiUrl: string, onConnect: Function, onDisco
     link: new WebSocketLink(wsClient),
     cache: new InMemoryCache(),
   });
-
 }

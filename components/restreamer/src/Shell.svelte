@@ -1,14 +1,13 @@
-<script lang="ts">
+<script lang="js">
   import UIkit from 'uikit';
   import Icons from 'uikit/dist/js/uikit-icons';
-  import {showError} from "./util";
-  (UIkit as any).use(Icons);
+  import { showError } from './util';
+  UIkit.use(Icons);
 
   export let isStateLoading;
   export let canRenderToolbar;
   export let canRenderMainComponent;
   export let error;
-
 </script>
 
 <template>
@@ -27,12 +26,11 @@
         </a>
         <div class="uk-margin-auto-left">
           {#if canRenderToolbar}
-            <slot name="toolbar"></slot>
+            <slot name="toolbar" />
           {/if}
           {#if error}
-            {showError(error.message) || ''}
+            {showError(error.message)}
           {/if}
-
         </div>
       </div>
     </header>
@@ -41,7 +39,7 @@
       {#if isStateLoading}
         <div class="uk-alert uk-alert-warning loading">Loading...</div>
       {:else if canRenderMainComponent}
-        <slot name="main"></slot>
+        <slot name="main" />
       {/if}
     </main>
 

@@ -73,7 +73,7 @@ pub struct QueriesRoot;
 impl QueriesRoot {
 
     /// Returns output for specified restream by output_id.
-    fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Output {
+    fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Option<Output> {
         context.state().get_output(restream_id, output_id)
     }
 }
@@ -99,17 +99,17 @@ impl SubscriptionsRoot {
     }
 
     /// Returns output for specified restream by output_id.
-    async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Output> {
+    async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Option<Output>> {
         context.state().restreams
             .signal_cloned()
             .dedupe_cloned()
             .map(move |restreams| {
-                restreams
+                Some(restreams
                     .into_iter()
-                    .find(|r| r.id == restream_id).unwrap()
+                    .find(|r| r.id == restream_id)?
                     .outputs
                     .into_iter()
-                    .find(|o| o.id == output_id).unwrap()
+                    .find(|o| o.id == output_id)?)
             })
             .to_stream()
             .boxed()

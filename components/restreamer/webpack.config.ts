@@ -9,8 +9,6 @@ import SveltePreprocess from 'svelte-preprocess';
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
 
-const getTransformer = require('ts-transform-graphql-tag').getTransformer;
-
 const config: webpack.Configuration = {
   entry: {
     main: './src/main.ts',
@@ -44,12 +42,7 @@ const config: webpack.Configuration = {
       {
         test: /\.ts$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'ts-loader',
-          options: {
-            getCustomTransformers: () => ({ before: [getTransformer()] })
-          }
-        }
+        use: 'ts-loader',
       },
       {
         test: /\.css$/,
