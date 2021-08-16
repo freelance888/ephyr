@@ -35,6 +35,7 @@
   // TODO: rename 'value' to 'reStream'
   export let value;
   export let globalOutputsFilters;
+  export let hidden = false;
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -54,11 +55,6 @@
     ? globalOutputsFilters
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
-  $: filteredOutputs = hasActiveFilters
-    ? value.outputs.filter((output) =>
-        reStreamOutputsFilters.includes(output.status)
-      )
-    : value.outputs;
 
   function openEditRestreamModal() {
     const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
@@ -142,7 +138,7 @@
 </script>
 
 <template>
-  <div class="uk-section uk-section-muted uk-section-xsmall">
+  <div class="uk-section uk-section-muted uk-section-xsmall" class:hidden>
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
     <Confirm let:confirm>
@@ -243,18 +239,20 @@
     {/if}
 
     <div class="uk-grid uk-grid-small" uk-grid>
-      {#each filteredOutputs as output}
-        <Output {public_host} restream_id={value.id} value={output} />
+      {#each value.outputs as output}
+        <Output
+          {public_host}
+          restream_id={value.id}
+          value={output}
+          hidden={hasActiveFilters &&
+            !reStreamOutputsFilters.includes(output.status)}
+        />
       {:else}
         <div class="uk-flex-1">
           <div class="uk-card-default uk-padding-small uk-text-center">
-            {#if hasActiveFilters}
-              There are no Outputs matching your filter criteria.
-            {:else}
-              There are no Outputs for current Input. You can add it by clicking <b
-                >+OUTPUT</b
-              > button.
-            {/if}
+            There are no Outputs for current Input. You can add it by clicking <b
+              >+OUTPUT</b
+            > button.
           </div>
         </div>
       {/each}
@@ -268,6 +266,9 @@
     margin-top: 20px
     padding-left: 10px
     padding-right: @padding-left
+
+    &.hidden
+      display: none
 
     &:hover
       .uk-close, .uk-button-small

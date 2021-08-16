@@ -31,11 +31,6 @@
   $: globalInputsFilters = [];
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
-  $: filteredReStreams = hasActiveFilters
-    ? allReStreams.filter((stream) =>
-        globalInputsFilters.includes(stream.input.endpoints[0].status)
-      )
-    : allReStreams;
 
   async function enableAllOutputsOfRestreams() {
     try {
@@ -159,23 +154,21 @@
     </div>
   </section>
 
-  {#each filteredReStreams as restream}
+  {#each allReStreams as restream}
     <Restream
       public_host={$info.data.info.publicHost}
       value={restream}
+      hidden={hasActiveFilters &&
+        !globalInputsFilters.includes(restream.input.endpoints[0].status)}
       {globalOutputsFilters}
     />
   {:else}
     <div
       class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
     >
-      {#if hasActiveFilters}
-        There are no Inputs matching your filter criteria.
-      {:else}
-        <div>
-          There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
-        </div>
-      {/if}
+      <div>
+        There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+      </div>
     </div>
   {/each}
 </template>

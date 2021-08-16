@@ -29,6 +29,7 @@
   export let public_host;
   export let value;
   export let restream_id;
+  export let hidden = false;
 
   let volume = 100;
   $: {
@@ -110,6 +111,7 @@
 <template>
   <div
     class="uk-card uk-card-default uk-card-body uk-flex"
+    class:hidden
     class:grouped={!isOutputPage()}
     class:uk-margin-left={!isOutputPage()}
   >
@@ -247,6 +249,8 @@
       width: calc((100% - (20px * 2)) / 2)
       @media screen and (max-width: 700px)
         width: 100%
+    &.hidden
+      display: none
 
     .uk-close
       position: absolute;
