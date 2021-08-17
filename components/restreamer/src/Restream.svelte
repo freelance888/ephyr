@@ -1,19 +1,24 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
-  import { mutation, getClient, subscribe } from 'svelte-apollo';
+  import { getClient, mutation, subscribe } from 'svelte-apollo';
 
   import {
-    RemoveRestream,
     DisableAllOutputs,
+    DisableOutput,
     EnableAllOutputs,
+    EnableOutput,
     ExportRestream,
     Info,
+    RemoveOutput,
+    RemoveRestream,
+    TuneDelay,
+    TuneVolume,
   } from './api/graphql/client.graphql';
 
   import { showError } from './util';
 
-  import { restreamModal, outputModal, exportModal } from './stores';
+  import { exportModal, outputModal, restreamModal } from './stores';
 
   import Confirm from './Confirm.svelte';
   import Input from './Input.svelte';
@@ -29,6 +34,14 @@
 
   export let public_host = 'localhost';
   export let value;
+
+  let outputMutations = {
+    DisableOutput,
+    EnableOutput,
+    RemoveOutput,
+    TuneVolume,
+    TuneDelay,
+  };
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -259,10 +272,13 @@
       <div class="uk-grid uk-grid-small" uk-grid>
         {#each value.outputs as output}
           <Output
+            {deleteConfirmation}
+            {enableConfirmation}
             {public_host}
             restream_id={value.id}
             value={output}
             hidden={!showAll && !showFiltered[output.status]}
+            mutations={outputMutations}
           />
         {/each}
       </div>

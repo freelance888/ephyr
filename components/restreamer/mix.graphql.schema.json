@@ -991,18 +991,6 @@
           "description": null,
           "fields": [
             {
-              "name": "title",
-              "description": "Subscribes to updates of title of this server.",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "output",
               "description": "Returns output for specified restream by output_id.",
               "args": [

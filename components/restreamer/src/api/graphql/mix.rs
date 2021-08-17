@@ -86,18 +86,6 @@ pub struct SubscriptionsRoot;
 
 #[graphql_subscription(name = "Subscription", context = Context)]
 impl SubscriptionsRoot {
-    /// Subscribes to updates of title of this server.
-    async fn title(context: &Context) -> BoxStream<'static, Option<String>> {
-        context
-            .state()
-            .settings
-            .signal_cloned()
-            .dedupe_cloned()
-            .map(move |h| h.title)
-            .to_stream()
-            .boxed()
-    }
-
     /// Returns output for specified restream by output_id.
     async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Option<Output>> {
         context.state().restreams

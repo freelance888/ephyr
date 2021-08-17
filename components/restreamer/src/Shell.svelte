@@ -4,7 +4,7 @@
   import { showError } from './util';
   UIkit.use(Icons);
 
-  export let isStateLoading;
+  export let isLoading;
   export let canRenderToolbar;
   export let canRenderMainComponent;
   export let error;
@@ -29,14 +29,14 @@
             <slot name="toolbar" />
           {/if}
           {#if error}
-            {showError(error.message)}
+            {showError(error.message) || ''}
           {/if}
         </div>
       </div>
     </header>
 
     <main class="uk-container uk-flex-1">
-      {#if isStateLoading}
+      {#if isLoading}
         <div class="uk-alert uk-alert-warning loading">Loading...</div>
       {:else if canRenderMainComponent}
         <slot name="main" />

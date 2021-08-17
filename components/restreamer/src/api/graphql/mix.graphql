@@ -1,7 +1,3 @@
-subscription Info {
-    title
-}
-
 subscription Output($restreamId: RestreamId!, $outputId: OutputId!) {
     output(outputId: $outputId, restreamId: $restreamId) {
         id

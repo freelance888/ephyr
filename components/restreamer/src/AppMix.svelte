@@ -3,8 +3,13 @@
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './Shell.svelte';
   import Output from './Output.svelte';
-  import { Output as Mix, Info } from './api/graphql/mix.graphql';
-  import { onDestroy } from 'svelte';
+  import {
+    Output as Mix,
+    TuneVolume,
+    TuneDelay,
+  } from './api/graphql/mix.graphql';
+
+  const mutations = { TuneVolume, TuneDelay };
 
   const gqlClient = createGraphQlClient(
     '/api-mix',
@@ -19,7 +24,6 @@
   const output_id = urlParams.get('output');
   const restream_id = urlParams.get('id');
 
-  const info = subscribe(Info, { errorPolicy: 'all' });
   const mix = subscribe(Mix, {
     errorPolicy: 'all',
     variables: {
@@ -28,26 +32,15 @@
     },
   });
 
-  $: mixError = $mix && $mix.error;
-  $: infoError = $info && $info.error;
-  $: isStateLoading = !isOnline || $mix.loading;
+  $: error = $mix && $mix.error;
+  $: isLoading = !isOnline || $mix.loading;
   $: canRenderMainComponent = isOnline && $mix.data;
-  $: error = $mixError || $infoError;
-
-  onDestroy(
-    info.subscribe((i) => {
-      if (!i.loading && i.data) {
-        const title = i.data.title;
-        document.title = title || 'Ephyr re-streamer';
-      }
-    })
-  );
 </script>
 
 <template>
-  <Shell {canRenderMainComponent} {isStateLoading} {error}>
+  <Shell {canRenderMainComponent} {isLoading} {error}>
     <section slot="main" class="uk-section uk-section-muted single-output">
-      <Output {restream_id} value={$mix.data.output} />
+      <Output {restream_id} value={$mix.data.output} {mutations} />
     </section>
   </Shell>
 </template>
