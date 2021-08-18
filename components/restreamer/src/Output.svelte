@@ -138,7 +138,7 @@
     {/if}
 
     {#if value.label}
-      <span class="label">{value.label}</span>
+      <span class="label" title={value.label}>{value.label}</span>
     {/if}
 
     {#if !isOutputPage()}
@@ -266,6 +266,11 @@
       border-top-left-radius: 4px
       border-top-right-radius: 4px
       background-color: #fff
+      max-width: 85%
+      max-height: 19px
+      white-space: nowrap
+      overflow: hidden
+      text-overflow: ellipsis
 
     a.single-view, a.edit-output
       position: absolute
