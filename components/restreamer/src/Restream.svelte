@@ -1,29 +1,33 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
-  import { getClient, mutation, subscribe } from 'svelte-apollo';
+  import { mutation, getClient, subscribe } from 'svelte-apollo';
 
   import {
-    DisableAllOutputs,
+    RemoveRestream,
     DisableOutput,
+    DisableAllOutputs,
     EnableAllOutputs,
     EnableOutput,
     ExportRestream,
-    Info,
     RemoveOutput,
-    RemoveRestream,
     TuneDelay,
     TuneVolume,
+    Info,
   } from './api/graphql/client.graphql';
 
   import { showError } from './util';
+  import { statusesList } from './constants/statuses';
 
-  import { exportModal, outputModal, restreamModal } from './stores';
+  import { restreamModal, outputModal, exportModal } from './stores';
 
   import Confirm from './Confirm.svelte';
   import Input from './Input.svelte';
   import Output from './Output.svelte';
   import Toggle from './Toggle.svelte';
+  import StatusFilter from './components/common/StatusFilter.svelte';
+  import { getReStreamOutputsCount } from './restreamHelpers';
+  import { toggleFilterStatus } from './utils/statusFilters.util';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -33,7 +37,10 @@
   const info = subscribe(Info, { errorPolicy: 'all' });
 
   export let public_host = 'localhost';
+  // TODO: rename 'value' to 'reStream'
   export let value;
+  export let globalOutputsFilters;
+  export let hidden = false;
 
   let outputMutations = {
     DisableOutput,
@@ -54,28 +61,13 @@
   $: allEnabled = value.outputs.every((o) => o.enabled);
   $: toggleStatusText = allEnabled ? 'Disable' : 'Enable';
 
-  $: onlineCount = value.outputs.filter((o) => o.status === 'ONLINE').length;
-  $: initCount = value.outputs.filter((o) => o.status === 'INITIALIZING')
-    .length;
-  $: offlineCount = value.outputs.filter((o) => o.status === 'OFFLINE').length;
-  $: presentBitmask =
-    (onlineCount > 0 ? 1 : 0) +
-    2 * (initCount > 0 ? 1 : 0) +
-    4 * (offlineCount > 0 ? 1 : 0);
-
-  let enabledBitmask = 0;
-  $: if (enabledBitmask === presentBitmask) {
-    enabledBitmask = 0;
-  }
-
-  $: showAll =
-    (enabledBitmask & presentBitmask) === presentBitmask ||
-    (enabledBitmask & presentBitmask) === 0;
-  $: showFiltered = {
-    ONLINE: !showAll && (enabledBitmask & 1) === 1,
-    INITIALIZING: !showAll && (enabledBitmask & 2) === 2,
-    OFFLINE: !showAll && (enabledBitmask & 4) === 4,
-  };
+  $: hasGlobalOutputsFilters = !!globalOutputsFilters.length;
+  $: reStreamOutputsCountByStatus = getReStreamOutputsCount(value);
+  // NOTE: if global filters are selected, they have higher priority
+  $: reStreamOutputsFilters = hasGlobalOutputsFilters
+    ? globalOutputsFilters
+    : [];
+  $: hasActiveFilters = reStreamOutputsFilters.length;
 
   function openEditRestreamModal() {
     const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
@@ -159,7 +151,7 @@
 </script>
 
 <template>
-  <div class="uk-section uk-section-muted uk-section-xsmall">
+  <div class="uk-section uk-section-muted uk-section-xsmall" class:hidden>
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
     <Confirm let:confirm>
@@ -202,30 +194,21 @@
 
     {#if value.outputs && value.outputs.length > 0}
       <span class="total">
-        {#if offlineCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 4)}
-            class:enabled={showFiltered['OFFLINE']}
-            class="count uk-alert-danger">{offlineCount}</a
-          >
-        {/if}
-        {#if initCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 2)}
-            class:enabled={showFiltered['INITIALIZING']}
-            class="count uk-alert-warning">{initCount}</a
-          >
-        {/if}
-        {#if onlineCount > 0}
-          <a
-            href="/"
-            on:click|preventDefault={() => (enabledBitmask ^= 1)}
-            class:enabled={showFiltered['ONLINE']}
-            class="count uk-alert-success">{onlineCount}</a
-          >
-        {/if}
+        {#each statusesList as status (status)}
+          <StatusFilter
+            {status}
+            count={reStreamOutputsCountByStatus[status]}
+            active={reStreamOutputsFilters.includes(status)}
+            disabled={hasGlobalOutputsFilters}
+            title={hasGlobalOutputsFilters &&
+              'Filter is disabled while global output filters are active'}
+            handleClick={() =>
+              (reStreamOutputsFilters = toggleFilterStatus(
+                reStreamOutputsFilters,
+                status
+              ))}
+          />
+        {/each}
 
         <Confirm let:confirm>
           <Toggle
@@ -268,21 +251,28 @@
       {/each}
     {/if}
 
-    {#if value.outputs && value.outputs.length > 0}
-      <div class="uk-grid uk-grid-small" uk-grid>
-        {#each value.outputs as output}
-          <Output
-            {deleteConfirmation}
-            {enableConfirmation}
-            {public_host}
-            restream_id={value.id}
-            value={output}
-            hidden={!showAll && !showFiltered[output.status]}
-            mutations={outputMutations}
-          />
-        {/each}
-      </div>
-    {/if}
+    <div class="uk-grid uk-grid-small" uk-grid>
+      {#each value.outputs as output}
+        <Output
+          {deleteConfirmation}
+          {enableConfirmation}
+          {public_host}
+          restream_id={value.id}
+          value={output}
+          hidden={hasActiveFilters &&
+            !reStreamOutputsFilters.includes(output.status)}
+          mutations={outputMutations}
+        />
+      {:else}
+        <div class="uk-flex-1">
+          <div class="uk-card-default uk-padding-small uk-text-center">
+            There are no Outputs for current Input. You can add it by clicking <b
+              >+OUTPUT</b
+            > button.
+          </div>
+        </div>
+      {/each}
+    </div>
   </div>
 </template>
 
@@ -292,6 +282,9 @@
     margin-top: 20px
     padding-left: 10px
     padding-right: @padding-left
+
+    &.hidden
+      display: none
 
     &:hover
       .uk-close, .uk-button-small
@@ -310,18 +303,6 @@
     .total
       float: right
       margin-right: 20px
-      .count
-        text-align: right
-        margin-right: 2px
-        background-color: inherit
-        padding: 1px 4px
-        border-radius: 2px
-        outline: none
-        &:hover, &.enabled
-          background-color: #cecece
-        &:hover
-          color: inherit
-          text-decoration: none
 
     .edit-input, .export-import, .uk-close
       position: absolute

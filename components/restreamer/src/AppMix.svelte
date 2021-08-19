@@ -8,6 +8,8 @@
     TuneVolume,
     TuneDelay,
   } from './api/graphql/mix.graphql';
+  import YoutubePlayer from './YoutubePlayer.svelte';
+  import { isYoutubeVideo } from './util';
 
   const mutations = { TuneVolume, TuneDelay };
 
@@ -35,13 +37,21 @@
   $: error = $mix && $mix.error;
   $: isLoading = !isOnline || $mix.loading;
   $: canRenderMainComponent = isOnline && $mix.data;
+  $: output = $mix.data && $mix.data.output;
 </script>
 
 <template>
   <Shell {canRenderMainComponent} {isLoading} {error}>
-    <section slot="main" class="uk-section uk-section-muted single-output">
-      <Output {restream_id} value={$mix.data.output} {mutations} />
-    </section>
+    <div slot="main">
+      <section class="uk-section uk-section-muted single-output">
+        <Output {restream_id} value={output} {mutations} />
+      </section>
+      {#if isYoutubeVideo(output.previewUrl)}
+        <section class="uk-section uk-section-muted video-player">
+          <YoutubePlayer {restream_id} preview_url={output.previewUrl} />
+        </section>
+      {/if}
+    </div>
   </Shell>
 </template>
 
@@ -53,4 +63,9 @@
 
     :global(.volume input)
       width: 90% !important
+
+  .video-player
+      @extend .single-output
+      max-height: 800px
+      min-height: 150px
 </style>

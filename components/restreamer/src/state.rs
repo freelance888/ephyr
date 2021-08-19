@@ -240,7 +240,7 @@ impl State {
                     "Panicked executing `{}` hook of state: {}",
                     name,
                     display_panic(&p),
-                )
+                );
             })
             .map(|_| Ok(()))
             .forward(sink::drain()),
@@ -750,6 +750,7 @@ impl Restream {
     #[must_use]
     pub fn export(&self) -> spec::v1::Restream {
         spec::v1::Restream {
+            id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
             input: self.input.export(),
@@ -957,6 +958,7 @@ impl Input {
     #[must_use]
     pub fn export(&self) -> spec::v1::Input {
         spec::v1::Input {
+            id: Some(self.id),
             key: self.key.clone(),
             endpoints: self
                 .endpoints
@@ -1237,7 +1239,7 @@ impl InputSrc {
     pub fn apply(&mut self, new: spec::v1::InputSrc) {
         match (self, new) {
             (Self::Remote(old), spec::v1::InputSrc::RemoteUrl(new_url)) => {
-                old.url = new_url
+                old.url = new_url;
             }
             (Self::Failover(src), spec::v1::InputSrc::FailoverInputs(news)) => {
                 let mut olds = mem::replace(
@@ -1590,6 +1592,7 @@ impl Output {
     #[must_use]
     pub fn export(&self) -> spec::v1::Output {
         spec::v1::Output {
+            id: Some(self.id),
             dst: self.dst.clone(),
             label: self.label.clone(),
             preview_url: self.preview_url.clone(),

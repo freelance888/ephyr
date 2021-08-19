@@ -37,7 +37,7 @@ pub fn init(level: Option<slog::Level>) -> slog_scope::GlobalLoggerGuard {
         level.unwrap_or(slog::Level::Info),
     ));
     if let Err(e) = slog_stdlog::init() {
-        panic!("Failed to initialize logger: {}", e)
+        panic!("Failed to initialize logger: {}", e);
     };
     guard
 }

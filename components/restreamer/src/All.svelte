@@ -1,15 +1,20 @@
 <script lang="js">
-  import Restream from './Restream.svelte';
-  import Confirm from './Confirm.svelte';
-  import { showError } from './util';
   import { mutation } from 'svelte-apollo';
+
+  import Confirm from './Confirm.svelte';
+  import StatusFilter from './components/common/StatusFilter';
+  import { showError } from './util';
   import {
-    EnableAllOutputsOfRestreams,
     DisableAllOutputsOfRestreams,
+    EnableAllOutputsOfRestreams,
   } from './api/graphql/client.graphql';
   import OutputModal from './OutputModal.svelte';
   import PasswordModal from './PasswordModal.svelte';
+  import { getAggregatedStreamsData } from './allHelpers';
+  import { statusesList } from './constants/statuses';
+  import { toggleFilterStatus } from './utils/statusFilters.util';
   import { onDestroy } from 'svelte';
+  import Restream from './Restream.svelte';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -21,10 +26,28 @@
   export let state;
   export let info;
 
-  $: totalInputCount = $state.data.allRestreams.length;
-  $: totalOutputsCount = $state.data.allRestreams.reduce(
-    (sum, input) => (sum += input.outputs.length),
-    0
+  $: allReStreams = $state.data.allRestreams;
+  $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
+
+  $: globalInputsFilters = [];
+  $: globalOutputsFilters = [];
+  $: hasActiveFilters = globalInputsFilters.length;
+
+  let currentHash = undefined;
+  onDestroy(
+    info.subscribe((i) => {
+      if (i.data) {
+        const newHash = i.data.info.passwordHash;
+        if (currentHash === undefined) {
+          currentHash = newHash;
+        } else if (!!newHash && newHash !== currentHash) {
+          window.location.reload();
+        }
+
+        const title = i.data.info.title;
+        document.title = title || 'Ephyr re-streamer';
+      }
+    })
   );
 
   async function enableAllOutputsOfRestreams() {
@@ -44,23 +67,6 @@
   }
 
   let openPasswordOutputModal = false;
-
-  let currentHash = undefined;
-  onDestroy(
-    info.subscribe((i) => {
-      if (i.data) {
-        const newHash = i.data.info.passwordHash;
-        if (currentHash === undefined) {
-          currentHash = newHash;
-        } else if (!!newHash && newHash !== currentHash) {
-          window.location.reload();
-        }
-
-        const title = i.data.info.title;
-        document.title = title || 'Ephyr re-streamer';
-      }
-    })
-  );
 </script>
 
 <template>
@@ -69,13 +75,41 @@
     <span class="label">ALL</span>
     <div class="uk-grid uk-grid-small">
       <div class="uk-width-1-2@m uk-width-1-3@s">
-        <span class="toolbar-label total-inputs-label"
-          >INPUTS: {totalInputCount}</span
-        >
+        <span class="toolbar-label total-inputs-label">
+          INPUTS:
+
+          {#each statusesList as status (status)}
+            <StatusFilter
+              {status}
+              count={aggregatedStreamsData.inputsCountByStatus[status]}
+              active={globalInputsFilters.includes(status)}
+              handleClick={() =>
+                (globalInputsFilters = toggleFilterStatus(
+                  globalInputsFilters,
+                  status
+                ))}
+            />
+          {/each}
+        </span>
       </div>
 
       <div class="uk-width-expand">
-        <span class="toolbar-label">OUTPUTS: {totalOutputsCount}</span>
+        <span class="toolbar-label"
+          >OUTPUTS:
+
+          {#each statusesList as status (status)}
+            <StatusFilter
+              {status}
+              count={aggregatedStreamsData.outputsCountByStatus[status]}
+              active={globalOutputsFilters.includes(status)}
+              handleClick={() =>
+                (globalOutputsFilters = toggleFilterStatus(
+                  globalOutputsFilters,
+                  status
+                ))}
+            />
+          {/each}
+        </span>
         {#key $info.data.info.passwordOutputHash}
           <a
             href="/"
@@ -101,6 +135,7 @@
         {/key}
       </div>
       <div class="uk-panel uk-width-auto uk-flex-right">
+        <!-- TODO: move Confirm modals to other files -->
         <Confirm let:confirm>
           <button
             class="uk-button uk-button-default"
@@ -137,8 +172,22 @@
     </div>
   </section>
 
-  {#each $state.data.allRestreams as restream}
-    <Restream public_host={$info.data.info.publicHost} value={restream} />
+  {#each allReStreams as restream}
+    <Restream
+      public_host={$info.data.info.publicHost}
+      value={restream}
+      hidden={hasActiveFilters &&
+        !globalInputsFilters.includes(restream.input.endpoints[0].status)}
+      {globalOutputsFilters}
+    />
+  {:else}
+    <div
+      class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
+    >
+      <div>
+        There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+      </div>
+    </div>
   {/each}
 </template>
 
