@@ -6,11 +6,7 @@ use futures::stream::BoxStream;
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 
-use crate::{
-    state::{
-        Delay, MixinId, Output, OutputId, RestreamId, Volume
-    },
-};
+use crate::state::{Delay, MixinId, Output, OutputId, RestreamId, Volume};
 
 use super::Context;
 
@@ -18,7 +14,7 @@ use super::Context;
 ///
 /// [`api::graphql::mix`]: graphql::mix
 pub type Schema =
-RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
+    RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 
 /// Constructs and returns new [`Schema`], ready for use.
 #[inline]
@@ -35,7 +31,6 @@ pub struct MutationsRoot;
 
 #[graphql_object(name = "Mutation", context = Context)]
 impl MutationsRoot {
-
     /// Tunes a `Volume` rate of the specified `Output` or one of its `Mixin`s.
     fn tune_volume(
         restream_id: RestreamId,
@@ -71,9 +66,12 @@ pub struct QueriesRoot;
 
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
-
     /// Returns output for specified restream by output_id.
-    fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> Option<Output> {
+    fn output(
+        restream_id: RestreamId,
+        output_id: OutputId,
+        context: &Context,
+    ) -> Option<Output> {
         context.state().get_output(restream_id, output_id)
     }
 }
@@ -87,17 +85,25 @@ pub struct SubscriptionsRoot;
 #[graphql_subscription(name = "Subscription", context = Context)]
 impl SubscriptionsRoot {
     /// Returns output for specified restream by output_id.
-    async fn output(restream_id: RestreamId, output_id: OutputId, context: &Context) -> BoxStream<'static, Option<Output>> {
-        context.state().restreams
+    async fn output(
+        restream_id: RestreamId,
+        output_id: OutputId,
+        context: &Context,
+    ) -> BoxStream<'static, Output> {
+        context
+            .state()
+            .restreams
             .signal_cloned()
             .dedupe_cloned()
             .map(move |restreams| {
-                Some(restreams
+                restreams
                     .into_iter()
-                    .find(|r| r.id == restream_id)?
+                    .find(|r| r.id == restream_id)
+                    .unwrap()
                     .outputs
                     .into_iter()
-                    .find(|o| o.id == output_id)?)
+                    .find(|o| o.id == output_id)
+                    .unwrap()
             })
             .to_stream()
             .boxed()

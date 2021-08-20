@@ -17,8 +17,8 @@ use crate::{
     dvr, spec,
     state::{
         Delay, InputEndpointKind, InputId, InputKey, InputSrcUrl, Label,
-        MixinId, MixinSrcUrl, OutputDstUrl, OutputId, Restream, RestreamId,
-        RestreamKey, Volume, PasswordKind
+        MixinId, MixinSrcUrl, OutputDstUrl, OutputId, PasswordKind, Restream,
+        RestreamId, RestreamKey, Volume,
     },
     Spec,
 };
@@ -748,7 +748,6 @@ pub struct QueriesRoot;
 
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
-
     /// Returns the current `Info` parameters of this server.
     fn info(context: &Context) -> Info {
         let settings = context.state().settings.get_cloned();

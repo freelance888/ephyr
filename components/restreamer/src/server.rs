@@ -168,9 +168,7 @@ pub mod client {
                 .service(graphql_client)
                 .service(graphql_mix);
             if in_debug_mode {
-                app = app
-                    .service(playground_client)
-                    .service(playground_mix);
+                app = app.service(playground_client).service(playground_mix);
             }
             app.service(
                 ResourceFiles::new(OUTPUT_ROUTE, output_dir_files)
@@ -192,7 +190,7 @@ pub mod client {
         Schema(web::Data<api::graphql::client::Schema>),
 
         /// Single output schema for mixing
-        SchemaMix(web::Data<api::graphql::mix::Schema>)
+        SchemaMix(web::Data<api::graphql::mix::Schema>),
     }
 
     /// Endpoint serving [`api::`graphql`::mix`] for single output
@@ -227,13 +225,23 @@ pub mod client {
                 .with_keep_alive_interval(Duration::from_secs(5));
 
             match schema_kind {
-                SchemaKind::Schema(s) => subscriptions_handler(req, payload, s.into_inner(), cfg).await,
-                SchemaKind::SchemaMix(s) => subscriptions_handler(req, payload, s.into_inner(), cfg).await,
+                SchemaKind::Schema(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
+                SchemaKind::SchemaMix(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
             }
         } else {
             match schema_kind {
-                SchemaKind::Schema(s) => graphql_handler(&s, &ctx, req, payload).await,
-                SchemaKind::SchemaMix(s) => graphql_handler(&s, &ctx, req, payload).await
+                SchemaKind::Schema(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
+                SchemaKind::SchemaMix(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
             }
         }
     }
@@ -242,7 +250,6 @@ pub mod client {
     /// [`api::graphql::client`].
     ///
     /// [1]: https://github.com/graphql/graphql-playground
-    #[allow(clippy::unused_async)]
     #[get("/api/playground")]
     async fn playground_client() -> HttpResponse {
         playground().await
@@ -257,6 +264,7 @@ pub mod client {
         playground().await
     }
 
+    #[allow(clippy::unused_async)]
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
         // and authority.

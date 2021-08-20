@@ -24,7 +24,8 @@ fn main() -> anyhow::Result<()> {
             &api::graphql::client::schema(),
             &api::graphql::Context::fake(),
             juniper::IntrospectionFormat::default(),
-        ).map_err(err_fn)?,
+        )
+        .map_err(err_fn)?,
         Api::Mix => juniper::introspect(
             &api::graphql::mix::schema(),
             &api::graphql::Context::fake(),
@@ -88,7 +89,7 @@ enum Api {
     Client,
     /// [`api::graphql::mix`].
     #[display(fmt = "mix")]
-    Mix
+    Mix,
 }
 
 impl FromStr for Api {
