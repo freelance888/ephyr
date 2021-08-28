@@ -89,7 +89,7 @@ impl SubscriptionsRoot {
         restream_id: RestreamId,
         output_id: OutputId,
         context: &Context,
-    ) -> BoxStream<'static, Output> {
+    ) -> BoxStream<'static, Option<Output>> {
         context
             .state()
             .restreams
@@ -98,12 +98,10 @@ impl SubscriptionsRoot {
             .map(move |restreams| {
                 restreams
                     .into_iter()
-                    .find(|r| r.id == restream_id)
-                    .unwrap()
+                    .find(|r| r.id == restream_id)?
                     .outputs
                     .into_iter()
                     .find(|o| o.id == output_id)
-                    .unwrap()
             })
             .to_stream()
             .boxed()

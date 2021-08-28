@@ -42,24 +42,38 @@
 
 <template>
   <Shell {canRenderMainComponent} {isLoading} {error}>
-    <div slot="main">
-      <section class="uk-section uk-section-muted single-output">
-        <Output {restream_id} value={output} {mutations} />
-      </section>
-      {#if isYoutubeVideo(output.previewUrl)}
-        <section class="uk-section uk-section-muted video-player">
-          <YoutubePlayer {restream_id} preview_url={output.previewUrl} />
+    <div slot="main" class="main">
+      {#if !output}
+        <section class="uk-section uk-section-muted no-output">
+          <div class="uk-card-default uk-padding-small uk-text-center">
+            There is no output found
+          </div>
         </section>
+      {:else}
+        <section class="uk-section uk-section-muted single-output">
+          <Output {restream_id} value={output} {mutations} />
+        </section>
+        {#if isYoutubeVideo(output.previewUrl)}
+          <section class="uk-section uk-section-muted video-player">
+            <YoutubePlayer {restream_id} preview_url={output.previewUrl} />
+          </section>
+        {/if}
       {/if}
     </div>
   </Shell>
 </template>
 
 <style lang="stylus">
+  .main
+    max-width: 960px
+    padding-top: 20px
+
+  .no-output
+    padding: 20px
+
   .single-output
     margin-top: 20px
     padding: 10px 20px 20px 20px
-    max-width: 960px
 
     :global(.volume input)
       width: 90% !important
