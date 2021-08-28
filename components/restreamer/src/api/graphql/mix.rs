@@ -1,4 +1,4 @@
-//! Client [GraphQL] API providing application usage.
+//! Mix [GraphQL] API providing application usage.
 //!
 //! [GraphQL]: https://graphql.com
 
@@ -10,9 +10,7 @@ use crate::state::{Delay, MixinId, Output, OutputId, RestreamId, Volume};
 
 use super::Context;
 
-/// Schema of [`api::graphql::mix`] for single output app.
-///
-/// [`api::graphql::mix`]: graphql::mix
+/// Schema of `Mix` app.
 pub type Schema =
     RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 

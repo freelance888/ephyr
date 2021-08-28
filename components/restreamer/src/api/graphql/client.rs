@@ -26,9 +26,7 @@ use crate::{
 use super::Context;
 use url::Url;
 
-/// Full schema of [`api::graphql::client`].
-///
-/// [`api::graphql::client`]: graphql::client
+/// Schema of `Restreamer` app.
 pub type Schema =
     RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 
