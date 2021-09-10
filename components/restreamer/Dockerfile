@@ -63,9 +63,9 @@ RUN cargo build -p ephyr-restreamer --lib --release
 # avoid recompilation each time project sources are changed.
 WORKDIR /tmp/ephyr/components/restreamer/
 
-COPY components/restreamer/.yarnrc \
-     components/restreamer/package.json \
-     components/restreamer/yarn.lock \
+COPY components/restreamer/client/.yarnrc \
+     components/restreamer/client/package.json \
+     components/restreamer/client/yarn.lock \
      ./
 
 RUN yarn install --pure-lockfile

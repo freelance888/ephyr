@@ -109,8 +109,8 @@ pub mod client {
         State,
     };
 
-    const OUTPUT_ROUTE: &str = "/restream";
-    const OUTPUT_ROUTE_API: &str = "/api-mix";
+    const MIX_ROUTE: &str = "/mix";
+    const MIX_ROUTE_API: &str = "/api-mix";
 
     pub mod public_dir {
         #![allow(clippy::must_use_candidate, unused_results)]
@@ -119,11 +119,11 @@ pub mod client {
         include!(concat!(env!("OUT_DIR"), "/generated.rs"));
     }
 
-    pub mod public_output_dir {
+    pub mod public_mix_dir {
         #![allow(clippy::must_use_candidate, unused_results)]
         #![doc(hidden)]
 
-        include!(concat!(env!("OUT_DIR"), "/generated_output.rs"));
+        include!(concat!(env!("OUT_DIR"), "/generated_mix.rs"));
     }
 
     /// Runs client HTTP server.
@@ -150,7 +150,7 @@ pub mod client {
 
         Ok(HttpServer::new(move || {
             let root_dir_files = public_dir::generate();
-            let output_dir_files = public_output_dir::generate();
+            let output_dir_files = public_mix_dir::generate();
 
             let mut app = App::new()
                 .app_data(stored_cfg.clone())
@@ -171,7 +171,7 @@ pub mod client {
                 app = app.service(playground_client).service(playground_mix);
             }
             app.service(
-                ResourceFiles::new(OUTPUT_ROUTE, output_dir_files)
+                ResourceFiles::new(MIX_ROUTE, output_dir_files)
                     .resolve_not_found_to("index.html"),
             )
             .service(ResourceFiles::new("/", root_dir_files))
@@ -287,11 +287,11 @@ pub mod client {
         let route = req.uri().path();
         log::debug!("authorize URI PATH: {}", route);
 
-        let is_output_auth = route.starts_with(OUTPUT_ROUTE)
-            || route.starts_with(OUTPUT_ROUTE_API);
+        let is_mix_auth =
+            route.starts_with(MIX_ROUTE) || route.starts_with(MIX_ROUTE_API);
         let settings = req.app_data::<State>().unwrap().settings.get_cloned();
 
-        let hash = if is_output_auth {
+        let hash = if is_mix_auth {
             settings.password_output_hash
         } else {
             settings.password_hash

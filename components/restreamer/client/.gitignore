@@ -4,8 +4,3 @@
 
 /node_modules/
 /yarn-error.log
-
-/do.deploy.sh
-/state.json
-
-/.idea/**

@@ -3,11 +3,7 @@
 deploy/
 docs/
 
-public/
-
-node_modules/
-yarn-error.log
-
+.idea/*
 Makefile
 
 *.md

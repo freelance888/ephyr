@@ -8,5 +8,5 @@ components/restreamer/deploy/
 components/restreamer/docs/
 components/restreamer/public/
 components/restreamer/*.graphql.schema.json
-components/restreamer/node_modules/
-components/restreamer/yarn-error.log
+components/restreamer/client/node_modules/
+components/restreamer/client/yarn-error.log
