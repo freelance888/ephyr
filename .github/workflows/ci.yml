@@ -64,17 +64,17 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/yarn.lock', matrix.component)) }}
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
                 && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
       - run: yarn lint
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
 
@@ -210,17 +210,17 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/yarn.lock', matrix.component)) }}
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
                 && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
       - run: yarn doc
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
 
