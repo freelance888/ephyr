@@ -26,12 +26,6 @@
   export let state;
   export let info;
 
-  state.subscribe(x => {
-    if (x.data) {
-      console.log('UPDATE:', x.data.allRestreams.length);
-    }
-  });
-
   $: allReStreams = $state.data.allRestreams;
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
