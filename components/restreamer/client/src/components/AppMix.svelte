@@ -3,11 +3,7 @@
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Output from './Output.svelte';
-  import {
-    Output as Mix,
-    TuneVolume,
-    TuneDelay,
-  } from '../../api/mix.graphql';
+  import { Output as Mix, TuneVolume, TuneDelay } from '../../api/mix.graphql';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
 
   const mutations = { TuneVolume, TuneDelay };

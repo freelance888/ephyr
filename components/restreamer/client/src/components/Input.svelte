@@ -1,11 +1,7 @@
 <script lang="js">
   import { mutation, subscribe } from 'svelte-apollo';
 
-  import {
-    DisableInput,
-    EnableInput,
-    Info,
-  } from '../../api/client.graphql';
+  import { DisableInput, EnableInput, Info } from '../../api/client.graphql';
 
   import { showError } from '../utils/util';
 
