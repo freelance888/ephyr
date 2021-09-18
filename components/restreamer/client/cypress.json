@@ -1,5 +1,10 @@
 {
   "viewportHeight": 960,
   "viewportWidth": 1280,
-  "video": false
+  "video": false,
+  "baseUrl": "http://77.223.97.131",
+  "env": {
+    "host": "77.223.97.131",
+    "jsonConfig": ""
+  }
 }
