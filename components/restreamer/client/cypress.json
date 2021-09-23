@@ -2,9 +2,8 @@
   "viewportHeight": 960,
   "viewportWidth": 1280,
   "video": false,
-  "baseUrl": "http://77.223.97.131",
+  "baseUrl": "http://localhost",
   "env": {
-    "host": "77.223.97.131",
     "jsonConfig": ""
   }
 }
