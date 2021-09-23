@@ -132,7 +132,11 @@ Supported commands:
 2. `[skip ci]` -- skip run of all steps on GitHub CI;
 3. `[fresh ci]` -- clean all previous cache and run CI.
 
-
+## Run cypress tests
+Supported commands:
+1. `npm run cypress` -- open cypress runner and allows running test on `localhost`;
+2. `npm run cypress:run` -- run cypress tests in terminal on `localhost`;
+3. `npm run cypress:run:ci` -- run cypress tests in terminal on host specified in `config.cypress_host` section of `package.json`.
 
 
 [DigitalOcean]: https://digitalocean.com
