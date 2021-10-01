@@ -135,8 +135,9 @@ Supported commands:
 ## Run cypress tests
 Supported commands:
 1. `npm run cypress` -- open cypress runner and allows running test on `localhost`;
-2. `npm run cypress:run` -- run cypress tests in terminal on `localhost`;
-3. `npm run cypress:run:ci` -- run cypress tests in terminal on host specified in `config.cypress_host` section of `package.json`.
+2. `npm run cypress:host` -- open cypress runner and allows running test on host specified in `config.cypress_host` section of `package.json`.   
+3. `npm run cypress:run` -- run cypress tests in terminal on `localhost`;
+4. `npm run cypress:run:ci` -- run cypress tests in terminal on host specified in `config.cypress_host` section of `package.json`.
 
 
 [DigitalOcean]: https://digitalocean.com
