@@ -376,7 +376,7 @@ impl State {
         id: InputId,
         restream_id: RestreamId,
         endpoint_id: EndpointId,
-        label: Option<Label>
+        label: Option<Label>,
     ) -> Option<bool> {
         self.restreams
             .lock_mut()
@@ -385,9 +385,9 @@ impl State {
             .input
             .find_mut(id)?
             .endpoints
-                .iter_mut()
-                .find(|endpoint| endpoint.id == endpoint_id)?
-                .label = label;
+            .iter_mut()
+            .find(|endpoint| endpoint.id == endpoint_id)?
+            .label = label;
         Some(true)
     }
 
