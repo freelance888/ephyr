@@ -36,7 +36,7 @@ All user visible changes to this project will be documented in this file. This p
 ### Fixed
 
 - Deploy:
-  - Save files into root directory even if volume attached to the server ([#64], [#82]).
+  - Volume is not detected during Ephyr installation ([#64], [#82]).
 - Web UI:
   - Error message does not disappear ([#41], [#60]);
   - Trim long output label width with ellipsis ([#107], [#111]).
@@ -55,7 +55,7 @@ All user visible changes to this project will be documented in this file. This p
     - `ffmpeg` from 4.3 to 4.4 ([#85]);
     - Code style to Rust 1.54 ([#61], [#98]).
 
-- Split implmentation for Graphql Schema ([#112]);
+- Split implementation for Graphql Schema ([#112]);
 - Move fronted to separate folder ([#117]);
 - Add Cypress tests and commands to run for npm ([#121], [#123], [#124]).
 
