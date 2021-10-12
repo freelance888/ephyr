@@ -3,6 +3,103 @@ Ephyr re-streamer changelog
 
 All user visible changes to this project will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
+
+## [0.4.0] · Unreleased
+[0.4.0]: /../../tree/restreamer-v0.4.0
+
+[Diff](/../../compare/restreamer-v0.3.0...restreamer-v0.4.0)
+
+
+### Added
+
+- Deploy:
+  - Replace Podman CLI with Docker CLI ([#126]);
+  - Add support for VScale VPS provider ([#62], [#82]).
+- CI:
+  - Release to `restreamer-dev` tag with `[release]` message in commit ([#79], [#99]).
+- Web UI:
+  - Input:
+      - Add `multiple-json` input mode ([#60], [#92]),
+  - Output:
+    - Add `[Preview]` link to video broadcast ([#60], [#77]);
+    - Add Youtube video iframe to Public Mixer Output ([#95], [#97], [#101]);
+    - Allow access without password for mixing single output page ([#50], [#90]);
+  - Make status filter items do not jump when status changes ([#84], [#99]);
+  - Add Copy button to for Input\Output URL ([#76]);
+  - Add `unstable` status output and input ([#125]).
+- GraphQL API:
+    - Types:
+        - Update `InputKey` max key length from 20 to 50 ([#80], [#81]);
+        - Add `enableConfirmation` into `Settings` ([#52], [#78]);
+        - Add `id` to `Input` and `Output` ([#96], [#102]).
+
+### Fixed
+
+- Deploy:
+  - Save files into root directory even if volume attached to the server ([#64], [#82]).
+- Web UI:
+  - Error message does not disappear ([#41], [#60]);
+  - Trim long output label width with ellipsis ([#107], [#111]).
+
+### Miscellaneous
+
+Client updates:
+    - `dns-packet` from 1.3.1 to 1.3.4 ([#75]);
+    - `postcss` from 7.0.35 to 7.0.36 ([#86]);
+    - `ssri` from 6.0.1 to 6.0.2 ([#87]);
+    - `ws` from 5.2.2 to 5.2.3 ([#88]);
+    - `tar` from 6.1.5 to 6.1.11 ([#119]);
+    - `url-parse` from 1.5.1 to 1.5.3 ([#109]);
+    - `path-parse` from 1.0.6 to 1.0.7 ([#108]).
+Server updates:
+    - `ffmpeg` from 4.3 to 4.4 ([#85]);
+    - Code style to Rust 1.54 ([#61], [#98]).
+
+- Split implmentation for Graphql Schema ([#112]);
+- Move fronted to separate folder ([#117]);
+- Add Cypress tests and commands to run for npm ([#121], [#123], [#124]).
+
+
+[#41]: /../../issues/41
+[#52]: /../../issues/52
+[#54]: /../../issues/54
+[#62]: /../../issues/62
+[#64]: /../../issues/64
+[#79]: /../../issues/79
+[#80]: /../../issues/80
+[#84]: /../../issues/84
+[#95]: /../../issues/95
+[#97]: /../../issues/97
+[#99]: /../../issues/99
+[#107]: /../../issues/107
+
+[#60]: /../../pull/60
+[#61]: /../../pull/61
+[#75]: /../../pull/75
+[#76]: /../../pull/76
+[#77]: /../../pull/77
+[#78]: /../../pull/78
+[#81]: /../../pull/81
+[#82]: /../../pull/82
+[#85]: /../../pull/85
+[#86]: /../../pull/86
+[#87]: /../../pull/87
+[#88]: /../../pull/88
+[#91]: /../../pull/91
+[#92]: /../../pull/92
+[#98]: /../../pull/98
+[#99]: /../../pull/99
+[#101]: /../../pull/101
+[#108]: /../../pull/108
+[#109]: /../../pull/109
+[#111]: /../../pull/111
+[#108]: /../../pull/108
+[#109]: /../../pull/109
+[#119]: /../../pull/119
+[#126]: /../../pull/126
+
+
+
 ## [0.3.0] · 2021-05-11
 [0.3.0]: /../../tree/restreamer-v0.3.0
 
