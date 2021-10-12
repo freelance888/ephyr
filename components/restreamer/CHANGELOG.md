@@ -43,7 +43,7 @@ All user visible changes to this project will be documented in this file. This p
 
 ### Miscellaneous
 
-Client updates:
+- Client updates:
     - `dns-packet` from 1.3.1 to 1.3.4 ([#75]);
     - `postcss` from 7.0.35 to 7.0.36 ([#86]);
     - `ssri` from 6.0.1 to 6.0.2 ([#87]);
@@ -51,7 +51,7 @@ Client updates:
     - `tar` from 6.1.5 to 6.1.11 ([#119]);
     - `url-parse` from 1.5.1 to 1.5.3 ([#109]);
     - `path-parse` from 1.0.6 to 1.0.7 ([#108]).
-Server updates:
+- Server updates:
     - `ffmpeg` from 4.3 to 4.4 ([#85]);
     - Code style to Rust 1.54 ([#61], [#98]).
 
@@ -85,17 +85,24 @@ Server updates:
 [#86]: /../../pull/86
 [#87]: /../../pull/87
 [#88]: /../../pull/88
+[#90]: /../../pull/90
 [#91]: /../../pull/91
 [#92]: /../../pull/92
+[#96]: /../../pull/96
 [#98]: /../../pull/98
 [#99]: /../../pull/99
 [#101]: /../../pull/101
+[#102]: /../../pull/102
 [#108]: /../../pull/108
 [#109]: /../../pull/109
 [#111]: /../../pull/111
-[#108]: /../../pull/108
-[#109]: /../../pull/109
+[#112]: /../../pull/112
+[#117]: /../../pull/117
 [#119]: /../../pull/119
+[#121]: /../../pull/121
+[#123]: /../../pull/123
+[#124]: /../../pull/124
+[#125]: /../../pull/125
 [#126]: /../../pull/126
 
 
