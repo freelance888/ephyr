@@ -10,7 +10,7 @@ use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
 use crate::state::{Client, ClientId};
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use crate::display_panic;
 use crate::types::DroppableAbortHandle;
 use crate::api::graphql;
@@ -25,8 +25,8 @@ pub struct ClientJobsPool {
 
 impl ClientJobsPool {
     /// Creates new pull of [`ClientJob`]
-    // #[inline]
-    // #[must_use]
+    #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             pool: HashMap::new(),
@@ -34,7 +34,6 @@ impl ClientJobsPool {
     }
 
     /// Creates new [`ClientJob`] for added [`Client`] and removes for deleted [`Client`]
-    // #[must_use]
     pub fn apply(&mut self, clients: &[Client]) {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
@@ -73,20 +72,33 @@ impl ClientJob {
             loop {
                 let _ = AssertUnwindSafe(
                     async move {
-                        println!("Get statistics from client: {}", client_id);
-                        let result: Result<(), graphql::Error> = Ok(());
+                        log::info!("Get statistics from client: {}", client_id);
+
+                        let client_ip: IpAddr = client_id.into();
+                        let ip0: IpAddr = Ipv4Addr::new(0, 0, 0, 0).into();
+                        let ip100: IpAddr = Ipv4Addr::new(0, 0, 0, 100).into();
+
+                        if client_ip == ip0 { panic!("Can't get data from {}", ip0) };
+
+                        let result: Result<(), graphql::Error> = if client_ip == ip100 {
+                            let msg = format!("Error while getting data from {}", ip100);
+                            Err(graphql::Error::new("ERROR_UNKNOWN").message(&msg))
+                        } else {
+                            Ok(())
+                        };
+
                         future::ready(result).await
                     }
-                    .unwrap_or_else(|_| {
-                        println!("ERROR. Error retrieving data for client {}. Stop gathering statistics from client", client_id);
+                    .unwrap_or_else(|e| {
+                        log::info!("Error retrieving data for client {}. {}", client_id, e);
                     }),
                 )
                 .catch_unwind()
                 .await
                 .map_err(|p| {
-                    log::crit!(
-                        "Panicked while gather statistics from client: {}",
-                        display_panic(&p),
+                    log::error!(
+                        "Panicked while getting statistics from client: {}",
+                        display_panic(&p)
                     );
                 });
 
@@ -96,7 +108,7 @@ impl ClientJob {
 
         // Spawn periodic job for gathering info from client
         drop(tokio::spawn(spawner.map(move |_| {
-            println!("OFFLINE. Stop gathering statistics from client {}", client_id);
+            log::info!("Client {} removed. Stop getting statistics", client_id);
         })));
 
         Self {

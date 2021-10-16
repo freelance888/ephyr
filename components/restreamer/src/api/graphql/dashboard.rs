@@ -42,22 +42,47 @@ pub struct MutationsRoot;
 
 #[graphql_object(name = "Mutation", context = Context)]
 impl MutationsRoot {
-    /// Adds a new [`Client`] by ip
+    /// Add a new [`Client`] by ip
+    ///
+    /// Returns [`graphql::Error`] if there is already [`Client`] with such `ip` in this
+    /// [`State`].
+    #[graphql(arguments(ip_address(
+        description = "IP address of remote host."
+    )))]
     fn add_client(ip_address: String, context: &Context) -> Result<Option<bool>, graphql::Error> {
-
-        let ip = match IpAddr::from_str(ip_address.as_str()) {
-            Ok(address) => address,
-            Err(e) => return Err(graphql::Error::new("STRING_IS_NOT_IP_ADDRESS")
-                .status(StatusCode::BAD_REQUEST)
-                .message(&e))
-        };
-
+        let ip = convert_to_ip(ip_address)?;
         match context.state().add_client(ip) {
             Ok(_) => Ok(Some(true)),
             Err(e) => Err(graphql::Error::new("DUPLICATE_CLIENT_IP")
                 .status(StatusCode::CONFLICT)
                 .message(&e))
         }
+    }
+
+    /// Remove [`Client`] by ip
+    ///
+    /// Returns [`graphql::Error`] if there is no [`Client`] with such `id` in this
+    /// [`State`].
+    #[graphql(arguments(ip_address(
+        description = "IP address of remote host."
+    )))]
+    fn remove_client(ip_address: String, context: &Context) -> Result<Option<bool>, graphql::Error> {
+        let ip = convert_to_ip(ip_address)?;
+        match context.state().remove_client(ip) {
+            Some(_) => Ok(Some(true)),
+            None => Ok(None)
+        }
+    }
+}
+
+
+/// Convert [`String`] to [`IpAddr`] or return [`graphql::Error`]
+fn convert_to_ip(ip_address: String) -> Result<IpAddr, graphql::Error> {
+    match IpAddr::from_str(ip_address.as_str()) {
+        Ok(address) => Ok(address),
+        Err(e) => Err(graphql::Error::new("STRING_IS_NOT_IP_ADDRESS")
+            .status(StatusCode::BAD_REQUEST)
+            .message(&e))
     }
 }
 

@@ -280,10 +280,10 @@ impl State {
     /// Returns [`None`] if there is no [`Client`] with such `id` in this
     /// [`State`].
     #[allow(clippy::must_use_candidate)]
-    pub fn remove_client(&self, id: ClientId) -> Option<()> {
+    pub fn remove_client(&self, ip: IpAddr) -> Option<()> {
         let mut clients = self.clients.lock_mut();
         let prev_len = clients.len();
-        clients.retain(|r| r.id != id);
+        clients.retain(|r| r.id != ip.into());
         (clients.len() != prev_len).then(|| ())
     }
 
