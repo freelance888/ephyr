@@ -24,40 +24,44 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
-
 // ALL OTPUTS START
 Cypress.Commands.add('allOutputStart', () => {
-	cy.get("span:contains('Start All')").click();
-	cy.get('[slot="confirm"]').click();
+  cy.get("span:contains('Start All')").click();
+  cy.get('[slot="confirm"]').click();
 
-	cy.get('[slot="confirm"]')
-	.should('not.exist')
-})
+  cy.get('[slot="confirm"]').should('not.exist');
+});
 
 // ALL OTPUTS STOP
 Cypress.Commands.add('allOutputStop', () => {
-	cy.get("span:contains('Stop All')").click();
-	cy.get('[slot="confirm"]').click();
+  cy.get("span:contains('Stop All')").click();
+  cy.get('[slot="confirm"]').click();
 
-	cy.get('[slot="confirm"]')
-	.should('not.exist')
-})
+  cy.get('[slot="confirm"]').should('not.exist');
+});
 // REMOVE ALL INPUTS
 Cypress.Commands.add('deleteAllInputs', () => {
-    cy.get(".export-import-all").click();
-	cy.get('.uk-textarea').invoke('val', `{
+  cy.get('.export-import-all').click();
+  cy.get('.uk-textarea')
+    .invoke(
+      'val',
+      `{
       "restreams":[],
       "version": "v1"
-    }`).trigger('input')
-	cy.get("button:contains('Replace')").click()
-	cy.get("button:contains('Replace')")
-	.should('not.exist')
-})
+    }`
+    )
+    .trigger('input');
+  cy.get("button:contains('Replace')").click();
+  cy.get("button:contains('Replace')").should('not.exist');
+});
 
 // IMPORT ALL INPUTS
 Cypress.Commands.add('importJsonConf', (host) => {
-    cy.get(".export-import-all").click();
-	cy.get('.uk-textarea').invoke('val', `{
+  cy.get('.export-import-all').click();
+  cy.get('.uk-textarea')
+    .invoke(
+      'val',
+      `{
   "version": "v1",
   "settings": {
     "title": null,
@@ -191,15 +195,16 @@ Cypress.Commands.add('importJsonConf', (host) => {
       }
     }
   ]
-}`).trigger('input')
-	cy.get("button:contains('Replace')").click()
-	cy.get("button:contains('Replace')")
-	.should('not.exist')
-})
+}`
+    )
+    .trigger('input');
+  cy.get("button:contains('Replace')").click();
+  cy.get("button:contains('Replace')").should('not.exist');
+});
 
 // IMPORT ALL INPUTS
 Cypress.Commands.add('runTestStream', (rtmp) => {
-    cy.exec(
+  cy.exec(
     `ffmpeg -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
   );
-})
+});
