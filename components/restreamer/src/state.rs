@@ -27,6 +27,9 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
+use chrono::{DateTime, Utc};
+use std::net::IpAddr;
+use std::str::FromStr;
 
 /// Server's settings.
 ///
@@ -98,6 +101,9 @@ pub struct State {
 
     /// All [`Restream`]s performed by this application.
     pub restreams: Mutable<Vec<Restream>>,
+
+    /// All [`Client`]s for monitoring
+    pub clients: Mutable<Vec<Client>>,
 }
 
 impl State {
@@ -150,11 +156,16 @@ impl State {
             .map_err(|e| log::error!("Failed to persist server state: {}", e))
         };
         let persist_state2 = persist_state1.clone();
+        let persist_state3 = persist_state1.clone();
+
         Self::on_change("persist_restreams", &state.restreams, move |_| {
             persist_state1()
         });
         Self::on_change("persist_settings", &state.settings, move |_| {
             persist_state2()
+        });
+        Self::on_change("persist_clients", &state.clients, move |_| {
+            persist_state3()
         });
 
         Ok(state)
@@ -245,6 +256,35 @@ impl State {
             .map(|_| Ok(()))
             .forward(sink::drain()),
         ));
+    }
+
+    /// Adds a new [`Client`] by ip address to this [`State`]
+    ///
+    /// # Errors
+    ///
+    /// If this [`State`] has a [`Client`] with the same ip address
+    pub fn add_client(&self, ip: IpAddr) -> anyhow::Result<()> {
+        let mut clients = self.clients.lock_mut();
+
+        if clients.iter().any(|r| r.id == ClientId::new(ip)) {
+            return Err(anyhow!("Client ip address '{}' is used already", ip));
+        }
+
+        clients.push(Client::new(ip));
+
+        Ok(())
+    }
+
+    /// Removes a [`Client`] with the given `id` from this [`State`].
+    ///
+    /// Returns [`None`] if there is no [`Client`] with such `id` in this
+    /// [`State`].
+    #[allow(clippy::must_use_candidate)]
+    pub fn remove_client(&self, id: ClientId) -> Option<()> {
+        let mut clients = self.clients.lock_mut();
+        let prev_len = clients.len();
+        clients.retain(|r| r.id != id);
+        (clients.len() != prev_len).then(|| ())
     }
 
     /// Adds a new [`Restream`] by the given `spec` to this [`State`].
@@ -667,6 +707,75 @@ impl State {
                 o.enabled = enabled;
                 true
             })
+    }
+}
+
+/// Client represents server with running `ephyr` app and can return some statistics
+/// about status of [`Input`]s, [`Outputs`]s .
+#[derive(
+Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize
+)]
+pub struct Client {
+    /// Unique id of client. Essentially it's [`IPAddr`].
+    pub id: ClientId,
+
+    /// Statistics for this [`Client`].
+    pub statistics: Option<ClientStatistics>,
+}
+
+impl Client {
+    /// Creates a new [`Client`] passing ip address as identity.
+    #[must_use]
+    pub fn new(ip_address: IpAddr) -> Self {
+        Self {
+            id: ClientId::new(ip_address),
+            statistics: None
+        }
+    }
+}
+
+/// ID of a [`Client`].
+#[derive(
+Clone,
+Copy,
+Debug,
+Deserialize,
+Display,
+Eq,
+From,
+Into,
+PartialEq,
+Serialize,
+)]
+pub struct ClientId(IpAddr);
+
+impl ClientId {
+    /// Constructs [`IpAddr`] from string.
+    #[inline]
+    #[must_use]
+    pub fn new(ip: IpAddr) -> Self {
+        Self(ip)
+    }
+}
+
+#[graphql_scalar]
+impl<S> GraphQLScalar for ClientId
+    where
+        S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
+        Value::scalar(self.0.to_string())
+    }
+
+    fn from_input_value(v: &InputValue) -> Option<Self> {
+        v.as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(|s| IpAddr::from_str(s).ok())
+            .and_then(|ip| Some(Self::new(ip)))
+    }
+
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -2152,6 +2261,38 @@ mod volume_spec {
         ] {
             let actual = Volume::new(*input).unwrap().display_as_fraction();
             assert_eq!(&actual, *expected);
+        }
+    }
+}
+
+/// Information about status of all [Input] and [Outputs] and
+/// server health info (CPU usage, memory usage, etc.)
+#[derive(Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize)]
+pub struct ClientStatistics {
+    /// Client public ip
+    pub public_host: Option<String>,
+
+    /// Time when statistics was taken
+    pub timestamp: Option<DateTime<Utc>>,
+}
+
+impl ClientStatistics {
+    /// Creates a new [`ClientStatistics`] object with snapshot of
+    /// current client's statistics about [Input]s and [Outputs]s
+    #[must_use]
+    pub fn new(public_ip: String) -> Self {
+        Self {
+            public_host: Some(public_ip),
+            timestamp: Some(Utc::now())
+        }
+    }
+}
+
+impl Default for ClientStatistics {
+    fn default() -> ClientStatistics {
+        ClientStatistics {
+            public_host: None,
+            timestamp: None,
         }
     }
 }

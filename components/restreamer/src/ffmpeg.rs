@@ -25,6 +25,7 @@ use crate::{
     teamspeak,
 };
 use std::result::Result::Err;
+use crate::types::DroppableAbortHandle;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -290,7 +291,7 @@ impl Restreamer {
         })));
 
         Self {
-            abort: DroppableAbortHandle(abort_handle),
+            abort: DroppableAbortHandle::new(abort_handle),
             kind,
         }
     }
@@ -1122,19 +1123,6 @@ impl Mixin {
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
         self.url != actual.url || self.delay != actual.delay
-    }
-}
-
-/// Abort handle of a spawned [FFmpeg] [`Restreamer`] process.
-///
-/// [FFmpeg]: https://ffmpeg.org
-#[derive(Clone, Debug)]
-pub struct DroppableAbortHandle(future::AbortHandle);
-
-impl Drop for DroppableAbortHandle {
-    #[inline]
-    fn drop(&mut self) {
-        self.0.abort();
     }
 }
 

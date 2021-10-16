@@ -11,6 +11,41 @@
     },
     "types": [
       {
+        "kind": "OBJECT",
+        "name": "ClientStatistics",
+        "description": "Information about status of all [Input] and [Outputs] and\nserver health info (CPU usage, memory usage, etc.)",
+        "fields": [
+          {
+            "name": "publicHost",
+            "description": "Client public ip",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "timestamp",
+            "description": "Time when statistics was taken",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTimeUtc",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "SCALAR",
         "name": "OutputId",
         "description": null,
@@ -916,6 +951,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "DateTimeUtc",
+        "description": "DateTime",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "Input",
         "description": "Upstream source that a `Restream` receives a live stream from.",
@@ -1420,6 +1465,22 @@
         "name": "Query",
         "description": null,
         "fields": [
+          {
+            "name": "statistics",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ClientStatistics",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
           {
             "name": "info",
             "description": "Returns the current `Info` parameters of this server.",
