@@ -9,11 +9,16 @@ use std::{
 use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
-use crate::state::{Client, ClientId};
+use crate::state::{Client, ClientId, ClientStatisticsResponse};
 use std::net::{IpAddr, Ipv4Addr};
 use crate::display_panic;
 use crate::types::DroppableAbortHandle;
 use crate::api::graphql;
+
+use graphql_client::{GraphQLQuery, Response};
+use std::result::Result;
+use reqwest;
+
 
 /// Poll of [`ClientJob`]s for getting statistics info on each [`Client`]
 ///
@@ -53,6 +58,15 @@ impl ClientJobsPool {
     }
 }
 
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "dashboard.graphql.schema.json",
+    query_path = "src/api/graphql/queries/client_stat.graphql",
+    response_derives = "Debug",
+)]
+pub struct StatisticsQuery;
+
+
 /// Job for retrieving statistics from client from specific `ip`
 #[derive(Debug)]
 pub struct ClientJob {
@@ -72,13 +86,10 @@ impl ClientJob {
             loop {
                 let _ = AssertUnwindSafe(
                     async move {
-                        log::info!("Get statistics from client: {}", client_id);
 
                         let client_ip: IpAddr = client_id.into();
                         let ip0: IpAddr = Ipv4Addr::new(0, 0, 0, 0).into();
                         let ip100: IpAddr = Ipv4Addr::new(0, 0, 0, 100).into();
-
-                        if client_ip == ip0 { panic!("Can't get data from {}", ip0) };
 
                         let result: Result<(), graphql::Error> = if client_ip == ip100 {
                             let msg = format!("Error while getting data from {}", ip100);
@@ -116,4 +127,28 @@ impl ClientJob {
             abort: DroppableAbortHandle::new(abort_handle),
         }
     }
+
+    async fn fetch_client_stat(client_id: ClientId) -> Result<u8, reqwest::Error> {
+        log::info!("Get statistics from client: {}", client_id);
+
+        type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
+        type ResponseData = <StatisticsQuery as GraphQLQuery>::ResponseData;
+
+        let variables = Vars {};
+        let request_body = StatisticsQuery::build_query(variables);
+
+        let client = reqwest::Client::new();
+        let url = format!("http://{}/api", client_id);
+        let res = client.post(url).json(&request_body).send().await?;
+
+        let _: Response<ResponseData> = res.json().await?;
+
+        // ClientStatisticsResponse {
+        //     data: response.data,
+        //     errors: response.errors.into_iter().map(|e| )
+        // }
+
+        Ok(1)
+    }
+
 }

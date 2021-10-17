@@ -30,6 +30,7 @@ use crate::{display_panic, serde::is_false, spec, srs, Spec};
 use chrono::{DateTime, Utc};
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::error::Error;
 
 /// Server's settings.
 ///
@@ -2295,4 +2296,15 @@ impl Default for ClientStatistics {
             timestamp: None,
         }
     }
+}
+
+
+/// Current state of [`ClientStatistics`] request
+///
+pub struct ClientStatisticsResponse {
+    /// Statistics
+    pub data: Option<ClientStatistics>,
+
+    /// The top-level errors returned by the server.
+    pub errors: Option<Vec<anyhow::Error>>,
 }

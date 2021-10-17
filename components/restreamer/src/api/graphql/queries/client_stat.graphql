@@ -1,0 +1,6 @@
+query StatisticsQuery {
+    statistics {
+        publicHost
+        timestamp
+    }
+}
