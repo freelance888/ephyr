@@ -164,7 +164,10 @@
 
     <div class="output-mixes">
       <div class="uk-flex uk-margin-small-bottom">
-        <span class="uk-margin-small-right status-indicator" data-testid={`output-status:${value.status}`}>
+        <span
+          class="uk-margin-small-right status-indicator"
+          data-testid={`output-status:${value.status}`}
+        >
           {#if value.status === 'ONLINE'}
             <i class="fas fa-circle online" />
           {:else if value.status === 'INITIALIZING'}

@@ -151,7 +151,11 @@
 </script>
 
 <template>
-  <div data-testid={value.label} class="uk-section uk-section-muted uk-section-xsmall" class:hidden>
+  <div
+    data-testid={value.label}
+    class="uk-section uk-section-muted uk-section-xsmall"
+    class:hidden
+  >
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
     <Confirm let:confirm>
