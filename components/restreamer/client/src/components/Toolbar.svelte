@@ -79,6 +79,7 @@
   {/key}
   <div class="add-input">
     <button
+      data-testid="add-input:open-modal-btn"
       class="uk-button uk-button-primary"
       on:click={() => restreamModal.openAdd()}
     >

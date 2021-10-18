@@ -103,6 +103,7 @@
             <input
               class="uk-input uk-form-small"
               type="text"
+              data-testid="add-input-modal:label-input"
               bind:value={$value.label}
               on:change={() => value.sanitizeLabel()}
               placeholder="optional label"
@@ -111,6 +112,7 @@
               >rtmp://{public_host}/<input
                 class="uk-input"
                 type="text"
+                data-testid="add-input-modal:stream-key-input"
                 placeholder="<stream-key>"
                 bind:value={$value.key}
               />/origin</label
@@ -184,6 +186,7 @@
 
         <button
           class="uk-button uk-button-primary"
+          data-testid="add-input-modal:confirm"
           disabled={!submitable}
           on:click={submit}
           >{#if $value.edit_id}Edit{:else}Add{/if}</button

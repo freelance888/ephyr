@@ -69,6 +69,7 @@
         <div class="endpoint">
           <div
             class:endpoint-status-icon={true}
+            data-testid={`endpoint-status:${endpoint.status}`}
             class:uk-alert-danger={endpoint.status === 'OFFLINE'}
             class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
             class:uk-alert-success={endpoint.status === 'ONLINE'}

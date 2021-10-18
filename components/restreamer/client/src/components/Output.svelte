@@ -102,6 +102,7 @@
 <template>
   <div
     class="uk-card uk-card-default uk-card-body uk-flex"
+    data-testid={value.label}
     class:hidden
     class:grouped={!isMixPage()}
     class:uk-margin-left={!isMixPage()}
@@ -146,6 +147,7 @@
         <Confirm let:confirm>
           <Toggle
             id="output-toggle-{value.id}"
+            data-testid="toggle-output-status"
             classes="small"
             checked={value.enabled}
             confirmFn={enableConfirmation ? confirm : undefined}
@@ -162,23 +164,17 @@
 
     <div class="output-mixes">
       <div class="uk-flex uk-margin-small-bottom">
-        {#if value.status === 'ONLINE'}
-          <span class="uk-margin-small-right status-indicator"
-            ><i class="fas fa-circle online" /></span
-          >
-        {:else if value.status === 'INITIALIZING'}
-          <span class="uk-margin-small-right status-indicator"
-            ><i class="fas fa-dot-circle initializing" /></span
-          >
-        {:else if value.status === 'UNSTABLE'}
-          <span class="uk-margin-small-right status-indicator"
-            ><i class="fas fa-dot-circle unstable" /></span
-          >
-        {:else}
-          <span class="uk-margin-small-right status-indicator"
-            ><i class="far fa-dot-circle offline" /></span
-          >
-        {/if}
+        <span class="uk-margin-small-right status-indicator" data-testid={`output-status:${value.status}`}>
+          {#if value.status === 'ONLINE'}
+            <i class="fas fa-circle online" />
+          {:else if value.status === 'INITIALIZING'}
+            <i class="fas fa-dot-circle initializing" />
+          {:else if value.status === 'UNSTABLE'}
+            <i class="fas fa-dot-circle unstable" />
+          {:else}
+            <i class="far fa-dot-circle offline" />
+          {/if}
+        </span>
 
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
           <RecordsModal let:open id={value.id} {public_host}>
