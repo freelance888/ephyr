@@ -134,12 +134,11 @@ impl ClientJob {
         type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
         type ResponseData = <StatisticsQuery as GraphQLQuery>::ResponseData;
 
-        let variables = Vars {};
-        let request_body = StatisticsQuery::build_query(variables);
+        let request_body = StatisticsQuery::build_query(Vars {});
 
         let client = reqwest::Client::new();
         let url = format!("http://{}/api", client_id);
-        let res = client.post(url).json(&request_body).send().await?;
+        let res = client.post(url.as_str()).json(&request_body).send().await?;
 
         let response: Response<ResponseData> = res.json().await?;
         let errors= response.errors.unwrap_or(vec![]).into_iter().map(|e| e.message).collect();
