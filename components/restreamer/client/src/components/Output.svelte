@@ -164,15 +164,19 @@
       <div class="uk-flex uk-margin-small-bottom">
         {#if value.status === 'ONLINE'}
           <span class="uk-margin-small-right status-indicator"
-            ><i class="fas fa-circle uk-alert-success" /></span
+            ><i class="fas fa-circle online" /></span
           >
         {:else if value.status === 'INITIALIZING'}
           <span class="uk-margin-small-right status-indicator"
-            ><i class="fas fa-dot-circle uk-alert-warning" /></span
+            ><i class="fas fa-dot-circle initializing" /></span
+          >
+        {:else if value.status === 'UNSTABLE'}
+          <span class="uk-margin-small-right status-indicator"
+            ><i class="fas fa-dot-circle unstable" /></span
           >
         {:else}
           <span class="uk-margin-small-right status-indicator"
-            ><i class="far fa-dot-circle uk-alert-danger" /></span
+            ><i class="far fa-dot-circle offline" /></span
           >
         {/if}
 

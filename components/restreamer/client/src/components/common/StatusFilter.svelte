@@ -26,6 +26,7 @@
       class:online={status === 'ONLINE'}
       class:offline={status === 'OFFLINE'}
       class:initializing={status === 'INITIALIZING'}
+      class:unstable={status === 'UNSTABLE'}
     >
       {count}
     </div>
@@ -44,12 +45,6 @@
       padding: 1px 4px
       border-radius: 2px
       outline: none
-      &.initializing
-        color: #faa05a
-      &.online
-        color: #32d296
-      &.offline
-        color: #f0506e;
       &.active
         background-color: #cecece
       &.disabled
