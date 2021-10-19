@@ -28,9 +28,6 @@ use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 use chrono::{DateTime, Utc};
-use std::net::IpAddr;
-use std::str::FromStr;
-use std::error::Error;
 
 /// Server's settings.
 ///
@@ -264,14 +261,14 @@ impl State {
     /// # Errors
     ///
     /// If this [`State`] has a [`Client`] with the same ip address
-    pub fn add_client(&self, ip: IpAddr) -> anyhow::Result<()> {
+    pub fn add_client(&self, host: String) -> anyhow::Result<()> {
         let mut clients = self.clients.lock_mut();
 
-        if clients.iter().any(|r| r.id == ClientId::new(ip)) {
-            return Err(anyhow!("Client ip address '{}' is used already", ip));
+        if clients.iter().any(|r|  r.id == ClientId::new(host.clone())) {
+            return Err(anyhow!("Client ip address '{}' is used already", host.clone()));
         }
 
-        clients.push(Client::new(ip));
+        clients.push(Client::new(host.clone()));
 
         Ok(())
     }
@@ -281,10 +278,10 @@ impl State {
     /// Returns [`None`] if there is no [`Client`] with such `id` in this
     /// [`State`].
     #[allow(clippy::must_use_candidate)]
-    pub fn remove_client(&self, ip: IpAddr) -> Option<()> {
+    pub fn remove_client(&self, host: String) -> Option<()> {
         let mut clients = self.clients.lock_mut();
         let prev_len = clients.len();
-        clients.retain(|r| r.id != ip.into());
+        clients.retain(|r| r.id != ClientId::new(host.clone()));
         (clients.len() != prev_len).then(|| ())
     }
 
@@ -717,7 +714,7 @@ impl State {
 Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize
 )]
 pub struct Client {
-    /// Unique id of client. Essentially it's [`IPAddr`].
+    /// Unique id of client. IP or domain name.
     pub id: ClientId,
 
     /// Statistics for this [`Client`].
@@ -725,11 +722,11 @@ pub struct Client {
 }
 
 impl Client {
-    /// Creates a new [`Client`] passing ip address as identity.
+    /// Creates a new [`Client`] passing host or ip address as identity.
     #[must_use]
-    pub fn new(ip_address: IpAddr) -> Self {
+    pub fn new(host: String) -> Self {
         Self {
-            id: ClientId::new(ip_address),
+            id: ClientId::new(host),
             statistics: None
         }
     }
@@ -738,7 +735,6 @@ impl Client {
 /// ID of a [`Client`].
 #[derive(
 Clone,
-Copy,
 Debug,
 Deserialize,
 Display,
@@ -747,15 +743,16 @@ From,
 Into,
 PartialEq,
 Serialize,
+Hash
 )]
-pub struct ClientId(IpAddr);
+pub struct ClientId(String);
 
 impl ClientId {
-    /// Constructs [`IpAddr`] from string.
+    /// Constructs [`ClientId`] from string.
     #[inline]
     #[must_use]
-    pub fn new(ip: IpAddr) -> Self {
-        Self(ip)
+    pub fn new(host: String) -> Self {
+        Self(host)
     }
 }
 
@@ -771,8 +768,7 @@ impl<S> GraphQLScalar for ClientId
     fn from_input_value(v: &InputValue) -> Option<Self> {
         v.as_scalar()
             .and_then(ScalarValue::as_str)
-            .and_then(|s| IpAddr::from_str(s).ok())
-            .and_then(|ip| Some(Self::new(ip)))
+            .and_then(|host| Some(Self::new(host.to_string())))
     }
 
     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
@@ -2301,10 +2297,11 @@ impl Default for ClientStatistics {
 
 /// Current state of [`ClientStatistics`] request
 ///
+#[derive(Debug)]
 pub struct ClientStatisticsResponse {
     /// Statistics
     pub data: Option<ClientStatistics>,
 
     /// The top-level errors returned by the server.
-    pub errors: Option<Vec<anyhow::Error>>,
+    pub errors: Option<Vec<String>>,
 }

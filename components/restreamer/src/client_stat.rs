@@ -1,5 +1,9 @@
 //! Clients statistics
 
+// This is required because of graphql_client generate
+// module for query without documentation and causes warning messages
+#![allow(missing_docs)]
+
 use std::{
     collections::HashMap,
     panic::AssertUnwindSafe,
@@ -9,23 +13,20 @@ use std::{
 use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
-use crate::state::{Client, ClientId, ClientStatisticsResponse};
-use std::net::{IpAddr, Ipv4Addr};
+use crate::state::{Client, ClientId, ClientStatisticsResponse, ClientStatistics};
 use crate::display_panic;
 use crate::types::DroppableAbortHandle;
-use crate::api::graphql;
 
 use graphql_client::{GraphQLQuery, Response};
-use std::result::Result;
 use reqwest;
+use chrono::{DateTime, Utc};
 
-
-/// Poll of [`ClientJob`]s for getting statistics info on each [`Client`]
+/// Poll of [`ClientJob`]s for getting statistics info from each [`Client`]
 ///
 #[derive(Debug)]
 pub struct ClientJobsPool {
     /// Pool of [`ClientJob`]s
-    pool: HashMap<IpAddr, ClientJob>,
+    pool: HashMap<String, ClientJob>,
 }
 
 impl ClientJobsPool {
@@ -40,38 +41,41 @@ impl ClientJobsPool {
 
     /// Creates new [`ClientJob`] for added [`Client`] and removes for deleted [`Client`]
     pub fn apply(&mut self, clients: &[Client]) {
-        let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
+        let mut new_pool= HashMap::with_capacity(self.pool.len() + 1);
 
         for c in clients {
-            let client_ip = c.id.into();
+            let client_id = c.id.clone().into();
             let job = self
                 .pool
-                .remove(&client_ip)
+                .remove(&client_id)
                 .unwrap_or_else(|| {
-                    ClientJob::run(c.id)
+                    ClientJob::run(c.id.clone())
                 });
 
-            drop(new_pool.insert(client_ip, job));
+            drop(new_pool.insert(client_id, job));
         }
 
         self.pool = new_pool;
     }
 }
 
+type DateTimeUtc = DateTime<Utc>;
+
+/// GrapthQL query for getting client statistics
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "dashboard.graphql.schema.json",
+    schema_path = "client.graphql.schema.json",
     query_path = "src/api/graphql/queries/client_stat.graphql",
     response_derives = "Debug",
 )]
+#[derive(Debug)]
 pub struct StatisticsQuery;
-
 
 /// Job for retrieving statistics from client from specific `ip`
 #[derive(Debug)]
 pub struct ClientJob {
     /// IP address - identity of client
-    ip: IpAddr,
+    id: ClientId,
 
     /// Callback for stop job
     abort: DroppableAbortHandle,
@@ -79,26 +83,22 @@ pub struct ClientJob {
 
 impl ClientJob {
     /// Spawns new future for getting client statistics from [`Client`]
-    /// [`ClientId`] is essentially IP address of remote host
     #[must_use]
-    pub fn run(client_id: ClientId) -> Self {
+    pub fn run(id: ClientId) -> Self {
+        let client_id1 = id.clone();
+        let client_id2 = id.clone();
+
         let (spawner, abort_handle) = future::abortable(async move {
             loop {
+                let client_id = &id;
                 let _ = AssertUnwindSafe(
                     async move {
-
-                        let client_ip: IpAddr = client_id.into();
-                        let ip0: IpAddr = Ipv4Addr::new(0, 0, 0, 0).into();
-                        let ip100: IpAddr = Ipv4Addr::new(0, 0, 0, 100).into();
-
-                        let result: Result<(), graphql::Error> = if client_ip == ip100 {
-                            let msg = format!("Error while getting data from {}", ip100);
-                            Err(graphql::Error::new("ERROR_UNKNOWN").message(&msg))
-                        } else {
-                            Ok(())
-                        };
-
-                        future::ready(result).await
+                        let result = Self::fetch_client_stat(client_id).await;
+                        println!("DATA from {}: {:#?}", client_id, result);
+                        match result {
+                            Ok(_) => Ok(()),
+                            Err(e) => Err(e)
+                        }
                     }
                     .unwrap_or_else(|e| {
                         log::info!("Error retrieving data for client {}. {}", client_id, e);
@@ -119,16 +119,16 @@ impl ClientJob {
 
         // Spawn periodic job for gathering info from client
         drop(tokio::spawn(spawner.map(move |_| {
-            log::info!("Client {} removed. Stop getting statistics", client_id);
+            log::info!("Client {} removed. Stop getting statistics", client_id1);
         })));
 
         Self {
-            ip: client_id.into(),
+            id: client_id2,
             abort: DroppableAbortHandle::new(abort_handle),
         }
     }
 
-    async fn fetch_client_stat(client_id: ClientId) -> Result<u8, reqwest::Error> {
+    async fn fetch_client_stat(client_id: &ClientId) -> anyhow::Result<ClientStatisticsResponse> {
         log::info!("Get statistics from client: {}", client_id);
 
         type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
@@ -141,14 +141,21 @@ impl ClientJob {
         let url = format!("http://{}/api", client_id);
         let res = client.post(url).json(&request_body).send().await?;
 
-        let _: Response<ResponseData> = res.json().await?;
+        let response: Response<ResponseData> = res.json().await?;
+        let errors= response.errors.unwrap_or(vec![]).into_iter().map(|e| e.message).collect();
 
-        // ClientStatisticsResponse {
-        //     data: response.data,
-        //     errors: response.errors.into_iter().map(|e| )
-        // }
-
-        Ok(1)
+        match response.data {
+            Some(data) => Ok(ClientStatisticsResponse {
+                data: Some(ClientStatistics {
+                    public_host: data.statistics.public_host,
+                    timestamp: data.statistics.timestamp,
+                }),
+                errors: Some(errors)
+            }),
+            None => Ok(ClientStatisticsResponse {
+                data: None,
+                errors: Some(errors)
+            })
+        }
     }
-
 }
