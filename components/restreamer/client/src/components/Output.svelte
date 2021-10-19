@@ -164,21 +164,31 @@
 
     <div class="output-mixes">
       <div class="uk-flex uk-margin-small-bottom">
-        <span
-          class="uk-margin-small-right status-indicator"
-          data-testid={`output-status:${value.status}`}
-        >
-          {#if value.status === 'ONLINE'}
-            <i class="fas fa-circle online" />
-          {:else if value.status === 'INITIALIZING'}
-            <i class="fas fa-dot-circle initializing" />
-          {:else if value.status === 'UNSTABLE'}
-            <i class="fas fa-dot-circle unstable" />
-          {:else}
-            <i class="far fa-dot-circle offline" />
-          {/if}
-        </span>
-
+        {#if value.status === 'ONLINE'}
+          <span
+            class="uk-margin-small-right status-indicator"
+            data-testid={`output-status:${value.status}`}
+            ><i class="fas fa-circle online" /></span
+          >
+        {:else if value.status === 'INITIALIZING'}
+          <span
+            class="uk-margin-small-right status-indicator"
+            data-testid={`output-status:${value.status}`}
+            ><i class="fas fa-dot-circle initializing" /></span
+          >
+        {:else if value.status === 'UNSTABLE'}
+          <span
+            class="uk-margin-small-right status-indicator"
+            data-testid={`output-status:${value.status}`}
+            ><i class="fas fa-dot-circle unstable" /></span
+          >
+        {:else}
+          <span
+            class="uk-margin-small-right status-indicator"
+            data-testid={`output-status:${value.status}`}
+            ><i class="far fa-dot-circle offline" /></span
+          >
+        {/if}
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
           <RecordsModal let:open id={value.id} {public_host}>
             <a
