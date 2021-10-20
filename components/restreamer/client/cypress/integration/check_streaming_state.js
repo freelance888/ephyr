@@ -34,29 +34,41 @@ describe('CHECK STREAMING STATE', () => {
       '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
     ).should('have.css', 'color', greenColor);
 
-    cy.get(
-      '[data-testid=SINGLE] [data-icon="arrow-right"]'
-    ).should('have.css', 'color', greenColor);
+    cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
 
-    cy.get(
-      '[data-testid=RU] [data-icon="arrow-right"]'
-    ).should('have.css', 'color', greenColor);
+    cy.get('[data-testid=RU] [data-icon="arrow-right"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
 
     cy.wait(5000);
-    cy.get(
-          '[data-testid=Teamspeak] [data-icon="circle"]'
-    ).should('have.css', 'color', greenColor);
+    cy.get('[data-testid=Teamspeak] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
 
-    cy.get(
-          '[data-testid=Twitter] [data-icon="circle"]'
-    ).should('have.css', 'color', greenColor);
+    cy.get('[data-testid=Twitter] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
 
-    cy.get(
-          '[data-testid="[Manual Start] FB"] [data-icon="circle"]'
-    ).should('have.css', 'color', greenColor);
-    
-    cy.get(
-          '[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]'
-    ).should('have.css', 'color', brownColor);
+    cy.get('[data-testid="[Manual Start] FB"] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
+
+    cy.get('[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]').should(
+      'have.css',
+      'color',
+      brownColor
+    );
   });
 });
