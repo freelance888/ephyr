@@ -37,6 +37,10 @@ describe('CHECK STREAMING STATE', () => {
       '[data-icon="arrow-right"][title="Accepts origin live RTMP stream"]'
     ).should('have.css', 'color', greenColor);
 
+    cy.get(
+      '[data-testid=RU] [data-icon="arrow-right"]'
+    ).should('have.css', 'color', greenColor);
+
     cy.wait(5000);
     cy.get('.status-indicator > [data-icon="circle"]').should(
       'have.css',
