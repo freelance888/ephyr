@@ -15,6 +15,7 @@ describe('CHECK STREAMING STATE', () => {
   });
 
   const greenColor = 'rgb(50, 210, 150)';
+  const brownColor = 'rgb(102, 102, 102)';
 
   it('Assert', () => {
     cy.get(
@@ -34,7 +35,7 @@ describe('CHECK STREAMING STATE', () => {
     ).should('have.css', 'color', greenColor);
 
     cy.get(
-      '[data-icon="arrow-right"][title="Accepts origin live RTMP stream"]'
+      '[data-testid=SINGLE] [data-icon="arrow-right"]'
     ).should('have.css', 'color', greenColor);
 
     cy.get(
@@ -42,10 +43,20 @@ describe('CHECK STREAMING STATE', () => {
     ).should('have.css', 'color', greenColor);
 
     cy.wait(5000);
-    cy.get('.status-indicator > [data-icon="circle"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
+    cy.get(
+          '[data-testid=Teamspeak] [data-icon="circle"]'
+    ).should('have.css', 'color', greenColor);
+
+    cy.get(
+          '[data-testid=Twitter] [data-icon="circle"]'
+    ).should('have.css', 'color', greenColor);
+
+    cy.get(
+          '[data-testid="[Manual Start] FB"] [data-icon="circle"]'
+    ).should('have.css', 'color', greenColor);
+    
+    cy.get(
+          '[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]'
+    ).should('have.css', 'color', brownColor);
   });
 });
