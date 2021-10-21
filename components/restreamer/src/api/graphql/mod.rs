@@ -3,8 +3,8 @@
 //! [GraphQL]: https://graphql.com
 
 pub mod client;
-pub mod mix;
 pub mod dashboard;
+pub mod mix;
 
 use std::{borrow::Cow, convert::Infallible, fmt, ops::Deref};
 

@@ -24,8 +24,8 @@ use crate::{
 };
 
 use super::Context;
-use url::Url;
 use crate::state::ClientStatistics;
+use url::Url;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -747,7 +747,6 @@ pub struct QueriesRoot;
 
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
-
     fn statistics(context: &Context) -> ClientStatistics {
         let public_ip = context.config().public_host.clone().unwrap();
         ClientStatistics::new(public_ip)

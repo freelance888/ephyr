@@ -264,8 +264,11 @@ impl State {
     pub fn add_client(&self, host: String) -> anyhow::Result<()> {
         let mut clients = self.clients.lock_mut();
 
-        if clients.iter().any(|r|  r.id == ClientId::new(host.clone())) {
-            return Err(anyhow!("Client ip address '{}' is used already", host.clone()));
+        if clients.iter().any(|r| r.id == ClientId::new(host.clone())) {
+            return Err(anyhow!(
+                "Client ip address '{}' is used already",
+                host.clone()
+            ));
         }
 
         clients.push(Client::new(host.clone()));
@@ -711,14 +714,14 @@ impl State {
 /// Client represents server with running `ephyr` app and can return some statistics
 /// about status of [`Input`]s, [`Outputs`]s .
 #[derive(
-Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
 pub struct Client {
     /// Unique id of client. IP or domain name.
     pub id: ClientId,
 
     /// Statistics for this [`Client`].
-    pub statistics: Option<ClientStatistics>,
+    pub statistics: Option<ClientStatisticsResponse>,
 }
 
 impl Client {
@@ -727,23 +730,24 @@ impl Client {
     pub fn new(host: String) -> Self {
         Self {
             id: ClientId::new(host),
-            statistics: None
+            statistics: None,
         }
     }
 }
 
 /// ID of a [`Client`].
 #[derive(
-Clone,
-Debug,
-Deserialize,
-Display,
-Eq,
-From,
-Into,
-PartialEq,
-Serialize,
-Hash
+    Clone,
+    Debug,
+    Deserialize,
+    Display,
+    Eq,
+    From,
+    GraphQLScalarValue,
+    Into,
+    PartialEq,
+    Serialize,
+    Hash,
 )]
 pub struct ClientId(String);
 
@@ -753,26 +757,6 @@ impl ClientId {
     #[must_use]
     pub fn new(host: String) -> Self {
         Self(host)
-    }
-}
-
-#[graphql_scalar]
-impl<S> GraphQLScalar for ClientId
-    where
-        S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.to_string())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(|host| Some(Self::new(host.to_string())))
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -2265,42 +2249,76 @@ mod volume_spec {
     }
 }
 
-/// Information about status of all [Input] and [Outputs] and
+/// Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+)]
+pub struct StatusStatistics {
+    /// Amount of items with `Initializing` [`Status`]
+    pub initializing: i32,
+
+    /// Amount of items with `Online` [`Status`]
+    pub online: i32,
+
+    /// Amount of items with `Offline` [`Status`]
+    pub offline: i32,
+
+    /// Amount of items with `Unstable` [`Status`]
+    pub unstable: i32,
+}
+
+impl StatusStatistics {
+    /// Creates a new [`StatusStatistics`] for [`Input`] or [`Output`] statuses of the
+    /// [`Client`]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            initializing: 0,
+            online: 0,
+            offline: 0,
+            unstable: 0,
+        }
+    }
+}
+
+/// Information about status of all [`Input`]s and [`Output`]s and
 /// server health info (CPU usage, memory usage, etc.)
-#[derive(Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+)]
 pub struct ClientStatistics {
-    /// Client public ip
+    /// Client host
     pub public_host: Option<String>,
 
     /// Time when statistics was taken
     pub timestamp: Option<DateTime<Utc>>,
+
+    /// Count of inputs grouped by status
+    pub inputs: StatusStatistics,
+
+    /// Count of outputs grouped by status
+    pub outputs: StatusStatistics,
 }
 
 impl ClientStatistics {
     /// Creates a new [`ClientStatistics`] object with snapshot of
-    /// current client's statistics about [Input]s and [Outputs]s
+    /// current client's statistics regarding [`Input`]s and [`Output`]s
     #[must_use]
     pub fn new(public_ip: String) -> Self {
         Self {
             public_host: Some(public_ip),
-            timestamp: Some(Utc::now())
+            timestamp: Some(Utc::now()),
+            inputs: StatusStatistics::new(),
+            outputs: StatusStatistics::new(),
         }
     }
 }
-
-impl Default for ClientStatistics {
-    fn default() -> ClientStatistics {
-        ClientStatistics {
-            public_host: None,
-            timestamp: None,
-        }
-    }
-}
-
 
 /// Current state of [`ClientStatistics`] request
 ///
-#[derive(Debug)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+)]
 pub struct ClientStatisticsResponse {
     /// Statistics
     pub data: Option<ClientStatistics>,

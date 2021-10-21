@@ -8,7 +8,7 @@ use tokio::{fs, time};
 
 use crate::{
     cli::{Failure, Opts},
-    dvr, ffmpeg, srs, teamspeak, State, client_stat
+    client_stat, dvr, ffmpeg, srs, teamspeak, State,
 };
 
 /// Initializes and runs all application's HTTP servers.
@@ -68,8 +68,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         future::ready(())
     });
 
-    let mut client_jobs =
-        client_stat::ClientJobsPool::new();
+    let mut client_jobs = client_stat::ClientJobsPool::new(state.clone());
     State::on_change("spawn_client_jobs", &state.clients, move |clients| {
         client_jobs.apply(&clients);
         future::ready(())
@@ -307,7 +306,6 @@ pub mod client {
     async fn playground_dashboard() -> HttpResponse {
         playground().await
     }
-
 
     #[allow(clippy::unused_async)]
     async fn playground() -> HttpResponse {

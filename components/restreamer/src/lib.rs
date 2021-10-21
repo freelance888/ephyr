@@ -24,8 +24,8 @@
 
 pub mod api;
 pub mod cli;
-pub mod dvr;
 pub mod client_stat;
+pub mod dvr;
 pub mod ffmpeg;
 pub mod serde;
 pub mod server;

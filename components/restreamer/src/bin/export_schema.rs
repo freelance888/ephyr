@@ -98,7 +98,7 @@ enum Api {
     Mix,
     /// [`api::graphql::dashboard`].
     #[display(fmt = "dashboard")]
-    Dashboard
+    Dashboard,
 }
 
 impl FromStr for Api {

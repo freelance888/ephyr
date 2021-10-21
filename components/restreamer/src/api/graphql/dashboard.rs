@@ -2,15 +2,15 @@
 //!
 //! [GraphQL]: https://graphql.com
 
-use juniper::{graphql_object, RootNode, EmptySubscription};
 use super::Context;
+use crate::api::graphql;
 use crate::state::Client;
 use actix_web::http::StatusCode;
-use crate::api::graphql;
+use juniper::{graphql_object, EmptySubscription, RootNode};
 
 /// Schema of `Dashboard` app.
 pub type Schema =
-RootNode<'static, QueriesRoot, MutationsRoot, EmptySubscription<Context>>;
+    RootNode<'static, QueriesRoot, MutationsRoot, EmptySubscription<Context>>;
 
 /// Constructs and returns new [`Schema`], ready for use.
 #[inline]
@@ -47,26 +47,32 @@ impl MutationsRoot {
     #[graphql(arguments(ip_address(
         description = "IP address of remote host."
     )))]
-    fn add_client(host: String, context: &Context) -> Result<Option<bool>, graphql::Error> {
+    fn add_client(
+        host: String,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
         match context.state().add_client(host) {
             Ok(_) => Ok(Some(true)),
             Err(e) => Err(graphql::Error::new("DUPLICATE_CLIENT_IP")
                 .status(StatusCode::CONFLICT)
-                .message(&e))
+                .message(&e)),
         }
     }
 
-    /// Remove [`Client`] by ip
+    /// Remove [`Client`]
     ///
     /// Returns [`None`] if there is no [`Client`] in this
     /// [`State`].
     #[graphql(arguments(ip_address(
         description = "IP address of remote host."
     )))]
-    fn remove_client(host: String, context: &Context) -> Result<Option<bool>, graphql::Error> {
+    fn remove_client(
+        host: String,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
         match context.state().remove_client(host) {
             Some(_) => Ok(Some(true)),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 }
