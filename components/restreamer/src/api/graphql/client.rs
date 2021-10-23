@@ -163,6 +163,7 @@ impl MutationsRoot {
                     key: InputKey::new("main").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
+                        label: None,
                     }],
                     src: src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
@@ -172,6 +173,7 @@ impl MutationsRoot {
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
+                        label: None,
                     }],
                     src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
@@ -183,10 +185,12 @@ impl MutationsRoot {
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
             kind: InputEndpointKind::Rtmp,
+            label: None,
         }];
         if with_hls {
             endpoints.push(spec::v1::InputEndpoint {
                 kind: InputEndpointKind::Hls,
+                label: None,
             });
         }
 

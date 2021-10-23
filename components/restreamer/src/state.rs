@@ -1129,7 +1129,7 @@ impl InputEndpoint {
             id: EndpointId::random(),
             kind: spec.kind,
             status: Status::Offline,
-            label: None,
+            label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
         }
@@ -1139,13 +1139,14 @@ impl InputEndpoint {
     #[inline]
     pub fn apply(&mut self, new: spec::v1::InputEndpoint) {
         self.kind = new.kind;
+        self.label = new.label;
     }
 
     /// Exports this [`InputEndpoint`] as a [`spec::v1::InputEndpoint`].
     #[inline]
     #[must_use]
     pub fn export(&self) -> spec::v1::InputEndpoint {
-        spec::v1::InputEndpoint { kind: self.kind }
+        spec::v1::InputEndpoint { kind: self.kind, label: self.label.clone(), }
     }
 
     /// Indicates whether this [`InputEndpoint`] is an
