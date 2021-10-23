@@ -1146,7 +1146,10 @@ impl InputEndpoint {
     #[inline]
     #[must_use]
     pub fn export(&self) -> spec::v1::InputEndpoint {
-        spec::v1::InputEndpoint { kind: self.kind, label: self.label.clone(), }
+        spec::v1::InputEndpoint {
+            kind: self.kind,
+            label: self.label.clone(),
+        }
     }
 
     /// Indicates whether this [`InputEndpoint`] is an
