@@ -13,16 +13,20 @@
       {
         "kind": "OBJECT",
         "name": "ClientStatistics",
-        "description": "Information about status of all [`Input`] and [`Outputs`] and\nserver health info (CPU usage, memory usage, etc.)",
+        "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)",
         "fields": [
           {
             "name": "publicHost",
             "description": "Client host",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -32,9 +36,13 @@
             "description": "Time when statistics was taken",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "DateTimeUtc",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTimeUtc",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -47,9 +55,17 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "Statistics",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "StatusStatistics",
+                    "ofType": null
+                  }
+                }
               }
             },
             "isDeprecated": false,
@@ -63,9 +79,17 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "Statistics",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "StatusStatistics",
+                    "ofType": null
+                  }
+                }
               }
             },
             "isDeprecated": false,
@@ -2079,6 +2103,49 @@
       },
       {
         "kind": "OBJECT",
+        "name": "StatusStatistics",
+        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]",
+        "fields": [
+          {
+            "name": "status",
+            "description": "Status of [`Input`]s or [`Outputs`]",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "Status",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "count",
+            "description": "Count of items having [`Status`]",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
         "name": "Mixin",
         "description": "Additional source for an `Output` to be mixed with before re-streaming to\nthe destination.",
         "fields": [
@@ -2170,16 +2237,6 @@
       },
       {
         "kind": "SCALAR",
-        "name": "MixinSrcUrl",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
         "name": "InputId",
         "description": null,
         "fields": null,
@@ -2189,62 +2246,13 @@
         "possibleTypes": null
       },
       {
-        "kind": "ENUM",
-        "name": "__TypeKind",
-        "description": "GraphQL type kind\n\nThe GraphQL specification defines a number of type kinds - the meta type of a type.",
+        "kind": "SCALAR",
+        "name": "MixinSrcUrl",
+        "description": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
-        "enumValues": [
-          {
-            "name": "SCALAR",
-            "description": "## Scalar types\n\nScalar types appear as the leaf nodes of GraphQL queries. Strings, numbers, and booleans are the built in types, and while it's possible to define your own, it's relatively uncommon.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "OBJECT",
-            "description": "## Object types\n\nThe most common type to be implemented by users. Objects have fields and can implement interfaces.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "INTERFACE",
-            "description": "## Interface types\n\nInterface types are used to represent overlapping fields between multiple types, and can be queried for their concrete type.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "UNION",
-            "description": "## Union types\n\nUnions are similar to interfaces but can not contain any fields on their own.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "ENUM",
-            "description": "## Enum types\n\nLike scalars, enum types appear as the leaf nodes of GraphQL queries.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "INPUT_OBJECT",
-            "description": "## Input objects\n\nRepresents complex values provided in queries _into_ the system.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "LIST",
-            "description": "## List types\n\nRepresent lists of other types. This library provides implementations for vectors and slices, but other Rust types can be extended to serve as GraphQL lists.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "NON_NULL",
-            "description": "## Non-null types\n\nIn GraphQL, nullable types are the default. By putting a `!` after a type, it becomes non-nullable.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
+        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -2345,78 +2353,62 @@
         "possibleTypes": null
       },
       {
-        "kind": "OBJECT",
-        "name": "Statistics",
-        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]",
-        "fields": [
+        "kind": "ENUM",
+        "name": "__TypeKind",
+        "description": "GraphQL type kind\n\nThe GraphQL specification defines a number of type kinds - the meta type of a type.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
           {
-            "name": "initializing",
-            "description": "Amount of items with `Initializing` [`Status`]",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              }
-            },
+            "name": "SCALAR",
+            "description": "## Scalar types\n\nScalar types appear as the leaf nodes of GraphQL queries. Strings, numbers, and booleans are the built in types, and while it's possible to define your own, it's relatively uncommon.",
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "online",
-            "description": "Amount of items with `Online` [`Status`]",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              }
-            },
+            "name": "OBJECT",
+            "description": "## Object types\n\nThe most common type to be implemented by users. Objects have fields and can implement interfaces.",
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "offline",
-            "description": "Amount of items with `Offline` [`Status`]",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              }
-            },
+            "name": "INTERFACE",
+            "description": "## Interface types\n\nInterface types are used to represent overlapping fields between multiple types, and can be queried for their concrete type.",
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "unstable",
-            "description": "Amount of items with `Unstable` [`Status`]",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              }
-            },
+            "name": "UNION",
+            "description": "## Union types\n\nUnions are similar to interfaces but can not contain any fields on their own.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "ENUM",
+            "description": "## Enum types\n\nLike scalars, enum types appear as the leaf nodes of GraphQL queries.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "INPUT_OBJECT",
+            "description": "## Input objects\n\nRepresents complex values provided in queries _into_ the system.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "LIST",
+            "description": "## List types\n\nRepresent lists of other types. This library provides implementations for vectors and slices, but other Rust types can be extended to serve as GraphQL lists.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "NON_NULL",
+            "description": "## Non-null types\n\nIn GraphQL, nullable types are the default. By putting a `!` after a type, it becomes non-nullable.",
             "isDeprecated": false,
             "deprecationReason": null
           }
         ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
         "possibleTypes": null
       },
       {

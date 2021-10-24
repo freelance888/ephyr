@@ -1,15 +1,12 @@
 //! Clients statistics
 
-// This is required because of graphql_client generate
+// This is required because of `graphql_client` crate generate
 // module for graphql query without documentation and that causes warning messages
 #![allow(missing_docs)]
 
 use std::{collections::HashMap, panic::AssertUnwindSafe, time::Duration};
 
-use crate::state::{
-    Client, ClientId, ClientStatistics, ClientStatisticsResponse,
-    StatusStatistics,
-};
+use crate::state::{Client, ClientId, ClientStatistics, ClientStatisticsResponse, StatusStatistics, Status};
 use crate::types::DroppableAbortHandle;
 use crate::{display_panic, State};
 use ephyr_log::log;
@@ -18,6 +15,7 @@ use tokio::time;
 
 use crate::client_stat::statistics_query::StatisticsQueryStatisticsInputs;
 use crate::client_stat::statistics_query::StatisticsQueryStatisticsOutputs;
+
 use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
@@ -63,7 +61,7 @@ impl ClientJobsPool {
 
 type DateTimeUtc = DateTime<Utc>;
 
-/// GrapthQL query for getting client statistics
+/// GraphQL query for getting client statistics
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "client.graphql.schema.json",
@@ -76,10 +74,8 @@ pub struct StatisticsQuery;
 impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsInputs) -> Self {
         StatusStatistics {
-            initializing: item.initializing as i32,
-            online: item.online as i32,
-            offline: item.offline as i32,
-            unstable: item.unstable as i32,
+            status: item.status.into(),
+            count: item.count as i32,
         }
     }
 }
@@ -87,15 +83,25 @@ impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
 impl From<StatisticsQueryStatisticsOutputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsOutputs) -> Self {
         StatusStatistics {
-            initializing: item.initializing as i32,
-            online: item.online as i32,
-            offline: item.offline as i32,
-            unstable: item.unstable as i32,
+            status: item.status.into(),
+            count: item.count as i32,
         }
     }
 }
 
-/// Job for retrieving statistics from client from specific `ip`
+impl From<statistics_query::Status> for Status {
+    fn from(status: statistics_query::Status) -> Self {
+        match status {
+            statistics_query::Status::ONLINE => Status::Online,
+            statistics_query::Status::OFFLINE => Status::Offline,
+            statistics_query::Status::INITIALIZING => Status::Initializing,
+            statistics_query::Status::UNSTABLE => Status::Unstable,
+            statistics_query::Status::Other(other) => panic!("Unknown status {}", other)
+        }
+    }
+}
+
+/// Job for retrieving statistics from client from specific host i.e [`ClientId`]
 #[derive(Debug)]
 pub struct ClientJob {
     /// identity of client
@@ -225,12 +231,11 @@ impl ClientJob {
 
         client.statistics = match response.data {
             Some(data) => Some(ClientStatisticsResponse {
-                data: Some(ClientStatistics {
-                    public_host: data.statistics.public_host,
-                    timestamp: data.statistics.timestamp,
-                    inputs: data.statistics.inputs.into(),
-                    outputs: data.statistics.outputs.into(),
-                }),
+                data: Some(ClientStatistics::new(
+                    data.statistics.public_host,
+                    data.statistics.inputs.into_iter().map(|x| x.into()).collect(),
+                    data.statistics.outputs.into_iter().map(|x| x.into()).collect(),
+                )),
                 errors: Some(response_errors),
             }),
             None => Some(ClientStatisticsResponse {

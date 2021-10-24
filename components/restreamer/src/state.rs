@@ -28,6 +28,7 @@ use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 
 /// Server's settings.
 ///
@@ -673,6 +674,43 @@ impl State {
         Some(true)
     }
 
+    /// Gather statistics about [`Input`]s statuses
+    pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
+        self.restreams
+        .get_cloned()
+        .into_iter()
+        .fold(HashMap::new(), |mut stat, restream| {
+            let item = restream.input.endpoints.iter().find(|e| e.is_rtmp());
+            if item.is_some() {
+                let main_input = item.unwrap();
+                Self::update_stat(&mut stat, main_input.status);
+            }
+
+            stat
+
+        }).into_iter().map(|x| StatusStatistics { status: x.0, count: x.1 }).collect()
+    }
+
+    /// Gather statistics about [`Output`]s statuses
+    pub fn get_outputs_statistics(&self) -> Vec<StatusStatistics> {
+        self.restreams
+            .get_cloned()
+            .into_iter()
+            .flat_map(|r| r.outputs.into_iter())
+            .fold(HashMap::new(), |mut stat, output| {
+                Self::update_stat(&mut stat, output.status);
+                stat
+            }).into_iter().map(|x| StatusStatistics { status: x.0, count: x.1 }).collect()
+    }
+
+    fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
+        if let Some(x) = stat.get_mut(&status) {
+            *x = *x + 1
+        } else {
+            let _ = stat.insert(status, 1);
+        }
+    }
+
     /// Disables/Enables all [`Output`]s in the specified [`Restream`] of this
     /// [`State`].
     #[must_use]
@@ -714,13 +752,14 @@ impl State {
 /// Client represents server with running `ephyr` app and can return some statistics
 /// about status of [`Input`]s, [`Outputs`]s .
 #[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+    Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
 )]
 pub struct Client {
     /// Unique id of client. IP or domain name.
     pub id: ClientId,
 
     /// Statistics for this [`Client`].
+    #[serde(skip)]
     pub statistics: Option<ClientStatisticsResponse>,
 }
 
@@ -747,7 +786,6 @@ impl Client {
     Into,
     PartialEq,
     Serialize,
-    Hash,
 )]
 pub struct ClientId(String);
 
@@ -2015,7 +2053,7 @@ pub enum PasswordKind {
 }
 
 /// Status indicating availability of an `Input`, `Output`, or a `Mixin`.
-#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault)]
+#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault, Hash)]
 pub enum Status {
     /// Inactive, no operations are performed and no media traffic is flowed.
     #[default]
@@ -2250,77 +2288,55 @@ mod volume_spec {
 }
 
 /// Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]
-#[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
-)]
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct StatusStatistics {
-    /// Amount of items with `Initializing` [`Status`]
-    pub initializing: i32,
+    /// Status of [`Input`]s or [`Outputs`]
+    pub status: Status,
 
-    /// Amount of items with `Online` [`Status`]
-    pub online: i32,
-
-    /// Amount of items with `Offline` [`Status`]
-    pub offline: i32,
-
-    /// Amount of items with `Unstable` [`Status`]
-    pub unstable: i32,
-}
-
-impl StatusStatistics {
-    /// Creates a new [`StatusStatistics`] for [`Input`] or [`Output`] statuses of the
-    /// [`Client`]
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            initializing: 0,
-            online: 0,
-            offline: 0,
-            unstable: 0,
-        }
-    }
+    /// Count of items having [`Status`]
+    pub count: i32,
 }
 
 /// Information about status of all [`Input`]s and [`Output`]s and
 /// server health info (CPU usage, memory usage, etc.)
-#[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
-)]
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct ClientStatistics {
     /// Client host
-    pub public_host: Option<String>,
+    pub public_host: String,
 
     /// Time when statistics was taken
-    pub timestamp: Option<DateTime<Utc>>,
+    pub timestamp: DateTime<Utc>,
 
     /// Count of inputs grouped by status
-    pub inputs: StatusStatistics,
+    pub inputs: Vec<StatusStatistics>,
 
     /// Count of outputs grouped by status
-    pub outputs: StatusStatistics,
+    pub outputs: Vec<StatusStatistics>,
 }
 
 impl ClientStatistics {
     /// Creates a new [`ClientStatistics`] object with snapshot of
     /// current client's statistics regarding [`Input`]s and [`Output`]s
     #[must_use]
-    pub fn new(public_ip: String) -> Self {
+    pub fn new(
+        public_ip: String,
+        inputs: Vec<StatusStatistics>,
+        outputs: Vec<StatusStatistics>,
+    ) -> Self {
         Self {
-            public_host: Some(public_ip),
-            timestamp: Some(Utc::now()),
-            inputs: StatusStatistics::new(),
-            outputs: StatusStatistics::new(),
+            public_host: public_ip,
+            timestamp: Utc::now(),
+            inputs,
+            outputs,
         }
     }
 }
 
 /// Current state of [`ClientStatistics`] request
 ///
-#[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
-)]
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct ClientStatisticsResponse {
-    /// Statistics
+    /// Statistics data
     pub data: Option<ClientStatistics>,
 
     /// The top-level errors returned by the server.

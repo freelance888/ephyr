@@ -3,16 +3,12 @@ query StatisticsQuery {
         publicHost
         timestamp
         inputs {
-            initializing
-            online
-            offline
-            unstable
+            status
+            count
         }
         outputs {
-            initializing
-            online
-            offline
-            unstable
+            status
+            count
         }
     }
 }
