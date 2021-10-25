@@ -17,6 +17,7 @@ askama = { version = "0.10", default-features = false }
 backoff = { version = "0.3", features = ["tokio"] }
 byteorder = "1.4"
 ephyr-log = { version = "0.1", path = "../../common/log" }
+chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
 futures-signals = "0.3"
 hex = "0.4"

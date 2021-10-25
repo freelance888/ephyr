@@ -1975,6 +1975,9 @@ pub enum Status {
     /// Active, all operations are performing successfully and media traffic
     /// flows as expected.
     Online,
+
+    /// Failed recently
+    Unstable,
 }
 
 /// Label of a [`Restream`] or an [`Output`].

@@ -18,13 +18,9 @@ if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
                     -o "Dpkg::Options::=--force-confold" upgrade
 fi
 
-# Install Podman for running containers.
-echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" \
-  | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key \
-  | apt-key add -
+# Install Docker for running containers.
 apt-get -y update
-apt-get -y install podman
+curl -sL https://get.docker.com | bash -s
 
 
 WITH_FIREWALLD=${WITH_FIREWALLD:-0}
@@ -67,7 +63,7 @@ echo "EPHYR_CONTAINER_NAME=$EPHYR_CONTAINER_NAME"
 echo "EPHYR_IMAGE_NAME=$EPHYR_IMAGE_NAME"
 
 # Run Podman service
-/usr/bin/podman run \
+/usr/bin/docker run \
   --network=host \
   -v /var/lib/$EPHYR_CONTAINER_NAME/srs.conf:/usr/local/srs/conf/srs.conf \
   -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:/state.json \
@@ -95,12 +91,12 @@ ExecStartPre=/usr/bin/mkdir -p /var/lib/\${EPHYR_CONTAINER_NAME}/
 ExecStartPre=touch /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf
 ExecStartPre=touch /var/lib/\${EPHYR_CONTAINER_NAME}/state.json
 
-ExecStartPre=-/usr/bin/podman pull \${EPHYR_IMAGE_NAME}:\${EPHYR_IMAGE_TAG}
-ExecStartPre=-/usr/bin/podman stop \${EPHYR_CONTAINER_NAME}
-ExecStartPre=-/usr/bin/podman rm --volumes \${EPHYR_CONTAINER_NAME}
+ExecStartPre=-/usr/bin/docker pull \${EPHYR_IMAGE_NAME}:\${EPHYR_IMAGE_TAG}
+ExecStartPre=-/usr/bin/docker stop \${EPHYR_CONTAINER_NAME}
+ExecStartPre=-/usr/bin/docker rm --volumes \${EPHYR_CONTAINER_NAME}
 ExecStart=/usr/local/bin/run-ephyr-restreamer.sh
-ExecStop=-/usr/bin/podman stop \${EPHYR_CONTAINER_NAME}
-ExecStop=-/usr/bin/podman rm --volumes \${EPHYR_CONTAINER_NAME}
+ExecStop=-/usr/bin/docker stop \${EPHYR_CONTAINER_NAME}
+ExecStop=-/usr/bin/docker rm --volumes \${EPHYR_CONTAINER_NAME}
 
 Restart=always
 

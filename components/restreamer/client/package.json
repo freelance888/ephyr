@@ -2,12 +2,18 @@
   "name": "ephyr-restreamer",
   "version": "0.3.0",
   "private": true,
+  "config": {
+    "get_ip_command": "curl http://api.ipify.org",
+    "cypress_host": "ip_address_should_be_here"
+  },
   "scripts": {
     "build": "svelte-check && webpack",
     "build:dev": "yarn build",
     "build:prod": "cross-env NODE_ENV=production yarn build",
-    "cypress": "cypress open",
-    "cypress:run": "cypress run --browser chrome --headless",
+    "cypress": "cypress open --config watchForFileChanges=false --env host=$($npm_package_config_get_ip_command)",
+    "cypress:host": "cypress open --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
+    "cypress:run": "cypress run --browser chrome --headless --env host=$($npm_package_config_get_ip_command)",
+    "cypress:run:ci": "cypress run --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
     "dev": "webpack-dev-server --content-base public",
     "doc": "typedoc",
     "fmt": "prettier --write .",

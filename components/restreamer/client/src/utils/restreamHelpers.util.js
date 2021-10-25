@@ -1,4 +1,4 @@
-import { ONLINE, OFFLINE, INITIALIZING } from '../constants/statuses';
+import { ONLINE, OFFLINE, INITIALIZING, UNSTABLE } from '../constants/statuses';
 
 export const getReStreamOutputsCount = (reStream) =>
   reStream.outputs.reduce(
@@ -13,5 +13,6 @@ export const getReStreamOutputsCount = (reStream) =>
       [OFFLINE]: 0,
       [INITIALIZING]: 0,
       [ONLINE]: 0,
+      [UNSTABLE]: 0,
     }
   );

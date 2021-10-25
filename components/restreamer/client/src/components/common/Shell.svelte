@@ -56,6 +56,15 @@
     --primary-text-color: #777;
   }
 
+  .initializing
+    color: #faa05a
+  .online
+    color: #32d296
+  .offline
+    color: #f0506e;
+  .unstable
+    color: #7a5128;
+
   .page
     min-height: 100vh;
 
