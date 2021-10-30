@@ -677,18 +677,24 @@ impl State {
     /// Gather statistics about [`Input`]s statuses
     pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
         self.restreams
-        .get_cloned()
-        .into_iter()
-        .fold(HashMap::new(), |mut stat, restream| {
-            let item = restream.input.endpoints.iter().find(|e| e.is_rtmp());
-            if item.is_some() {
-                let main_input = item.unwrap();
-                Self::update_stat(&mut stat, main_input.status);
-            }
+            .get_cloned()
+            .into_iter()
+            .fold(HashMap::new(), |mut stat, restream| {
+                let item =
+                    restream.input.endpoints.iter().find(|e| e.is_rtmp());
+                if item.is_some() {
+                    let main_input = item.unwrap();
+                    Self::update_stat(&mut stat, main_input.status);
+                }
 
-            stat
-
-        }).into_iter().map(|x| StatusStatistics { status: x.0, count: x.1 }).collect()
+                stat
+            })
+            .into_iter()
+            .map(|x| StatusStatistics {
+                status: x.0,
+                count: x.1,
+            })
+            .collect()
     }
 
     /// Gather statistics about [`Output`]s statuses
@@ -700,7 +706,13 @@ impl State {
             .fold(HashMap::new(), |mut stat, output| {
                 Self::update_stat(&mut stat, output.status);
                 stat
-            }).into_iter().map(|x| StatusStatistics { status: x.0, count: x.1 }).collect()
+            })
+            .into_iter()
+            .map(|x| StatusStatistics {
+                status: x.0,
+                count: x.1,
+            })
+            .collect()
     }
 
     fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
@@ -2053,7 +2065,9 @@ pub enum PasswordKind {
 }
 
 /// Status indicating availability of an `Input`, `Output`, or a `Mixin`.
-#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault, Hash)]
+#[derive(
+    Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault, Hash,
+)]
 pub enum Status {
     /// Inactive, no operations are performed and no media traffic is flowed.
     #[default]

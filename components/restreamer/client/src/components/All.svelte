@@ -72,7 +72,7 @@
 <template>
   <OutputModal />
   <section class="uk-section-muted toolbar">
-    <span class="label">ALL</span>
+    <span class="section-label">ALL</span>
     <div class="uk-grid uk-grid-small">
       <div class="uk-width-1-2@m uk-width-1-3@s">
         <span class="toolbar-label total-inputs-label">
@@ -192,25 +192,6 @@
 </template>
 
 <style lang="stylus">
-  .toolbar
-    position: relative
-    padding: 8px
-    margin-top: 20px
-    margin-bottom: 30px
-
-  .toolbar-label
-    line-height: 38px
-    margin-left: 12px
-
-  .label
-    position: absolute
-    top: -14px
-    left: 0
-    padding: 2px 10px
-    border-top-left-radius: 4px
-    border-top-right-radius: 4px
-    background-color: #f8f8f8
-
   .set-output-password
     margin-left: 10px;
     display: inline-block

@@ -6,7 +6,10 @@
 
 use std::{collections::HashMap, panic::AssertUnwindSafe, time::Duration};
 
-use crate::state::{Client, ClientId, ClientStatistics, ClientStatisticsResponse, StatusStatistics, Status};
+use crate::state::{
+    Client, ClientId, ClientStatistics, ClientStatisticsResponse, Status,
+    StatusStatistics,
+};
 use crate::types::DroppableAbortHandle;
 use crate::{display_panic, State};
 use ephyr_log::log;
@@ -96,7 +99,9 @@ impl From<statistics_query::Status> for Status {
             statistics_query::Status::OFFLINE => Status::Offline,
             statistics_query::Status::INITIALIZING => Status::Initializing,
             statistics_query::Status::UNSTABLE => Status::Unstable,
-            statistics_query::Status::Other(other) => panic!("Unknown status {}", other)
+            statistics_query::Status::Other(other) => {
+                panic!("Unknown status {}", other)
+            }
         }
     }
 }
@@ -233,8 +238,16 @@ impl ClientJob {
             Some(data) => Some(ClientStatisticsResponse {
                 data: Some(ClientStatistics::new(
                     data.statistics.public_host,
-                    data.statistics.inputs.into_iter().map(|x| x.into()).collect(),
-                    data.statistics.outputs.into_iter().map(|x| x.into()).collect(),
+                    data.statistics
+                        .inputs
+                        .into_iter()
+                        .map(|x| x.into())
+                        .collect(),
+                    data.statistics
+                        .outputs
+                        .into_iter()
+                        .map(|x| x.into())
+                        .collect(),
                 )),
                 errors: Some(response_errors),
             }),

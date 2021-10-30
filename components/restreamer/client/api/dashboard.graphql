@@ -1,0 +1,20 @@
+subscription Statistics {
+    statistics {
+        id
+        statistics {
+            data {
+                publicHost
+                timestamp
+                inputs {
+                    status
+                    count
+                }
+                outputs {
+                    status
+                    count
+                }
+            }
+            errors
+        }
+    }
+}

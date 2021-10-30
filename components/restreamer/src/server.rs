@@ -214,6 +214,9 @@ pub mod client {
 
         /// Single output schema for mixing
         SchemaMix(web::Data<api::graphql::mix::Schema>),
+
+        /// Dashboard schema
+        SchemaDashboard(web::Data<api::graphql::dashboard::Schema>),
     }
 
     /// Endpoint serving [`api::`graphql`::dashboard`] application
@@ -223,8 +226,7 @@ pub mod client {
         payload: web::Payload,
         schema: web::Data<api::graphql::dashboard::Schema>,
     ) -> Result<HttpResponse, Error> {
-        let ctx = api::graphql::Context::new(req.clone());
-        graphql_handler(&schema, &ctx, req, payload).await
+        graphql(req, payload, SchemaKind::SchemaDashboard(schema)).await
     }
 
     /// Endpoint serving [`api::`graphql`::mix`] for single output
@@ -233,9 +235,9 @@ pub mod client {
     async fn graphql_mix(
         req: HttpRequest,
         payload: web::Payload,
-        schema_mix: web::Data<api::graphql::mix::Schema>,
+        schema: web::Data<api::graphql::mix::Schema>,
     ) -> Result<HttpResponse, Error> {
-        graphql(req, payload, SchemaKind::SchemaMix(schema_mix)).await
+        graphql(req, payload, SchemaKind::SchemaMix(schema)).await
     }
 
     /// Endpoint serving [`api::`graphql`::client`] for main application
@@ -267,6 +269,10 @@ pub mod client {
                     subscriptions_handler(req, payload, s.into_inner(), cfg)
                         .await
                 }
+                SchemaKind::SchemaDashboard(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
             }
         } else {
             match schema_kind {
@@ -274,6 +280,9 @@ pub mod client {
                     graphql_handler(&s, &ctx, req, payload).await
                 }
                 SchemaKind::SchemaMix(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
+                SchemaKind::SchemaDashboard(s) => {
                     graphql_handler(&s, &ctx, req, payload).await
                 }
             }

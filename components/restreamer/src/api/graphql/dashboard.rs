@@ -6,17 +6,19 @@ use super::Context;
 use crate::api::graphql;
 use crate::state::Client;
 use actix_web::http::StatusCode;
-use juniper::{graphql_object, EmptySubscription, RootNode};
+use futures::stream::BoxStream;
+use futures_signals::signal::SignalExt;
+use juniper::{graphql_object, graphql_subscription, RootNode};
 
 /// Schema of `Dashboard` app.
 pub type Schema =
-    RootNode<'static, QueriesRoot, MutationsRoot, EmptySubscription<Context>>;
+    RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 
 /// Constructs and returns new [`Schema`], ready for use.
 #[inline]
 #[must_use]
 pub fn schema() -> Schema {
-    Schema::new(QueriesRoot, MutationsRoot, EmptySubscription::new())
+    Schema::new(QueriesRoot, MutationsRoot, SubscriptionsRoot)
 }
 
 /// Root of all [GraphQL queries][1] in the [`Schema`].
@@ -74,5 +76,24 @@ impl MutationsRoot {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }
+    }
+}
+
+/// Root of all [GraphQL subscriptions][1] in the [`Schema`].
+///
+/// [1]: https://spec.graphql.org/June2018/#sec-Root-Operation-Types
+#[derive(Clone, Copy, Debug)]
+pub struct SubscriptionsRoot;
+
+#[graphql_subscription(name = "Subscription", context = Context)]
+impl SubscriptionsRoot {
+    async fn statistics(context: &Context) -> BoxStream<'static, Vec<Client>> {
+        context
+            .state()
+            .clients
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
     }
 }

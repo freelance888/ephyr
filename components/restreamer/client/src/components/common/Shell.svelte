@@ -135,4 +135,22 @@
     overflow-wrap: anywhere;
     white-space: normal;
 
+  .toolbar
+    position: relative
+    padding: 8px
+    margin-top: 20px
+    margin-bottom: 30px
+
+  .toolbar-label
+    line-height: 38px
+    margin-left: 12px
+
+  .section-label
+    position: absolute
+    top: -12px
+    left: 0
+    padding: 2px 10px
+    border-top-left-radius: 4px
+    border-top-right-radius: 4px
+    background-color: #f8f8f8
 </style>

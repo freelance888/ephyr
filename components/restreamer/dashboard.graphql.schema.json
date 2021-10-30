@@ -6,7 +6,9 @@
     "mutationType": {
       "name": "Mutation"
     },
-    "subscriptionType": null,
+    "subscriptionType": {
+      "name": "Subscription"
+    },
     "types": [
       {
         "kind": "SCALAR",
@@ -21,16 +23,20 @@
       {
         "kind": "OBJECT",
         "name": "ClientStatistics",
-        "description": "Information about status of all [Input] and [Outputs] and\nserver health info (CPU usage, memory usage, etc.)",
+        "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)",
         "fields": [
           {
             "name": "publicHost",
-            "description": "Client public ip",
+            "description": "Client host",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -40,9 +46,61 @@
             "description": "Time when statistics was taken",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "DateTimeUtc",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTimeUtc",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "inputs",
+            "description": "Count of inputs grouped by status",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "StatusStatistics",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "outputs",
+            "description": "Count of outputs grouped by status",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "StatusStatistics",
+                    "ofType": null
+                  }
+                }
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -244,11 +302,11 @@
         "fields": [
           {
             "name": "addClient",
-            "description": "Add a new [`Client`] by ip\n\nReturns [`graphql::Error`] if there is already [`Client`] with such `ip` in this\n[`State`].",
+            "description": "Add a new [`Client`]\n\nReturns [`graphql::Error`] if there is already [`Client`] in this\n[`State`].",
             "args": [
               {
-                "name": "ipAddress",
-                "description": "IP address of remote host.",
+                "name": "host",
+                "description": null,
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -271,11 +329,11 @@
           },
           {
             "name": "removeClient",
-            "description": "Remove [`Client`] by ip\n\nReturns [`graphql::Error`] if there is no [`Client`] with such `id` in this\n[`State`].",
+            "description": "Remove [`Client`]\n\nReturns [`None`] if there is no [`Client`] in this\n[`State`].",
             "args": [
               {
-                "name": "ipAddress",
-                "description": "IP address of remote host.",
+                "name": "host",
+                "description": null,
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -292,6 +350,49 @@
               "kind": "SCALAR",
               "name": "Boolean",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "StatusStatistics",
+        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]",
+        "fields": [
+          {
+            "name": "status",
+            "description": "Status of [`Input`]s or [`Outputs`]",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "Status",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "count",
+            "description": "Count of items having [`Status`]",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -557,6 +658,76 @@
         "possibleTypes": null
       },
       {
+        "kind": "ENUM",
+        "name": "Status",
+        "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "OFFLINE",
+            "description": "Inactive, no operations are performed and no media traffic is flowed.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "INITIALIZING",
+            "description": "Initializing, media traffic doesn't yet flow as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "ONLINE",
+            "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "UNSTABLE",
+            "description": "Failed recently",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "Subscription",
+        "description": null,
+        "fields": [
+          {
+            "name": "statistics",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Client",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "__Schema",
         "description": null,
@@ -662,7 +833,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "Unique id of client. Essentially it's [`IPAddr`].",
+            "description": "Unique id of client. IP or domain name.",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -682,7 +853,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ClientStatistics",
+              "name": "ClientStatisticsResponse",
               "ofType": null
             },
             "isDeprecated": false,
@@ -736,6 +907,59 @@
         "fields": null,
         "inputFields": null,
         "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "Int",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ClientStatisticsResponse",
+        "description": "Current state of [`ClientStatistics`] request\n",
+        "fields": [
+          {
+            "name": "data",
+            "description": "Statistics data",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ClientStatistics",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "errors",
+            "description": "The top-level errors returned by the server.",
+            "args": [],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
         "enumValues": null,
         "possibleTypes": null
       },
