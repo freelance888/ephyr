@@ -68,8 +68,9 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         future::ready(())
     });
 
-    future::try_join(
+    future::try_join3(
         self::client::run(&cfg, state.clone()),
+        self::statistics::run(state.clone()),
         self::callback::run(&cfg, state),
     )
     .await?;
@@ -246,6 +247,8 @@ pub mod client {
 pub mod callback {
     use actix_web::{error, middleware, post, web, App, Error, HttpServer};
     use ephyr_log::log;
+    use std::time::Duration;
+    use std::thread;
 
     use crate::{
         api::srs::callback,
@@ -546,6 +549,93 @@ pub mod callback {
         if !endpoint.srs_player_ids.contains(&req.client_id) {
             let _ = endpoint.srs_player_ids.insert(req.client_id.into());
         }
+        Ok(())
+    }
+}
+
+/// Module which collects server statistics and updates them every second
+///
+pub mod statistics {
+    use std::time::Duration;
+    use std::thread;
+    use tokio::{io, process::Command, sync::Mutex, time};
+    use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+    use systemstat::{System, Platform, saturating_sub_bytes, CPULoad};
+
+    use crate::{
+        cli::{Failure, Opts},
+        State,
+    };
+
+    /// Runs statistics monitoring
+    pub async fn run(state: State) -> Result<(), Failure> {
+        // we use tx_last and rx_last to compute the delta (send/receive bytes last second)
+        let mut tx_last: f64 = 0.0;
+        let mut rx_last: f64 = 0.0;
+
+        let (spawner, abort_handle) = future::abortable(async move {
+            loop {
+                let sys = System::new();
+
+                // Update cpu usage
+                match sys.cpu_load_aggregate() {
+                    Ok(cpu)=> {
+                        // Need to wait some time to let the library compute CPU usage
+                        // Do not change delay time, since it is also used further to compute
+                        // network statistics (bytes sent/received last second)
+                        time::delay_for(Duration::from_secs(1)).await;
+                        let cpu = cpu.done().unwrap();
+
+                        let mut server_info = state.server_info.lock_mut();
+                        server_info.update_cpu(f64::from(1.0 - cpu.idle) * 100.0);  // in percents
+                    },
+                    Err(x) => println!("\nCPU load: error: {}", x)
+                }
+
+                // Update ram usage
+                match sys.memory() {
+                    Ok(mem) => {
+                        let mut server_info = state.server_info.lock_mut();
+                        let mem_total = (mem.total.as_u64() as f64) / 1024.0 / 1024.0;  // in megabytes
+                        let mem_free = (mem.free.as_u64() as f64) / 1024.0 / 1024.0;  // in megabytes
+                        server_info.update_ram(mem_total, mem_free);
+                    },
+                    Err(x) => println!("\nMemory: error: {}", x)
+                }
+
+                // Update network usage
+                match sys.networks() {
+                    Ok(netifs) => {
+                        // Sum up along network interfaces
+                        let mut tx: f64 = 0.0;
+                        let mut rx: f64 = 0.0;
+
+                        // Note that the sum of sent/received bytes are computed along all
+                        // the available network interfaces
+                        for netif in netifs.values() {
+                            let netstats = sys.network_stats(&netif.name).unwrap();
+                            tx = tx + (netstats.tx_bytes.as_u64() as f64) * 8.0 / 1024.0 / 1024.0;  // in megabits (remove *8.0 to convert into megabytes)
+                            rx = rx + (netstats.rx_bytes.as_u64() as f64) * 8.0 / 1024.0 / 1024.0;  // in megabits
+                        }
+
+                        // Compute delta
+                        let tx_delta = tx - tx_last;
+                        let rx_delta = rx - rx_last;
+
+                        // Update server info
+                        let mut server_info = state.server_info.lock_mut();
+                        server_info.update_traffic_usage(tx_delta, rx_delta);
+
+                        tx_last = tx;
+                        rx_last = rx;
+                    }
+                    Err(x) => println!("\nNetworks: error: {}", x)
+                }
+            }
+        });
+
+        drop(tokio::spawn(spawner.map(move |_| { })));
+
         Ok(())
     }
 }

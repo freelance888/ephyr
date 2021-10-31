@@ -733,6 +733,18 @@ impl QueriesRoot {
         }
     }
 
+    /// Returns the current `ServerInfo`
+    fn server_info(context: &Context) -> ServerInfo {
+        let info = context.state().server_info.get_cloned();
+        ServerInfo {
+            cpu_usage: info.cpu_usage,
+            ram_total: info.ram_total,
+            ram_free: info.ram_free,
+            tx_delta: info.tx_delta,
+            rx_delta: info.rx_delta,
+        }
+    }
+
     /// Returns all the `Restream`s happening on this server.
     fn all_restreams(context: &Context) -> Vec<Restream> {
         context.state().restreams.get_cloned()
@@ -773,6 +785,7 @@ impl QueriesRoot {
         context: &Context,
     ) -> Result<Option<String>, graphql::Error> {
         let settings = context.state().settings.get_cloned().export();
+        let server_info = context.state().server_info.get_cloned().export();
         let restreams = context
             .state()
             .restreams
@@ -786,6 +799,7 @@ impl QueriesRoot {
             .then(|| {
                 let spec: Spec = spec::v1::Spec {
                     settings,
+                    server_info,
                     restreams,
                 }
                 .into();
@@ -818,6 +832,26 @@ impl SubscriptionsRoot {
                 password_hash: h.password_hash,
                 title: h.title,
                 delete_confirmation: h.delete_confirmation,
+            })
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of `ServerInfo` parameters of this server.
+    async fn server_info(
+        context: &Context,
+    ) -> BoxStream<'static, ServerInfo> {
+        context
+            .state()
+            .server_info
+            .signal_cloned()
+            .dedupe_cloned()
+            .map(move |h| ServerInfo {
+                cpu_usage: h.cpu_usage,
+                ram_total: h.ram_total,
+                ram_free: h.ram_free,
+                tx_delta: h.tx_delta,
+                rx_delta: h.rx_delta,
             })
             .to_stream()
             .boxed()
@@ -861,4 +895,23 @@ pub struct Info {
     /// [Argon2]: https://en.wikipedia.org/wiki/Argon2
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
     pub password_hash: Option<String>,
+}
+
+/// Information about server status.
+#[derive(Clone, Debug, GraphQLObject)]
+pub struct ServerInfo {
+    /// Total CPU usage, %
+    pub cpu_usage: f64,
+
+    /// Total RAM installed on current machine, bytes
+    pub ram_total: f64,
+
+    /// Free (available) RAM, bytes
+    pub ram_free: f64,
+
+    /// Bytes, transfered last second
+    pub tx_delta: f64,
+
+    /// Bytes, received last second
+    pub rx_delta: f64,
 }

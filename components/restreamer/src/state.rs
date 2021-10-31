@@ -22,9 +22,12 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use smart_default::SmartDefault;
-use tokio::{fs, io::AsyncReadExt as _};
+use tokio::{fs, time, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
+use std::process::{Command, Stdio};
+use std::thread;
+use systemstat::{System, Platform, saturating_sub_bytes};
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 
@@ -76,6 +79,90 @@ impl Default for Settings {
     }
 }
 
+/// Server's info
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ServerInfo {
+    /// Total CPU usage, %
+    pub cpu_usage: f64,
+
+    /// Total RAM installed on current machine, bytes
+    pub ram_total: f64,
+
+    /// Free (available) RAM, bytes
+    pub ram_free: f64,
+
+    /// Bytes, transfered last second
+    pub tx_delta: f64,
+
+    /// Bytes, received last second
+    pub rx_delta: f64,
+}
+
+impl ServerInfo {
+    /// Exports this [`ServerInfo`] as a [`spec::v1::ServerInfo`].
+    #[inline]
+    #[must_use]
+    pub fn export(&self) -> spec::v1::ServerInfo {
+        spec::v1::ServerInfo {
+            cpu_usage: self.cpu_usage,
+            ram_total: self.ram_total,
+            ram_free: self.ram_free,
+            tx_delta: self.tx_delta,
+            rx_delta: self.rx_delta,
+        }
+    }
+
+    /// Applies the given [`spec::v1::ServerInfo`] to this [`ServerInfo`].
+    pub fn apply(&mut self, new: spec::v1::ServerInfo) {
+        self.cpu_usage = new.cpu_usage;
+        self.ram_total = new.ram_total;
+        self.ram_free = new.ram_free;
+        self.tx_delta = new.tx_delta;
+        self.rx_delta = new.rx_delta;
+    }
+
+    /// Updates cpu usage of this [`ServerInfo`], in percents
+    pub fn update_cpu(&mut self, cpu: f64) {
+        self.cpu_usage = cpu;
+    }
+
+    /// Updates ram usage info of this [`ServerInfo`], in megabytes
+    pub fn update_ram(&mut self, ram_total: f64, ram_free: f64) {
+        self.ram_total = ram_total;
+        self.ram_free = ram_free;
+    }
+
+    /// Updates traffic usage info of this [`ServerInfo`], in megabites
+    pub fn update_traffic_usage(&mut self, tx_delta: f64, rx_delta: f64) {
+        self.tx_delta = tx_delta;
+        self.rx_delta = rx_delta;
+    }
+}
+
+impl Default for ServerInfo {
+    fn default() -> ServerInfo {
+        ServerInfo {
+            cpu_usage: 0.0,
+            ram_total: 0.0,
+            ram_free: 0.0,
+            tx_delta: 0.0,
+            rx_delta: 0.0,
+        }
+    }
+}
+
+impl PartialEq for ServerInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.cpu_usage == other.cpu_usage &&
+            self.tx_delta == other.tx_delta &&
+            self.rx_delta == other.rx_delta &&
+            self.ram_total == other.ram_total &&
+            self.ram_free == other.ram_free
+    }
+}
+
+impl Eq for ServerInfo {}
+
 /// Reactive application's state.
 ///
 /// Any changes to it automatically propagate to the appropriate subscribers.
@@ -86,6 +173,9 @@ pub struct State {
 
     /// All [`Restream`]s performed by this application.
     pub restreams: Mutable<Vec<Restream>>,
+
+    /// Global [`ServerInfo`] of server
+    pub server_info: Mutable<ServerInfo>,
 }
 
 impl State {
@@ -201,6 +291,7 @@ impl State {
                 .iter()
                 .map(Restream::export)
                 .collect(),
+            server_info: self.server_info.get_cloned().export(),
         }
         .into()
     }
