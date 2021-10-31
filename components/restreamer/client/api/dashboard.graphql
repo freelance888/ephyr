@@ -18,3 +18,11 @@ subscription Statistics {
         }
     }
 }
+
+mutation AddClient($host: String!) {
+    addClient(host: $host)
+}
+
+mutation RemoveClient($host: String!) {
+    removeClient(host: $host)
+}
