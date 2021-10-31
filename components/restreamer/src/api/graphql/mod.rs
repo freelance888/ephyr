@@ -3,6 +3,7 @@
 //! [GraphQL]: https://graphql.com
 
 pub mod client;
+pub mod mix;
 
 use std::{borrow::Cow, convert::Infallible, fmt, ops::Deref};
 
@@ -143,7 +144,7 @@ impl Error {
     /// Goes as `errors.extensions.status` field of GraphQL response.
     #[inline]
     pub fn set_status<S: Into<http::StatusCode>>(&mut self, s: S) {
-        self.status = s.into()
+        self.status = s.into();
     }
 
     /// Sets given [`Error`](struct@Error)'s message as required by
@@ -154,7 +155,7 @@ impl Error {
     /// [1]: https://facebook.github.io/graphql/June2018/#sec-Errors
     #[inline]
     pub fn set_message<M: fmt::Display + ?Sized>(&mut self, m: &M) {
-        self.message = format!("{}", m).into()
+        self.message = format!("{}", m).into();
     }
 
     /// Sets backtrace of this [`Error`](struct@Error).
@@ -163,7 +164,7 @@ impl Error {
     #[inline]
     pub fn set_backtrace<B: fmt::Display + ?Sized>(&mut self, bt: &B) {
         self.backtrace =
-            Some(format!("{}", bt).split('\n').map(String::from).collect())
+            Some(format!("{}", bt).split('\n').map(String::from).collect());
     }
 }
 

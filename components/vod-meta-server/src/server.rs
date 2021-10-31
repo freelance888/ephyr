@@ -41,17 +41,17 @@ use crate::{
 pub async fn run(opts: cli::Opts) -> Result<(), cli::Failure> {
     let request_max_size =
         opts.request_max_size.get_bytes().try_into().map_err(|e| {
-            log::error!("Maximum request size has too big value: {}", e)
+            log::error!("Maximum request size has too big value: {}", e);
         })?;
 
     let state = state::Manager::try_new(&opts.state).await.map_err(|e| {
-        log::error!("Failed to initialize vod::meta::State: {}", e)
+        log::error!("Failed to initialize vod::meta::State: {}", e);
     })?;
     state.refresh_playlists_positions().await.map_err(|e| {
         log::error!(
             "Failed to refresh vod::meta::State initial positions: {}",
             e,
-        )
+        );
     })?;
 
     let cache =
@@ -168,7 +168,7 @@ async fn renew_state(
         playlist
             .fill_with_cache_files(&cache)
             .await
-            .map_err(error::ErrorInternalServerError)?
+            .map_err(error::ErrorInternalServerError)?;
     }
 
     state
@@ -278,14 +278,14 @@ async fn refill_state_with_cache_files(
                             "Panicked while refilling vod::meta::State with \
                              vod::file::cache: {}",
                             display_panic(&p),
-                        )
+                        );
                     })?
                     .map_err(|e| {
                         log::error!(
                             "Failed to refill vod::meta::State with \
                              vod::file::cache: {}",
                             e,
-                        )
+                        );
                     })
             }
         })
@@ -312,15 +312,9 @@ async fn refresh_initial_positions(state: state::Manager, period: Duration) {
                             "Panicked while refreshing vod::meta::State \
                              initial positions: {}",
                             display_panic(&p),
-                        )
-                    })?
-                    .map_err(|e| {
-                        log::error!(
-                            "Failed to refresh vod::meta::State initial \
-                             positions: {}",
-                            e,
-                        )
+                        );
                     })
+                    .unwrap_err();
             }
         })
         .map(Ok)

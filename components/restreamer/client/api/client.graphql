@@ -1,0 +1,235 @@
+subscription Info {
+    info {
+        publicHost
+        title
+        deleteConfirmation
+        enableConfirmation
+        passwordHash
+        passwordOutputHash
+    }
+}
+
+subscription ServerInfo {
+    serverInfo {
+        cpuUsage
+        ramTotal
+        ramFree
+        txDelta
+        rxDelta
+    }
+}
+
+subscription State {
+    allRestreams {
+        id
+        key
+        label
+        input {
+            id
+            key
+            endpoints {
+                id
+                kind
+                status
+                label
+            }
+            src {
+                ... on RemoteInputSrc {
+                    url
+                    label
+                }
+                ... on FailoverInputSrc {
+                    inputs {
+                        id
+                        key
+                        endpoints {
+                            id
+                            kind
+                            status
+                            label
+                        }
+                        src {
+                            ... on RemoteInputSrc {
+                                url
+                                label
+                            }
+                        }
+                        enabled
+                    }
+                }
+            }
+            enabled
+        }
+        outputs {
+            id
+            dst
+            label
+            previewUrl
+            volume
+            mixins {
+                id
+                src
+                volume
+                delay
+            }
+            enabled
+            status
+        }
+    }
+}
+
+query DvrFiles($id: OutputId!) {
+    dvrFiles(id: $id)
+}
+
+query ExportRestream($id: RestreamId!) {
+    export(ids: [$id])
+}
+
+query ExportAllRestreams {
+    export
+}
+
+mutation Import($restream_id: RestreamId, $replace: Boolean!, $spec: String!) {
+    import(restreamId: $restream_id, replace: $replace, spec: $spec)
+}
+
+mutation SetRestream(
+    $key: RestreamKey!
+    $url: InputSrcUrl
+    $label: Label
+    $id: RestreamId
+    $with_backup: Boolean
+    $backup_url: InputSrcUrl
+    $with_hls: Boolean
+) {
+    setRestream(
+        key: $key
+        src: $url
+        label: $label
+        withBackup: $with_backup
+        backupSrc: $backup_url
+        withHls: $with_hls
+        id: $id
+    )
+}
+
+mutation RemoveRestream($id: RestreamId!) {
+    removeRestream(id: $id)
+}
+
+mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
+    enableInput(id: $input_id, restreamId: $restream_id)
+}
+
+mutation DisableInput($restream_id: RestreamId!, $input_id: InputId!) {
+    disableInput(id: $input_id, restreamId: $restream_id)
+}
+
+mutation SetEndpointLabel(
+    $restream_id: RestreamId!
+    $input_id: InputId!
+    $endpoint_id: EndpointId!
+    $label: String!
+) {
+    changeEndpointLabel(
+        id: $input_id
+        restreamId: $restream_id
+        endpointId: $endpoint_id
+        label: $label
+    )
+}
+
+mutation SetOutput(
+    $restream_id: RestreamId!
+    $url: OutputDstUrl!
+    $label: Label
+    $preview_url: Url
+    $mixins: [MixinSrcUrl!]
+    $id: OutputId
+) {
+    setOutput(
+        restreamId: $restream_id
+        dst: $url
+        label: $label
+        previewUrl: $preview_url
+        mixins: $mixins
+        id: $id
+    )
+}
+
+mutation RemoveOutput($restream_id: RestreamId!, $output_id: OutputId!) {
+    removeOutput(restreamId: $restream_id, id: $output_id)
+}
+
+mutation EnableOutput($restream_id: RestreamId!, $output_id: OutputId!) {
+    enableOutput(restreamId: $restream_id, id: $output_id)
+}
+
+mutation DisableOutput($restream_id: RestreamId!, $output_id: OutputId!) {
+    disableOutput(restreamId: $restream_id, id: $output_id)
+}
+
+mutation EnableAllOutputs($restream_id: RestreamId!) {
+    enableAllOutputs(restreamId: $restream_id)
+}
+
+mutation DisableAllOutputs($restream_id: RestreamId!) {
+    disableAllOutputs(restreamId: $restream_id)
+}
+
+mutation EnableAllOutputsOfRestreams {
+    enablesAllOutputsOfRestreams
+}
+
+mutation DisableAllOutputsOfRestreams {
+    disableAllOutputsOfRestreams
+}
+
+mutation TuneVolume(
+    $restream_id: RestreamId!
+    $output_id: OutputId!
+    $mixin_id: MixinId
+    $volume: Volume!
+) {
+    tuneVolume(
+        restreamId: $restream_id
+        outputId: $output_id
+        mixinId: $mixin_id
+        volume: $volume
+    )
+}
+
+mutation TuneDelay(
+    $restream_id: RestreamId!
+    $output_id: OutputId!
+    $mixin_id: MixinId!
+    $delay: Delay!
+) {
+    tuneDelay(
+        restreamId: $restream_id
+        outputId: $output_id
+        mixinId: $mixin_id
+        delay: $delay
+    )
+}
+
+mutation RemoveDvrFile($path: String!) {
+    removeDvrFile(path: $path)
+}
+
+mutation SetPassword($new: String, $old: String, $kind: PasswordKind!) {
+    setPassword(new: $new, old: $old, kind: $kind)
+}
+
+mutation SetSettings(
+    $title: String
+    $deleteConfirmation: Boolean!
+    $enableConfirmation: Boolean!
+) {
+    setSettings(
+        title: $title
+        deleteConfirmation: $deleteConfirmation
+        enableConfirmation: $enableConfirmation
+    )
+}

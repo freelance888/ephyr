@@ -343,6 +343,75 @@
             "deprecationReason": null
           },
           {
+            "name": "changeEndpointLabel",
+            "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not, and `null` if the `Input` or `Endpoint` doesn't exist.",
+            "args": [
+              {
+                "name": "id",
+                "description": "ID of the `Input` to be changed.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "InputId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "restreamId",
+                "description": "ID of the `Restream` to disable the `Input` in.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "RestreamId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "endpointId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "EndpointId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "label",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Label",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "setOutput",
             "description": "Sets a new `Output` or updates an existing one (if `id` is specified).\n\n### Idempotency\n\nIdempotent if `id` is specified. Otherwise is non-idempotent, always\ncreates a new `Output` and errors on the `dst` duplicates within the\nspecified `Restream`.\n\n### Result\n\nReturns `null` if a `Restream` with the given `restreamId` doesn't\nexist, or an `Output` with the given `id` doesn't exist, otherwise\nalways returns `true`.",
             "args": [
@@ -828,6 +897,16 @@
                   "ofType": null
                 },
                 "defaultValue": null
+              },
+              {
+                "name": "kind",
+                "description": null,
+                "type": {
+                  "kind": "ENUM",
+                  "name": "PasswordKind",
+                  "ofType": null
+                },
+                "defaultValue": null
               }
             ],
             "type": {
@@ -859,6 +938,16 @@
               {
                 "name": "deleteConfirmation",
                 "description": "Whether do we need to confirm deletion of inputs and outputs",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "enableConfirmation",
+                "description": "Whether do we need to confirm enabling/disabling of inputs or outputs",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Boolean",
@@ -1197,6 +1286,29 @@
       },
       {
         "kind": "ENUM",
+        "name": "PasswordKind",
+        "description": "Specifies kind of password",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "MAIN",
+            "description": "Password for main application",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "OUTPUT",
+            "description": "Password for single output application",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
         "name": "Status",
         "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
         "fields": null,
@@ -1218,6 +1330,12 @@
           {
             "name": "ONLINE",
             "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "UNSTABLE",
+            "description": "Failed recently",
             "isDeprecated": false,
             "deprecationReason": null
           }
@@ -1356,6 +1474,18 @@
                 "name": "InputEndpointKind",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "label",
+            "description": "User defined label for each Endpoint",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Label",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2177,8 +2307,32 @@
             "deprecationReason": null
           },
           {
+            "name": "enableConfirmation",
+            "description": "Whether do we need to confirm enabling/disabling of inputs or outputs",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "passwordHash",
             "description": "[Argon2] hash of the password that this server's GraphQL API is\nprotected with, if any.\n\nNon-`null` value means that any request to GraphQL API should perform\n[HTTP Basic auth][1]. Any username is allowed, but the password should\nmatch this hash.\n\n[Argon2]: https://en.wikipedia.org/wiki/Argon2\n[1]: https://en.wikipedia.org/wiki/Basic_access_authentication",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "passwordOutputHash",
+            "description": "Password hash for single output application",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2476,6 +2630,18 @@
                 "name": "InputSrcUrl",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "label",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Label",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null

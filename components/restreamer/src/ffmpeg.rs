@@ -24,6 +24,7 @@ use crate::{
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
 };
+use chrono::{DateTime, Utc};
 use std::result::Result::Err;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
@@ -218,17 +219,22 @@ impl Restreamer {
         state: State,
     ) -> Self {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
-
         let kind_for_spawn = kind.clone();
+        let mut time_of_fail: Option<DateTime<Utc>> = None;
+
         let (spawner, abort_handle) = future::abortable(async move {
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
-
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
 
                 let _ = AssertUnwindSafe(
                     async move {
-                        kind.renew_status(Status::Initializing, state);
+                        Self::change_status(
+                            time_of_fail,
+                            kind,
+                            state,
+                            Status::Initializing,
+                        );
 
                         kind.setup_ffmpeg(
                             cmd.kill_on_drop(true)
@@ -241,7 +247,7 @@ impl Restreamer {
                             log::error!(
                                 "Failed to setup FFmpeg re-streamer: {}",
                                 e,
-                            )
+                            );
                         })
                         .await?;
 
@@ -249,7 +255,9 @@ impl Restreamer {
                         pin_mut!(running);
 
                         let set_online = async move {
-                            time::delay_for(Duration::from_secs(5)).await;
+                            // If ffmpeg process does not fail within 10 sec
+                            // than set `Online` status.
+                            time::delay_for(Duration::from_secs(10)).await;
                             kind.renew_status(Status::Online, state);
                             future::pending::<()>().await;
                             Ok(())
@@ -262,12 +270,18 @@ impl Restreamer {
                                 log::error!(
                                     "Failed to run FFmpeg re-streamer: {}",
                                     e.factor_first().0,
-                                )
+                                );
                             })
                             .map(|r| r.factor_first().0)
                     }
                     .unwrap_or_else(|_| {
-                        kind.renew_status(Status::Offline, state);
+                        Self::change_status(
+                            time_of_fail,
+                            kind,
+                            state,
+                            Status::Offline,
+                        );
+                        time_of_fail = Some(Utc::now());
                     }),
                 )
                 .catch_unwind()
@@ -286,12 +300,40 @@ impl Restreamer {
 
         // Spawn FFmpeg re-streamer as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
-            kind_for_abort.renew_status(Status::Offline, &state_for_abort)
+            kind_for_abort.renew_status(Status::Offline, &state_for_abort);
         })));
 
         Self {
             abort: DroppableAbortHandle(abort_handle),
             kind,
+        }
+    }
+
+    /// Check if the last time of fail was less that 15 sec. ago than [FFmpeg]
+    /// process is unstable.
+    /// In other case set new `[Status]` to `[RestreamerKind]`
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    fn change_status(
+        time_of_fail: Option<DateTime<Utc>>,
+        kind: &RestreamerKind,
+        state: &State,
+        new_status: Status,
+    ) {
+        match time_of_fail {
+            Some(dt) => {
+                let seconds =
+                    Utc::now().signed_duration_since(dt).num_seconds();
+                let status = if seconds < 15 {
+                    Status::Unstable
+                } else {
+                    new_status
+                };
+                kind.renew_status(status, state);
+            }
+            None => {
+                kind.renew_status(new_status, state);
+            }
         }
     }
 }
@@ -414,7 +456,7 @@ impl RestreamerKind {
             CopyRestreamer {
                 id: output.id.into(),
                 from_url: from_url.clone(),
-                to_url: Self::dst_url(&output),
+                to_url: Self::dst_url(output),
             }
             .into()
         } else {
@@ -779,7 +821,7 @@ impl MixingRestreamer {
         Self {
             id: output.id.into(),
             from_url: from_url.clone(),
-            to_url: RestreamerKind::dst_url(&output),
+            to_url: RestreamerKind::dst_url(output),
             orig_volume: output.volume,
             orig_zmq_port: new_unique_zmq_port(),
             mixins: output
@@ -1176,7 +1218,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     "Failed to establish ZeroMQ connection with {} : {}",
                     addr,
                     e,
-                )
+                );
             })?;
 
             socket
@@ -1194,7 +1236,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                         "Failed to send ZeroMQ message to {} : {}",
                         addr,
                         e,
-                    )
+                    );
                 })?;
 
             let resp = socket.recv().await.map_err(|e| {
@@ -1202,7 +1244,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     "Failed to receive ZeroMQ response from {} : {}",
                     addr,
                     e,
-                )
+                );
             })?;
 
             if resp.data.as_ref() != "0 Success".as_bytes() {
@@ -1213,7 +1255,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                         |_| Cow::Owned(format!("{:?}", &*resp.data)),
                         Cow::Borrowed,
                     ),
-                )
+                );
             }
 
             <Result<_, ()>>::Ok(())

@@ -144,9 +144,9 @@ impl Playlist {
             for clip in clips {
                 #[allow(clippy::option_if_let_else)]
                 if let Some(m) = &mut mutual {
-                    m.retain(|r| clip.sources.contains_key(r))
+                    m.retain(|r| clip.sources.contains_key(r));
                 } else {
-                    mutual = Some(clip.sources.keys().copied().collect())
+                    mutual = Some(clip.sources.keys().copied().collect());
                 }
             }
         }
@@ -438,7 +438,7 @@ impl Playlist {
                             }
 
                             for (size, seq) in &mut sequences {
-                                if let Some(src) = clip.sources.get(&size) {
+                                if let Some(src) = clip.sources.get(size) {
                                     let path =
                                         mapping::SourceClip::get_url_path(
                                             src.url
@@ -718,10 +718,7 @@ impl Clip {
         if !matches!(url.scheme().to_lowercase().as_str(), "http" | "https") {
             return Err(anyhow!("Only HTTP YouTube URLs are supported"));
         }
-        if !matches!(
-            url.host_str(),
-            Some("youtube.com") | Some("www.youtube.com")
-        ) {
+        if !matches!(url.host_str(), Some("youtube.com" | "www.youtube.com")) {
             return Err(anyhow!("Only YouTube URLs are supported"));
         }
         if url.path().trim_end_matches('/') != "/watch" {

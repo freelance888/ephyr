@@ -17,13 +17,21 @@ use structopt::StructOpt;
 fn main() -> anyhow::Result<()> {
     let opts = CliOpts::from_args_safe()?;
 
+    let err_fn = |e| anyhow!("Failed to execute introspection query: {}", e);
+
     let (res, _) = match opts.api {
         Api::Client => juniper::introspect(
             &api::graphql::client::schema(),
             &api::graphql::Context::fake(),
             juniper::IntrospectionFormat::default(),
         )
-        .map_err(|e| anyhow!("Failed to execute introspection query: {}", e))?,
+        .map_err(err_fn)?,
+        Api::Mix => juniper::introspect(
+            &api::graphql::mix::schema(),
+            &api::graphql::Context::fake(),
+            juniper::IntrospectionFormat::default(),
+        )
+        .map_err(err_fn)?,
     };
 
     let json = serde_json::to_string_pretty(&res)
@@ -79,6 +87,9 @@ enum Api {
     /// [`api::graphql::client`].
     #[display(fmt = "client")]
     Client,
+    /// [`api::graphql::mix`].
+    #[display(fmt = "mix")]
+    Mix,
 }
 
 impl FromStr for Api {
@@ -87,6 +98,7 @@ impl FromStr for Api {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "client" => Ok(Self::Client),
+            "mix" => Ok(Self::Mix),
             _ => Err(anyhow!("Unknown backend API '{}'", s)),
         }
     }

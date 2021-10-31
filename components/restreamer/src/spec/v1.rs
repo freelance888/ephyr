@@ -16,7 +16,7 @@ use url::Url;
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Spec {
     /// [`Settings`] to be performed.
-    pub settings: Settings,
+    pub settings: Option<Settings>,
 
     /// [`Restream`]s to be performed.
     #[serde(deserialize_with = "Spec::deserialize_restreams")]
@@ -61,6 +61,10 @@ pub struct Settings {
     /// Whether do we need to confirm deletion of inputs and outputs
     /// If `true` we should confirm deletion, `false` - do not confirm
     pub delete_confirmation: Option<bool>,
+
+    /// Whether do we need to confirm enabling/disabling of inputs \
+    /// or outputs
+    pub enable_confirmation: Option<bool>,
 }
 
 /// Server's info
@@ -96,6 +100,9 @@ impl Eq for ServerInfo {}
 /// [`state::Restream`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Restream {
+    /// Unique ID of [`Restream`].
+    pub id: Option<state::RestreamId>,
+
     /// Unique key of this [`Restream`] identifying it, and used to form its
     /// endpoints URLs.
     pub key: state::RestreamKey,
@@ -142,6 +149,11 @@ impl Restream {
 /// Shareable (exportable and importable) specification of a [`state::Input`].
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Input {
+    /// Unique ID of this `Input`.
+    ///
+    /// Once assigned, it never changes.
+    pub id: Option<state::InputId>,
+
     /// Key of this [`Input`] to expose its [`InputEndpoint`]s with for
     /// accepting and serving a live stream.
     pub key: state::InputKey,
@@ -234,11 +246,12 @@ impl<'de> Deserialize<'de> for Input {
             let mut unique_urls = HashSet::new();
             let mut unique_keys = HashSet::with_capacity(1);
             let _ = unique_keys.insert(&raw.key);
-            ensure_srcs_unique(&src, &mut unique_urls, &mut unique_keys)
+            ensure_srcs_unique(src, &mut unique_urls, &mut unique_keys)
                 .map_err(D::Error::custom)?;
         }
 
         Ok(Self {
+            id: None,
             key: raw.key,
             endpoints: raw.endpoints,
             src: raw.src,
@@ -249,10 +262,14 @@ impl<'de> Deserialize<'de> for Input {
 
 /// Shareable (exportable and importable) specification of a
 /// [`state::InputEndpoint`].
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct InputEndpoint {
     /// Kind of this [`InputEndpoint`].
     pub kind: state::InputEndpointKind,
+
+    /// Label for this input
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<state::Label>,
 }
 
 /// Shareable (exportable and importable) specification of a
@@ -270,6 +287,11 @@ pub enum InputSrc {
 /// Shareable (exportable and importable) specification of a [`state::Output`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Output {
+    /// Unique ID of this `Output`.
+    ///
+    /// Once assigned, it never changes.
+    pub id: Option<state::OutputId>,
+
     /// Downstream URL to re-stream a live stream onto.
     pub dst: state::OutputDstUrl,
 

@@ -1,0 +1,6 @@
+/.envrc
+
+/public/
+
+/node_modules/
+/yarn-error.log

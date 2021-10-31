@@ -64,17 +64,17 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/yarn.lock', matrix.component)) }}
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
                 && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
       - run: yarn lint
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
 
@@ -210,17 +210,17 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/yarn.lock', matrix.component)) }}
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
                 && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
       - run: yarn doc
-        working-directory: components/${{ matrix.component }}
+        working-directory: components/${{ matrix.component }}/client
         if: ${{ matrix.if }}
 
 
@@ -233,18 +233,21 @@ jobs:
   docker:
     if: ${{ github.ref == 'refs/heads/master'
             || startsWith(github.ref, 'refs/tags/')
+            || contains(github.event.head_commit.message, '[release]')
             || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             export: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                        || github.ref == 'refs/heads/master' }}
+                        || github.ref == 'refs/heads/master'
+                        || contains(github.event.head_commit.message, '[release]') }}
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
           - component: vod-meta-server
             export: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                        || github.ref == 'refs/heads/master' }}
+                        || github.ref == 'refs/heads/master'
+                        || contains(github.event.head_commit.message, '[release]') }}
             if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
     env:
@@ -300,16 +303,19 @@ jobs:
       - typedoc
       - docker
     if: ${{ github.ref == 'refs/heads/master'
+            || contains(github.event.head_commit.message, '[release]')
             || startsWith(github.ref, 'refs/tags/') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
+                    || contains(github.event.head_commit.message, '[release]')
                     || !startsWith(github.ref, 'refs/tags/') }}
           - component: vod-meta-server
             if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+                  || contains(github.event.head_commit.message, '[release]')
+                  || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -358,6 +364,9 @@ jobs:
           script: |
             if (${{ github.ref == 'refs/heads/master' }}) {
               return 'edge';
+            }
+            if (${{ contains(github.event.head_commit.message, '[release]') }}) {
+              return 'dev';
             }
 
             let versions = '${{ steps.semver.outputs.group1 }}';

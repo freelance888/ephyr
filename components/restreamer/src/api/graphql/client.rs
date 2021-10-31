@@ -17,18 +17,17 @@ use crate::{
     dvr, spec,
     state::{
         Delay, InputEndpointKind, InputId, InputKey, InputSrcUrl, Label,
-        MixinId, MixinSrcUrl, OutputDstUrl, OutputId, Restream, RestreamId,
-        RestreamKey, Volume,
+        MixinId, MixinSrcUrl, OutputDstUrl, OutputId, PasswordKind, Restream,
+        RestreamId, RestreamKey, Volume,
     },
     Spec,
 };
 
 use super::Context;
+use crate::state::EndpointId;
 use url::Url;
 
-/// Full schema of [`api::graphql::client`].
-///
-/// [`api::graphql::client`]: graphql::client
+/// Schema of `Restreamer` app.
 pub type Schema =
     RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 
@@ -160,17 +159,21 @@ impl MutationsRoot {
         let input_src = if with_backup {
             Some(spec::v1::InputSrc::FailoverInputs(vec![
                 spec::v1::Input {
+                    id: None,
                     key: InputKey::new("main").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
+                        label: None,
                     }],
                     src: src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
                 },
                 spec::v1::Input {
+                    id: None,
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
+                        label: None,
                     }],
                     src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
@@ -182,17 +185,21 @@ impl MutationsRoot {
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
             kind: InputEndpointKind::Rtmp,
+            label: None,
         }];
         if with_hls {
             endpoints.push(spec::v1::InputEndpoint {
                 kind: InputEndpointKind::Hls,
+                label: None,
             });
         }
 
         let spec = spec::v1::Restream {
+            id: None,
             key,
             label,
             input: spec::v1::Input {
+                id: None,
                 key: InputKey::new("origin").unwrap(),
                 endpoints,
                 src: input_src,
@@ -303,6 +310,48 @@ impl MutationsRoot {
         context.state().disable_input(id, restream_id)
     }
 
+    /// Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if the label has been set with the given `label`,
+    /// `false` if it was not
+    /// `null` if the `Input` or `Endpoint` doesn't exist.
+    #[graphql(arguments(
+        id(description = "ID of the `Input` to be changed."),
+        restream_id(description = "ID of the `Restream` to change."),
+        endpoint_id(),
+        label(),
+    ))]
+    fn change_endpoint_label(
+        id: InputId,
+        restream_id: RestreamId,
+        endpoint_id: EndpointId,
+        label: String,
+        context: &Context,
+    ) -> Option<bool> {
+        if label.is_empty() {
+            context.state().change_endpoint_label(
+                id,
+                restream_id,
+                endpoint_id,
+                None,
+            )
+        } else {
+            let label_opt: Option<Label> = Label::new(label);
+            if label_opt.is_some() {
+                context.state().change_endpoint_label(
+                    id,
+                    restream_id,
+                    endpoint_id,
+                    label_opt,
+                )
+            } else {
+                Some(false)
+            }
+        }
+    }
+
     /// Sets a new `Output` or updates an existing one (if `id` is specified).
     ///
     /// ### Idempotency
@@ -374,6 +423,7 @@ impl MutationsRoot {
         }
 
         let spec = spec::v1::Output {
+            id: None,
             dst,
             label,
             preview_url,
@@ -641,14 +691,19 @@ impl MutationsRoot {
     fn set_password(
         new: Option<String>,
         old: Option<String>,
+        kind: Option<PasswordKind>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         static HASH_CFG: Lazy<argon2::Config<'static>> =
             Lazy::new(argon2::Config::default);
 
-        let mut settings = context.state().settings.lock_mut();
+        let settings = context.state().settings.get_cloned();
+        let hash = match kind {
+            None | Some(PasswordKind::Main) => settings.password_hash,
+            Some(PasswordKind::Output) => settings.password_output_hash,
+        };
 
-        if let Some(hash) = &settings.password_hash {
+        if let Some(hash) = &hash {
             match old {
                 None => {
                     return Err(graphql::Error::new("NO_OLD_PASSWORD")
@@ -665,11 +720,11 @@ impl MutationsRoot {
             }
         }
 
-        if settings.password_hash.is_none() && new.is_none() {
+        if hash.is_none() && new.is_none() {
             return Ok(false);
         }
 
-        settings.password_hash = new.map(|v| {
+        let new_hash = new.map(|v| {
             argon2::hash_encoded(
                 v.as_bytes(),
                 &rand::thread_rng().gen::<[u8; 32]>(),
@@ -677,6 +732,16 @@ impl MutationsRoot {
             )
             .unwrap()
         });
+
+        let mut settings = context.state().settings.lock_mut();
+        match kind {
+            None | Some(PasswordKind::Main) => {
+                settings.password_hash = new_hash;
+            }
+            Some(PasswordKind::Output) => {
+                settings.password_output_hash = new_hash;
+            }
+        };
 
         Ok(true)
     }
@@ -692,11 +757,16 @@ impl MutationsRoot {
         delete_confirmation(
             description = "Whether do we need to confirm deletion of inputs \
             and outputs"
+        ),
+        enable_confirmation(
+            description = "Whether do we need to confirm enabling/disabling of \
+            inputs or outputs"
         )
     ))]
     fn set_settings(
         title: Option<String>,
         delete_confirmation: Option<bool>,
+        enable_confirmation: Option<bool>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -710,6 +780,7 @@ impl MutationsRoot {
         let mut settings = context.state().settings.lock_mut();
         settings.title = Some(value);
         settings.delete_confirmation = delete_confirmation;
+        settings.enable_confirmation = enable_confirmation;
         Ok(true)
     }
 }
@@ -728,8 +799,10 @@ impl QueriesRoot {
         Info {
             public_host: context.config().public_host.clone().unwrap(),
             password_hash: settings.password_hash,
+            password_output_hash: settings.password_output_hash,
             title: settings.title,
             delete_confirmation: settings.delete_confirmation,
+            enable_confirmation: settings.enable_confirmation,
         }
     }
 
@@ -798,7 +871,7 @@ impl QueriesRoot {
         (!restreams.is_empty())
             .then(|| {
                 let spec: Spec = spec::v1::Spec {
-                    settings,
+                    settings: Some(settings),
                     server_info,
                     restreams,
                 }
@@ -830,8 +903,10 @@ impl SubscriptionsRoot {
             .map(move |h| Info {
                 public_host: public_host.clone(),
                 password_hash: h.password_hash,
+                password_output_hash: h.password_output_hash,
                 title: h.title,
                 delete_confirmation: h.delete_confirmation,
+                enable_confirmation: h.enable_confirmation,
             })
             .to_stream()
             .boxed()
@@ -885,6 +960,9 @@ pub struct Info {
     /// Whether do we need to confirm deletion of inputs and outputs
     pub delete_confirmation: Option<bool>,
 
+    /// Whether do we need to confirm enabling/disabling of inputs or outputs
+    pub enable_confirmation: Option<bool>,
+
     /// [Argon2] hash of the password that this server's GraphQL API is
     /// protected with, if any.
     ///
@@ -895,6 +973,9 @@ pub struct Info {
     /// [Argon2]: https://en.wikipedia.org/wiki/Argon2
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
     pub password_hash: Option<String>,
+
+    /// Password hash for single output application
+    pub password_output_hash: Option<String>,
 }
 
 /// Information about server status.

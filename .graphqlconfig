@@ -4,7 +4,15 @@
       "schemaPath": "./components/restreamer/client.graphql.schema.json",
       "extensions": {
         "endpoints": {
-          "dev": "http://127.0.0.1/api/"
+          "client": "http://127.0.0.1/api/"
+        }
+      }
+    },
+    "ephyr-restreamer-mix": {
+      "schemaPath": "./components/restreamer/mix.graphql.schema.json",
+      "extensions": {
+        "endpoints": {
+          "mix": "http://127.0.0.1/api-mix/"
         }
       }
     }

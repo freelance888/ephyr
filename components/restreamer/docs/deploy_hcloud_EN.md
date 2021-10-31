@@ -114,4 +114,4 @@ Use IP address of the created server in browser's address bar to access the inst
 [SSH]: https://en.wikipedia.org/wiki/SSH_(Secure_Shell)
 
 [1]: https://accounts.hetzner.com/account/payment
-[2]: https://qsandbox.com/tools/private-public-keygen
+[2]: https://app.id123.io/free-tools/key-generator/

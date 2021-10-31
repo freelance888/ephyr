@@ -247,15 +247,22 @@ endif
 # GraphQL commands #
 ####################
 
-# Generate GraphQL schema JSON from project sources.
+# Generate Client GraphQL schema JSON from project sources.
 #
 # Usage:
-#	make graphql.schema
+#	make graphql.schema.client
 
-graphql.schema:
+graphql.schema.client:
 	cargo run --bin export_schema -- --api=client --out-dir=./
 
 
+# Generate Mix GraphQL schema JSON from project sources.
+#
+# Usage:
+#	make graphql.schema.mix
+
+graphql.schema.mix:
+	cargo run --bin export_schema -- --api=mix --out-dir=./
 
 
 ##################
@@ -266,4 +273,4 @@ graphql.schema:
         cargo.fmt cargo.lint \
         do.down do.setup do.token.verify do.up \
         docker.down docker.image docker.push docker.up \
-        graphql.schema
+        graphql.schema.client graphql.schema.mix

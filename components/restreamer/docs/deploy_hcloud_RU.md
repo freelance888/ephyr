@@ -114,4 +114,4 @@ curl -sL https://tinyurl.com/k46y7v3c | EPHYR_VER=0.3.0 bash -s
 [SSH]: https://en.wikipedia.org/wiki/SSH_(Secure_Shell)
 
 [1]: https://accounts.hetzner.com/account/payment
-[2]: https://qsandbox.com/tools/private-public-keygen
+[2]: https://app.id123.io/free-tools/key-generator/

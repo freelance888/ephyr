@@ -7,3 +7,5 @@
 
 /do.deploy.sh
 /state.json
+
+/.idea/**

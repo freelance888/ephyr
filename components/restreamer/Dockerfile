@@ -3,7 +3,7 @@
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.3-centos7 AS build-ephyr
+FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
 
 
 # Install Rust.
@@ -63,9 +63,9 @@ RUN cargo build -p ephyr-restreamer --lib --release
 # avoid recompilation each time project sources are changed.
 WORKDIR /tmp/ephyr/components/restreamer/
 
-COPY components/restreamer/.yarnrc \
-     components/restreamer/package.json \
-     components/restreamer/yarn.lock \
+COPY components/restreamer/client/.yarnrc \
+     components/restreamer/client/package.json \
+     components/restreamer/client/yarn.lock \
      ./
 
 RUN yarn install --pure-lockfile
@@ -99,7 +99,7 @@ FROM ossrs/srs:3 AS build-srs
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.3-centos7 AS runtime
+FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 

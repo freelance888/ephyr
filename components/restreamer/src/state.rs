@@ -40,6 +40,10 @@ pub struct Settings {
     /// public APIs.
     pub password_hash: Option<String>,
 
+    /// [`argon2`] hash of password which protects access to single output
+    /// application's public APIs.
+    pub password_output_hash: Option<String>,
+
     /// Title for the server
     /// It is used for differentiating servers on UI side if multiple servers
     /// are used.
@@ -48,6 +52,10 @@ pub struct Settings {
     /// Whether do we need to confirm deletion of inputs and outputs
     /// If `true` we should confirm deletion, `false` - do not confirm
     pub delete_confirmation: Option<bool>,
+
+    /// Whether do we need to confirm enabling/disabling of inputs or outputs
+    /// If `true` we should confirm, `false` - do not confirm
+    pub enable_confirmation: Option<bool>,
 }
 
 impl Settings {
@@ -57,6 +65,7 @@ impl Settings {
     pub fn export(&self) -> spec::v1::Settings {
         spec::v1::Settings {
             delete_confirmation: self.delete_confirmation,
+            enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
         }
     }
@@ -66,6 +75,7 @@ impl Settings {
     pub fn apply(&mut self, new: spec::v1::Settings) {
         self.title = new.title;
         self.delete_confirmation = new.delete_confirmation;
+        self.enable_confirmation = new.enable_confirmation;
     }
 }
 
@@ -73,8 +83,10 @@ impl Default for Settings {
     fn default() -> Settings {
         Settings {
             password_hash: None,
+            password_output_hash: None,
             title: None,
             delete_confirmation: Some(true),
+            enable_confirmation: Some(true),
         }
     }
 }
@@ -276,7 +288,11 @@ impl State {
         }
 
         let mut settings = self.settings.lock_mut();
-        settings.apply(new.settings);
+        if new.settings.is_some() || replace {
+            settings.apply(
+                new.settings.unwrap_or_else(|| Settings::default().export()),
+            );
+        }
     }
 
     /// Exports this [`State`] as a [`spec::v1::Spec`].
@@ -284,7 +300,7 @@ impl State {
     #[must_use]
     pub fn export(&self) -> Spec {
         spec::v1::Spec {
-            settings: self.settings.get_cloned().export(),
+            settings: Some(self.settings.get_cloned().export()),
             restreams: self
                 .restreams
                 .get_cloned()
@@ -315,7 +331,7 @@ impl State {
                     "Panicked executing `{}` hook of state: {}",
                     name,
                     display_panic(&p),
-                )
+                );
             })
             .map(|_| Ok(()))
             .forward(sink::drain()),
@@ -439,6 +455,31 @@ impl State {
             .input
             .find_mut(id)
             .map(Input::disable)
+    }
+
+    ///
+    ///
+    /// Returns `true` if it has been disabled, or `false` if it already has
+    /// been disabled, or [`None`] if it doesn't exist.
+    #[must_use]
+    pub fn change_endpoint_label(
+        &self,
+        id: InputId,
+        restream_id: RestreamId,
+        endpoint_id: EndpointId,
+        label: Option<Label>,
+    ) -> Option<bool> {
+        self.restreams
+            .lock_mut()
+            .iter_mut()
+            .find(|r| r.id == restream_id)?
+            .input
+            .find_mut(id)?
+            .endpoints
+            .iter_mut()
+            .find(|endpoint| endpoint.id == endpoint_id)?
+            .label = label;
+        Some(true)
     }
 
     /// Adds a new [`Output`] to the specified [`Restream`] of this [`State`].
@@ -580,6 +621,22 @@ impl State {
 
         output.enabled = false;
         Some(true)
+    }
+
+    /// Get [Output] from [Restream] by `restream_id` and `output_id`
+    #[must_use]
+    pub fn get_output(
+        &self,
+        restream_id: RestreamId,
+        output_id: OutputId,
+    ) -> Option<Output> {
+        self.restreams
+            .get_cloned()
+            .into_iter()
+            .find(|r| r.id == restream_id)?
+            .outputs
+            .into_iter()
+            .find(|o| o.id == output_id)
     }
 
     /// Enables all [`Output`]s in the specified [`Restream`] of this [`State`].
@@ -814,6 +871,7 @@ impl Restream {
     #[must_use]
     pub fn export(&self) -> spec::v1::Restream {
         spec::v1::Restream {
+            id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
             input: self.input.export(),
@@ -1021,6 +1079,7 @@ impl Input {
     #[must_use]
     pub fn export(&self) -> spec::v1::Input {
         spec::v1::Input {
+            id: Some(self.id),
             key: self.key.clone(),
             endpoints: self
                 .endpoints
@@ -1125,6 +1184,10 @@ pub struct InputEndpoint {
     /// Kind of this `InputEndpoint`.
     pub kind: InputEndpointKind,
 
+    /// User defined label for each Endpoint
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<Label>,
+
     /// `Status` of this `InputEndpoint` indicating whether it actually serves a
     /// live stream ready to be consumed by `Output`s and clients.
     #[serde(skip)]
@@ -1157,6 +1220,7 @@ impl InputEndpoint {
             id: EndpointId::random(),
             kind: spec.kind,
             status: Status::Offline,
+            label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
         }
@@ -1166,13 +1230,17 @@ impl InputEndpoint {
     #[inline]
     pub fn apply(&mut self, new: spec::v1::InputEndpoint) {
         self.kind = new.kind;
+        self.label = new.label;
     }
 
     /// Exports this [`InputEndpoint`] as a [`spec::v1::InputEndpoint`].
     #[inline]
     #[must_use]
     pub fn export(&self) -> spec::v1::InputEndpoint {
-        spec::v1::InputEndpoint { kind: self.kind }
+        spec::v1::InputEndpoint {
+            kind: self.kind,
+            label: self.label.clone(),
+        }
     }
 
     /// Indicates whether this [`InputEndpoint`] is an
@@ -1285,7 +1353,7 @@ impl InputSrc {
     pub fn new(spec: spec::v1::InputSrc) -> Self {
         match spec {
             spec::v1::InputSrc::RemoteUrl(url) => {
-                Self::Remote(RemoteInputSrc { url })
+                Self::Remote(RemoteInputSrc { url, label: None })
             }
             spec::v1::InputSrc::FailoverInputs(inputs) => {
                 Self::Failover(FailoverInputSrc {
@@ -1301,7 +1369,7 @@ impl InputSrc {
     pub fn apply(&mut self, new: spec::v1::InputSrc) {
         match (self, new) {
             (Self::Remote(old), spec::v1::InputSrc::RemoteUrl(new_url)) => {
-                old.url = new_url
+                old.url = new_url;
             }
             (Self::Failover(src), spec::v1::InputSrc::FailoverInputs(news)) => {
                 let mut olds = mem::replace(
@@ -1346,6 +1414,10 @@ impl InputSrc {
 pub struct RemoteInputSrc {
     /// URL of this `RemoteInputSrc`.
     pub url: InputSrcUrl,
+
+    /// Label for this Endpoint
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<Label>,
 }
 
 /// Failover source of multiple `Input`s to pull a live stream by an `Input`
@@ -1654,6 +1726,7 @@ impl Output {
     #[must_use]
     pub fn export(&self) -> spec::v1::Output {
         spec::v1::Output {
+            id: Some(self.id),
             dst: self.dst.clone(),
             label: self.label.clone(),
             preview_url: self.preview_url.clone(),
@@ -1970,6 +2043,16 @@ where
     }
 }
 
+/// Specifies kind of password
+#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq)]
+pub enum PasswordKind {
+    /// Password for main application
+    Main,
+
+    /// Password for single output application
+    Output,
+}
+
 /// Status indicating availability of an `Input`, `Output`, or a `Mixin`.
 #[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault)]
 pub enum Status {
@@ -1983,6 +2066,9 @@ pub enum Status {
     /// Active, all operations are performing successfully and media traffic
     /// flows as expected.
     Online,
+
+    /// Failed recently
+    Unstable,
 }
 
 /// Label of a [`Restream`] or an [`Output`].

@@ -26,7 +26,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             detect_public_ip()
                 .await
                 .ok_or_else(|| {
-                    log::error!("Cannot detect server's public IP address")
+                    log::error!("Cannot detect server's public IP address");
                 })?
                 .to_string(),
         );
@@ -34,7 +34,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {}", e)
+            log::error!("Failed to resolve FFmpeg binary path: {}", e);
         })?;
 
     let state = State::try_new(&cfg.state_path)
@@ -110,11 +110,21 @@ pub mod client {
         State,
     };
 
+    const MIX_ROUTE: &str = "/mix";
+    const MIX_ROUTE_API: &str = "/api-mix";
+
     pub mod public_dir {
         #![allow(clippy::must_use_candidate, unused_results)]
         #![doc(hidden)]
 
         include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+    }
+
+    pub mod public_mix_dir {
+        #![allow(clippy::must_use_candidate, unused_results)]
+        #![doc(hidden)]
+
+        include!(concat!(env!("OUT_DIR"), "/generated_mix.rs"));
     }
 
     /// Runs client HTTP server.
@@ -140,7 +150,9 @@ pub mod client {
         let stored_cfg = cfg.clone();
 
         Ok(HttpServer::new(move || {
-            let public_dir_files = public_dir::generate();
+            let root_dir_files = public_dir::generate();
+            let output_dir_files = public_mix_dir::generate();
+
             let mut app = App::new()
                 .app_data(stored_cfg.clone())
                 .app_data(state.clone())
@@ -148,16 +160,22 @@ pub mod client {
                     basic::Config::default().realm("Any login is allowed"),
                 )
                 .data(api::graphql::client::schema())
+                .data(api::graphql::mix::schema())
                 .wrap(middleware::Logger::default())
                 .wrap_fn(|req, srv| match authorize(req) {
                     Ok(req) => srv.call(req).left_future(),
                     Err(e) => future::err(e).right_future(),
                 })
-                .service(graphql);
+                .service(graphql_client)
+                .service(graphql_mix);
             if in_debug_mode {
-                app = app.service(playground);
+                app = app.service(playground_client).service(playground_mix);
             }
-            app.service(ResourceFiles::new("/", public_dir_files))
+            app.service(
+                ResourceFiles::new(MIX_ROUTE, output_dir_files)
+                    .resolve_not_found_to("index.html"),
+            )
+            .service(ResourceFiles::new("/", root_dir_files))
         })
         .bind((cfg.client_http_ip, cfg.client_http_port))
         .map_err(|e| log::error!("Failed to bind client HTTP server: {}", e))?
@@ -166,24 +184,66 @@ pub mod client {
         .map_err(|e| log::error!("Failed to run client HTTP server: {}", e))?)
     }
 
-    /// Endpoint serving [`api::graphql::client`] directly.
-    ///
-    /// # Errors
-    ///
-    /// If GraphQL operation execution errors or fails.
+    /// Either main or output schema
+    #[derive(Debug)]
+    pub enum SchemaKind {
+        /// Full schema
+        Schema(web::Data<api::graphql::client::Schema>),
+
+        /// Single output schema for mixing
+        SchemaMix(web::Data<api::graphql::mix::Schema>),
+    }
+
+    /// Endpoint serving [`api::`graphql`::mix`] for single output
+    /// application
+    #[route("/api-mix", method = "GET", method = "POST")]
+    async fn graphql_mix(
+        req: HttpRequest,
+        payload: web::Payload,
+        schema_mix: web::Data<api::graphql::mix::Schema>,
+    ) -> Result<HttpResponse, Error> {
+        graphql(req, payload, SchemaKind::SchemaMix(schema_mix)).await
+    }
+
+    /// Endpoint serving [`api::`graphql`::client`] for main application
     #[route("/api", method = "GET", method = "POST")]
-    async fn graphql(
+    async fn graphql_client(
         req: HttpRequest,
         payload: web::Payload,
         schema: web::Data<api::graphql::client::Schema>,
+    ) -> Result<HttpResponse, Error> {
+        graphql(req, payload, SchemaKind::Schema(schema)).await
+    }
+
+    async fn graphql(
+        req: HttpRequest,
+        payload: web::Payload,
+        schema_kind: SchemaKind,
     ) -> Result<HttpResponse, Error> {
         let ctx = api::graphql::Context::new(req.clone());
         if req.head().upgrade() {
             let cfg = ConnectionConfig::new(ctx)
                 .with_keep_alive_interval(Duration::from_secs(5));
-            subscriptions_handler(req, payload, schema.into_inner(), cfg).await
+
+            match schema_kind {
+                SchemaKind::Schema(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
+                SchemaKind::SchemaMix(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
+            }
         } else {
-            graphql_handler(&schema, &ctx, req, payload).await
+            match schema_kind {
+                SchemaKind::Schema(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
+                SchemaKind::SchemaMix(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
+            }
         }
     }
 
@@ -192,6 +252,20 @@ pub mod client {
     ///
     /// [1]: https://github.com/graphql/graphql-playground
     #[get("/api/playground")]
+    async fn playground_client() -> HttpResponse {
+        playground().await
+    }
+
+    /// Endpoint serving [GraphQL Playground][1] for exploring
+    /// [`api::graphql::mix`].
+    ///
+    /// [1]: https://github.com/graphql/graphql-playground
+    #[get("/api-mix/playground")]
+    async fn playground_mix() -> HttpResponse {
+        playground().await
+    }
+
+    #[allow(clippy::unused_async)]
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
         // and authority.
@@ -211,13 +285,20 @@ pub mod client {
     ///
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
     fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
-        let hash = match req
-            .app_data::<State>()
-            .unwrap()
-            .settings
-            .get_cloned()
-            .password_hash
-        {
+        let route = req.uri().path();
+        log::debug!("authorize URI PATH: {}", route);
+
+        let is_mix_auth =
+            route.starts_with(MIX_ROUTE) || route.starts_with(MIX_ROUTE_API);
+        let settings = req.app_data::<State>().unwrap().settings.get_cloned();
+
+        let hash = if is_mix_auth {
+            settings.password_output_hash
+        } else {
+            settings.password_hash
+        };
+
+        let hash = match hash {
             Some(h) => h,
             None => return Ok(req),
         };
@@ -278,7 +359,7 @@ pub mod callback {
         .run()
         .await
         .map_err(|e| {
-            log::error!("Failed to run callback HTTP server: {}", e)
+            log::error!("Failed to run callback HTTP server: {}", e);
         })?)
     }
 
@@ -290,6 +371,7 @@ pub mod callback {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+    #[allow(clippy::unused_async)]
     #[post("/")]
     async fn on_callback(
         req: web::Json<callback::Request>,

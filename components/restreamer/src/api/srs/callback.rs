@@ -52,7 +52,7 @@ pub struct Request {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
-#[allow(clippy::pub_enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Event {
