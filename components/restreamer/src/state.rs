@@ -92,7 +92,7 @@ impl Default for Settings {
 }
 
 /// Server's info
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: f64,
@@ -111,19 +111,6 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-    /// Exports this [`ServerInfo`] as a [`spec::v1::ServerInfo`].
-    #[inline]
-    #[must_use]
-    pub fn export(&self) -> spec::v1::ServerInfo {
-        spec::v1::ServerInfo {
-            cpu_usage: self.cpu_usage,
-            ram_total: self.ram_total,
-            ram_free: self.ram_free,
-            tx_delta: self.tx_delta,
-            rx_delta: self.rx_delta,
-        }
-    }
-
     /// Applies the given [`spec::v1::ServerInfo`] to this [`ServerInfo`].
     pub fn apply(&mut self, new: spec::v1::ServerInfo) {
         self.cpu_usage = new.cpu_usage;
@@ -162,18 +149,6 @@ impl Default for ServerInfo {
         }
     }
 }
-
-impl PartialEq for ServerInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.cpu_usage == other.cpu_usage &&
-            self.tx_delta == other.tx_delta &&
-            self.rx_delta == other.rx_delta &&
-            self.ram_total == other.ram_total &&
-            self.ram_free == other.ram_free
-    }
-}
-
-impl Eq for ServerInfo {}
 
 /// Reactive application's state.
 ///

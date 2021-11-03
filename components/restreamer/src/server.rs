@@ -716,7 +716,7 @@ pub mod statistics {
             }
         });
 
-        drop(tokio::spawn(spawner.map(move |_| { })));
+        drop(tokio::spawn(spawner));
 
         Ok(())
     }

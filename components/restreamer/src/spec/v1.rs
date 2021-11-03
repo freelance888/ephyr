@@ -21,9 +21,6 @@ pub struct Spec {
     /// [`Restream`]s to be performed.
     #[serde(deserialize_with = "Spec::deserialize_restreams")]
     pub restreams: Vec<Restream>,
-
-    /// [`ServerInfo`] to be performed.
-    pub server_info: ServerInfo,
 }
 
 impl Spec {
@@ -67,34 +64,6 @@ pub struct Settings {
     pub enable_confirmation: Option<bool>,
 }
 
-/// Server's info
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ServerInfo {
-    /// Total CPU usage, %
-    pub cpu_usage: f64,
-
-    /// Total RAM installed on current machine, bytes
-    pub ram_total: f64,
-
-    /// Free (available) RAM, bytes
-    pub ram_free: f64,
-
-    /// Bytes, transfered last second
-    pub tx_delta: f64,
-
-    /// Bytes, received last second
-    pub rx_delta: f64,
-}
-impl PartialEq for ServerInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.cpu_usage == other.cpu_usage &&
-            self.tx_delta == other.tx_delta &&
-            self.rx_delta == other.rx_delta &&
-            self.ram_total == other.ram_total &&
-            self.ram_free == other.ram_free
-    }
-}
-impl Eq for ServerInfo {}
 
 /// Shareable (exportable and importable) specification of a
 /// [`state::Restream`].

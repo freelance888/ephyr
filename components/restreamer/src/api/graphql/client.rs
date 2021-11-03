@@ -858,7 +858,6 @@ impl QueriesRoot {
         context: &Context,
     ) -> Result<Option<String>, graphql::Error> {
         let settings = context.state().settings.get_cloned().export();
-        let server_info = context.state().server_info.get_cloned().export();
         let restreams = context
             .state()
             .restreams
@@ -872,7 +871,6 @@ impl QueriesRoot {
             .then(|| {
                 let spec: Spec = spec::v1::Spec {
                     settings: Some(settings),
-                    server_info,
                     restreams,
                 }
                 .into();
