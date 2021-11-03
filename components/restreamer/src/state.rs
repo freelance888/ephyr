@@ -257,17 +257,17 @@ impl State {
         ));
     }
 
-    /// Adds a new [`Client`] by ip address to this [`State`]
+    /// Adds a new [`Client`] to this [`State`]
     ///
     /// # Errors
     ///
-    /// If this [`State`] has a [`Client`] with the same ip address
+    /// If this [`State`] has a [`Client`] with the same host
     pub fn add_client(&self, host: String) -> anyhow::Result<()> {
         let mut clients = self.clients.lock_mut();
 
         if clients.iter().any(|r| r.id == ClientId::new(host.clone())) {
             return Err(anyhow!(
-                "Client ip address '{}' is used already",
+                "Client host '{}' is used already",
                 host.clone()
             ));
         }
