@@ -9,6 +9,7 @@ pub struct DroppableAbortHandle(future::AbortHandle);
 
 impl DroppableAbortHandle {
     /// Creates and initialise callback for aborting future on `drop()`
+    #[must_use]
     pub fn new(callback: future::AbortHandle) -> Self {
         Self(callback)
     }

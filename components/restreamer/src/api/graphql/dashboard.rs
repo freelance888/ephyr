@@ -4,7 +4,7 @@
 
 use super::Context;
 use crate::api::graphql;
-use crate::state::Client;
+use crate::state::{Client, ClientId};
 use actix_web::http::StatusCode;
 use futures::stream::BoxStream;
 use futures_signals::signal::SignalExt;
@@ -46,16 +46,16 @@ impl MutationsRoot {
     ///
     /// Returns [`graphql::Error`] if there is already [`Client`] in this
     /// [`State`].
-    #[graphql(arguments(ip_address(
-        description = "IP address of remote host."
+    #[graphql(arguments(client_id(
+        description = "IP address or host name of remote client"
     )))]
     fn add_client(
-        host: String,
+        client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        match context.state().add_client(host) {
+        match context.state().add_client(&client_id) {
             Ok(_) => Ok(Some(true)),
-            Err(e) => Err(graphql::Error::new("DUPLICATE_CLIENT_IP")
+            Err(e) => Err(graphql::Error::new("DUPLICATE_CLIENT")
                 .status(StatusCode::CONFLICT)
                 .message(&e)),
         }
@@ -65,14 +65,14 @@ impl MutationsRoot {
     ///
     /// Returns [`None`] if there is no [`Client`] in this
     /// [`State`].
-    #[graphql(arguments(ip_address(
-        description = "IP address of remote host."
+    #[graphql(arguments(client_id(
+        description = "IP address or host name of remote client"
     )))]
     fn remove_client(
-        host: String,
+        client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        match context.state().remove_client(host) {
+        match context.state().remove_client(&client_id) {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }

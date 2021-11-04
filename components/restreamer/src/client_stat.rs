@@ -178,10 +178,10 @@ impl ClientJob {
         client_id: &ClientId,
         state: &State,
     ) -> anyhow::Result<()> {
-        log::info!("Getting statistics from client: {}", client_id);
-
         type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
         type ResponseData = <StatisticsQuery as GraphQLQuery>::ResponseData;
+
+        log::info!("Getting statistics from client: {}", client_id);
 
         let request_body = StatisticsQuery::build_query(Vars {});
 
@@ -194,7 +194,8 @@ impl ClientJob {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        Self::save_client_stat(client_id, response, state)
+        Self::save_client_stat(client_id, response, state);
+        Ok(())
     }
 
     fn save_client_error(
@@ -204,7 +205,7 @@ impl ClientJob {
     ) {
         let mut clients = state.clients.lock_mut();
         let client =
-            match clients.iter_mut().find(|r| r.id == client_id.to_owned()) {
+            match clients.iter_mut().find(|r| r.id == *client_id) {
                 Some(c) => c,
                 None => panic!("Client with id = {} was not found", client_id),
             };
@@ -219,17 +220,17 @@ impl ClientJob {
         client_id: &ClientId,
         response: Response<<StatisticsQuery as GraphQLQuery>::ResponseData>,
         state: &State,
-    ) -> anyhow::Result<()> {
+    ) {
         let response_errors: Vec<String> = response
             .errors
-            .unwrap_or(vec![])
+            .unwrap_or_else(Vec::new)
             .into_iter()
             .map(|e| e.message)
             .collect();
 
         let mut clients = state.clients.lock_mut();
         let client =
-            match clients.iter_mut().find(|r| r.id == client_id.to_owned()) {
+            match clients.iter_mut().find(|r| r.id == *client_id) {
                 Some(c) => c,
                 None => panic!("Client with id = {} was not found", client_id),
             };
@@ -256,7 +257,5 @@ impl ClientJob {
                 errors: Some(response_errors),
             }),
         };
-
-        Ok(())
     }
 }

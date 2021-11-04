@@ -201,7 +201,7 @@ impl MutationsRoot {
                 src: input_src,
                 enabled: true,
             },
-            outputs: vec![],
+            outputs: Vec::new(),
         };
 
         #[allow(clippy::option_if_let_else)] // due to consuming `spec`

@@ -262,17 +262,17 @@ impl State {
     /// # Errors
     ///
     /// If this [`State`] has a [`Client`] with the same host
-    pub fn add_client(&self, host: String) -> anyhow::Result<()> {
+    pub fn add_client(&self, client_id: &ClientId) -> anyhow::Result<()> {
         let mut clients = self.clients.lock_mut();
 
-        if clients.iter().any(|r| r.id == ClientId::new(host.clone())) {
+        if clients.iter().any(|r| r.id == *client_id) {
             return Err(anyhow!(
                 "Client host '{}' is used already",
-                host.clone()
+                client_id
             ));
         }
 
-        clients.push(Client::new(host.clone()));
+        clients.push(Client::new(client_id));
 
         Ok(())
     }
@@ -282,10 +282,10 @@ impl State {
     /// Returns [`None`] if there is no [`Client`] with such `id` in this
     /// [`State`].
     #[allow(clippy::must_use_candidate)]
-    pub fn remove_client(&self, host: String) -> Option<()> {
+    pub fn remove_client(&self, client_id: &ClientId) -> Option<()> {
         let mut clients = self.clients.lock_mut();
         let prev_len = clients.len();
-        clients.retain(|r| r.id != ClientId::new(host.clone()));
+        clients.retain(|r| r.id != *client_id);
         (clients.len() != prev_len).then(|| ())
     }
 
@@ -675,6 +675,7 @@ impl State {
     }
 
     /// Gather statistics about [`Input`]s statuses
+    #[must_use]
     pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
         self.restreams
             .get_cloned()
@@ -682,10 +683,12 @@ impl State {
             .fold(HashMap::new(), |mut stat, restream| {
                 let item =
                     restream.input.endpoints.iter().find(|e| e.is_rtmp());
-                if item.is_some() {
-                    let main_input = item.unwrap();
-                    Self::update_stat(&mut stat, main_input.status);
-                }
+                match item {
+                    Some(main_input) => {
+                        Self::update_stat(&mut stat, main_input.status);
+                    },
+                    None => log::error!("Main endpoint not found for {} input", restream.input.id)
+                };
 
                 stat
             })
@@ -698,6 +701,7 @@ impl State {
     }
 
     /// Gather statistics about [`Output`]s statuses
+    #[must_use]
     pub fn get_outputs_statistics(&self) -> Vec<StatusStatistics> {
         self.restreams
             .get_cloned()
@@ -717,7 +721,7 @@ impl State {
 
     fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
         if let Some(x) = stat.get_mut(&status) {
-            *x = *x + 1
+            *x += 1;
         } else {
             let _ = stat.insert(status, 1);
         }
@@ -778,9 +782,9 @@ pub struct Client {
 impl Client {
     /// Creates a new [`Client`] passing host or ip address as identity.
     #[must_use]
-    pub fn new(host: String) -> Self {
+    pub fn new(client_id: &ClientId) -> Self {
         Self {
-            id: ClientId::new(host),
+            id: client_id.clone(),
             statistics: None,
         }
     }
