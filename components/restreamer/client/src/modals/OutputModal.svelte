@@ -311,6 +311,7 @@
           <input
             class="uk-input uk-form-small"
             type="text"
+            data-testid="add-output-modal:label-input"
             bind:value={$value.label}
             on:change={() => value.sanitizeLabel()}
             placeholder="optional label"
@@ -318,12 +319,14 @@
           <input
             class="uk-input"
             type="text"
+            data-testid="add-output-modal:rtmp-input"
             bind:value={$value.url}
             placeholder="rtmp://..."
           />
           <input
             class="uk-input"
             type="text"
+            data-testid="add-output-modal:preview-input"
             bind:value={$value.preview_url}
             placeholder="optional preview url"
           />
@@ -421,6 +424,7 @@
         </fieldset>
 
         <button
+          data-testid="add-output-modal:confirm"
           class="uk-button uk-button-primary"
           disabled={!submitable}
           on:click={submit}>{!$value.edit_id ? 'Add' : 'Edit'}</button

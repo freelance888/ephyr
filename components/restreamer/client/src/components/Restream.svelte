@@ -151,7 +151,11 @@
 </script>
 
 <template>
-  <div class="uk-section uk-section-muted uk-section-xsmall" class:hidden>
+  <div
+    data-testid={value.label}
+    class="uk-section uk-section-muted uk-section-xsmall"
+    class:hidden
+  >
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
     <Confirm let:confirm>
@@ -174,6 +178,7 @@
 
     <button
       class="uk-button uk-button-primary uk-button-small"
+      data-testid="add-output:open-modal-btn"
       on:click={openAddOutputModal}
     >
       <i class="fas fa-plus" />&nbsp;<span>Output</span>
@@ -212,6 +217,7 @@
 
         <Confirm let:confirm>
           <Toggle
+            data-testid="toggle-all-outputs-status"
             id="all-outputs-toggle-{value.id}"
             checked={allEnabled}
             title="{toggleStatusText} all outputs"

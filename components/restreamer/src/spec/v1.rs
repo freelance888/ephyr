@@ -230,10 +230,14 @@ impl<'de> Deserialize<'de> for Input {
 
 /// Shareable (exportable and importable) specification of a
 /// [`state::InputEndpoint`].
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct InputEndpoint {
     /// Kind of this [`InputEndpoint`].
     pub kind: state::InputEndpointKind,
+
+    /// Label for this input
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<state::Label>,
 }
 
 /// Shareable (exportable and importable) specification of a

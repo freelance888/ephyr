@@ -139,6 +139,7 @@
         <Confirm let:confirm>
           <button
             class="uk-button uk-button-default"
+            data-testid="start-all-outputs"
             title="Start all outputs of all restreams"
             on:click={() => confirm(enableAllOutputsOfRestreams)}
             ><span class="uk-visible@m">Start All</span><span
@@ -155,6 +156,7 @@
         <Confirm let:confirm>
           <button
             class="uk-button uk-button-default"
+            data-testid="stop-all-outputs"
             title="Stop all outputs of all restreams"
             on:click={() => confirm(disableAllOutputsOfRestreams)}
             value=""

@@ -18,24 +18,30 @@ subscription State {
             id
             key
             endpoints {
+                id
                 kind
                 status
+                label
             }
             src {
                 ... on RemoteInputSrc {
                     url
+                    label
                 }
                 ... on FailoverInputSrc {
                     inputs {
                         id
                         key
                         endpoints {
+                            id
                             kind
                             status
+                            label
                         }
                         src {
                             ... on RemoteInputSrc {
                                 url
+                                label
                             }
                         }
                         enabled
@@ -108,6 +114,20 @@ mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
 
 mutation DisableInput($restream_id: RestreamId!, $input_id: InputId!) {
     disableInput(id: $input_id, restreamId: $restream_id)
+}
+
+mutation SetEndpointLabel(
+    $restream_id: RestreamId!
+    $input_id: InputId!
+    $endpoint_id: EndpointId!
+    $label: String!
+) {
+    changeEndpointLabel(
+        id: $input_id
+        restreamId: $restream_id
+        endpointId: $endpoint_id
+        label: $label
+    )
 }
 
 mutation SetOutput(

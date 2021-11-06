@@ -7,7 +7,7 @@
 
   import Toggle from './common/Toggle.svelte';
   import Confirm from './common/Confirm.svelte';
-  import Url from './common/Url.svelte';
+  import InputEndpoint from './InputEndpoint.svelte';
 
   const disableInputMutation = mutation(DisableInput);
   const enableInputMutation = mutation(EnableInput);
@@ -20,7 +20,6 @@
   export let value;
 
   $: isPull = !!value.src && value.src.__typename === 'RemoteInputSrc';
-  $: isFailover = !!value.src && value.src.__typename === 'FailoverInputSrc';
 
   $: toggleStatusText = value.enabled ? 'Disable' : 'Enable';
 
@@ -66,86 +65,22 @@
     </Confirm>
     <div class="endpoints">
       {#each value.endpoints as endpoint}
-        <div class="endpoint">
-          <div
-            class:endpoint-status-icon={true}
-            class:uk-alert-danger={endpoint.status === 'OFFLINE'}
-            class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
-            class:uk-alert-success={endpoint.status === 'ONLINE'}
-          >
-            {#if isFailover || endpoint.kind !== 'RTMP'}
-              {#if endpoint.status === 'ONLINE'}
-                <span
-                  ><i
-                    class="fas fa-circle"
-                    title="Serves {isFailover
-                      ? 'failover '
-                      : ''}live {endpoint.kind} stream"
-                  /></span
-                >
-              {:else if endpoint.status === 'INITIALIZING'}
-                <span
-                  ><i
-                    class="fas fa-dot-circle"
-                    title="Serves {isFailover
-                      ? 'failover '
-                      : ''} live {endpoint.kind} stream"
-                  /></span
-                >
-              {:else}
-                <span
-                  ><i
-                    class="far fa-dot-circle"
-                    title="Serves {isFailover
-                      ? 'failover '
-                      : ''} live {endpoint.kind} stream"
-                  /></span
-                >
-              {/if}
-            {:else if isPull}
-              <span
-                ><i
-                  class="fas fa-arrow-down"
-                  title="Pulls {value.key} live {endpoint.kind} stream"
-                />
-              </span>
-            {:else}
-              <span
-                ><i
-                  class="fas fa-arrow-right"
-                  title="Accepts {value.key} live {endpoint.kind} stream"
-                />
-              </span>
-            {/if}
-          </div>
-
-          <Url url={getInputUrl(endpoint)} />
-        </div>
+        <InputEndpoint
+          {endpoint}
+          input={value}
+          input_url={getInputUrl(endpoint)}
+          {restream_id}
+        />
       {/each}
     </div>
   </div>
 </template>
 
 <style lang="stylus">
-  .fa-arrow-down, .fa-arrow-right
-    font-size: 14px
-    cursor: help
-
-  .fa-circle, .fa-dot-circle
-    font-size: 13px
-    cursor: help
-
   .input
     display: flex;
     align-items: baseline;
 
   .endpoints
     margin-left: 4px
-
-  .endpoint
-    display: flex
-
-  .endpoint .endpoint-status-icon
-    flex-shrink: 0
-    margin-right: 5px
 </style>

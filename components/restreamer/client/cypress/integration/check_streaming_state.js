@@ -14,32 +14,61 @@ describe('CHECK STREAMING STATE', () => {
     cy.allOutputStart();
   });
 
+  const greenColor = 'rgb(50, 210, 150)';
+  const brownColor = 'rgb(102, 102, 102)';
+
   it('Assert', () => {
     cy.get(
       '[data-icon="circle"][title="Serves failover live RTMP stream"]'
-    ).should('have.css', 'color', 'rgb(50, 210, 150)');
+    ).should('have.css', 'color', greenColor);
 
     cy.get(
       '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
-    ).should('have.css', 'color', 'rgb(50, 210, 150)');
+    ).should('have.css', 'color', greenColor);
 
     cy.get(
       '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
-    ).should('have.css', 'color', 'rgb(50, 210, 150)');
+    ).should('have.css', 'color', greenColor);
 
     cy.get(
       '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
-    ).should('have.css', 'color', 'rgb(50, 210, 150)');
+    ).should('have.css', 'color', greenColor);
 
-    cy.get(
-      '[data-icon="arrow-right"][title="Accepts origin live RTMP stream"]'
-    ).should('have.css', 'color', 'rgb(50, 210, 150)');
-
-    cy.wait(5000);
-    cy.get('.status-indicator > [data-icon="circle"]').should(
+    cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
       'have.css',
       'color',
-      'rgb(50, 210, 150)'
+      greenColor
+    );
+
+    cy.get('[data-testid=RU] [data-icon="arrow-right"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
+
+    cy.wait(5000);
+    cy.get('[data-testid=Teamspeak] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
+
+    cy.get('[data-testid=Twitter] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
+
+    cy.get('[data-testid="[Manual Start] FB"] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
+    );
+
+    cy.get('[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]').should(
+      'have.css',
+      'color',
+      brownColor
     );
   });
 });

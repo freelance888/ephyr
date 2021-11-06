@@ -111,14 +111,14 @@ Cypress.Commands.add('importJsonConf', (host) => {
         {
           "id": "e9e57309-3cca-4872-8c39-bdc1945afe6d",
           "dst": "rtmp://${host}/ru/origin",
-          "label": "[Manual Start] FB АЛЛАТРА ТВ България / @valeranedov",
+          "label": "[Manual Start] FB",
           "preview_url": "https://www.facebook.com/allatratvbulgaria/posts/348462730347939",
           "enabled": true
         },
         {
           "id": "30396de9-aed6-4db1-8af6-3f1c88ba06cd",
           "dst": "rtmp://a.rtmp.youtube.com/live2/rwhetk-2s44",
-          "label": "[Manual Start] YT Съзидателно Общество. AllatraUnites / @valeranedov",
+          "label": "[Manual Start] YT",
           "preview_url": "https://youtu.be/jKl7txehM78",
           "enabled": true
         }
