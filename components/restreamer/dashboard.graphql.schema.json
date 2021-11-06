@@ -306,7 +306,7 @@
             "args": [
               {
                 "name": "clientId",
-                "description": "IP address or host name of remote client",
+                "description": "Ulr of remote client",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -333,7 +333,7 @@
             "args": [
               {
                 "name": "clientId",
-                "description": "IP address or host name of remote client",
+                "description": "Ulr of remote client",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
