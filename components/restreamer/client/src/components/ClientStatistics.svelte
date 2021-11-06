@@ -16,7 +16,7 @@
 
   async function removeRestream() {
     try {
-      await removeClientMutation({ variables: { host: client.id } });
+      await removeClientMutation({ variables: { client_id: client.id } });
     } catch (e) {
       showError(e.message);
     }
@@ -25,7 +25,7 @@
 
 <template>
   <section class="uk-section uk-section-muted toolbar">
-    <span class="section-label">{client.id}</span>
+    <span class="section-label"><a href={client.id}>{client.id}</a></span>
     <Confirm let:confirm>
       <button
         type="button"

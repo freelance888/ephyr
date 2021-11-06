@@ -28,7 +28,7 @@ use reqwest;
 #[derive(Debug)]
 pub struct ClientJobsPool {
     /// Pool of [`ClientJob`]s
-    pool: HashMap<String, ClientJob>,
+    pool: HashMap<ClientId, ClientJob>,
 
     /// Application [`State`]
     state: State,
@@ -50,7 +50,7 @@ impl ClientJobsPool {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
         for c in clients {
-            let client_id = c.id.clone().into();
+            let client_id = c.id.clone();
             let job = self.pool.remove(&client_id).unwrap_or_else(|| {
                 ClientJob::run(c.id.clone(), self.state.clone())
             });
@@ -74,6 +74,7 @@ type DateTimeUtc = DateTime<Utc>;
 #[derive(Debug)]
 pub struct StatisticsQuery;
 
+#[allow(clippy::cast_possible_truncation)]
 impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsInputs) -> Self {
         StatusStatistics {
@@ -83,6 +84,7 @@ impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)]
 impl From<StatisticsQueryStatisticsOutputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsOutputs) -> Self {
         StatusStatistics {
@@ -186,7 +188,7 @@ impl ClientJob {
         let request_body = StatisticsQuery::build_query(Vars {});
 
         let request = reqwest::Client::new();
-        let url = format!("http://{}/api", client_id);
+        let url = format!("{}api", client_id);
         let res = request
             .post(url.as_str())
             .json(&request_body)

@@ -146,6 +146,7 @@
     margin-left: 12px
 
   .section-label
+    font-size: smaller
     position: absolute
     top: -12px
     left: 0

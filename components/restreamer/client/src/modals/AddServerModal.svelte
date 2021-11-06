@@ -7,7 +7,7 @@
   const addClientMutation = mutation(AddClient);
 
   export let visible = false;
-  let host = '';
+  let clientId = '';
 
   function close() {
     visible = false;
@@ -15,7 +15,7 @@
 
   async function submit_change() {
     try {
-      await addClientMutation({ variables: { host } });
+      await addClientMutation({ variables: { client_id: clientId } });
       close();
     } catch (e) {
       showError(e.message);
@@ -37,7 +37,11 @@
         on:click={close}
       />
       <fieldset class="settings-form">
-        <input class="uk-input" bind:value={host} placeholder="Server name" />
+        <input
+          class="uk-input"
+          bind:value={clientId}
+          placeholder="Server name"
+        />
         <div class="uk-alert">
           IP address or host name of the server for getting statistics info.
         </div>

@@ -19,10 +19,10 @@ subscription Statistics {
     }
 }
 
-mutation AddClient($host: String!) {
-    addClient(host: $host)
+mutation AddClient($client_id: ClientId!) {
+    addClient(clientId: $client_id)
 }
 
-mutation RemoveClient($host: String!) {
-    removeClient(host: $host)
+mutation RemoveClient($client_id: ClientId!) {
+    removeClient(clientId: $client_id)
 }

@@ -792,25 +792,46 @@ impl Client {
 
 /// ID of a [`Client`].
 #[derive(
-    Clone,
-    Debug,
-    Deserialize,
-    Display,
-    Eq,
-    From,
-    GraphQLScalarValue,
-    Into,
-    PartialEq,
-    Serialize,
+    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
 )]
-pub struct ClientId(String);
+pub struct ClientId(Url);
 
 impl ClientId {
     /// Constructs [`ClientId`] from string.
-    #[inline]
     #[must_use]
-    pub fn new(host: String) -> Self {
-        Self(host)
+    pub fn new(url: Url) -> Self {
+        Self(url)
+    }
+}
+
+impl<'de> Deserialize<'de> for ClientId {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        Ok(Self::new(Url::deserialize(deserializer)?))
+    }
+}
+
+#[graphql_scalar]
+impl<S> GraphQLScalar for ClientId
+    where
+        S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
+        Value::scalar(self.0.as_str().to_owned())
+    }
+
+    fn from_input_value(v: &InputValue) -> Option<Self> {
+        v.as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(|s| Url::parse(s).ok())
+            .map(Self::new)
+    }
+
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -2312,6 +2333,7 @@ pub struct StatusStatistics {
     pub status: Status,
 
     /// Count of items having [`Status`]
+    /// GraphQLScalar requires i32 numbers
     pub count: i32,
 }
 

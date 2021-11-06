@@ -305,14 +305,14 @@
             "description": "Add a new [`Client`]\n\nReturns [`graphql::Error`] if there is already [`Client`] in this\n[`State`].",
             "args": [
               {
-                "name": "host",
-                "description": null,
+                "name": "clientId",
+                "description": "IP address or host name of remote client",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "String",
+                    "name": "ClientId",
                     "ofType": null
                   }
                 },
@@ -332,14 +332,14 @@
             "description": "Remove [`Client`]\n\nReturns [`None`] if there is no [`Client`] in this\n[`State`].",
             "args": [
               {
-                "name": "host",
-                "description": null,
+                "name": "clientId",
+                "description": "IP address or host name of remote client",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "String",
+                    "name": "ClientId",
                     "ofType": null
                   }
                 },
@@ -383,7 +383,7 @@
           },
           {
             "name": "count",
-            "description": "Count of items having [`Status`]",
+            "description": "Count of items having [`Status`]\nGraphQLScalar requires i32 numbers",
             "args": [],
             "type": {
               "kind": "NON_NULL",
