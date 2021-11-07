@@ -422,22 +422,43 @@ impl MutationsRoot {
             }
         }
 
+        let existing_output;
+        if let Some(&id_unwrap) = id.as_ref() {
+            existing_output = context.state().get_output(restream_id, id_unwrap);
+        } else {
+            existing_output = None;
+        }
+        let mut original_volume = Volume::ORIGIN;
+        if let Some(output) = existing_output.as_ref() {
+            if !mixins.is_empty() {
+                original_volume = output.volume;
+            }
+        }
+
         let spec = spec::v1::Output {
             id: None,
             dst,
             label,
             preview_url,
-            volume: Volume::ORIGIN,
+            volume: original_volume,
             mixins: mixins
                 .into_iter()
                 .map(|src| {
-                    let delay = (src.scheme() == "ts")
-                        .then(|| Delay::from_millis(3500))
-                        .flatten()
-                        .unwrap_or_default();
+                    let delay;
+                    let volume;
+                    if let Some(orig_mixin) = existing_output.as_ref().map( |val| val.mixins.iter().find(|val| val.src == src)).flatten() {
+                        volume = orig_mixin.volume;
+                        delay = orig_mixin.delay;
+                    } else {
+                        volume = Volume::ORIGIN;
+                        delay = (src.scheme() == "ts")
+                            .then(|| Delay::from_millis(3500))
+                            .flatten()
+                            .unwrap_or_default();
+                    }
                     spec::v1::Mixin {
                         src,
-                        volume: Volume::ORIGIN,
+                        volume,
                         delay,
                     }
                 })
