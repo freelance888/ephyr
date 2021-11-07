@@ -2379,8 +2379,8 @@ pub struct StatusStatistics {
 /// server health info (CPU usage, memory usage, etc.)
 #[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct ClientStatistics {
-    /// Client host
-    pub public_host: String,
+    /// Client title
+    pub client_title: String,
 
     /// Time when statistics was taken
     pub timestamp: DateTime<Utc>,
@@ -2397,12 +2397,12 @@ impl ClientStatistics {
     /// current client's statistics regarding [`Input`]s and [`Output`]s
     #[must_use]
     pub fn new(
-        public_ip: String,
+        client_title: String,
         inputs: Vec<StatusStatistics>,
         outputs: Vec<StatusStatistics>,
     ) -> Self {
         Self {
-            public_host: public_ip,
+            client_title,
             timestamp: Utc::now(),
             inputs,
             outputs,

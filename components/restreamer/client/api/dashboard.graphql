@@ -3,7 +3,7 @@ subscription Statistics {
         id
         statistics {
             data {
-                publicHost
+                clientTitle
                 timestamp
                 inputs {
                     status

@@ -9,6 +9,11 @@
 
   export let client;
 
+  $: clientTitle =
+    client.statistics &&
+    client.statistics.data &&
+    client.statistics.data.clientTitle;
+
   function getStatusCount(items, status) {
     const output = items.find((x) => x.status === status);
     return output ? output.count : 0;
@@ -25,7 +30,9 @@
 
 <template>
   <section class="uk-section uk-section-muted toolbar">
-    <span class="section-label"><a href={client.id}>{client.id}</a></span>
+    <span class="section-label"
+      ><a href={client.id}>{clientTitle ? clientTitle : client.id}</a></span
+    >
     <Confirm let:confirm>
       <button
         type="button"
@@ -77,7 +84,14 @@
       </div>
     {:else}
       <div class="uk-alert-danger uk-margin-small">
-        {client.statistics && client.statistics.errors}
+        {#if !client.statistics}
+          <span
+            >No statistics. Usually this means that server does not respond.
+            Please check the correctness of the server URL</span
+          >
+        {:else}
+          {client.statistics && client.statistics.errors}
+        {/if}
       </div>
     {/if}
   </section>

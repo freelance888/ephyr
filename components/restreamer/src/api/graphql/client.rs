@@ -795,9 +795,15 @@ pub struct QueriesRoot;
 impl QueriesRoot {
     fn statistics(context: &Context) -> ClientStatistics {
         let public_ip = context.config().public_host.clone().unwrap();
+        let settings = context.state().settings.get_cloned();
+        let title = match settings.title {
+            Some(t) => t,
+            None => public_ip,
+        };
+
         let inputs_stat = context.state().get_inputs_statistics();
         let outputs_stat = context.state().get_outputs_statistics();
-        ClientStatistics::new(public_ip, inputs_stat, outputs_stat)
+        ClientStatistics::new(title, inputs_stat, outputs_stat)
     }
 
     /// Returns the current `Info` parameters of this server.

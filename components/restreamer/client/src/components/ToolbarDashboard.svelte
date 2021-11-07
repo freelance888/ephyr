@@ -9,7 +9,7 @@
       class="uk-button uk-button-primary"
       on:click={() => (openAddServerModal = true)}
     >
-      <i class="fas fa-plus" />&nbsp;<span>Add server</span>
+      <i class="fas fa-plus" />&nbsp;<span>Add host</span>
     </button>
     {#if openAddServerModal}
       <AddServerModal bind:visible={openAddServerModal} />

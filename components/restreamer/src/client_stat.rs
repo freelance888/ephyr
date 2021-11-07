@@ -146,7 +146,7 @@ impl ClientJob {
                                 client_id, e
                             );
 
-                            log::info!("{}", error_message);
+                            log::error!("{}", error_message);
                             Self::save_client_error(
                                 client_id,
                                 error_message,
@@ -244,7 +244,7 @@ impl ClientJob {
         client.statistics = match response.data {
             Some(data) => Some(ClientStatisticsResponse {
                 data: Some(ClientStatistics::new(
-                    data.statistics.public_host,
+                    data.statistics.client_title,
                     data.statistics
                         .inputs
                         .into_iter()

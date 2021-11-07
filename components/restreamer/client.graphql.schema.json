@@ -16,7 +16,7 @@
         "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)",
         "fields": [
           {
-            "name": "publicHost",
+            "name": "clientTitle",
             "description": "Client host",
             "args": [],
             "type": {
@@ -2189,7 +2189,7 @@
         "fields": [
           {
             "name": "status",
-            "description": "Status of [`Input`]s or [`Outputs`]",
+            "description": "Status of [`Input`]s or [`Output`]",
             "args": [],
             "type": {
               "kind": "NON_NULL",

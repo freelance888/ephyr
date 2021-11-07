@@ -29,7 +29,7 @@
     use:saveOrCloseByKeys={{ save: submit_change, close: close }}
   >
     <div class="uk-modal-dialog uk-modal-body">
-      <h2 class="uk-modal-title">Add server</h2>
+      <h2 class="uk-modal-title">Add host</h2>
       <button
         class="uk-modal-close-outside"
         uk-close
@@ -40,10 +40,10 @@
         <input
           class="uk-input"
           bind:value={clientId}
-          placeholder="Server name"
+          placeholder="http://..."
         />
         <div class="uk-alert">
-          IP address or host name of the server for getting statistics info.
+          Url of the server for getting statistics info.
         </div>
       </fieldset>
 

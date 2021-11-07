@@ -48,7 +48,7 @@
     class="set-settings"
     on:click|preventDefault={() => (openSettingsModal = true)}
   >
-    <i class="fas fa-edit" title="Set title" />
+    <i class="fas fa-cog" title="Change settings" />
   </a>
   {#if openSettingsModal}
     <SettingsModal
