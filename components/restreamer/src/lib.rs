@@ -3,7 +3,7 @@
 //! [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
     rust_2018_idioms,

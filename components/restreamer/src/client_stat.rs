@@ -206,11 +206,10 @@ impl ClientJob {
         state: &State,
     ) {
         let mut clients = state.clients.lock_mut();
-        let client =
-            match clients.iter_mut().find(|r| r.id == *client_id) {
-                Some(c) => c,
-                None => panic!("Client with id = {} was not found", client_id),
-            };
+        let client = match clients.iter_mut().find(|r| r.id == *client_id) {
+            Some(c) => c,
+            None => panic!("Client with id = {} was not found", client_id),
+        };
 
         client.statistics = Some(ClientStatisticsResponse {
             data: None,
@@ -231,11 +230,10 @@ impl ClientJob {
             .collect();
 
         let mut clients = state.clients.lock_mut();
-        let client =
-            match clients.iter_mut().find(|r| r.id == *client_id) {
-                Some(c) => c,
-                None => panic!("Client with id = {} was not found", client_id),
-            };
+        let client = match clients.iter_mut().find(|r| r.id == *client_id) {
+            Some(c) => c,
+            None => panic!("Client with id = {} was not found", client_id),
+        };
 
         client.statistics = match response.data {
             Some(data) => Some(ClientStatisticsResponse {

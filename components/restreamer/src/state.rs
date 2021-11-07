@@ -266,10 +266,7 @@ impl State {
         let mut clients = self.clients.lock_mut();
 
         if clients.iter().any(|r| r.id == *client_id) {
-            return Err(anyhow!(
-                "Client host '{}' is used already",
-                client_id
-            ));
+            return Err(anyhow!("Client host '{}' is used already", client_id));
         }
 
         clients.push(Client::new(client_id));
@@ -711,8 +708,11 @@ impl State {
                 match item {
                     Some(main_input) => {
                         Self::update_stat(&mut stat, main_input.status);
-                    },
-                    None => log::error!("Main endpoint not found for {} input", restream.input.id)
+                    }
+                    None => log::error!(
+                        "Main endpoint not found for {} input",
+                        restream.input.id
+                    ),
                 };
 
                 stat
@@ -791,7 +791,7 @@ impl State {
 }
 
 /// Client represents server with running `ephyr` app and can return some statistics
-/// about status of [`Input`]s, [`Outputs`]s .
+/// about status of [`Input`]s, [`Output`]s .
 #[derive(
     Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
 )]
@@ -832,8 +832,8 @@ impl ClientId {
 impl<'de> Deserialize<'de> for ClientId {
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(Self::new(Url::deserialize(deserializer)?))
     }
@@ -841,8 +841,8 @@ impl<'de> Deserialize<'de> for ClientId {
 
 #[graphql_scalar]
 impl<S> GraphQLScalar for ClientId
-    where
-        S: ScalarValue,
+where
+    S: ScalarValue,
 {
     fn resolve(&self) -> Value {
         Value::scalar(self.0.as_str().to_owned())
@@ -2367,7 +2367,7 @@ mod volume_spec {
 /// Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]
 #[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct StatusStatistics {
-    /// Status of [`Input`]s or [`Outputs`]
+    /// Status of [`Input`]s or [`Output`]
     pub status: Status,
 
     /// Count of items having [`Status`]
