@@ -1,30 +1,34 @@
 //! Clients statistics
 
-// This is required because of `graphql_client` crate generate
-// module for graphql query without documentation and that causes warning messages
+// This is required because of `graphql_client` crate generate module for
+// graphql query without documentation and that causes warning messages
 #![allow(missing_docs)]
 
 use std::{collections::HashMap, panic::AssertUnwindSafe, time::Duration};
 
-use crate::state::{
-    Client, ClientId, ClientStatistics, ClientStatisticsResponse, Status,
-    StatusStatistics,
+use crate::{
+    display_panic,
+    state::{
+        Client, ClientId, ClientStatistics, ClientStatisticsResponse, Status,
+        StatusStatistics,
+    },
+    types::DroppableAbortHandle,
+    State,
 };
-use crate::types::DroppableAbortHandle;
-use crate::{display_panic, State};
+
 use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
 
-use crate::client_stat::statistics_query::StatisticsQueryStatisticsInputs;
-use crate::client_stat::statistics_query::StatisticsQueryStatisticsOutputs;
+use crate::client_stat::statistics_query::{
+    StatisticsQueryStatisticsInputs, StatisticsQueryStatisticsOutputs,
+};
 
 use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
 /// Poll of [`ClientJob`]s for getting statistics info from each [`Client`]
-///
 #[derive(Debug)]
 pub struct ClientJobsPool {
     /// Pool of [`ClientJob`]s
@@ -45,7 +49,8 @@ impl ClientJobsPool {
         }
     }
 
-    /// Creates new [`ClientJob`] for added [`Client`] and removes for deleted [`Client`]
+    /// Creates new [`ClientJob`] for added [`Client`] and removes for
+    /// deleted [`Client`]
     pub fn apply(&mut self, clients: &[Client]) {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
@@ -108,7 +113,8 @@ impl From<statistics_query::Status> for Status {
     }
 }
 
-/// Job for retrieving statistics from client from specific host i.e [`ClientId`]
+/// Job for retrieving statistics from client from specific host
+/// i.e [`ClientId`]
 #[derive(Debug)]
 pub struct ClientJob {
     /// identity of client

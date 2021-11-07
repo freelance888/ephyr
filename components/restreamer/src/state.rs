@@ -790,8 +790,8 @@ impl State {
     }
 }
 
-/// Client represents server with running `ephyr` app and can return some statistics
-/// about status of [`Input`]s, [`Output`]s .
+/// Client represents server with running `ephyr` app and can return some
+/// statistics about status of [`Input`]s, [`Output`]s .
 #[derive(
     Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
 )]
@@ -2411,7 +2411,6 @@ impl ClientStatistics {
 }
 
 /// Current state of [`ClientStatistics`] request
-///
 #[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct ClientStatisticsResponse {
     /// Statistics data

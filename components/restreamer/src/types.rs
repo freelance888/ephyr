@@ -1,9 +1,7 @@
 //! Common types
-//!
 use futures::future;
 
 /// Abort handle of a future.
-///
 #[derive(Clone, Debug)]
 pub struct DroppableAbortHandle(future::AbortHandle);
 

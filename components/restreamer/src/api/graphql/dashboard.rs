@@ -3,8 +3,10 @@
 //! [GraphQL]: https://graphql.com
 
 use super::Context;
-use crate::api::graphql;
-use crate::state::{Client, ClientId};
+use crate::{
+    api::graphql,
+    state::{Client, ClientId},
+};
 use actix_web::http::StatusCode;
 use futures::stream::BoxStream;
 use futures_signals::signal::SignalExt;
