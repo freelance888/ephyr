@@ -2252,21 +2252,68 @@ where
 
 #[cfg(test)]
 mod volume_spec {
-    use super::Volume;
-    use super::VolumeLevel;
+    use super::{Volume, VolumeLevel};
     use crate::spec::v1;
 
     #[test]
     fn displays_as_fraction() {
         for (input, expected) in &[
-            (v1::Volume{level: VolumeLevel(1), muted: false}, "0.01"),
-            (v1::Volume{level: VolumeLevel(10), muted: false}, "0.10"),
-            (v1::Volume{level: VolumeLevel(200), muted: false}, "2.00"),
-            (v1::Volume{level: VolumeLevel(107), muted: false}, "1.07"),
-            (v1::Volume{level: VolumeLevel(170), muted: false}, "1.70"),
-            (v1::Volume{level: VolumeLevel(1000), muted: false}, "10.00"),
-            (v1::Volume{level: VolumeLevel(0), muted: false}, "0.00"),
-            (v1::Volume{level: VolumeLevel(200), muted: true}, "0.00"),
+            (
+                v1::Volume {
+                    level: VolumeLevel(1),
+                    muted: false,
+                },
+                "0.01",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(10),
+                    muted: false,
+                },
+                "0.10",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(200),
+                    muted: false,
+                },
+                "2.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(107),
+                    muted: false,
+                },
+                "1.07",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(170),
+                    muted: false,
+                },
+                "1.70",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(1000),
+                    muted: false,
+                },
+                "10.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(0),
+                    muted: false,
+                },
+                "0.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(200),
+                    muted: true,
+                },
+                "0.00",
+            ),
         ] {
             let actual = Volume::new(input).display_as_fraction();
             assert_eq!(&actual, *expected);
