@@ -424,7 +424,8 @@ impl MutationsRoot {
 
         let existing_output;
         if let Some(&id_unwrap) = id.as_ref() {
-            existing_output = context.state().get_output(restream_id, id_unwrap);
+            existing_output =
+                context.state().get_output(restream_id, id_unwrap);
         } else {
             existing_output = None;
         }
@@ -446,7 +447,11 @@ impl MutationsRoot {
                 .map(|src| {
                     let delay;
                     let volume;
-                    if let Some(orig_mixin) = existing_output.as_ref().map( |val| val.mixins.iter().find(|val| val.src == src)).flatten() {
+                    if let Some(orig_mixin) =
+                        existing_output.as_ref().and_then(|val| {
+                            val.mixins.iter().find(|val| val.src == src)
+                        })
+                    {
                         volume = orig_mixin.volume.export();
                         delay = orig_mixin.delay;
                     } else {
@@ -456,11 +461,7 @@ impl MutationsRoot {
                             .flatten()
                             .unwrap_or_default();
                     }
-                    spec::v1::Mixin {
-                        src,
-                        volume,
-                        delay,
-                    }
+                    spec::v1::Mixin { src, volume, delay }
                 })
                 .collect(),
             enabled: false,
@@ -636,9 +637,12 @@ impl MutationsRoot {
         muted: bool,
         context: &Context,
     ) -> Option<bool> {
-        context
-            .state()
-            .tune_volume(restream_id, output_id, mixin_id, Volume{level, muted})
+        context.state().tune_volume(
+            restream_id,
+            output_id,
+            mixin_id,
+            Volume { level, muted },
+        )
     }
 
     /// Tunes a `Delay` of the specified `Mixin` before mix it into its

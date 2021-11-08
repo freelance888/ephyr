@@ -1,10 +1,15 @@
 //! Application state.
 
 use std::{
-    borrow::Cow, collections::HashSet, convert::TryInto, future::Future, mem,
-    panic::AssertUnwindSafe, path::Path, time::Duration,
+    borrow::Cow,
+    collections::HashSet,
+    convert::{TryFrom, TryInto},
+    future::Future,
+    mem,
+    panic::AssertUnwindSafe,
+    path::Path,
+    time::Duration,
 };
-use std::convert::TryFrom;
 
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
@@ -1580,7 +1585,7 @@ impl Output {
             dst: spec.dst,
             label: spec.label,
             preview_url: spec.preview_url,
-            volume: Volume::new(spec.volume),
+            volume: Volume::new(&spec.volume),
             mixins: spec.mixins.into_iter().map(Mixin::new).collect(),
             enabled: spec.enabled,
             status: Status::Offline,
@@ -1596,7 +1601,7 @@ impl Output {
         self.dst = new.dst;
         self.label = new.label;
         self.preview_url = new.preview_url;
-        self.volume = Volume::new(new.volume);
+        self.volume = Volume::new(&new.volume);
         // Temporary omit changing existing `enabled` value to avoid unexpected
         // breakages of ongoing re-streams.
         //self.enabled = new.enabled;
@@ -1816,7 +1821,7 @@ impl Mixin {
         Self {
             id: MixinId::random(),
             src: spec.src,
-            volume: Volume::new(spec.volume),
+            volume: Volume::new(&spec.volume),
             delay: spec.delay,
             status: Status::Offline,
         }
@@ -1826,7 +1831,7 @@ impl Mixin {
     #[inline]
     pub fn apply(&mut self, new: spec::v1::Mixin) {
         self.src = new.src;
-        self.volume = Volume::new(new.volume);
+        self.volume = Volume::new(&new.volume);
         self.delay = new.delay;
     }
 
@@ -2032,10 +2037,9 @@ where
     }
 }
 
-
 /// Volume rate of an audio track in percents and flag if it is muted.
 #[derive(
-Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
 // #[serde(try_from="VolumeLevel")]
 pub struct Volume {
@@ -2047,25 +2051,35 @@ pub struct Volume {
 
 impl Volume {
     /// Maximum possible value of a [`Volume`] rate.
-    pub const MAX: Volume = Volume{level: VolumeLevel(1000), muted: false};
+    pub const MAX: Volume = Volume {
+        level: VolumeLevel(1000),
+        muted: false,
+    };
 
     /// Value of a [`Volume`] rate corresponding to the original one of an audio
     /// track.
-    pub const ORIGIN: Volume = Volume{level: VolumeLevel(100), muted: false};
+    pub const ORIGIN: Volume = Volume {
+        level: VolumeLevel(100),
+        muted: false,
+    };
 
     /// Minimum possible value of a [`Volume`] rate. Actually, disables audio.
-    pub const OFF: Volume = Volume{level: VolumeLevel(0), muted: true};
+    pub const OFF: Volume = Volume {
+        level: VolumeLevel(0),
+        muted: true,
+    };
 
     /// Creates a new [`Volume`] rate value if it satisfies the required
     /// invariants:
     /// - within [`Volume::OFF`] and [`Volume::MAX`] values.
     #[must_use]
-    pub fn new(num: spec::v1::Volume) -> Self {
-        if let Some(volume) = VolumeLevel::new(num.level.0) {
-            Self{level: volume, muted: num.muted}
-        } else {
-            Self::default()
-        }
+    pub fn new(num: &spec::v1::Volume) -> Self {
+        VolumeLevel::new(num.level.0).map_or_else(Self::default, |volume| {
+            Self {
+                level: volume,
+                muted: num.muted,
+            }
+        })
     }
 
     /// Displays this [`Volume`] as a fraction of `1`, i.e. `100%` as `1`, `50%`
@@ -2088,18 +2102,18 @@ impl Volume {
         *self == Self::ORIGIN
     }
 
-    /// Export this struct as ['spec::v1::Volume']
+    /// Export this struct as [`spec::v1::Volume`]
     #[inline]
     #[must_use]
     pub fn export(&self) -> spec::v1::Volume {
         spec::v1::Volume {
             level: self.level,
-            muted: self.muted
+            muted: self.muted,
         }
     }
 }
 
-/// Default value for Volume is ['Volume::ORIGIN']
+/// Default value for Volume is [`Volume::ORIGIN`]
 impl Default for Volume {
     fn default() -> Self {
         Volume::ORIGIN
@@ -2107,29 +2121,35 @@ impl Default for Volume {
 }
 
 /// For backward compatibility can convert from number to Volume struct
-/// the #[serde(try_from='VolumeLevel')] in [Volume] must be enabled
+/// the `#[serde(try_from='VolumeLevel')]` in [Volume] must be enabled
 impl TryFrom<VolumeLevel> for Volume {
     type Error = std::num::ParseIntError;
     fn try_from(value: VolumeLevel) -> Result<Self, Self::Error> {
-        Ok(Volume{level: value, muted: false})
+        Ok(Volume {
+            level: value,
+            muted: false,
+        })
     }
 }
 
 /// Volume rate of an audio track in percents.
 #[derive(
-Clone,
-Copy,
-Debug,
-Deserialize,
-Eq,
-Ord,
-PartialEq,
-PartialOrd,
-Serialize,
-SmartDefault,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    Ord,
+    PartialEq,
+    PartialOrd,
+    Serialize,
+    SmartDefault,
 )]
 pub struct VolumeLevel(#[default(Volume::ORIGIN.level.0)] u16);
 impl VolumeLevel {
+    /// Creates a new [`VolumeLevel`] rate value if it satisfies the required
+    /// invariants:
+    /// - within [`Volume::OFF.level`] and [`Volume::MAX.level`] values.
     pub fn new<N: TryInto<u16>>(val: N) -> Option<Self> {
         let num = val.try_into().ok()?;
         if (Volume::OFF.level.0..=Volume::MAX.level.0).contains(&num) {
@@ -2147,8 +2167,8 @@ impl VolumeLevel {
 /// `0` means disabled audio.
 #[graphql_scalar]
 impl<S> GraphQLScalar for VolumeLevel
-    where
-        S: ScalarValue,
+where
+    S: ScalarValue,
 {
     fn resolve(&self) -> Value {
         Value::scalar(i32::from(self.0))
@@ -2233,18 +2253,22 @@ where
 #[cfg(test)]
 mod volume_spec {
     use super::Volume;
+    use super::VolumeLevel;
+    use crate::spec::v1;
 
     #[test]
     fn displays_as_fraction() {
         for (input, expected) in &[
-            (1, "0.01"),
-            (10, "0.10"),
-            (200, "2.00"),
-            (107, "1.07"),
-            (170, "1.70"),
-            (1000, "10.00"),
+            (v1::Volume{level: VolumeLevel(1), muted: false}, "0.01"),
+            (v1::Volume{level: VolumeLevel(10), muted: false}, "0.10"),
+            (v1::Volume{level: VolumeLevel(200), muted: false}, "2.00"),
+            (v1::Volume{level: VolumeLevel(107), muted: false}, "1.07"),
+            (v1::Volume{level: VolumeLevel(170), muted: false}, "1.70"),
+            (v1::Volume{level: VolumeLevel(1000), muted: false}, "10.00"),
+            (v1::Volume{level: VolumeLevel(0), muted: false}, "0.00"),
+            (v1::Volume{level: VolumeLevel(200), muted: true}, "0.00"),
         ] {
-            let actual = Volume::new(*input).unwrap().display_as_fraction();
+            let actual = Volume::new(input).display_as_fraction();
             assert_eq!(&actual, *expected);
         }
     }

@@ -6,7 +6,9 @@ use futures::stream::BoxStream;
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 
-use crate::state::{Delay, MixinId, Output, OutputId, RestreamId, Volume, VolumeLevel};
+use crate::state::{
+    Delay, MixinId, Output, OutputId, RestreamId, Volume, VolumeLevel,
+};
 
 use super::Context;
 
@@ -38,9 +40,12 @@ impl MutationsRoot {
         muted: bool,
         context: &Context,
     ) -> Option<bool> {
-        context
-            .state()
-            .tune_volume(restream_id, output_id, mixin_id, Volume{level, muted})
+        context.state().tune_volume(
+            restream_id,
+            output_id,
+            mixin_id,
+            Volume { level, muted },
+        )
     }
 
     /// Tunes a `Delay` of the specified `Mixin` before mix it into its

@@ -340,6 +340,7 @@ pub struct Mixin {
     pub delay: state::Delay,
 }
 
+/// Shareable specification of [`state::Volume`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Volume {
     /// Volume level or rate in percentages
@@ -351,7 +352,7 @@ pub struct Volume {
     pub muted: bool,
 }
 
-/// Implementation of Default volume as ['state::Volume::default']
+/// Implementation of Default volume as [`state::Volume::default`]
 impl Default for Volume {
     fn default() -> Self {
         state::Volume::default().export()

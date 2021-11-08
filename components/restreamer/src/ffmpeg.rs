@@ -908,8 +908,9 @@ impl MixingRestreamer {
             let _ = cmd.stdin(Stdio::piped());
         }
 
-        let orig_volume =
-            output.as_ref().map_or(self.orig_volume.clone(), |o| o.volume.clone());
+        let orig_volume = output
+            .as_ref()
+            .map_or(self.orig_volume.clone(), |o| o.volume.clone());
 
         // WARNING: The filters order matters here!
         let mut filter_complex = Vec::with_capacity(self.mixins.len() + 1);
@@ -960,11 +961,11 @@ impl MixingRestreamer {
             let volume = output
                 .as_ref()
                 .and_then(|o| {
-                    o.mixins
-                        .iter()
-                        .find_map(|m| (m.id == mixin.id).then(|| m.volume.clone()))
+                    o.mixins.iter().find_map(|m| {
+                        (m.id == mixin.id).then(|| m.volume.clone())
+                    })
                 })
-                .unwrap_or(mixin.volume.clone());
+                .unwrap_or_else(|| mixin.volume.clone());
 
             // WARNING: The filters order matters here!
             filter_complex.push(format!(
