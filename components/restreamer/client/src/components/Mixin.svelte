@@ -1,7 +1,7 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
-  import Volume from './Volume.svelte';
+  import Volume from './common/Volume.svelte';
   import Url from './common/Url.svelte';
 
   export let value;
@@ -10,10 +10,7 @@
   export let mutations;
 
   const tuneDelayMutation = mutation(mutations.TuneDelay);
-  const tuneVolumeMutation = mutation(mutations.TuneVolume);
 
-  let level = 100;
-  let muted = false;
   let delay = 0;
   $: {
     // Trigger Svelte reactivity watching.
@@ -47,7 +44,14 @@
   <div class="mixin">
     <i class="fas fa-wave-square" title="Mixed audio" />
     <Url url={value.src} />
-    <Volume volume={value.volume} {restream_id} {output_id} {mutations} max={value.src.startsWith('ts://') ? 1000 : 200} mixin_id={value.id}/>
+    <Volume
+      volume={value.volume}
+      {restream_id}
+      {output_id}
+      {mutations}
+      max={value.src.startsWith('ts://') ? 1000 : 200}
+      mixin_id={value.id}
+    />
     <div class="delay">
       <i class="far fa-clock" title="Delay" />
       <input

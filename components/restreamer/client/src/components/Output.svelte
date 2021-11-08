@@ -6,7 +6,7 @@
 
   import Confirm from './common/Confirm.svelte';
   import Toggle from './common/Toggle.svelte';
-  import Volume from './Volume.svelte';
+  import Volume from './common/Volume.svelte';
   import Mixin from './Mixin.svelte';
   import RecordsModal from '../modals/RecordsModal.svelte';
   import Url from './common/Url.svelte';
@@ -28,8 +28,6 @@
   const removeOutputMutation = mutations.RemoveOutput
     ? mutation(mutations.RemoveOutput)
     : undefined;
-
-  const tuneVolumeMutation = mutation(mutations.TuneVolume);
 
   $: toggleStatusText = value.enabled ? 'Disable' : 'Enable';
 
@@ -171,6 +169,7 @@
         {/if}
       </div>
 
+      {#if value.mixins.length > 0}
         {#if !isMixPage()}
           <a
             class="single-view"
@@ -181,8 +180,12 @@
           </a>
         {/if}
 
-        <Volume volume={value.volume} restream_id={restream_id} output_id={value.id} {mutations}/>
-      {#if value.mixins.length > 0}
+        <Volume
+          volume={value.volume}
+          {restream_id}
+          output_id={value.id}
+          {mutations}
+        />
         {#each value.mixins as mixin}
           <Mixin {restream_id} output_id={value.id} value={mixin} {mutations} />
         {/each}
@@ -260,27 +263,6 @@
   .fa-circle, .fa-dot-circle
     font-size: 10px
     margin-top: -1px
-  .fa-volume-up, .fa-volume-mute
-    font-size: 10px
-
-  .volume
-    padding-left: 17px
-    font-size: 10px
-
-    a
-      color: #d9d9d9
-      outline: none
-      &:hover
-        text-decoration: none
-        color: #c4c4c4
-
-    .uk-range::-moz-range-thumb, .uk-range::-webkit-slider-thumb
-      width: 7px
-      height: 12px
-    .uk-range
-      display: inline-block
-      width: 74%
-      margin-top: -1px
 
   a.dvr-link
     color: var(--primary-text-color)
