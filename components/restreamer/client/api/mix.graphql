@@ -20,13 +20,15 @@ mutation TuneVolume(
     $restream_id: RestreamId!
     $output_id: OutputId!
     $mixin_id: MixinId
-    $volume: Volume!
+    $level: VolumeLevel!
+    $muted: Boolean!
 ) {
     tuneVolume(
         restreamId: $restream_id
         outputId: $output_id
         mixinId: $mixin_id
-        volume: $volume
+        level: $level
+        muted: $muted
     )
 }
 
