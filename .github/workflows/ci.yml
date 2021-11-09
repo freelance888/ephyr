@@ -158,6 +158,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: FedericoCarboni/setup-ffmpeg@v1
       - uses: cypress-io/github-action@v2
         with:
           browser: chrome
