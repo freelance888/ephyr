@@ -158,14 +158,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install hcloud client
-        uses: 3bit/setup-hcloud@v1
+      - name: Create new Hetzner server
+        id: setup_server # set this to get the output in steps.setup_server.outputs
+        uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
-          hcloud-version: '1.29.0'
-      - name: Rebot server to fetch latest `edge` image
-      -  run: hcloud server reboot 15858462
+          server-name: "server"
+          server-image: "ubuntu-20.04"
+          server-type: "cx11"
+          ssh-key-name: "github-ci"
+          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
+          startup-timeout: 40000
         env:
-          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+          API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H ${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }} >> ~/.ssh/known_hosts
+      - run: ssh root@${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }} "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=edge bash -s"
       - name: Install ffmpeg for run tests
         uses: FedericoCarboni/setup-ffmpeg@v1
       - name: Run Cypress tests
@@ -174,8 +183,8 @@ jobs:
           browser: chrome
           working-directory: components/restreamer/client
         env:
-          CYPRESS_host: ${{ secrets.CYPRESS_HOST }}
-          CYPRESS_baseUrl: http://${{ secrets.CYPRESS_HOST }}
+          CYPRESS_host: ${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }}
+          CYPRESS_baseUrl: http://${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }}
 
   #################
   # Documentation #
