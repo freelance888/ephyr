@@ -1,4 +1,5 @@
 /.envrc
+/components/restreamer/.env
 
 /public/
 

@@ -150,8 +150,18 @@ jobs:
                   ./components/restreamer/client.graphql.schema.json
         if: ${{ matrix.if }}
 
-
-
+  test-cypress:
+    name: Cypress tests
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cypress-io/github-action@v2
+        with:
+          browser: chrome
+          working-directory: components/restreamer/client
 
   #################
   # Documentation #
