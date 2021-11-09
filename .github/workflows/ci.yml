@@ -156,13 +156,15 @@ jobs:
       || startsWith(github.ref, 'refs/tags/')
       || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
-    environment: cypress
     steps:
       - uses: actions/checkout@v2
       - uses: cypress-io/github-action@v2
         with:
           browser: chrome
           working-directory: components/restreamer/client
+        env:
+          CYPRESS_HOST: ${{ secrets.CYPRESS_HOST }}
+          CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
 
   #################
   # Documentation #
