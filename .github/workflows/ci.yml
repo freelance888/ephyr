@@ -158,8 +158,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: FedericoCarboni/setup-ffmpeg@v1
-      - uses: cypress-io/github-action@v2
+      - name: Install hcloud client
+        uses: 3bit/setup-hcloud@v1
+        with:
+          hcloud-version: '1.29.0'
+      - name: Rebot server to fetch latest `edge` image
+      -  run: hcloud server reboot 15858462
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+      - name: Install ffmpeg for run tests
+        uses: FedericoCarboni/setup-ffmpeg@v1
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v2
         with:
           browser: chrome
           working-directory: components/restreamer/client
