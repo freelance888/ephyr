@@ -157,7 +157,6 @@ jobs:
       || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
-      # Setup server
       - name: Create new Hetzner server
         uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
@@ -169,14 +168,15 @@ jobs:
           startup-timeout: 40000
         env:
           API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
-      # Install Ephyr
-      - uses: webfactory/ssh-agent@v0.4.1
+
+      - name: Install Ephyr on new server
+        uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
       - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=edge bash -s"
 
-      # Setup tests
+      # Setup and run tests
       - uses: actions/checkout@v2
       - name: Install ffmpeg for run tests
         uses: FedericoCarboni/setup-ffmpeg@v1
@@ -186,8 +186,8 @@ jobs:
           browser: chrome
           working-directory: components/restreamer/client
         env:
-          CYPRESS_host: $SERVER_IPV4
-          CYPRESS_baseUrl: http://$SERVER_IPV4
+          CYPRESS_host: ${{ env.SERVER_IPV4 }}
+          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}
 
   #################
   # Documentation #
