@@ -164,7 +164,7 @@ jobs:
           working-directory: components/restreamer/client
         env:
           CYPRESS_HOST: ${{ secrets.CYPRESS_HOST }}
-          CYPRESS_BASE_URL: ${{ secrets.CYPRESS_BASE_URL }}
+          CYPRESS_BASE_URL: http://${{ secrets.CYPRESS_HOST }}
 
   #################
   # Documentation #
