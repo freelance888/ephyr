@@ -159,7 +159,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Create new Hetzner server
-        id: setup_server # set this to get the output in steps.setup_server.outputs
+#        id: setup_server # set this to get the output in steps.setup_server.outputs
         uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
           server-name: "server"
@@ -173,8 +173,8 @@ jobs:
       - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H ${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }} >> ~/.ssh/known_hosts
-      - run: ssh root@${{ steps.setup_server.outputs.hcloud_server_created_ipv4 }} "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=edge bash -s"
+      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
+      - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=edge bash -s"
       - name: Install ffmpeg for run tests
         uses: FedericoCarboni/setup-ffmpeg@v1
       - name: Run Cypress tests
