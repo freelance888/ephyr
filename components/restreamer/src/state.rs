@@ -2050,28 +2050,16 @@ pub struct Volume {
 }
 
 impl Volume {
-    /// Maximum possible value of a [`Volume`] rate.
-    pub const MAX: Volume = Volume {
-        level: VolumeLevel(1000),
-        muted: false,
-    };
-
     /// Value of a [`Volume`] rate corresponding to the original one of an audio
     /// track.
     pub const ORIGIN: Volume = Volume {
-        level: VolumeLevel(100),
+        level: VolumeLevel::ORIGIN,
         muted: false,
-    };
-
-    /// Minimum possible value of a [`Volume`] rate. Actually, disables audio.
-    pub const OFF: Volume = Volume {
-        level: VolumeLevel(0),
-        muted: true,
     };
 
     /// Creates a new [`Volume`] rate value if it satisfies the required
     /// invariants:
-    /// - within [`Volume::OFF`] and [`Volume::MAX`] values.
+    /// - within [`VolumeLevel::OFF`] and [`VolumeLevel::MAX`] values.
     #[must_use]
     pub fn new(num: &spec::v1::Volume) -> Self {
         VolumeLevel::new(num.level.0).map_or_else(Self::default, |volume| {
@@ -2147,12 +2135,22 @@ impl TryFrom<VolumeLevel> for Volume {
 )]
 pub struct VolumeLevel(#[default(Volume::ORIGIN.level.0)] u16);
 impl VolumeLevel {
+    /// Maximum possible value of a [`VolumeLevel`].
+    pub const MAX: VolumeLevel = VolumeLevel(1000);
+
+    /// Value of a [`Volume`] rate corresponding to the original one of an audio
+    /// track.
+    pub const ORIGIN: VolumeLevel = VolumeLevel(100);
+
+    /// Minimum possible value of a [`Volume`] rate. Actually, disables audio.
+    pub const OFF: VolumeLevel = VolumeLevel(0);
     /// Creates a new [`VolumeLevel`] rate value if it satisfies the required
     /// invariants:
-    /// - within [`Volume::OFF.level`] and [`Volume::MAX.level`] values.
+    /// - within [`VolumeLevel::OFF.level`] and [`VolumeLevel::MAX.level`]
+    /// values.
     pub fn new<N: TryInto<u16>>(val: N) -> Option<Self> {
         let num = val.try_into().ok()?;
-        if (Volume::OFF.level.0..=Volume::MAX.level.0).contains(&num) {
+        if (VolumeLevel::OFF.0..=VolumeLevel::MAX.0).contains(&num) {
             Some(Self(num))
         } else {
             None
