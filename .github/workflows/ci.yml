@@ -12,70 +12,70 @@ jobs:
   # Linting and formatting #
   ##########################
 
-#  clippy:
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: stable
-#          components: clippy
-#
-#      - uses: Swatinem/rust-cache@v1
-#        if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: cargo lint
+  clippy:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
 
-#  rustfmt:
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: nightly
-#          components: rustfmt
-#
-#      - run: make cargo.fmt check=yes
+      - uses: Swatinem/rust-cache@v1
+        if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
 
-#  eslint:
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        include:
-#          - component: restreamer
-#            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#    steps:
-#      - uses: actions/checkout@v2
-#        if: ${{ matrix.if }}
-#
-#      - uses: actions/cache@v1
-#        with:
-#          path: ${{ env.YARN_CACHE_FOLDER }}
-#          key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-#                        format('components/{0}/client/yarn.lock', matrix.component)) }}
-#          restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
-#        if: ${{ matrix.if
-#                && !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: yarn install --pure-lockfile --non-interactive
-#        working-directory: components/${{ matrix.component }}/client
-#        if: ${{ matrix.if }}
-#
-#      - run: yarn lint
-#        working-directory: components/${{ matrix.component }}/client
-#        if: ${{ matrix.if }}
+      - run: cargo lint
+
+  rustfmt:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: rustfmt
+
+      - run: make cargo.fmt check=yes
+
+  eslint:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: restreamer
+            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ matrix.if }}
+
+      - uses: actions/cache@v1
+        with:
+          path: ${{ env.YARN_CACHE_FOLDER }}
+          key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
+          restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
+        if: ${{ matrix.if
+                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+
+      - run: yarn install --pure-lockfile --non-interactive
+        working-directory: components/${{ matrix.component }}/client
+        if: ${{ matrix.if }}
+
+      - run: yarn lint
+        working-directory: components/${{ matrix.component }}/client
+        if: ${{ matrix.if }}
 
 
 
@@ -84,181 +84,144 @@ jobs:
   # Tests #
   #########
 
-#  test-unit-rust:
-#    name: Rust unit tests
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    strategy:
-#      matrix:
-#        include:
-#          - crate: log
-#            if: true
-#          - crate: serde
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - crate: api-allatra-video
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - crate: restreamer
-#            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - crate: vod-meta-server
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        if: ${{ matrix.if }}
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: stable
-#        if: ${{ matrix.if }}
-#
-#      - uses: Swatinem/rust-cache@v1
-#        with:
-#          key: ${{ matrix.crate }}
-#        if: ${{ matrix.if
-#                && !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: cargo test -p ephyr-${{ matrix.crate }} --all-features
-#        env:
-#          LIBOPUS_STATIC: 1
-#        if: ${{ matrix.if }}
-
-#  graphql-schema:
-#    name: GraphQL schema
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/restreamer-v')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: stable
-#
-#      - uses: Swatinem/rust-cache@v1
-#        if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: cargo run -p ephyr-restreamer --bin export_schema -- --out-dir=./
-#
-#      - name: Verify GraphQL schema is up-to-date
-#        run: diff ./client.graphql.schema.json
-#                  ./components/restreamer/client.graphql.schema.json
-#        if: ${{ matrix.if }}
-
-  test-cypress:
-    needs: release
-    name: Cypress tests
+  test-unit-rust:
+    name: Rust unit tests
     if: ${{ github.ref == 'refs/heads/master'
-      || startsWith(github.ref, 'refs/tags/')
-      || !contains(github.event.head_commit.message, '[skip ci]') }}
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      matrix:
+        include:
+          - crate: log
+            if: true
+          - crate: serde
+            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+          - crate: api-allatra-video
+            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+          - crate: restreamer
+            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+          - crate: vod-meta-server
+            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Create new Hetzner server
-        uses: TimDaub/hetzner-cloud-deploy-server-action@v2
-        with:
-          server-name: "cypress-ephyr-tests"
-          server-image: "ubuntu-20.04"
-          server-type: "cpx11"
-          ssh-key-name: "github-ci"
-          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
-          startup-timeout: 40000
-        env:
-          API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
-
-      - name: Install Ephyr on new server
-        uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
-      - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=${{ needs.release.outputs.release_tag }} bash -s"
-
-      # Setup and run tests
       - uses: actions/checkout@v2
-      - name: Install ffmpeg for run tests
-        uses: FedericoCarboni/setup-ffmpeg@v1
-      - name: Run Cypress tests
-        uses: cypress-io/github-action@v2
+        if: ${{ matrix.if }}
+      - uses: actions-rs/toolchain@v1
         with:
-          browser: chrome
-          working-directory: components/restreamer/client
+          profile: minimal
+          toolchain: stable
+        if: ${{ matrix.if }}
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.crate }}
+        if: ${{ matrix.if
+                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+
+      - run: cargo test -p ephyr-${{ matrix.crate }} --all-features
         env:
-          CYPRESS_host: ${{ env.SERVER_IPV4 }}
-          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}
+          LIBOPUS_STATIC: 1
+        if: ${{ matrix.if }}
+
+  graphql-schema:
+    name: GraphQL schema
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/restreamer-v')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v1
+        if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
+
+      - run: cargo run -p ephyr-restreamer --bin export_schema -- --out-dir=./
+
+      - name: Verify GraphQL schema is up-to-date
+        run: diff ./client.graphql.schema.json
+                  ./components/restreamer/client.graphql.schema.json
+        if: ${{ matrix.if }}
+
+
+
 
   #################
   # Documentation #
   #################
 
-#  rustdoc:
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    strategy:
-#      matrix:
-#        include:
-#          - component: restreamer
-#            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - component: vod-meta-server
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        if: ${{ matrix.if }}
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: stable
-#        if: ${{ matrix.if }}
-#
-#      - uses: Swatinem/rust-cache@v1
-#        with:
-#          key: ${{ matrix.component }}
-#        if: ${{ matrix.if
-#                && !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: cargo doc -p ephyr-${{ matrix.component }} --all-features
-#        env:
-#          LIBOPUS_STATIC: 1
-#        if: ${{ matrix.if }}
+  rustdoc:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      matrix:
+        include:
+          - component: restreamer
+            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+          - component: vod-meta-server
+            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ matrix.if }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+        if: ${{ matrix.if }}
 
-#  typedoc:
-#    if: ${{ github.ref == 'refs/heads/master'
-#            || startsWith(github.ref, 'refs/tags/')
-#            || !contains(github.event.head_commit.message, '[skip ci]') }}
-#    strategy:
-#      matrix:
-#        include:
-#          - component: restreamer
-#            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        if: ${{ matrix.if }}
-#
-#      - uses: actions/cache@v1
-#        with:
-#          path: ${{ env.YARN_CACHE_FOLDER }}
-#          key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-#                        format('components/{0}/client/yarn.lock', matrix.component)) }}
-#          restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
-#        if: ${{ matrix.if
-#                && !contains(github.event.head_commit.message, '[fresh ci]') }}
-#
-#      - run: yarn install --pure-lockfile --non-interactive
-#        working-directory: components/${{ matrix.component }}/client
-#        if: ${{ matrix.if }}
-#
-#      - run: yarn doc
-#        working-directory: components/${{ matrix.component }}/client
-#        if: ${{ matrix.if }}
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.component }}
+        if: ${{ matrix.if
+                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+
+      - run: cargo doc -p ephyr-${{ matrix.component }} --all-features
+        env:
+          LIBOPUS_STATIC: 1
+        if: ${{ matrix.if }}
+
+  typedoc:
+    if: ${{ github.ref == 'refs/heads/master'
+            || startsWith(github.ref, 'refs/tags/')
+            || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      matrix:
+        include:
+          - component: restreamer
+            if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
+                    || !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ matrix.if }}
+
+      - uses: actions/cache@v1
+        with:
+          path: ${{ env.YARN_CACHE_FOLDER }}
+          key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
+                        format('components/{0}/client/yarn.lock', matrix.component)) }}
+          restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
+        if: ${{ matrix.if
+                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+
+      - run: yarn install --pure-lockfile --non-interactive
+        working-directory: components/${{ matrix.component }}/client
+        if: ${{ matrix.if }}
+
+      - run: yarn doc
+        working-directory: components/${{ matrix.component }}/client
+        if: ${{ matrix.if }}
 
 
 
@@ -332,12 +295,12 @@ jobs:
 
   release:
     needs:
-#      - clippy
-#      - rustfmt
-#      - eslint
-#      - test-unit-rust
-#      - rustdoc
-#      - typedoc
+      - clippy
+      - rustfmt
+      - eslint
+      - test-unit-rust
+      - rustdoc
+      - typedoc
       - docker
     if: ${{ github.ref == 'refs/heads/master'
             || contains(github.event.head_commit.message, '[release]')
@@ -465,3 +428,52 @@ jobs:
           prerelease: ${{ steps.semver.outputs.group4 != '' }}
         if: ${{ matrix.if
                 && startsWith(github.ref, 'refs/tags/') }}
+
+
+
+
+
+
+  #############
+  # E2E tests #
+  #############
+
+  test-cypress:
+    needs: release
+    name: Cypress tests
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create new Hetzner server
+        uses: TimDaub/hetzner-cloud-deploy-server-action@v2
+        with:
+          server-name: "cypress-ephyr-tests"
+          server-image: "ubuntu-20.04"
+          server-type: "cpx11"
+          ssh-key-name: "github-ci"
+          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
+          startup-timeout: 40000
+        env:
+          API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
+
+      - name: Install Ephyr on new server
+        uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
+      - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=${{ needs.release.outputs.release_tag }} bash -s"
+
+      # Setup and run tests
+      - uses: actions/checkout@v2
+      - name: Install ffmpeg for run tests
+        uses: FedericoCarboni/setup-ffmpeg@v1
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v2
+        with:
+          browser: chrome
+          working-directory: components/restreamer/client
+        env:
+          CYPRESS_host: ${{ env.SERVER_IPV4 }}
+          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}
