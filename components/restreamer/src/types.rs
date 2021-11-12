@@ -1,5 +1,7 @@
 //! Common types
+use fmt::Debug;
 use futures::future;
+use std::fmt;
 
 /// Abort handle of a future.
 #[derive(Clone, Debug)]

@@ -744,6 +744,20 @@ impl State {
             .collect()
     }
 
+    /// Statistics for statuses of this [`Client`]
+    #[must_use]
+    pub fn get_statistics(&self, public_ip: String) -> ClientStatistics {
+        let settings = self.settings.get_cloned();
+        let title = match settings.title {
+            Some(t) => t,
+            None => public_ip,
+        };
+
+        let inputs_stat = self.get_inputs_statistics();
+        let outputs_stat = self.get_outputs_statistics();
+        ClientStatistics::new(title, inputs_stat, outputs_stat)
+    }
+
     fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
         if let Some(x) = stat.get_mut(&status) {
             *x += 1;
@@ -796,7 +810,7 @@ impl State {
     Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
 )]
 pub struct Client {
-    /// Unique id of client. IP or domain name.
+    /// Unique id of client. Url of the host.
     pub id: ClientId,
 
     /// Statistics for this [`Client`].

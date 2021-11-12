@@ -72,7 +72,7 @@ type DateTimeUtc = DateTime<Utc>;
 /// GraphQL query for getting client statistics
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "client.graphql.schema.json",
+    schema_path = "statistics.graphql.schema.json",
     query_path = "src/api/graphql/queries/client_stat.graphql",
     response_derives = "Debug"
 )]
@@ -194,7 +194,7 @@ impl ClientJob {
         let request_body = StatisticsQuery::build_query(Vars {});
 
         let request = reqwest::Client::new();
-        let url = format!("{}api", client_id);
+        let url = format!("{}api-statistics", client_id);
         let res = request
             .post(url.as_str())
             .json(&request_body)

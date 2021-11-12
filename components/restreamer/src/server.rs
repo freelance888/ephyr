@@ -114,9 +114,12 @@ pub mod client {
         cli::{Failure, Opts},
         State,
     };
+    use std::fmt;
 
     const MIX_ROUTE: &str = "/mix";
     const MIX_ROUTE_API: &str = "/api-mix";
+    const STATISTICS_ROUTE_API: &str = "/api-statistics";
+    const INDEX_FILE: &str = "index.html";
 
     pub mod public_dir {
         #![allow(clippy::must_use_candidate, unused_results)]
@@ -175,6 +178,7 @@ pub mod client {
                 .data(api::graphql::client::schema())
                 .data(api::graphql::mix::schema())
                 .data(api::graphql::dashboard::schema())
+                .data(api::graphql::statistics::schema())
                 .wrap(middleware::Logger::default())
                 .wrap_fn(|req, srv| match authorize(req) {
                     Ok(req) => srv.call(req).left_future(),
@@ -182,20 +186,22 @@ pub mod client {
                 })
                 .service(graphql_client)
                 .service(graphql_mix)
+                .service(graphql_statistics)
                 .service(graphql_dashboard);
             if in_debug_mode {
                 app = app
                     .service(playground_client)
                     .service(playground_mix)
+                    .service(playground_statistics)
                     .service(playground_dashboard);
             }
             app.service(
                 ResourceFiles::new(MIX_ROUTE, mix_dir_files)
-                    .resolve_not_found_to("index.html"),
+                    .resolve_not_found_to(INDEX_FILE),
             )
             .service(
                 ResourceFiles::new("/dashboard", dashboard_dir_files)
-                    .resolve_not_found_to("index.html"),
+                    .resolve_not_found_to(INDEX_FILE),
             )
             .service(ResourceFiles::new("/", root_dir_files))
         })
@@ -206,8 +212,7 @@ pub mod client {
         .map_err(|e| log::error!("Failed to run client HTTP server: {}", e))?)
     }
 
-    /// Either main or output schema
-    #[derive(Debug)]
+    /// List of schemes
     pub enum SchemaKind {
         /// Full schema
         Schema(web::Data<api::graphql::client::Schema>),
@@ -217,6 +222,26 @@ pub mod client {
 
         /// Dashboard schema
         SchemaDashboard(web::Data<api::graphql::dashboard::Schema>),
+
+        /// Statistics schema
+        SchemaStatistics(web::Data<api::graphql::statistics::Schema>),
+    }
+
+    impl fmt::Debug for SchemaKind {
+        #[inline]
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "")
+        }
+    }
+
+    /// Endpoint serving [`api::`graphql`::statistics`] application
+    #[route("/api-statistics", method = "GET", method = "POST")]
+    async fn graphql_statistics(
+        req: HttpRequest,
+        payload: web::Payload,
+        schema: web::Data<api::graphql::statistics::Schema>,
+    ) -> Result<HttpResponse, Error> {
+        graphql(req, payload, SchemaKind::SchemaStatistics(schema)).await
     }
 
     /// Endpoint serving [`api::`graphql`::dashboard`] application
@@ -273,6 +298,10 @@ pub mod client {
                     subscriptions_handler(req, payload, s.into_inner(), cfg)
                         .await
                 }
+                SchemaKind::SchemaStatistics(s) => {
+                    subscriptions_handler(req, payload, s.into_inner(), cfg)
+                        .await
+                }
             }
         } else {
             match schema_kind {
@@ -283,6 +312,9 @@ pub mod client {
                     graphql_handler(&s, &ctx, req, payload).await
                 }
                 SchemaKind::SchemaDashboard(s) => {
+                    graphql_handler(&s, &ctx, req, payload).await
+                }
+                SchemaKind::SchemaStatistics(s) => {
                     graphql_handler(&s, &ctx, req, payload).await
                 }
             }
@@ -316,6 +348,15 @@ pub mod client {
         playground().await
     }
 
+    /// Endpoint serving [GraphQL Playground][1] for exploring
+    /// [`api::graphql::statistics`].
+    ///
+    /// [1]: https://github.com/graphql/graphql-playground
+    #[get("/api-statistics/playground")]
+    async fn playground_statistics() -> HttpResponse {
+        playground().await
+    }
+
     #[allow(clippy::unused_async)]
     async fn playground() -> HttpResponse {
         // Constructs API URL relatively to the current HTTP request's scheme
@@ -338,6 +379,10 @@ pub mod client {
     fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         let route = req.uri().path();
         log::debug!("authorize URI PATH: {}", route);
+
+        if route.starts_with(STATISTICS_ROUTE_API) {
+            return Ok(req);
+        }
 
         let is_mix_auth =
             route.starts_with(MIX_ROUTE) || route.starts_with(MIX_ROUTE_API);
