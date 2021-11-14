@@ -89,7 +89,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
+                "kind": "OBJECT",
                 "name": "Volume",
                 "ofType": null
               }
@@ -238,7 +238,7 @@
       },
       {
         "kind": "SCALAR",
-        "name": "Delay",
+        "name": "String",
         "description": null,
         "fields": null,
         "inputFields": null,
@@ -301,7 +301,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
+                "kind": "OBJECT",
                 "name": "Volume",
                 "ofType": null
               }
@@ -349,7 +349,7 @@
       },
       {
         "kind": "SCALAR",
-        "name": "String",
+        "name": "Delay",
         "description": null,
         "fields": null,
         "inputFields": null,
@@ -405,14 +405,28 @@
                 "defaultValue": null
               },
               {
-                "name": "volume",
+                "name": "level",
                 "description": null,
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "Volume",
+                    "name": "VolumeLevel",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "muted",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
                     "ofType": null
                   }
                 },
@@ -874,8 +888,51 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
+        "kind": "OBJECT",
         "name": "Volume",
+        "description": "Volume rate of an audio track in percents and flag if it is muted.",
+        "fields": [
+          {
+            "name": "level",
+            "description": "Volume rate or level",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "VolumeLevel",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "muted",
+            "description": "Whether it is muted or not",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "VolumeLevel",
         "description": null,
         "fields": null,
         "inputFields": null,
@@ -891,41 +948,6 @@
         "inputFields": null,
         "interfaces": null,
         "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "ENUM",
-        "name": "Status",
-        "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": [
-          {
-            "name": "OFFLINE",
-            "description": "Inactive, no operations are performed and no media traffic is flowed.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "INITIALIZING",
-            "description": "Initializing, media traffic doesn't yet flow as expected.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "ONLINE",
-            "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "UNSTABLE",
-            "description": "Failed recently",
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
         "possibleTypes": null
       },
       {
@@ -991,6 +1013,51 @@
         "possibleTypes": null
       },
       {
+        "kind": "ENUM",
+        "name": "Status",
+        "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "OFFLINE",
+            "description": "Inactive, no operations are performed and no media traffic is flowed.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "INITIALIZING",
+            "description": "Initializing, media traffic doesn't yet flow as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "ONLINE",
+            "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "UNSTABLE",
+            "description": "Failed recently",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "RestreamId",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "Subscription",
         "description": null,
@@ -1039,16 +1106,6 @@
         ],
         "inputFields": null,
         "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "RestreamId",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
