@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use derive_more::{Deref, Display, From, Into};
+use derive_more::{Deref, Display, From, Into, Eq, PartialEq};
 use ephyr_log::log;
 use futures::{
     future::TryFutureExt as _,
