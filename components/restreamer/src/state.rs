@@ -111,14 +111,6 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-    /// Applies the given [`spec::v1::ServerInfo`] to this [`ServerInfo`].
-    pub fn apply(&mut self, new: spec::v1::ServerInfo) {
-        self.cpu_usage = new.cpu_usage;
-        self.ram_total = new.ram_total;
-        self.ram_free = new.ram_free;
-        self.tx_delta = new.tx_delta;
-        self.rx_delta = new.rx_delta;
-    }
 
     /// Updates cpu usage of this [`ServerInfo`], in percents
     pub fn update_cpu(&mut self, cpu: f64) {
@@ -282,7 +274,6 @@ impl State {
                 .iter()
                 .map(Restream::export)
                 .collect(),
-            server_info: self.server_info.get_cloned().export(),
         }
         .into()
     }
