@@ -4,11 +4,17 @@ subscription Output($restreamId: RestreamId!, $outputId: OutputId!) {
         dst
         label
         previewUrl
-        volume
+        volume {
+            level
+            muted
+        }
         mixins {
             id
             src
-            volume
+            volume {
+                level
+                muted
+            }
             delay
         }
         enabled
