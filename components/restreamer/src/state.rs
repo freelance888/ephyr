@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use derive_more::{Deref, Display, From, Into, Eq, PartialEq};
+use derive_more::{Deref, Display, From, Into};
 use ephyr_log::log;
 use futures::{
     future::TryFutureExt as _,
@@ -22,12 +22,9 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use smart_default::SmartDefault;
-use tokio::{fs, time, io::AsyncReadExt as _};
+use tokio::{fs, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
-use std::process::{Command, Stdio};
-use std::thread;
-use systemstat::{System, Platform, saturating_sub_bytes};
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 
@@ -92,7 +89,7 @@ impl Default for Settings {
 }
 
 /// Server's info
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq)]
 pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: f64,
@@ -111,7 +108,6 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-
     /// Updates cpu usage of this [`ServerInfo`], in percents
     pub fn update_cpu(&mut self, cpu: f64) {
         self.cpu_usage = cpu;

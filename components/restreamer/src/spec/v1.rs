@@ -64,7 +64,6 @@ pub struct Settings {
     pub enable_confirmation: Option<bool>,
 }
 
-
 /// Shareable (exportable and importable) specification of a
 /// [`state::Restream`].
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

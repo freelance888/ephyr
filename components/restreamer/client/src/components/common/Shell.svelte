@@ -2,12 +2,16 @@
   import UIkit from 'uikit';
   import Icons from 'uikit/dist/js/uikit-icons';
   import { showError } from '../../utils/util';
+  import ServerInfo from './ServerInfo.svelte';
+
   UIkit.use(Icons);
 
   export let isLoading;
   export let canRenderToolbar;
   export let canRenderMainComponent;
   export let error;
+  export let serverInfo;
+
 </script>
 
 <template>
@@ -24,6 +28,9 @@
           <h3>Creative Society</h3>
           <small>Ephyr re-streamer {process.env.VERSION}</small>
         </a>
+        <div>
+          <ServerInfo serverInfo={serverInfo}></ServerInfo>
+        </div>
         <div class="uk-margin-auto-left">
           {#if canRenderToolbar}
             <slot name="toolbar" />
