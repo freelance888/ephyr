@@ -273,7 +273,8 @@ pub struct Output {
 
     /// Volume rate of this [`Output`]'s audio tracks when mixed with
     /// [`Output::mixins`].
-    pub volume: Volume,
+    #[serde(default, skip_serializing_if = "state::Volume::is_origin")]
+    pub volume: state::Volume,
 
     /// [`Mixin`]s to mix this [`Output`] with before re-streaming it to its
     /// downstream destination.
@@ -332,29 +333,11 @@ pub struct Mixin {
     pub src: state::MixinSrcUrl,
 
     /// Volume rate of this [`Mixin`]'s audio tracks to mix them with.
-    pub volume: Volume,
+    #[serde(default, skip_serializing_if = "state::Volume::is_origin")]
+    pub volume: state::Volume,
 
     /// Delay that this [`Mixin`] should wait before being mixed with an
     /// [`Output`].
     #[serde(default, skip_serializing_if = "state::Delay::is_zero")]
     pub delay: state::Delay,
-}
-
-/// Shareable specification of [`state::Volume`].
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Volume {
-    /// Volume level or rate in percentages
-    #[serde(default)]
-    pub level: state::VolumeLevel,
-
-    /// Flag if the volume is muted
-    #[serde(default)]
-    pub muted: bool,
-}
-
-/// Implementation of Default volume as [`state::Volume::default`]
-impl Default for Volume {
-    fn default() -> Self {
-        state::Volume::default().export()
-    }
 }

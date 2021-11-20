@@ -823,7 +823,7 @@ impl MixingRestreamer {
             id: output.id.into(),
             from_url: from_url.clone(),
             to_url: RestreamerKind::dst_url(output),
-            orig_volume: output.volume.clone(),
+            orig_volume: output.volume,
             orig_zmq_port: new_unique_zmq_port(),
             mixins: output
                 .mixins
@@ -859,13 +859,13 @@ impl MixingRestreamer {
         }
 
         if self.orig_volume != actual.orig_volume {
-            self.orig_volume = actual.orig_volume.clone();
-            tune_volume(self.id, self.orig_zmq_port, self.orig_volume.clone());
+            self.orig_volume = actual.orig_volume;
+            tune_volume(self.id, self.orig_zmq_port, self.orig_volume);
         }
         for (curr, actual) in self.mixins.iter_mut().zip(actual.mixins.iter()) {
             if curr.volume != actual.volume {
-                curr.volume = actual.volume.clone();
-                tune_volume(curr.id.into(), curr.zmq_port, curr.volume.clone());
+                curr.volume = actual.volume;
+                tune_volume(curr.id.into(), curr.zmq_port, curr.volume);
             }
         }
 
@@ -909,9 +909,8 @@ impl MixingRestreamer {
             let _ = cmd.stdin(Stdio::piped());
         }
 
-        let orig_volume = output
-            .as_ref()
-            .map_or(self.orig_volume.clone(), |o| o.volume.clone());
+        let orig_volume =
+            output.as_ref().map_or(self.orig_volume, |o| o.volume);
 
         // WARNING: The filters order matters here!
         let mut filter_complex = Vec::with_capacity(self.mixins.len() + 1);
@@ -962,11 +961,11 @@ impl MixingRestreamer {
             let volume = output
                 .as_ref()
                 .and_then(|o| {
-                    o.mixins.iter().find_map(|m| {
-                        (m.id == mixin.id).then(|| m.volume.clone())
-                    })
+                    o.mixins
+                        .iter()
+                        .find_map(|m| (m.id == mixin.id).then(|| m.volume))
                 })
-                .unwrap_or_else(|| mixin.volume.clone());
+                .unwrap_or(mixin.volume);
 
             // WARNING: The filters order matters here!
             filter_complex.push(format!(
@@ -1151,7 +1150,7 @@ impl Mixin {
             id: state.id,
             url: state.src.clone(),
             delay: state.delay,
-            volume: state.volume.clone(),
+            volume: state.volume,
             zmq_port: new_unique_zmq_port(),
             stdin,
         }

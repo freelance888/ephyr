@@ -6,7 +6,6 @@
 
   import Confirm from './common/Confirm.svelte';
   import Toggle from './common/Toggle.svelte';
-  import Volume from './common/Volume.svelte';
   import Mixin from './Mixin.svelte';
   import RecordsModal from '../modals/RecordsModal.svelte';
   import Url from './common/Url.svelte';
@@ -29,7 +28,25 @@
     ? mutation(mutations.RemoveOutput)
     : undefined;
 
+  const tuneVolumeMutation = mutation(mutations.TuneVolume);
+
+  let volume = 100;
+  $: {
+    // Trigger Svelte reactivity watching.
+    value.volume = value.volume;
+    // Move `volume` to a separate function to omit triggering this block when
+    // it is changed, as we're only interested in `value` changes here.
+    update_volume();
+  }
+
   $: toggleStatusText = value.enabled ? 'Disable' : 'Enable';
+
+  // Last used non-zero volume.
+  let last_volume = value.volume === 0 ? 100 : value.volume;
+
+  function update_volume() {
+    volume = value.volume;
+  }
 
   async function toggle() {
     const variables = { restream_id, output_id: value.id };
@@ -51,6 +68,23 @@
     } catch (e) {
       showError(e.message);
     }
+  }
+
+  async function tuneVolume() {
+    if (volume !== 0) {
+      last_volume = volume;
+    }
+    const variables = { restream_id, output_id: value.id, volume };
+    try {
+      await tuneVolumeMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function toggleVolume() {
+    volume = volume !== 0 ? 0 : last_volume;
+    await tuneVolume();
   }
 
   function openEditOutputModal() {
@@ -180,12 +214,26 @@
           </a>
         {/if}
 
-        <Volume
-          volume={value.volume}
-          {restream_id}
-          output_id={value.id}
-          {mutations}
-        />
+        <div class="uk-flex volume orig">
+          <a href="/" on:click|preventDefault={toggleVolume}>
+            {#if volume > 0}
+              <span><i class="fas fa-volume-up" title="Volume" /></span>
+            {:else}
+              <span><i class="fas fa-volume-mute" title="Muted" /></span>
+            {/if}
+          </a>
+          <input
+            class="uk-range"
+            type="range"
+            min="0"
+            max="200"
+            step="1"
+            bind:value={volume}
+            on:change={tuneVolume}
+          />
+          <span class="uk-margin-small-left">{volume}%</span>
+        </div>
+
         {#each value.mixins as mixin}
           <Mixin {restream_id} output_id={value.id} value={mixin} {mutations} />
         {/each}
@@ -263,6 +311,27 @@
   .fa-circle, .fa-dot-circle
     font-size: 10px
     margin-top: -1px
+  .fa-volume-up, .fa-volume-mute
+    font-size: 10px
+
+  .volume
+    padding-left: 17px
+    font-size: 10px
+
+    a
+      color: #d9d9d9
+      outline: none
+      &:hover
+        text-decoration: none
+        color: #c4c4c4
+
+    .uk-range::-moz-range-thumb, .uk-range::-webkit-slider-thumb
+      width: 7px
+      height: 12px
+    .uk-range
+      display: inline-block
+      width: 74%
+      margin-top: -1px
 
   a.dvr-link
     color: var(--primary-text-color)

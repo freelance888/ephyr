@@ -344,7 +344,7 @@
           },
           {
             "name": "changeEndpointLabel",
-            "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not\n`null` if the `Input` or `Endpoint` doesn't exist.",
+            "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not, and `null` if the `Input` or `Endpoint` doesn't exist.",
             "args": [
               {
                 "name": "id",
@@ -362,7 +362,7 @@
               },
               {
                 "name": "restreamId",
-                "description": "ID of the `Restream` to change.",
+                "description": "ID of the `Restream` to disable the `Input` in.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -396,7 +396,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "String",
+                    "name": "Label",
                     "ofType": null
                   }
                 },
@@ -752,28 +752,14 @@
                 "defaultValue": null
               },
               {
-                "name": "level",
-                "description": null,
+                "name": "volume",
+                "description": "Volume rate in percents to be set.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "VolumeLevel",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "muted",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Boolean",
+                    "name": "Volume",
                     "ofType": null
                   }
                 },
@@ -1749,7 +1735,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
+                "kind": "SCALAR",
                 "name": "Volume",
                 "ofType": null
               }
@@ -2114,7 +2100,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
+                "kind": "SCALAR",
                 "name": "Volume",
                 "ofType": null
               }
@@ -2347,51 +2333,8 @@
         "possibleTypes": null
       },
       {
-        "kind": "OBJECT",
-        "name": "Volume",
-        "description": "Volume rate of an audio track in percents and flag if it is muted.",
-        "fields": [
-          {
-            "name": "level",
-            "description": "Volume rate or level",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "VolumeLevel",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "muted",
-            "description": "Whether it is muted or not",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "SCALAR",
-        "name": "VolumeLevel",
+        "name": "Volume",
         "description": null,
         "fields": null,
         "inputFields": null,
@@ -2560,7 +2503,7 @@
           },
           {
             "name": "label",
-            "description": "Label for this Endpoint",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",

@@ -55,17 +55,11 @@ subscription State {
             dst
             label
             previewUrl
-            volume {
-                level
-                muted
-            }
+            volume
             mixins {
                 id
                 src
-                volume {
-                    level
-                    muted
-                }
+                volume
                 delay
             }
             enabled
@@ -186,15 +180,13 @@ mutation TuneVolume(
     $restream_id: RestreamId!
     $output_id: OutputId!
     $mixin_id: MixinId
-    $level: VolumeLevel!
-    $muted: Boolean!
+    $volume: Volume!
 ) {
     tuneVolume(
         restreamId: $restream_id
         outputId: $output_id
         mixinId: $mixin_id
-        level: $level
-        muted: $muted
+        volume: $volume
     )
 }
 
