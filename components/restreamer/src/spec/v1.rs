@@ -355,8 +355,8 @@ pub struct Volume {
 }
 
 impl Volume {
-    /// Indicates whether this [`Volume`] rate value corresponds is the
-    /// [`Volume::ORIGIN`]al one.
+    /// Indicates whether this [`Volume`] rate value corresponds
+    /// origin value of `state::Volume`
     #[allow(clippy::trivially_copy_pass_by_ref)] // required for `serde`
     #[inline]
     #[must_use]
