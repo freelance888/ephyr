@@ -273,6 +273,7 @@ pub struct Output {
 
     /// Volume rate of this [`Output`]'s audio tracks when mixed with
     /// [`Output::mixins`].
+    #[serde(default, skip_serializing_if = "Volume::is_origin")]
     pub volume: Volume,
 
     /// [`Mixin`]s to mix this [`Output`] with before re-streaming it to its
@@ -332,6 +333,7 @@ pub struct Mixin {
     pub src: state::MixinSrcUrl,
 
     /// Volume rate of this [`Mixin`]'s audio tracks to mix them with.
+    #[serde(default, skip_serializing_if = "Volume::is_origin")]
     pub volume: Volume,
 
     /// Delay that this [`Mixin`] should wait before being mixed with an
@@ -350,6 +352,17 @@ pub struct Volume {
     /// Flag if the volume is muted
     #[serde(default)]
     pub muted: bool,
+}
+
+impl Volume {
+    /// Indicates whether this [`Volume`] rate value corresponds is the
+    /// [`Volume::ORIGIN`]al one.
+    #[allow(clippy::trivially_copy_pass_by_ref)] // required for `serde`
+    #[inline]
+    #[must_use]
+    pub fn is_origin(&self) -> bool {
+        state::Volume::new(self).is_origin()
+    }
 }
 
 /// Implementation of Default volume as [`state::Volume::default`]
