@@ -205,6 +205,6 @@ Cypress.Commands.add('importJsonConf', (host) => {
 // IMPORT ALL INPUTS
 Cypress.Commands.add('runTestStream', (rtmp) => {
   cy.exec(
-    `ffmpeg -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
+    `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
   );
 });
