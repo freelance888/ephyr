@@ -815,6 +815,7 @@ impl QueriesRoot {
             ram_free: info.ram_free,
             tx_delta: info.tx_delta,
             rx_delta: info.rx_delta,
+            error_msg: info.error_msg,
         }
     }
 

@@ -645,6 +645,7 @@ pub mod statistics {
     use futures::FutureExt;
     use ephyr_log::log;
     use crate::display_panic;
+    use std::error::Error;
 
     /// Runs statistics monitoring
     pub async fn run(state: State) -> Result<(), Failure> {
@@ -658,6 +659,9 @@ pub mod statistics {
                 let state = &state;
                 let _ = AssertUnwindSafe(async move {
                     let sys = System::new();
+
+                    // Reset state
+                    state.server_info.lock_mut().reset();
 
                     // Update cpu usage
                     match sys.cpu_load_aggregate() {
@@ -673,9 +677,12 @@ pub mod statistics {
                             let mut server_info = state.server_info.lock_mut();
                             // in percents
                             server_info
-                                .update_cpu(f64::from(1.0 - cpu.idle) * 100.0);
+                                .update_cpu(Some(f64::from(1.0 - cpu.idle) * 100.0));
                         }
-                        Err(x) => log::error!("CPU load: error: {}", x),
+                        Err(x) => {
+                            state.server_info.lock_mut().set_error(Some(x.to_string()));
+                            log::error!("Statistics. CPU load: error: {}", x)
+                        },
                     }
 
                     // Update ram usage
@@ -688,9 +695,12 @@ pub mod statistics {
                             // in megabytes
                             let mem_free =
                                 (mem.free.as_u64() as f64) / 1024.0 / 1024.0;
-                            server_info.update_ram(mem_total, mem_free);
+                            server_info.update_ram(Some(mem_total), Some(mem_free));
                         }
-                        Err(x) => log::error!("Get statistics. Memory: error: {}", x),
+                        Err(x) => {
+                            state.server_info.lock_mut().set_error(Some(x.to_string()));
+                            log::error!("Statistics. Memory: error: {}", x)
+                        }
                     }
 
                     // Update network usage
@@ -723,12 +733,15 @@ pub mod statistics {
 
                             // Update server info
                             let mut server_info = state.server_info.lock_mut();
-                            server_info.update_traffic_usage(tx_delta, rx_delta);
+                            server_info.update_traffic_usage(Some(tx_delta), Some(rx_delta));
 
                             tx_last = tx;
                             rx_last = rx;
                         }
-                        Err(x) => log::error!("Get statistics. Networks: error: {}", x),
+                        Err(x) => {
+                            state.server_info.lock_mut().set_error(Some(x.to_string()));
+                            log::error!("Statistics. Networks: error: {}", x)
+                        }
                     }
                 })
                 .catch_unwind()

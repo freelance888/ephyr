@@ -92,48 +92,67 @@ impl Default for Settings {
 #[derive(Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq)]
 pub struct ServerInfo {
     /// Total CPU usage, %
-    pub cpu_usage: f64,
+    pub cpu_usage: Option<f64>,
 
     /// Total RAM installed on current machine, bytes
-    pub ram_total: f64,
+    pub ram_total: Option<f64>,
 
     /// Free (available) RAM, bytes
-    pub ram_free: f64,
+    pub ram_free: Option<f64>,
 
     /// Bytes, transfered last second
-    pub tx_delta: f64,
+    pub tx_delta: Option<f64>,
 
     /// Bytes, received last second
-    pub rx_delta: f64,
+    pub rx_delta: Option<f64>,
+
+    /// Error message
+    pub error_msg: Option<String>,
 }
 
 impl ServerInfo {
     /// Updates cpu usage of this [`ServerInfo`], in percents
-    pub fn update_cpu(&mut self, cpu: f64) {
+    pub fn update_cpu(&mut self, cpu: Option<f64>) {
         self.cpu_usage = cpu;
     }
 
+    /// Sets error message of this [`ServerInfo`]
+    pub fn set_error(&mut self, msg: Option<String>) {
+        self.error_msg = msg;
+    }
+
     /// Updates ram usage info of this [`ServerInfo`], in megabytes
-    pub fn update_ram(&mut self, ram_total: f64, ram_free: f64) {
+    pub fn update_ram(&mut self, ram_total: Option<f64>, ram_free: Option<f64>) {
         self.ram_total = ram_total;
         self.ram_free = ram_free;
     }
 
     /// Updates traffic usage info of this [`ServerInfo`], in megabites
-    pub fn update_traffic_usage(&mut self, tx_delta: f64, rx_delta: f64) {
+    pub fn update_traffic_usage(&mut self, tx_delta: Option<f64>, rx_delta: Option<f64>) {
         self.tx_delta = tx_delta;
         self.rx_delta = rx_delta;
+    }
+
+    /// Resets this [`ServerInfo`] to default
+    pub fn reset(&mut self) {
+        self.cpu_usage = None;
+        self.ram_total = None;
+        self.ram_free = None;
+        self.tx_delta = None;
+        self.rx_delta = None;
+        self.error_msg = None;
     }
 }
 
 impl Default for ServerInfo {
     fn default() -> ServerInfo {
         ServerInfo {
-            cpu_usage: 0.0,
-            ram_total: 0.0,
-            ram_free: 0.0,
-            tx_delta: 0.0,
-            rx_delta: 0.0,
+            cpu_usage: None,
+            ram_total: None,
+            ram_free: None,
+            tx_delta: None,
+            rx_delta: None,
+            error_msg: None,
         }
     }
 }

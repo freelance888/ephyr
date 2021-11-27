@@ -344,7 +344,7 @@
           },
           {
             "name": "changeEndpointLabel",
-            "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not, and `null` if the `Input` or `Endpoint` doesn't exist.",
+            "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not\n`null` if the `Input` or `Endpoint` doesn't exist.",
             "args": [
               {
                 "name": "id",
@@ -362,7 +362,7 @@
               },
               {
                 "name": "restreamId",
-                "description": "ID of the `Restream` to disable the `Input` in.",
+                "description": "ID of the `Restream` to change.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -396,7 +396,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "Label",
+                    "name": "String",
                     "ofType": null
                   }
                 },
@@ -1100,6 +1100,163 @@
         "possibleTypes": null
       },
       {
+        "kind": "ENUM",
+        "name": "PasswordKind",
+        "description": "Specifies kind of password",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "MAIN",
+            "description": "Password for main application",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "OUTPUT",
+            "description": "Password for single output application",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
+        "name": "Status",
+        "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "OFFLINE",
+            "description": "Inactive, no operations are performed and no media traffic is flowed.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "INITIALIZING",
+            "description": "Initializing, media traffic doesn't yet flow as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "ONLINE",
+            "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "UNSTABLE",
+            "description": "Failed recently",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "__Schema",
+        "description": null,
+        "fields": [
+          {
+            "name": "types",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "__Type",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "queryType",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "__Type",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "mutationType",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "__Type",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "subscriptionType",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "__Type",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "directives",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "__Directive",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "__Type",
         "description": null,
@@ -1272,163 +1429,6 @@
                   "kind": "OBJECT",
                   "name": "__EnumValue",
                   "ofType": null
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "ENUM",
-        "name": "PasswordKind",
-        "description": "Specifies kind of password",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": [
-          {
-            "name": "MAIN",
-            "description": "Password for main application",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "OUTPUT",
-            "description": "Password for single output application",
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "possibleTypes": null
-      },
-      {
-        "kind": "ENUM",
-        "name": "Status",
-        "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": [
-          {
-            "name": "OFFLINE",
-            "description": "Inactive, no operations are performed and no media traffic is flowed.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "INITIALIZING",
-            "description": "Initializing, media traffic doesn't yet flow as expected.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "ONLINE",
-            "description": "Active, all operations are performing successfully and media traffic\nflows as expected.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "UNSTABLE",
-            "description": "Failed recently",
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "__Schema",
-        "description": null,
-        "fields": [
-          {
-            "name": "types",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "__Type",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "queryType",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "mutationType",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "OBJECT",
-              "name": "__Type",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "subscriptionType",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "OBJECT",
-              "name": "__Type",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "directives",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "__Directive",
-                    "ofType": null
-                  }
                 }
               }
             },
@@ -2351,20 +2351,16 @@
       {
         "kind": "OBJECT",
         "name": "ServerInfo",
-        "description": "Information about server status.",
+        "description": "Server's info",
         "fields": [
           {
             "name": "cpuUsage",
             "description": "Total CPU usage, %",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2374,13 +2370,9 @@
             "description": "Total RAM installed on current machine, bytes",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2390,13 +2382,9 @@
             "description": "Free (available) RAM, bytes",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2406,13 +2394,9 @@
             "description": "Bytes, transfered last second",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2422,13 +2406,21 @@
             "description": "Bytes, received last second",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Float",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "errorMsg",
+            "description": "Error message",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2636,7 +2628,7 @@
           },
           {
             "name": "label",
-            "description": null,
+            "description": "Label for this Endpoint",
             "args": [],
             "type": {
               "kind": "SCALAR",

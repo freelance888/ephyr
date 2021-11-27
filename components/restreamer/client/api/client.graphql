@@ -16,6 +16,7 @@ subscription ServerInfo {
         ramFree
         txDelta
         rxDelta
+        errorMsg
     }
 }
 
