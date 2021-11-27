@@ -19,7 +19,8 @@ All user visible changes to this project will be documented in this file. This p
   - Release to `restreamer-dev` tag with `[release]` message in commit ([#79], [#99]).
 - Web UI:
   - Input:
-      - Add `multiple-json` input mode ([#60], [#92]),
+      - Add `multiple-json` input mode ([#60], [#92]);
+      - Add custom labels for inputs ([#69], [#127]).
   - Output:
     - Add `[Preview]` link to video broadcast ([#60], [#77]);
     - Add Youtube video iframe to Public Mixer Output ([#95], [#97], [#101]);
@@ -32,6 +33,7 @@ All user visible changes to this project will be documented in this file. This p
         - Update `InputKey` max key length from 20 to 50 ([#80], [#81]);
         - Add `enableConfirmation` into `Settings` ([#52], [#78]);
         - Add `id` to `Input` and `Output` ([#96], [#102]).
+- Dashboard application ([#142]).
 
 ### Fixed
 
@@ -40,6 +42,9 @@ All user visible changes to this project will be documented in this file. This p
 - Web UI:
   - Error message does not disappear ([#41], [#60]);
   - Trim long output label width with ellipsis ([#107], [#111]).
+- Input remains active after deletion ([#59], [#139]);
+- Wrong output indication ([#65], [#139]);
+- Resetting volume after and edit Output ([#72], [#143], [#148], [#150]).
 
 ### Miscellaneous
 
@@ -57,14 +62,19 @@ All user visible changes to this project will be documented in this file. This p
 
 - Split implementation for Graphql Schema ([#112]);
 - Move fronted to separate folder ([#117]);
-- Add Cypress tests and commands to run for npm ([#121], [#123], [#124]).
-
+- Add Cypress tests and commands to run for npm ([#121], [#123], [#124], [#133], [#144], [#145], [#151]);
+- Add data-test-ids for more convenient testing ([#131]);
+- Temporary disable security audit because issue with `chrono` package ([#141]).
 
 [#41]: /../../issues/41
 [#52]: /../../issues/52
 [#54]: /../../issues/54
+[#59]: /../../issues/59
 [#62]: /../../issues/62
 [#64]: /../../issues/64
+[#65]: /../../issues/65
+[#69]: /../../issues/69
+[#72]: /../../issues/72
 [#79]: /../../issues/79
 [#80]: /../../issues/80
 [#84]: /../../issues/84
@@ -104,6 +114,17 @@ All user visible changes to this project will be documented in this file. This p
 [#124]: /../../pull/124
 [#125]: /../../pull/125
 [#126]: /../../pull/126
+[#127]: /../../pull/127
+[#131]: /../../pull/131
+[#133]: /../../pull/133
+[#139]: /../../pull/139
+[#141]: /../../pull/141
+[#142]: /../../pull/142
+[#144]: /../../pull/144
+[#145]: /../../pull/145
+[#148]: /../../pull/148
+[#150]: /../../pull/150
+[#151]: /../../pull/151
 
 
 
