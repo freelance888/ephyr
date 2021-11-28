@@ -3,7 +3,7 @@
 set -e
 
 EPHYR_CLI_ARGS=${EPHYR_CLI_ARGS:-''}
-EPHYR_VER=${EPHYR_VER:-'0.3.0'}
+EPHYR_VER=${EPHYR_VER:-'0.4.0'}
 if [ "$EPHYR_VER" == "latest" ]; then
   EPHYR_VER=''
 else
