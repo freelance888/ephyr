@@ -15,8 +15,8 @@
     client.statistics.data.clientTitle;
 
   function getStatusCount(items, status) {
-    const output = items.find((x) => x.status === status);
-    return output ? output.count : 0;
+    const filteredItems = items.find((x) => x.status === status);
+    return filteredItems ? filteredItems.count : 0;
   }
 
   async function removeRestream() {
