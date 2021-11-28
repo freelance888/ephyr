@@ -25,6 +25,7 @@
   $: isLoading = !isOnline || $dashboard.loading;
   $: canRenderMainComponent = isOnline && $dashboard.data;
   $: clients = $dashboard.data && $dashboard.data.statistics;
+  $: clientsWithStatistics = clients ? clients.filter((x) => x.statistics) : [];
   $: inputFilters = [];
   $: outputFilters = [];
   $: filteredClients = () => {
@@ -38,8 +39,8 @@
       );
 
     const filtered = inputFilters.length
-      ? clients.filter((client) => hasFilteredInputs(client))
-      : clients;
+      ? clientsWithStatistics.filter((client) => hasFilteredInputs(client))
+      : clientsWithStatistics;
 
     return outputFilters.length
       ? filtered.filter((client) => hasFilteredOutputs(client))
@@ -48,14 +49,14 @@
 
   $: inputStatusCount = (status) =>
     getStatusCount(
-      clients,
-      (client) => (client.statistics ? client.statistics.data.inputs : []),
+      clientsWithStatistics,
+      (client) => client.statistics.data.inputs,
       status
     );
   $: outputStatusCount = (status) =>
     getStatusCount(
-      clients,
-      (client) => (client.statistics ? client.statistics.data.outputs : []),
+      clientsWithStatistics,
+      (client) => client.statistics.data.outputs,
       status
     );
 
