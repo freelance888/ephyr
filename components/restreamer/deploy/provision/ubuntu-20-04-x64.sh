@@ -22,6 +22,14 @@ fi
 apt-get -y update
 curl -sL https://get.docker.com | bash -s
 
+# Login to custom Docker Registry if provided
+REGISTRY_USER=${REGISTRY_USER:-0}
+REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
+REGISTRY_URL=${REGISTRY_URL:-0}
+if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != 0 ]]; then
+  docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
+fi
+
 
 WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 if [ "$WITH_FIREWALLD" == "1" ]; then
