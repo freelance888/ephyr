@@ -120,6 +120,7 @@ All user visible changes to this project will be documented in this file. This p
 [#139]: /../../pull/139
 [#141]: /../../pull/141
 [#142]: /../../pull/142
+[#143]: /../../pull/143
 [#144]: /../../pull/144
 [#145]: /../../pull/145
 [#148]: /../../pull/148
