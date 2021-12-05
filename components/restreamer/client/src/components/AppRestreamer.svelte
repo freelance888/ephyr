@@ -20,14 +20,14 @@
 
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
-  $: isStateLoading = !isOnline || $state.loading;
+  $: isLoading = !isOnline || $state.loading;
   $: canRenderMainComponent = isOnline && $state.data && $info.data;
   $: stateError = $state && $state.error;
 </script>
 
 <template>
   <Shell
-    {isStateLoading}
+    {isLoading}
     {canRenderToolbar}
     {canRenderMainComponent}
     error={stateError || infoError}

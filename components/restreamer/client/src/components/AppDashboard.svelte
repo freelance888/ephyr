@@ -31,11 +31,11 @@
   $: filteredClients = () => {
     const hasFilteredInputs = (x) =>
       inputFilters.some(
-        (status) => getTotalCountByClient(x.statistics.data.inputs, status) > 0
+        (status) => getTotalCountByClient(getInputs(x), status) > 0
       );
     const hasFilteredOutputs = (x) =>
       outputFilters.some(
-        (status) => getTotalCountByClient(x.statistics.data.outputs, status) > 0
+        (status) => getTotalCountByClient(getOutputs(x), status) > 0
       );
 
     const filtered = inputFilters.length
@@ -50,22 +50,49 @@
   $: inputStatusCount = (status) =>
     getStatusCount(
       clientsWithStatistics,
-      (client) => client.statistics.data.inputs,
-      status
-    );
-  $: outputStatusCount = (status) =>
-    getStatusCount(
-      clientsWithStatistics,
-      (client) => client.statistics.data.outputs,
+      (client) => getInputs(client),
       status
     );
 
+  $: outputStatusCount = (status) =>
+    getStatusCount(
+      clientsWithStatistics,
+      (client) => getOutputs(client),
+      status
+    );
+
+  const getInputs = (client) => {
+    const inputs =
+      client.statistics &&
+      client.statistics.data &&
+      client.statistics.data.inputs;
+
+    return inputs ? inputs : [];
+  };
+
+  const getOutputs = (client) => {
+    const outputs =
+      client.statistics &&
+      client.statistics.data &&
+      client.statistics.data.outputs;
+
+    return outputs ? outputs : [];
+  };
+
   const getTotalCountByClient = (items, status) => {
+    if (!items) {
+      return 0;
+    }
+
     const filteredItems = items.find((x) => x.status === status);
     return filteredItems ? filteredItems.count : 0;
   };
 
   function getStatusCount(allClients, getItems, status) {
+    if (!allClients) {
+      return 0;
+    }
+
     return allClients
       ? allClients.reduce(
           (sum, client) =>

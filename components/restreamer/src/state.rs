@@ -752,11 +752,11 @@ impl State {
 
     /// Statistics for statuses of this [`Client`]
     #[must_use]
-    pub fn get_statistics(&self, public_ip: String) -> ClientStatistics {
+    pub fn get_statistics(&self) -> ClientStatistics {
         let settings = self.settings.get_cloned();
         let title = match settings.title {
             Some(t) => t,
-            None => public_ip,
+            None => "".to_string(),
         };
 
         let inputs_stat = self.get_inputs_statistics();

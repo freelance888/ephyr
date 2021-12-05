@@ -192,8 +192,11 @@ impl ClientJob {
         log::info!("Getting statistics from client: {}", client_id);
 
         let request_body = StatisticsQuery::build_query(Vars {});
+        let request = reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .unwrap();
 
-        let request = reqwest::Client::new();
         let url = format!("{}api-statistics", client_id);
         let res = request
             .post(url.as_str())

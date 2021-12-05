@@ -32,7 +32,6 @@ pub struct QueriesRoot;
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
     fn statistics(context: &Context) -> ClientStatistics {
-        let public_ip = context.config().public_host.clone().unwrap();
-        context.state().get_statistics(public_ip)
+        context.state().get_statistics()
     }
 }
