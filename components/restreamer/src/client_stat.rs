@@ -117,11 +117,8 @@ impl From<statistics_query::Status> for Status {
 /// i.e [`ClientId`]
 #[derive(Debug)]
 pub struct ClientJob {
-    /// identity of client
-    id: ClientId,
-
     /// Callback for stop job
-    abort: DroppableAbortHandle,
+    _abort: DroppableAbortHandle,
 }
 
 impl ClientJob {
@@ -129,7 +126,6 @@ impl ClientJob {
     #[must_use]
     pub fn run(id: ClientId, state: State) -> Self {
         let client_id1 = id.clone();
-        let client_id2 = id.clone();
 
         let (spawner, abort_handle) = future::abortable(async move {
             loop {
@@ -177,8 +173,7 @@ impl ClientJob {
         })));
 
         Self {
-            id: client_id2,
-            abort: DroppableAbortHandle::new(abort_handle),
+            _abort: DroppableAbortHandle::new(abort_handle),
         }
     }
 
@@ -248,12 +243,12 @@ impl ClientJob {
                     data.statistics
                         .inputs
                         .into_iter()
-                        .map(|x| x.into())
+                        .map(Into::into)
                         .collect(),
                     data.statistics
                         .outputs
                         .into_iter()
-                        .map(|x| x.into())
+                        .map(Into::into)
                         .collect(),
                 )),
                 errors: Some(response_errors),

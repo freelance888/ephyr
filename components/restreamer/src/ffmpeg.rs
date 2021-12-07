@@ -198,7 +198,7 @@ pub struct Restreamer {
     /// Abort handle of a spawned [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    abort: DroppableAbortHandle,
+    _abort: DroppableAbortHandle,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -305,7 +305,7 @@ impl Restreamer {
         })));
 
         Self {
-            abort: DroppableAbortHandle::new(abort_handle),
+            _abort: DroppableAbortHandle::new(abort_handle),
             kind,
         }
     }
