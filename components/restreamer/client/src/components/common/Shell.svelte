@@ -15,10 +15,10 @@
     <header class="uk-container">
       <div class="uk-grid uk-grid-small" uk-grid>
         <a
-          href="https://allatraunites.com"
+          href="https://creativesociety.com"
           target="_blank"
           class="logo uk-flex"
-          title="Join us on allatraunites.com"
+          title="Join us on creativesociety.com"
         >
           <img src="logo.jpg" alt="Logo" />
           <h3>Creative Society</h3>
