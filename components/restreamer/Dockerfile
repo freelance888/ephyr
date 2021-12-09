@@ -2,7 +2,7 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
 FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
 
 
@@ -102,7 +102,7 @@ FROM ossrs/srs:3 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
 FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/

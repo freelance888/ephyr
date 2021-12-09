@@ -174,7 +174,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "id": "06f08ac0-5d96-41d3-8782-14d06d403532",
           "dst": "rtmp://${host}/it/main",
           "label": "Twitter",
-          "preview_url": "https://allatraunites.com/ru",
+          "preview_url": "https://creativesociety.com/ru",
           "enabled": true
         }
       ]

@@ -34,7 +34,7 @@ pub struct Server {
     /// Handle to the actual spawned [SRS] process.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    process: Arc<ServerProcess>,
+    _process: Arc<ServerProcess>,
 }
 
 impl Server {
@@ -121,7 +121,7 @@ impl Server {
 
         let srv = Self {
             conf_path,
-            process: Arc::new(ServerProcess(abort_handle)),
+            _process: Arc::new(ServerProcess(abort_handle)),
         };
 
         // Pre-create SRS conf file.

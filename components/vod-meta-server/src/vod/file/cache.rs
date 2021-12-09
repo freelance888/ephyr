@@ -40,7 +40,7 @@ pub struct Manager {
     /// [`TMPDIR` env var][1].
     ///
     /// [1]: https://en.wikipedia.org/wiki/TMPDIR
-    tmp_dir: TempDir,
+    _tmp_dir: TempDir,
 }
 
 impl Manager {
@@ -71,7 +71,7 @@ impl Manager {
         Ok(Self {
             cache_dir,
             downloads: tx,
-            tmp_dir,
+            _tmp_dir: tmp_dir,
         })
     }
 

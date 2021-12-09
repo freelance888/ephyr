@@ -3,7 +3,7 @@ Ephyr re-streamer
 
 [Changelog](CHANGELOG.md)
 
-🚀 Deploy to [DigitalOcean][101] ([ru][102]), [Hetzner Cloud][111] ([ru][112]), [Oracle Cloud][121] ([ru][122]).
+🚀 Deploy to [DigitalOcean][101] ([ru][102]), [Hetzner Cloud][111] ([ru][112]), [Oracle Cloud][121] ([ru][122]), [VScale\Selectel (ru)][123].
 
 Simple web application allowing to forward [RTMP] streams in a similar way as [facecast.io] does. It uses [SRS] to accept [RTMP] streams and [FFmpeg] to forward them.
 
@@ -38,3 +38,4 @@ As for any pre-built image usage, it is the image user's responsibility to ensur
 [112]: docs/deploy_hcloud_RU.md
 [121]: docs/deploy_oracle_EN.md
 [122]: docs/deploy_oracle_RU.md
+[123]: docs/deploy_vscale_RU.md
