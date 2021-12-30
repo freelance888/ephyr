@@ -23,6 +23,7 @@ use crate::{
     display_panic, dvr,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
+    types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
@@ -197,7 +198,7 @@ pub struct Restreamer {
     /// Abort handle of a spawned [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    abort: DroppableAbortHandle,
+    _abort: DroppableAbortHandle,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -304,7 +305,7 @@ impl Restreamer {
         })));
 
         Self {
-            abort: DroppableAbortHandle(abort_handle),
+            _abort: DroppableAbortHandle::new(abort_handle),
             kind,
         }
     }
@@ -822,7 +823,7 @@ impl MixingRestreamer {
             id: output.id.into(),
             from_url: from_url.clone(),
             to_url: RestreamerKind::dst_url(output),
-            orig_volume: output.volume,
+            orig_volume: output.volume.clone(),
             orig_zmq_port: new_unique_zmq_port(),
             mixins: output
                 .mixins
@@ -858,13 +859,13 @@ impl MixingRestreamer {
         }
 
         if self.orig_volume != actual.orig_volume {
-            self.orig_volume = actual.orig_volume;
-            tune_volume(self.id, self.orig_zmq_port, self.orig_volume);
+            self.orig_volume = actual.orig_volume.clone();
+            tune_volume(self.id, self.orig_zmq_port, self.orig_volume.clone());
         }
         for (curr, actual) in self.mixins.iter_mut().zip(actual.mixins.iter()) {
             if curr.volume != actual.volume {
-                curr.volume = actual.volume;
-                tune_volume(curr.id.into(), curr.zmq_port, curr.volume);
+                curr.volume = actual.volume.clone();
+                tune_volume(curr.id.into(), curr.zmq_port, curr.volume.clone());
             }
         }
 
@@ -908,8 +909,9 @@ impl MixingRestreamer {
             let _ = cmd.stdin(Stdio::piped());
         }
 
-        let orig_volume =
-            output.as_ref().map_or(self.orig_volume, |o| o.volume);
+        let orig_volume = output
+            .as_ref()
+            .map_or(self.orig_volume.clone(), |o| o.volume.clone());
 
         // WARNING: The filters order matters here!
         let mut filter_complex = Vec::with_capacity(self.mixins.len() + 1);
@@ -960,11 +962,11 @@ impl MixingRestreamer {
             let volume = output
                 .as_ref()
                 .and_then(|o| {
-                    o.mixins
-                        .iter()
-                        .find_map(|m| (m.id == mixin.id).then(|| m.volume))
+                    o.mixins.iter().find_map(|m| {
+                        (m.id == mixin.id).then(|| m.volume.clone())
+                    })
                 })
-                .unwrap_or(mixin.volume);
+                .unwrap_or_else(|| mixin.volume.clone());
 
             // WARNING: The filters order matters here!
             filter_complex.push(format!(
@@ -1149,7 +1151,7 @@ impl Mixin {
             id: state.id,
             url: state.src.clone(),
             delay: state.delay,
-            volume: state.volume,
+            volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
         }
@@ -1164,19 +1166,6 @@ impl Mixin {
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
         self.url != actual.url || self.delay != actual.delay
-    }
-}
-
-/// Abort handle of a spawned [FFmpeg] [`Restreamer`] process.
-///
-/// [FFmpeg]: https://ffmpeg.org
-#[derive(Clone, Debug)]
-pub struct DroppableAbortHandle(future::AbortHandle);
-
-impl Drop for DroppableAbortHandle {
-    #[inline]
-    fn drop(&mut self) {
-        self.0.abort();
     }
 }
 

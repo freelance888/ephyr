@@ -244,12 +244,12 @@ jobs:
                         || contains(github.event.head_commit.message, '[release]') }}
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
-          - component: vod-meta-server
-            export: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                        || github.ref == 'refs/heads/master'
-                        || contains(github.event.head_commit.message, '[release]') }}
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+#          - component: vod-meta-server
+#            export: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                        || github.ref == 'refs/heads/master'
+#                        || contains(github.event.head_commit.message, '[release]') }}
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                    || !startsWith(github.ref, 'refs/tags/') }}
     env:
       no-cache: ${{ contains(github.event.head_commit.message, '[fresh ci]')
                     || github.ref == 'refs/heads/master'
@@ -312,11 +312,13 @@ jobs:
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || contains(github.event.head_commit.message, '[release]')
                     || !startsWith(github.ref, 'refs/tags/') }}
-          - component: vod-meta-server
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                  || contains(github.event.head_commit.message, '[release]')
-                  || !startsWith(github.ref, 'refs/tags/') }}
+#          - component: vod-meta-server
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                  || contains(github.event.head_commit.message, '[release]')
+#                  || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tags.outputs.result }}
     steps:
       - uses: actions/checkout@v2
         if: ${{ matrix.if }}
@@ -350,7 +352,7 @@ jobs:
       - name: Verify release version matches NPM manifest
         run: >-
           test "${{ steps.semver.outputs.group1 }}" \
-               == $(grep -m1 '  "version": "' package.json | cut -d '"' -f4)
+               == $(grep -m1 '  "version": "' client/package.json | cut -d '"' -f4)
         working-directory: components/${{ matrix.component }}
         if: ${{ matrix.if
                 && startsWith(github.ref, 'refs/tags/')
@@ -426,3 +428,52 @@ jobs:
           prerelease: ${{ steps.semver.outputs.group4 != '' }}
         if: ${{ matrix.if
                 && startsWith(github.ref, 'refs/tags/') }}
+
+
+
+
+
+
+  #############
+  # E2E tests #
+  #############
+
+  test-cypress:
+    needs: release
+    name: Cypress tests
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create new Hetzner server
+        uses: TimDaub/hetzner-cloud-deploy-server-action@v2
+        with:
+          server-name: "cypress-ephyr-tests"
+          server-image: "ubuntu-20.04"
+          server-type: "cpx11"
+          ssh-key-name: "github-ci"
+          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
+          startup-timeout: 40000
+        env:
+          API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
+
+      - name: Install Ephyr on new server
+        uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
+      - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=${{ needs.release.outputs.release_tag }} bash -s"
+
+      # Setup and run tests
+      - uses: actions/checkout@v2
+      - name: Install ffmpeg for run tests
+        uses: FedericoCarboni/setup-ffmpeg@v1
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v2
+        with:
+          browser: chrome
+          working-directory: components/restreamer/client
+        env:
+          CYPRESS_host: ${{ env.SERVER_IPV4 }}
+          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}

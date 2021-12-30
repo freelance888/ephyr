@@ -174,7 +174,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "id": "06f08ac0-5d96-41d3-8782-14d06d403532",
           "dst": "rtmp://${host}/it/main",
           "label": "Twitter",
-          "preview_url": "https://allatraunites.com/ru",
+          "preview_url": "https://creativesociety.com/ru",
           "enabled": true
         }
       ]
@@ -205,6 +205,6 @@ Cypress.Commands.add('importJsonConf', (host) => {
 // IMPORT ALL INPUTS
 Cypress.Commands.add('runTestStream', (rtmp) => {
   cy.exec(
-    `ffmpeg -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
+    `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
   );
 });

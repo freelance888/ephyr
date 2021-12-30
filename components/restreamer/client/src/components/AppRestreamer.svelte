@@ -21,7 +21,7 @@
 
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
-  $: isStateLoading = !isOnline || $state.loading;
+  $: isLoading = !isOnline || $state.loading;
   $: canRenderMainComponent = isOnline && $state.data && $info.data;
   $: stateError = $state && $state.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
@@ -30,7 +30,7 @@
 
 <template>
   <Shell
-    {isStateLoading}
+    {isLoading}
     {canRenderToolbar}
     {canRenderMainComponent}
     error={stateError || infoError}

@@ -1,7 +1,7 @@
 //! Logging tools and their initialization.
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
     rust_2018_idioms,

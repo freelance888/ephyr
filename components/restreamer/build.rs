@@ -4,7 +4,8 @@ use std::{env, path::Path};
 fn main() -> anyhow::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
     let root_files = Path::new(&out_dir).join("generated.rs");
-    let restream_files = Path::new(&out_dir).join("generated_mix.rs");
+    let mix_files = Path::new(&out_dir).join("generated_mix.rs");
+    let dashboard_files = Path::new(&out_dir).join("generated_dashboard.rs");
 
     NpmBuild::new("./client")
         .executable("yarn")
@@ -21,7 +22,11 @@ fn main() -> anyhow::Result<()> {
         .build()?;
 
     resource_dir("./client/public/mix")
-        .with_generated_filename(restream_files)
+        .with_generated_filename(mix_files)
+        .build()?;
+
+    resource_dir("./client/public/dashboard")
+        .with_generated_filename(dashboard_files)
         .build()?;
 
     Ok(())

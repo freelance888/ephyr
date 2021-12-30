@@ -1,0 +1,14 @@
+query StatisticsQuery {
+    statistics {
+        clientTitle
+        timestamp
+        inputs {
+            status
+            count
+        }
+        outputs {
+            status
+            count
+        }
+    }
+}

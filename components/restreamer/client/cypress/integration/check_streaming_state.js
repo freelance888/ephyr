@@ -15,7 +15,7 @@ describe('CHECK STREAMING STATE', () => {
   });
 
   const greenColor = 'rgb(50, 210, 150)';
-  const brownColor = 'rgb(102, 102, 102)';
+  const brownColor = 'rgb(122, 81, 40)';
 
   it('Assert', () => {
     cy.get(

@@ -19,10 +19,10 @@
     <header class="uk-container">
       <div class="uk-grid uk-grid-small" uk-grid>
         <a
-          href="https://allatraunites.com"
+          href="https://creativesociety.com"
           target="_blank"
           class="logo uk-flex"
-          title="Join us on allatraunites.com"
+          title="Join us on creativesociety.com"
         >
           <img src="logo.jpg" alt="Logo" />
           <h3>Creative Society</h3>
@@ -142,4 +142,23 @@
     overflow-wrap: anywhere;
     white-space: normal;
 
+  .toolbar
+    position: relative
+    padding: 8px
+    margin-top: 20px
+    margin-bottom: 30px
+
+  .toolbar-label
+    line-height: 38px
+    margin-left: 12px
+
+  .section-label
+    font-size: smaller
+    position: absolute
+    top: -12px
+    left: 0
+    padding: 2px 10px
+    border-top-left-radius: 4px
+    border-top-right-radius: 4px
+    background-color: #f8f8f8
 </style>

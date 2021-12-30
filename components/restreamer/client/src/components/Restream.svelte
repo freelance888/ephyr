@@ -194,7 +194,7 @@
     </a>
 
     {#if !!value.label}
-      <span class="label">{value.label}</span>
+      <span class="section-label">{value.label}</span>
     {/if}
 
     {#if value.outputs && value.outputs.length > 0}
@@ -346,12 +346,4 @@
       margin-top: 10px
       margin-left: -10px
 
-    .label
-      position: absolute
-      top: -12px
-      left: 0
-      padding: 2px 10px
-      border-top-left-radius: 4px
-      border-top-right-radius: 4px
-      background-color: #f8f8f8
 </style>

@@ -3,7 +3,7 @@
 set -e
 
 EPHYR_CLI_ARGS=${EPHYR_CLI_ARGS:-''}
-EPHYR_VER=${EPHYR_VER:-'0.3.0'}
+EPHYR_VER=${EPHYR_VER:-'0.4.0'}
 if [ "$EPHYR_VER" == "latest" ]; then
   EPHYR_VER=''
 else
@@ -21,6 +21,14 @@ fi
 # Install Docker for running containers.
 apt-get -y update
 curl -sL https://get.docker.com | bash -s
+
+# Login to custom Docker Registry if provided
+REGISTRY_USER=${REGISTRY_USER:-0}
+REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
+REGISTRY_URL=${REGISTRY_URL:-0}
+if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != 0 ]]; then
+  docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
+fi
 
 
 WITH_FIREWALLD=${WITH_FIREWALLD:-0}

@@ -1,0 +1,28 @@
+subscription Statistics {
+    statistics {
+        id
+        statistics {
+            data {
+                clientTitle
+                timestamp
+                inputs {
+                    status
+                    count
+                }
+                outputs {
+                    status
+                    count
+                }
+            }
+            errors
+        }
+    }
+}
+
+mutation AddClient($client_id: ClientId!) {
+    addClient(clientId: $client_id)
+}
+
+mutation RemoveClient($client_id: ClientId!) {
+    removeClient(clientId: $client_id)
+}

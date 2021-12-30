@@ -19,7 +19,7 @@
     }}
   >
     <div
-      {title}
+      title={title ? title : status}
       class="content"
       class:active
       class:disabled

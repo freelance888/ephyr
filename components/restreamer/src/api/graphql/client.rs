@@ -24,7 +24,7 @@ use crate::{
 };
 
 use super::Context;
-use crate::state::{EndpointId, ServerInfo};
+use crate::state::{EndpointId, VolumeLevel, ServerInfo};
 use url::Url;
 
 /// Schema of `Restreamer` app.
@@ -422,24 +422,46 @@ impl MutationsRoot {
             }
         }
 
+        let existing_output;
+        if let Some(&id_unwrap) = id.as_ref() {
+            existing_output =
+                context.state().get_output(restream_id, id_unwrap);
+        } else {
+            existing_output = None;
+        }
+        let mut original_volume = Volume::ORIGIN.export();
+        if let Some(output) = existing_output.as_ref() {
+            if !mixins.is_empty() {
+                original_volume = output.volume.export();
+            }
+        }
+
         let spec = spec::v1::Output {
             id: None,
             dst,
             label,
             preview_url,
-            volume: Volume::ORIGIN,
+            volume: original_volume,
             mixins: mixins
                 .into_iter()
                 .map(|src| {
-                    let delay = (src.scheme() == "ts")
-                        .then(|| Delay::from_millis(3500))
-                        .flatten()
-                        .unwrap_or_default();
-                    spec::v1::Mixin {
-                        src,
-                        volume: Volume::ORIGIN,
-                        delay,
+                    let delay;
+                    let volume;
+                    if let Some(orig_mixin) =
+                        existing_output.as_ref().and_then(|val| {
+                            val.mixins.iter().find(|val| val.src == src)
+                        })
+                    {
+                        volume = orig_mixin.volume.export();
+                        delay = orig_mixin.delay;
+                    } else {
+                        volume = Volume::ORIGIN.export();
+                        delay = (src.scheme() == "ts")
+                            .then(|| Delay::from_millis(3500))
+                            .flatten()
+                            .unwrap_or_default();
                     }
+                    spec::v1::Mixin { src, volume, delay }
                 })
                 .collect(),
             enabled: false,
@@ -611,12 +633,16 @@ impl MutationsRoot {
         restream_id: RestreamId,
         output_id: OutputId,
         mixin_id: Option<MixinId>,
-        volume: Volume,
+        level: VolumeLevel,
+        muted: bool,
         context: &Context,
     ) -> Option<bool> {
-        context
-            .state()
-            .tune_volume(restream_id, output_id, mixin_id, volume)
+        context.state().tune_volume(
+            restream_id,
+            output_id,
+            mixin_id,
+            Volume { level, muted },
+        )
     }
 
     /// Tunes a `Delay` of the specified `Mixin` before mix it into its

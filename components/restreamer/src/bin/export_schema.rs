@@ -32,6 +32,18 @@ fn main() -> anyhow::Result<()> {
             juniper::IntrospectionFormat::default(),
         )
         .map_err(err_fn)?,
+        Api::Dashboard => juniper::introspect(
+            &api::graphql::dashboard::schema(),
+            &api::graphql::Context::fake(),
+            juniper::IntrospectionFormat::default(),
+        )
+        .map_err(err_fn)?,
+        Api::Statistics => juniper::introspect(
+            &api::graphql::statistics::schema(),
+            &api::graphql::Context::fake(),
+            juniper::IntrospectionFormat::default(),
+        )
+        .map_err(err_fn)?,
     };
 
     let json = serde_json::to_string_pretty(&res)
@@ -90,6 +102,12 @@ enum Api {
     /// [`api::graphql::mix`].
     #[display(fmt = "mix")]
     Mix,
+    /// [`api::graphql::dashboard`].
+    #[display(fmt = "dashboard")]
+    Dashboard,
+    /// [`api::graphql::statistics`].
+    #[display(fmt = "statistics")]
+    Statistics,
 }
 
 impl FromStr for Api {
@@ -99,6 +117,8 @@ impl FromStr for Api {
         match s {
             "client" => Ok(Self::Client),
             "mix" => Ok(Self::Mix),
+            "dashboard" => Ok(Self::Dashboard),
+            "statistics" => Ok(Self::Statistics),
             _ => Err(anyhow!("Unknown backend API '{}'", s)),
         }
     }

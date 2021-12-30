@@ -13,6 +13,7 @@ const config: webpack.Configuration = {
   entry: {
     main: './src/AppRestreamer.ts',
     'mix/main': './src/AppMix.ts',
+    'dashboard/main': './src/AppDashboard.ts',
   },
   resolve: {
     alias: {
@@ -67,6 +68,8 @@ const config: webpack.Configuration = {
         { from: 'static/index.html' },
         { from: 'static/mix', to: 'mix' },
         { from: 'static/assets', to: 'mix' },
+        { from: 'static/dashboard', to: 'dashboard' },
+        { from: 'static/assets', to: 'dashboard' },
         { from: 'static/assets' },
       ],
     }),

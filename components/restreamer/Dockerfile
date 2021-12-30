@@ -2,7 +2,7 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
 FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
 
 
@@ -44,6 +44,10 @@ COPY common/serde/Cargo.toml ./common/serde/
 COPY components/restreamer/Cargo.toml ./components/restreamer/
 COPY components/vod-meta-server/Cargo.toml ./components/vod-meta-server/
 COPY Cargo.toml Cargo.lock ./
+
+COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
+
+
 
 RUN mkdir -p common/api/allatra-video/src/ \
  && touch common/api/allatra-video/src/lib.rs \
@@ -98,7 +102,7 @@ FROM ossrs/srs:3 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.3/centos7/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
 FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/

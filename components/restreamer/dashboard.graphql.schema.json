@@ -22,19 +22,19 @@
       },
       {
         "kind": "OBJECT",
-        "name": "Output",
-        "description": "Downstream destination that a `Restream` re-streams a live stream to.",
+        "name": "ClientStatistics",
+        "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)",
         "fields": [
           {
-            "name": "id",
-            "description": "Unique ID of this `Output`.\n\nOnce assigned, it never changes.",
+            "name": "publicHost",
+            "description": "Client host",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "OutputId",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -42,15 +42,15 @@
             "deprecationReason": null
           },
           {
-            "name": "dst",
-            "description": "Downstream URL to re-stream a live stream onto.\n\nAt the moment only [RTMP] and [Icecast] are supported.\n\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol",
+            "name": "timestamp",
+            "description": "Time when statistics was taken",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "OutputDstUrl",
+                "name": "DateTimeUtc",
                 "ofType": null
               }
             },
@@ -58,48 +58,8 @@
             "deprecationReason": null
           },
           {
-            "name": "label",
-            "description": "Optional label of this `Output`.",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Label",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "previewUrl",
-            "description": "Url of stream preview.",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Url",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "volume",
-            "description": "Volume rate of this `Output`'s audio tracks when mixed with\n`Output.mixins`.\n\nHas no effect when there is no `Output.mixins`.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "Volume",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "mixins",
-            "description": "`Mixin`s to mix this `Output` with before re-streaming it to its\ndownstream destination.\n\nIf empty, then no mixing is performed and re-streaming is as cheap as\npossible (just copies bytes \"as is\").",
+            "name": "inputs",
+            "description": "Count of inputs grouped by status",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -112,7 +72,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "OBJECT",
-                    "name": "Mixin",
+                    "name": "StatusStatistics",
                     "ofType": null
                   }
                 }
@@ -122,32 +82,24 @@
             "deprecationReason": null
           },
           {
-            "name": "enabled",
-            "description": "Indicator whether this `Output` is enabled, so is allowed to perform a\nlive stream re-streaming to its downstream destination.",
+            "name": "outputs",
+            "description": "Count of outputs grouped by status",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "status",
-            "description": "`Status` of this `Output` indicating whether it actually re-streams a\nlive stream to its downstream destination.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "ENUM",
-                "name": "Status",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "StatusStatistics",
+                    "ofType": null
+                  }
+                }
               }
             },
             "isDeprecated": false,
@@ -156,16 +108,6 @@
         ],
         "inputFields": null,
         "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "OutputId",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -247,30 +189,20 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "Label",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "OBJECT",
-        "name": "Mixin",
-        "description": "Additional source for an `Output` to be mixed with before re-streaming to\nthe destination.",
+        "name": "__Field",
+        "description": null,
         "fields": [
           {
-            "name": "id",
-            "description": "Unique ID of this `Mixin`.\n\nOnce assigned, it never changes.",
+            "name": "name",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "MixinId",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -278,31 +210,51 @@
             "deprecationReason": null
           },
           {
-            "name": "src",
-            "description": "URL of the source to be mixed with an `Output`.\n\nAt the moment, only [TeamSpeak] is supported.\n\n[TeamSpeak]: https://teamspeak.com",
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "args",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
-                "name": "MixinSrcUrl",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "__InputValue",
+                    "ofType": null
+                  }
+                }
               }
             },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "volume",
-            "description": "Volume rate of this `Mixin`'s audio tracks to mix them with.",
+            "name": "type",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "OBJECT",
-                "name": "Volume",
+                "name": "__Type",
                 "ofType": null
               }
             },
@@ -310,15 +262,15 @@
             "deprecationReason": null
           },
           {
-            "name": "delay",
-            "description": "Delay that this `Mixin` should wait before being mixed with an `Output`.\n\nVery useful to fix de-synchronization issues and correct timings between\na `Mixin` and its `Output`.",
+            "name": "isDeprecated",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "Delay",
+                "name": "Boolean",
                 "ofType": null
               }
             },
@@ -326,8 +278,96 @@
             "deprecationReason": null
           },
           {
+            "name": "deprecationReason",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "Mutation",
+        "description": null,
+        "fields": [
+          {
+            "name": "addClient",
+            "description": "Add a new [`Client`]\n\nReturns [`graphql::Error`] if there is already [`Client`] in this\n[`State`].",
+            "args": [
+              {
+                "name": "clientId",
+                "description": "Ulr of remote client",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ClientId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "removeClient",
+            "description": "Remove [`Client`]\n\nReturns [`None`] if there is no [`Client`] in this\n[`State`].",
+            "args": [
+              {
+                "name": "clientId",
+                "description": "Ulr of remote client",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ClientId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "StatusStatistics",
+        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]",
+        "fields": [
+          {
             "name": "status",
-            "description": "`Status` of this `Mixin` indicating whether it provides an actual media\nstream to be mixed with its `Output`.",
+            "description": "Status of [`Input`]s or [`Outputs`]",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -340,172 +380,19 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "Delay",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "Mutation",
-        "description": null,
-        "fields": [
-          {
-            "name": "tuneVolume",
-            "description": "Tunes a `Volume` rate of the specified `Output` or one of its `Mixin`s.",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "mixinId",
-                "description": null,
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "MixinId",
-                  "ofType": null
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "level",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "VolumeLevel",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "muted",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Boolean",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
           },
           {
-            "name": "tuneDelay",
-            "description": "Tunes a `Delay` of the specified `Mixin` before mix it into its",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "mixinId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "MixinId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "delay",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Delay",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
+            "name": "count",
+            "description": "Count of items having [`Status`]\nGraphQLScalar requires i32 numbers",
+            "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -513,16 +400,6 @@
         ],
         "inputFields": null,
         "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "MixinSrcUrl",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -583,6 +460,16 @@
             "deprecationReason": null
           }
         ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "DateTimeUtc",
+        "description": "DateTime",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -771,248 +658,6 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "OutputDstUrl",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "__Field",
-        "description": null,
-        "fields": [
-          {
-            "name": "name",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "description",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "args",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "__InputValue",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "type",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "isDeprecated",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "deprecationReason",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "Volume",
-        "description": "Volume rate of an audio track in percents and flag if it is muted.",
-        "fields": [
-          {
-            "name": "level",
-            "description": "Volume rate or level",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "VolumeLevel",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "muted",
-            "description": "Whether it is muted or not",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "VolumeLevel",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "MixinId",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "Url",
-        "description": "Url",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "Query",
-        "description": null,
-        "fields": [
-          {
-            "name": "output",
-            "description": "Returns output for specified restream by output_id.",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "OBJECT",
-              "name": "Output",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "ENUM",
         "name": "Status",
         "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
@@ -1048,57 +693,30 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "RestreamId",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "OBJECT",
         "name": "Subscription",
         "description": null,
         "fields": [
           {
-            "name": "output",
-            "description": "Returns output for specified restream by output_id.",
-            "args": [
-              {
-                "name": "restreamId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "outputId",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
+            "name": "statistics",
+            "description": null,
+            "args": [],
             "type": {
-              "kind": "OBJECT",
-              "name": "Output",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Client",
+                    "ofType": null
+                  }
+                }
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -1196,6 +814,143 @@
                     "name": "__Directive",
                     "ofType": null
                   }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "Client",
+        "description": "Client represents server with running `ephyr` app and can return some statistics\nabout status of [`Input`]s, [`Outputs`]s .",
+        "fields": [
+          {
+            "name": "id",
+            "description": "Unique id of client. IP or domain name.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ClientId",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "statistics",
+            "description": "Statistics for this [`Client`].",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ClientStatisticsResponse",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "Query",
+        "description": null,
+        "fields": [
+          {
+            "name": "statistics",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Client",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "ClientId",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "Int",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ClientStatisticsResponse",
+        "description": "Current state of [`ClientStatistics`] request\n",
+        "fields": [
+          {
+            "name": "data",
+            "description": "Statistics data",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ClientStatistics",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "errors",
+            "description": "The top-level errors returned by the server.",
+            "args": [],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 }
               }
             },

@@ -752,14 +752,28 @@
                 "defaultValue": null
               },
               {
-                "name": "volume",
-                "description": "Volume rate in percents to be set.",
+                "name": "level",
+                "description": null,
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "Volume",
+                    "name": "VolumeLevel",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "muted",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
                     "ofType": null
                   }
                 },
@@ -1761,7 +1775,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
+                "kind": "OBJECT",
                 "name": "Volume",
                 "ofType": null
               }
@@ -2126,7 +2140,7 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
+                "kind": "OBJECT",
                 "name": "Volume",
                 "ofType": null
               }
@@ -2442,8 +2456,51 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
+        "kind": "OBJECT",
         "name": "Volume",
+        "description": "Volume rate of an audio track in percents and flag if it is muted.",
+        "fields": [
+          {
+            "name": "level",
+            "description": "Volume rate or level",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "VolumeLevel",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "muted",
+            "description": "Whether it is muted or not",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "VolumeLevel",
         "description": null,
         "fields": null,
         "inputFields": null,

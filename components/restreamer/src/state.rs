@@ -1,8 +1,14 @@
 //! Application state.
 
 use std::{
-    borrow::Cow, collections::HashSet, convert::TryInto, future::Future, mem,
-    panic::AssertUnwindSafe, path::Path, time::Duration,
+    borrow::Cow,
+    collections::HashSet,
+    convert::{TryFrom, TryInto},
+    future::Future,
+    mem,
+    panic::AssertUnwindSafe,
+    path::Path,
+    time::Duration,
 };
 
 use anyhow::anyhow;
@@ -27,6 +33,8 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
+use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 
 /// Server's settings.
 ///
@@ -111,6 +119,10 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
+    pub fn new() -> ServerInfo {
+        ServerInfo::default()
+    }
+
     /// Updates cpu usage of this [`ServerInfo`], in percents
     pub fn update_cpu(&mut self, cpu: Option<f64>) {
         self.cpu_usage = cpu;
@@ -133,14 +145,8 @@ impl ServerInfo {
         self.rx_delta = rx_delta;
     }
 
-    /// Resets this [`ServerInfo`] to default
-    pub fn reset(&mut self) {
-        self.cpu_usage = None;
-        self.ram_total = None;
-        self.ram_free = None;
-        self.tx_delta = None;
-        self.rx_delta = None;
-        self.error_msg = None;
+    pub fn apply(&mut self, new: ServerInfo) {
+        *self = new.clone();
     }
 }
 
@@ -167,6 +173,9 @@ pub struct State {
 
     /// All [`Restream`]s performed by this application.
     pub restreams: Mutable<Vec<Restream>>,
+
+    /// All [`Client`]s for monitoring
+    pub clients: Mutable<Vec<Client>>,
 
     /// Global [`ServerInfo`] of server
     pub server_info: Mutable<ServerInfo>,
@@ -222,11 +231,16 @@ impl State {
             .map_err(|e| log::error!("Failed to persist server state: {}", e))
         };
         let persist_state2 = persist_state1.clone();
+        let persist_state3 = persist_state1.clone();
+
         Self::on_change("persist_restreams", &state.restreams, move |_| {
             persist_state1()
         });
         Self::on_change("persist_settings", &state.settings, move |_| {
             persist_state2()
+        });
+        Self::on_change("persist_clients", &state.clients, move |_| {
+            persist_state3()
         });
 
         Ok(state)
@@ -317,6 +331,35 @@ impl State {
             .map(|_| Ok(()))
             .forward(sink::drain()),
         ));
+    }
+
+    /// Adds a new [`Client`] to this [`State`]
+    ///
+    /// # Errors
+    ///
+    /// If this [`State`] has a [`Client`] with the same host
+    pub fn add_client(&self, client_id: &ClientId) -> anyhow::Result<()> {
+        let mut clients = self.clients.lock_mut();
+
+        if clients.iter().any(|r| r.id == *client_id) {
+            return Err(anyhow!("Client host '{}' is used already", client_id));
+        }
+
+        clients.push(Client::new(client_id));
+
+        Ok(())
+    }
+
+    /// Removes a [`Client`] with the given `id` from this [`State`].
+    ///
+    /// Returns [`None`] if there is no [`Client`] with such `id` in this
+    /// [`State`].
+    #[allow(clippy::must_use_candidate)]
+    pub fn remove_client(&self, client_id: &ClientId) -> Option<()> {
+        let mut clients = self.clients.lock_mut();
+        let prev_len = clients.len();
+        clients.retain(|r| r.id != *client_id);
+        (clients.len() != prev_len).then(|| ())
     }
 
     /// Adds a new [`Restream`] by the given `spec` to this [`State`].
@@ -729,6 +772,76 @@ impl State {
         Some(true)
     }
 
+    /// Gather statistics about [`Input`]s statuses
+    #[must_use]
+    pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
+        self.restreams
+            .get_cloned()
+            .into_iter()
+            .fold(HashMap::new(), |mut stat, restream| {
+                let item =
+                    restream.input.endpoints.iter().find(|e| e.is_rtmp());
+                match item {
+                    Some(main_input) => {
+                        Self::update_stat(&mut stat, main_input.status);
+                    }
+                    None => log::error!(
+                        "Main endpoint not found for {} input",
+                        restream.input.id
+                    ),
+                };
+
+                stat
+            })
+            .into_iter()
+            .map(|x| StatusStatistics {
+                status: x.0,
+                count: x.1,
+            })
+            .collect()
+    }
+
+    /// Gather statistics about [`Output`]s statuses
+    #[must_use]
+    pub fn get_outputs_statistics(&self) -> Vec<StatusStatistics> {
+        self.restreams
+            .get_cloned()
+            .into_iter()
+            .flat_map(|r| r.outputs.into_iter())
+            .fold(HashMap::new(), |mut stat, output| {
+                Self::update_stat(&mut stat, output.status);
+                stat
+            })
+            .into_iter()
+            .map(|x| StatusStatistics {
+                status: x.0,
+                count: x.1,
+            })
+            .collect()
+    }
+
+    /// Statistics for statuses of this [`Client`]
+    #[must_use]
+    pub fn get_statistics(&self) -> ClientStatistics {
+        let settings = self.settings.get_cloned();
+        let title = match settings.title {
+            Some(t) => t,
+            None => "".to_string(),
+        };
+
+        let inputs_stat = self.get_inputs_statistics();
+        let outputs_stat = self.get_outputs_statistics();
+        ClientStatistics::new(title, inputs_stat, outputs_stat)
+    }
+
+    fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
+        if let Some(x) = stat.get_mut(&status) {
+            *x += 1;
+        } else {
+            let _ = stat.insert(status, 1);
+        }
+    }
+
     /// Disables/Enables all [`Output`]s in the specified [`Restream`] of this
     /// [`State`].
     #[must_use]
@@ -764,6 +877,76 @@ impl State {
                 o.enabled = enabled;
                 true
             })
+    }
+}
+
+/// Client represents server with running `ephyr` app and can return some
+/// statistics about status of [`Input`]s, [`Output`]s .
+#[derive(
+    Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
+)]
+pub struct Client {
+    /// Unique id of client. Url of the host.
+    pub id: ClientId,
+
+    /// Statistics for this [`Client`].
+    #[serde(skip)]
+    pub statistics: Option<ClientStatisticsResponse>,
+}
+
+impl Client {
+    /// Creates a new [`Client`] passing host or ip address as identity.
+    #[must_use]
+    pub fn new(client_id: &ClientId) -> Self {
+        Self {
+            id: client_id.clone(),
+            statistics: None,
+        }
+    }
+}
+
+/// ID of a [`Client`].
+#[derive(
+    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+)]
+pub struct ClientId(Url);
+
+impl ClientId {
+    /// Constructs [`ClientId`] from string.
+    #[must_use]
+    pub fn new(url: Url) -> Self {
+        Self(url)
+    }
+}
+
+impl<'de> Deserialize<'de> for ClientId {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self::new(Url::deserialize(deserializer)?))
+    }
+}
+
+#[graphql_scalar]
+impl<S> GraphQLScalar for ClientId
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
+        Value::scalar(self.0.as_str().to_owned())
+    }
+
+    fn from_input_value(v: &InputValue) -> Option<Self> {
+        v.as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(|s| Url::parse(s).ok())
+            .map(Self::new)
+    }
+
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -1651,7 +1834,7 @@ impl Output {
             dst: spec.dst,
             label: spec.label,
             preview_url: spec.preview_url,
-            volume: spec.volume,
+            volume: Volume::new(&spec.volume),
             mixins: spec.mixins.into_iter().map(Mixin::new).collect(),
             enabled: spec.enabled,
             status: Status::Offline,
@@ -1667,7 +1850,7 @@ impl Output {
         self.dst = new.dst;
         self.label = new.label;
         self.preview_url = new.preview_url;
-        self.volume = new.volume;
+        self.volume = Volume::new(&new.volume);
         // Temporary omit changing existing `enabled` value to avoid unexpected
         // breakages of ongoing re-streams.
         //self.enabled = new.enabled;
@@ -1711,7 +1894,7 @@ impl Output {
             dst: self.dst.clone(),
             label: self.label.clone(),
             preview_url: self.preview_url.clone(),
-            volume: self.volume,
+            volume: self.volume.export(),
             mixins: self.mixins.iter().map(Mixin::export).collect(),
             enabled: self.enabled,
         }
@@ -1887,7 +2070,7 @@ impl Mixin {
         Self {
             id: MixinId::random(),
             src: spec.src,
-            volume: spec.volume,
+            volume: Volume::new(&spec.volume),
             delay: spec.delay,
             status: Status::Offline,
         }
@@ -1897,7 +2080,7 @@ impl Mixin {
     #[inline]
     pub fn apply(&mut self, new: spec::v1::Mixin) {
         self.src = new.src;
-        self.volume = new.volume;
+        self.volume = Volume::new(&new.volume);
         self.delay = new.delay;
     }
 
@@ -1907,7 +2090,7 @@ impl Mixin {
     pub fn export(&self) -> spec::v1::Mixin {
         spec::v1::Mixin {
             src: self.src.clone(),
-            volume: self.volume,
+            volume: self.volume.export(),
             delay: self.delay,
         }
     }
@@ -2035,7 +2218,9 @@ pub enum PasswordKind {
 }
 
 /// Status indicating availability of an `Input`, `Output`, or a `Mixin`.
-#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault)]
+#[derive(
+    Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq, SmartDefault, Hash,
+)]
 pub enum Status {
     /// Inactive, no operations are performed and no media traffic is flowed.
     #[default]
@@ -2103,6 +2288,89 @@ where
     }
 }
 
+/// Volume rate of an audio track in percents and flag if it is muted.
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+)]
+// #[serde(try_from="VolumeLevel")]
+pub struct Volume {
+    /// Volume rate or level
+    pub level: VolumeLevel,
+    /// Whether it is muted or not
+    pub muted: bool,
+}
+
+impl Volume {
+    /// Value of a [`Volume`] rate corresponding to the original one of an audio
+    /// track.
+    pub const ORIGIN: Volume = Volume {
+        level: VolumeLevel::ORIGIN,
+        muted: false,
+    };
+
+    /// Creates a new [`Volume`] rate value if it satisfies the required
+    /// invariants:
+    /// - within [`VolumeLevel::OFF`] and [`VolumeLevel::MAX`] values.
+    #[must_use]
+    pub fn new(num: &spec::v1::Volume) -> Self {
+        VolumeLevel::new(num.level.0).map_or_else(Self::default, |volume| {
+            Self {
+                level: volume,
+                muted: num.muted,
+            }
+        })
+    }
+
+    /// Displays this [`Volume`] as a fraction of `1`, i.e. `100%` as `1`, `50%`
+    /// as `0.50`, and so on.
+    #[must_use]
+    pub fn display_as_fraction(self) -> String {
+        if self.muted {
+            String::from("0.00")
+        } else {
+            format!("{}.{:02}", self.level.0 / 100, self.level.0 % 100)
+        }
+    }
+
+    /// Indicates whether this [`Volume`] rate value corresponds is the
+    /// [`Volume::ORIGIN`]al one.
+    #[allow(clippy::trivially_copy_pass_by_ref)] // required for `serde`
+    #[inline]
+    #[must_use]
+    pub fn is_origin(&self) -> bool {
+        *self == Self::ORIGIN
+    }
+
+    /// Export this struct as [`spec::v1::Volume`]
+    #[inline]
+    #[must_use]
+    pub fn export(&self) -> spec::v1::Volume {
+        spec::v1::Volume {
+            level: self.level,
+            muted: self.muted,
+        }
+    }
+}
+
+/// Default value for Volume is [`Volume::ORIGIN`]
+impl Default for Volume {
+    fn default() -> Self {
+        Volume::ORIGIN
+    }
+}
+
+/// For backward compatibility can convert from number to Volume struct
+/// the `#[serde(try_from='VolumeLevel')]` in [Volume] must be enabled
+impl TryFrom<VolumeLevel> for Volume {
+    type Error = std::num::ParseIntError;
+    fn try_from(value: VolumeLevel) -> Result<Self, Self::Error> {
+        Ok(Volume {
+            level: value,
+            muted: false,
+        })
+    }
+}
+
 /// Volume rate of an audio track in percents.
 #[derive(
     Clone,
@@ -2116,46 +2384,28 @@ where
     Serialize,
     SmartDefault,
 )]
-pub struct Volume(#[default(Self::ORIGIN.0)] u16);
-
-impl Volume {
-    /// Maximum possible value of a [`Volume`] rate.
-    pub const MAX: Volume = Volume(1000);
+pub struct VolumeLevel(#[default(Volume::ORIGIN.level.0)] u16);
+impl VolumeLevel {
+    /// Maximum possible value of a [`VolumeLevel`].
+    pub const MAX: VolumeLevel = VolumeLevel(1000);
 
     /// Value of a [`Volume`] rate corresponding to the original one of an audio
     /// track.
-    pub const ORIGIN: Volume = Volume(100);
+    pub const ORIGIN: VolumeLevel = VolumeLevel(100);
 
     /// Minimum possible value of a [`Volume`] rate. Actually, disables audio.
-    pub const OFF: Volume = Volume(0);
-
-    /// Creates a new [`Volume`] rate value if it satisfies the required
+    pub const OFF: VolumeLevel = VolumeLevel(0);
+    /// Creates a new [`VolumeLevel`] rate value if it satisfies the required
     /// invariants:
-    /// - within [`Volume::OFF`] and [`Volume::MAX`] values.
-    #[must_use]
-    pub fn new<N: TryInto<u16>>(num: N) -> Option<Self> {
-        let num = num.try_into().ok()?;
-        if (Self::OFF.0..=Self::MAX.0).contains(&num) {
+    /// - within [`VolumeLevel::OFF.level`] and [`VolumeLevel::MAX.level`]
+    /// values.
+    pub fn new<N: TryInto<u16>>(val: N) -> Option<Self> {
+        let num = val.try_into().ok()?;
+        if (VolumeLevel::OFF.0..=VolumeLevel::MAX.0).contains(&num) {
             Some(Self(num))
         } else {
             None
         }
-    }
-
-    /// Displays this [`Volume`] as a fraction of `1`, i.e. `100%` as `1`, `50%`
-    /// as `0.50`, and so on.
-    #[must_use]
-    pub fn display_as_fraction(self) -> String {
-        format!("{}.{:02}", self.0 / 100, self.0 % 100)
-    }
-
-    /// Indicates whether this [`Volume`] rate value corresponds is the
-    /// [`Volume::ORIGIN`]al one.
-    #[allow(clippy::trivially_copy_pass_by_ref)] // required for `serde`
-    #[inline]
-    #[must_use]
-    pub fn is_origin(&self) -> bool {
-        *self == Self::ORIGIN
     }
 }
 
@@ -2165,7 +2415,7 @@ impl Volume {
 ///
 /// `0` means disabled audio.
 #[graphql_scalar]
-impl<S> GraphQLScalar for Volume
+impl<S> GraphQLScalar for VolumeLevel
 where
     S: ScalarValue,
 {
@@ -2251,20 +2501,127 @@ where
 
 #[cfg(test)]
 mod volume_spec {
-    use super::Volume;
+    use super::{Volume, VolumeLevel};
+    use crate::spec::v1;
 
     #[test]
     fn displays_as_fraction() {
         for (input, expected) in &[
-            (1, "0.01"),
-            (10, "0.10"),
-            (200, "2.00"),
-            (107, "1.07"),
-            (170, "1.70"),
-            (1000, "10.00"),
+            (
+                v1::Volume {
+                    level: VolumeLevel(1),
+                    muted: false,
+                },
+                "0.01",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(10),
+                    muted: false,
+                },
+                "0.10",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(200),
+                    muted: false,
+                },
+                "2.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(107),
+                    muted: false,
+                },
+                "1.07",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(170),
+                    muted: false,
+                },
+                "1.70",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(1000),
+                    muted: false,
+                },
+                "10.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(0),
+                    muted: false,
+                },
+                "0.00",
+            ),
+            (
+                v1::Volume {
+                    level: VolumeLevel(200),
+                    muted: true,
+                },
+                "0.00",
+            ),
         ] {
-            let actual = Volume::new(*input).unwrap().display_as_fraction();
+            let actual = Volume::new(input).display_as_fraction();
             assert_eq!(&actual, *expected);
         }
     }
+}
+
+/// Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
+pub struct StatusStatistics {
+    /// Status of [`Input`]s or [`Output`]
+    pub status: Status,
+
+    /// Count of items having [`Status`]
+    /// GraphQLScalar requires i32 numbers
+    pub count: i32,
+}
+
+/// Information about status of all [`Input`]s and [`Output`]s and
+/// server health info (CPU usage, memory usage, etc.)
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
+pub struct ClientStatistics {
+    /// Client title
+    pub client_title: String,
+
+    /// Time when statistics was taken
+    pub timestamp: DateTime<Utc>,
+
+    /// Count of inputs grouped by status
+    pub inputs: Vec<StatusStatistics>,
+
+    /// Count of outputs grouped by status
+    pub outputs: Vec<StatusStatistics>,
+}
+
+impl ClientStatistics {
+    /// Creates a new [`ClientStatistics`] object with snapshot of
+    /// current client's statistics regarding [`Input`]s and [`Output`]s
+    #[must_use]
+    pub fn new(
+        client_title: String,
+        inputs: Vec<StatusStatistics>,
+        outputs: Vec<StatusStatistics>,
+    ) -> Self {
+        Self {
+            client_title,
+            timestamp: Utc::now(),
+            inputs,
+            outputs,
+        }
+    }
+}
+
+/// Current state of [`ClientStatistics`] request
+#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
+pub struct ClientStatisticsResponse {
+    /// Statistics data
+    pub data: Option<ClientStatistics>,
+
+    /// The top-level errors returned by the server.
+    pub errors: Option<Vec<String>>,
 }

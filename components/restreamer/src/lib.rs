@@ -3,7 +3,7 @@
 //! [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
     rust_2018_idioms,
@@ -24,6 +24,7 @@
 
 pub mod api;
 pub mod cli;
+pub mod client_stat;
 pub mod dvr;
 pub mod ffmpeg;
 pub mod serde;
@@ -32,6 +33,7 @@ pub mod spec;
 pub mod srs;
 pub mod state;
 pub mod teamspeak;
+pub mod types;
 
 use std::{any::Any, mem};
 

@@ -19,7 +19,7 @@ describe('ADD SINGLE OTPUT', () => {
   });
 
   it('Set preview', () => {
-    const previewToPaste = 'https://allatraunites.com/ru';
+    const previewToPaste = 'https://creativesociety.com/ru';
     cy.get('[placeholder="optional preview url"]')
       .invoke('val', previewToPaste)
       .trigger('input');
