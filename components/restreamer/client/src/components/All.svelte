@@ -93,8 +93,6 @@
             />
           {/each}
         </span>
-        <pre>{JSON.stringify(sInfo, null, '\t')}</pre>
-
       </div>
 
       <div class="uk-width-expand">

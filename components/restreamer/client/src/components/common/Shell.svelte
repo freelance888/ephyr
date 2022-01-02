@@ -28,9 +28,9 @@
           <h3>Creative Society</h3>
           <small>Ephyr re-streamer {process.env.VERSION}</small>
         </a>
-        <div>
+        {#if !isLoading}
           <ServerInfo serverInfo={serverInfo}></ServerInfo>
-        </div>
+        {/if}
         <div class="uk-margin-auto-left">
           {#if canRenderToolbar}
             <slot name="toolbar" />

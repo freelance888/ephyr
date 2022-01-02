@@ -811,12 +811,12 @@ pub mod statistics {
                                     sys.network_stats(&netif.name).unwrap();
                                 // in megabits (remove * 8.0 to convert into megabytes)
                                 tx = tx
-                                    + (netstats.tx_bytes.as_u64() as f64) * 8.0
+                                    + (netstats.tx_bytes.as_u64() as f64)
                                     / 1024.0
                                     / 1024.0;
                                 // in megabits
                                 rx = rx
-                                    + (netstats.rx_bytes.as_u64() as f64) * 8.0
+                                    + (netstats.rx_bytes.as_u64() as f64)
                                     / 1024.0
                                     / 1024.0;
                             }

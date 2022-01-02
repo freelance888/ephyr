@@ -4,10 +4,19 @@
   import { showError } from '../utils/util';
   import { mutation } from 'svelte-apollo';
   import { RemoveClient } from '../../api/dashboard.graphql';
+  import ServerInfo from './common/ServerInfo.svelte';
 
   const removeClientMutation = mutation(RemoveClient);
 
   export let client;
+
+  let serverInfo = {
+    cpuUsage: 24.3,
+    ramTotal: 15346,
+    ramFree: 3987,
+    txDelta: 1.2,
+    rxDelta: 4.3
+  };
 
   $: clientTitle =
     client.statistics &&
@@ -48,7 +57,7 @@
     </Confirm>
     {#if client.statistics && client.statistics.data}
       <div class="uk-grid uk-grid-small">
-        <div class="uk-width-1-2@m uk-width-1-3@s">
+        <div class="uk-width-1-4@m">
           <span class="toolbar-label">
             INPUTS:
             {#each statusesList as status (status)}
@@ -65,7 +74,7 @@
           </span>
         </div>
 
-        <div class="uk-width-expand">
+        <div class="uk-width-1-4@m">
           <span class="toolbar-label">
             OUTPUTS:
             {#each statusesList as status (status)}
@@ -80,6 +89,9 @@
               </div>
             {/each}
           </span>
+        </div>
+        <div class='uk-width-1-2@m'>
+          <ServerInfo {serverInfo} rowMode={true}/>
         </div>
       </div>
     {:else}
@@ -109,6 +121,7 @@
     min-width: 28px
     display: inline-flex
     padding-left: 4px
+    justify-content: center
 
   .uk-close
     position: absolute
