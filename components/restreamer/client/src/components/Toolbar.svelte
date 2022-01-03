@@ -15,14 +15,13 @@
   export let state;
   export let isOnline;
   export let gqlClient;
-  export let serverInfo;
 
   async function openExportModal() {
     let resp;
     try {
       resp = await gqlClient.query({
         query: ExportAllRestreams,
-        fetchPolicy: 'no-cache'
+        fetchPolicy: 'no-cache',
       });
     } catch (e) {
       showError(e.message);
@@ -41,7 +40,6 @@
 
   let openPasswordModal = false;
   let openSettingsModal = false;
-
 </script>
 
 <template>

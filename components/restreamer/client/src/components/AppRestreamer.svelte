@@ -25,7 +25,6 @@
   $: canRenderMainComponent = isOnline && $state.data && $info.data;
   $: stateError = $state && $state.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
-
 </script>
 
 <template>
@@ -36,7 +35,14 @@
     error={stateError || infoError}
     serverInfo={sInfo}
   >
-    <Toolbar slot="toolbar" {info} {state} {serverInfo} {isOnline} {gqlClient} />
-    <PageAll slot="main" {info} {state} {serverInfo}/>
+    <Toolbar
+      slot="toolbar"
+      {info}
+      {state}
+      {serverInfo}
+      {isOnline}
+      {gqlClient}
+    />
+    <PageAll slot="main" {info} {state} {serverInfo} />
   </Shell>
 </template>

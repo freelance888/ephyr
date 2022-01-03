@@ -11,7 +11,6 @@
   export let canRenderMainComponent;
   export let error;
   export let serverInfo;
-
 </script>
 
 <template>
@@ -29,7 +28,7 @@
           <small>Ephyr re-streamer {process.env.VERSION}</small>
         </a>
         {#if !isLoading}
-          <ServerInfo serverInfo={serverInfo}></ServerInfo>
+          <ServerInfo {serverInfo} />
         {/if}
         <div class="uk-margin-auto-left">
           {#if canRenderToolbar}

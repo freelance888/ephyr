@@ -82,8 +82,11 @@
             {/each}
           </span>
         </div>
-        <div class='uk-width-1-2@m'>
-          <ServerInfo serverInfo={client.statistics.data.serverInfo} rowMode={true}/>
+        <div class="uk-width-1-2@m">
+          <ServerInfo
+            serverInfo={client.statistics.data.serverInfo}
+            rowMode={true}
+          />
         </div>
       </div>
     {:else}

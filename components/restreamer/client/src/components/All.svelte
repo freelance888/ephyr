@@ -25,10 +25,8 @@
 
   export let state;
   export let info;
-  export let serverInfo;
 
   $: allReStreams = $state.data.allRestreams;
-  $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
   $: globalInputsFilters = [];

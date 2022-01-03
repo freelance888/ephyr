@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="js">
   import { mutation } from 'svelte-apollo';
   import { showError } from '../../utils/util';
 
