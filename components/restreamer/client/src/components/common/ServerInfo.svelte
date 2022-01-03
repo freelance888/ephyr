@@ -40,10 +40,10 @@
         <span class="title">NET</span> -
         <span
           class="value uk-text-muted"
-          title="Network: send⬆️, receive⬇️ speed "
-          >⬆️ {formatNet(serverInfo.txDelta)} Mbit/s, ⬇ {formatNet(
+          title="Network: send⬆️, receive⬇️ speed (megabytes/second)"
+          >⬆️ {formatNet(serverInfo.txDelta)} Mb/s, ⬇ {formatNet(
             serverInfo.rxDelta
-          )} Mbit/s</span
+          )} Mb/s</span
         >
       </div>
     </div>
