@@ -790,12 +790,13 @@ pub mod statistics {
                     match sys.memory() {
                         Ok(mem) => {
                             // in megabytes
-                            let mem_total =
-                                mem.total.as_u64() / 1024 / 1024;
+                            let mem_total = mem.total.as_u64() / 1024 / 1024;
                             // in megabytes
-                            let mem_free =
-                                mem.free.as_u64() / 1024 / 1024;
-                            info.update_ram(Some(mem_total as f64), Some(mem_free as f64));
+                            let mem_free = mem.free.as_u64() / 1024 / 1024;
+                            info.update_ram(
+                                Some(mem_total as f64),
+                                Some(mem_free as f64),
+                            );
                         }
                         Err(x) => {
                             info.set_error(Some(x.to_string()));
@@ -818,12 +819,12 @@ pub mod statistics {
                                     sys.network_stats(&netif.name).unwrap();
                                 // in megabytes
                                 tx += netstats.tx_bytes.as_u64() as f64
-                                        / 1024.0
-                                        / 1024.0;
+                                    / 1024.0
+                                    / 1024.0;
                                 // in megabytes
                                 rx += netstats.rx_bytes.as_u64() as f64
-                                        / 1024.0
-                                        / 1024.0;
+                                    / 1024.0
+                                    / 1024.0;
                             }
 
                             // Compute delta

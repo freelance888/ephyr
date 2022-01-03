@@ -57,5 +57,5 @@
     margin-left: 10px
     margin-right: 10px
   .value
-    cursor: pointer;
+    cursor: pointer
 </style>

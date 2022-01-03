@@ -97,7 +97,9 @@ impl Default for Settings {
 }
 
 /// Server's info
-#[derive(Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq, Default)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq, Default,
+)]
 pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: Option<f64>,
