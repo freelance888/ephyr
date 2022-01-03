@@ -21,13 +21,14 @@ use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
 
 use crate::client_stat::statistics_query::{
-    StatisticsQueryStatisticsInputs, StatisticsQueryStatisticsOutputs, StatisticsQueryStatisticsServerInfo
+    StatisticsQueryStatisticsInputs, StatisticsQueryStatisticsOutputs,
+    StatisticsQueryStatisticsServerInfo,
 };
 
+use crate::state::ServerInfo;
 use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
-use crate::state::ServerInfo;
 
 /// Poll of [`ClientJob`]s for getting statistics info from each [`Client`]
 #[derive(Debug)]
@@ -98,7 +99,7 @@ impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
             ram_free: item.ram_free,
             rx_delta: item.rx_delta,
             tx_delta: item.tx_delta,
-            error_msg: item.error_msg
+            error_msg: item.error_msg,
         }
     }
 }
@@ -266,7 +267,7 @@ impl ClientJob {
                         .into_iter()
                         .map(Into::into)
                         .collect(),
-                    data.statistics.server_info.into()
+                    data.statistics.server_info.into(),
                 )),
                 errors: Some(response_errors),
             }),

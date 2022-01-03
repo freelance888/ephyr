@@ -731,21 +731,19 @@ pub mod callback {
 }
 
 /// Module which collects server statistics and updates them every second
-///
 pub mod statistics {
     use std::time::Duration;
     use systemstat::{Platform, System};
     use tokio::time;
 
-    use crate::{cli::Failure, State};
-    use std::panic::AssertUnwindSafe;
-    use futures::FutureExt;
+    use crate::{cli::Failure, display_panic, state::ServerInfo, State};
     use ephyr_log::log;
-    use crate::display_panic;
-    use crate::state::ServerInfo;
+    use futures::FutureExt;
+    use std::panic::AssertUnwindSafe;
 
     /// Runs statistics monitoring
     pub async fn run(state: State) -> Result<(), Failure> {
+        // we use tx_last and rx_last to compute the delta
         // we use tx_last and rx_last to compute the delta
         // (send/receive bytes last second)
         let mut tx_last: f64 = 0.0;
@@ -771,12 +769,14 @@ pub mod statistics {
                             let cpu = cpu.done().unwrap();
 
                             // in percents
-                            info.update_cpu(Some(f64::from(1.0 - cpu.idle) * 100.0));
+                            info.update_cpu(Some(
+                                f64::from(1.0 - cpu.idle) * 100.0,
+                            ));
                         }
                         Err(x) => {
                             info.set_error(Some(x.to_string()));
                             log::error!("Statistics. CPU load: error: {}", x)
-                        },
+                        }
                     }
 
                     // Update ram usage
@@ -804,20 +804,21 @@ pub mod statistics {
                             let mut rx: f64 = 0.0;
 
                             // Note that the sum of sent/received bytes are
-                            // computed among all the available network interfaces
+                            // computed among all the available network
+                            // interfaces
                             for netif in netifs.values() {
                                 let netstats =
                                     sys.network_stats(&netif.name).unwrap();
-                                // in megabits (remove * 8.0 to convert into megabytes)
+                                // in megabytes
                                 tx = tx
                                     + (netstats.tx_bytes.as_u64() as f64)
-                                    / 1024.0
-                                    / 1024.0;
-                                // in megabits
+                                        / 1024.0
+                                        / 1024.0;
+                                // in megabytes
                                 rx = rx
                                     + (netstats.rx_bytes.as_u64() as f64)
-                                    / 1024.0
-                                    / 1024.0;
+                                        / 1024.0
+                                        / 1024.0;
                             }
 
                             // Compute delta
@@ -825,7 +826,10 @@ pub mod statistics {
                             let rx_delta = rx - rx_last;
 
                             // Update server info
-                            info.update_traffic_usage(Some(tx_delta), Some(rx_delta));
+                            info.update_traffic_usage(
+                                Some(tx_delta),
+                                Some(rx_delta),
+                            );
 
                             tx_last = tx;
                             rx_last = rx;

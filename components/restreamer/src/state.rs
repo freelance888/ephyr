@@ -130,13 +130,21 @@ impl ServerInfo {
     }
 
     /// Updates ram usage info of this [`ServerInfo`], in megabytes
-    pub fn update_ram(&mut self, ram_total: Option<f64>, ram_free: Option<f64>) {
+    pub fn update_ram(
+        &mut self,
+        ram_total: Option<f64>,
+        ram_free: Option<f64>,
+    ) {
         self.ram_total = ram_total;
         self.ram_free = ram_free;
     }
 
     /// Updates traffic usage info of this [`ServerInfo`], in megabites
-    pub fn update_traffic_usage(&mut self, tx_delta: Option<f64>, rx_delta: Option<f64>) {
+    pub fn update_traffic_usage(
+        &mut self,
+        tx_delta: Option<f64>,
+        rx_delta: Option<f64>,
+    ) {
         self.tx_delta = tx_delta;
         self.rx_delta = rx_delta;
     }
@@ -823,7 +831,12 @@ impl State {
 
         let inputs_stat = self.get_inputs_statistics();
         let outputs_stat = self.get_outputs_statistics();
-        ClientStatistics::new(title, inputs_stat, outputs_stat, self.server_info.lock_mut().clone())
+        ClientStatistics::new(
+            title,
+            inputs_stat,
+            outputs_stat,
+            self.server_info.lock_mut().clone(),
+        )
     }
 
     fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
@@ -874,9 +887,7 @@ impl State {
 
 /// Client represents server with running `ephyr` app and can return some
 /// statistics about status of [`Input`]s, [`Output`]s .
-#[derive(
-    Clone, Debug, GraphQLObject, PartialEq, Serialize, Deserialize,
-)]
+#[derive(Clone, Debug, GraphQLObject, PartialEq, Serialize, Deserialize)]
 pub struct Client {
     /// Unique id of client. Url of the host.
     pub id: ClientId,
@@ -2601,14 +2612,14 @@ impl ClientStatistics {
         client_title: String,
         inputs: Vec<StatusStatistics>,
         outputs: Vec<StatusStatistics>,
-        server_info: ServerInfo
+        server_info: ServerInfo,
     ) -> Self {
         Self {
             client_title,
             timestamp: Utc::now(),
             inputs,
             outputs,
-            server_info
+            server_info,
         }
     }
 }

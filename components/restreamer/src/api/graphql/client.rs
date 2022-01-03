@@ -24,7 +24,7 @@ use crate::{
 };
 
 use super::Context;
-use crate::state::{EndpointId, VolumeLevel, ServerInfo};
+use crate::state::{EndpointId, ServerInfo, VolumeLevel};
 use url::Url;
 
 /// Schema of `Restreamer` app.
