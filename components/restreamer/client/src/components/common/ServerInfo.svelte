@@ -3,7 +3,7 @@
   export let rowMode = false;
 
   const formatMem = (value) => {
-    return value ? value.toFixed() : '';
+    return value ? value.toLocaleString('en-US', {maximumFractionDigits:0}) : '';
   }
 
   const formatNet = (value) => {

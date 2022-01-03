@@ -10,14 +10,6 @@
 
   export let client;
 
-  let serverInfo = {
-    cpuUsage: 24.3,
-    ramTotal: 15346,
-    ramFree: 3987,
-    txDelta: 1.2,
-    rxDelta: 4.3
-  };
-
   $: clientTitle =
     client.statistics &&
     client.statistics.data &&
@@ -91,7 +83,7 @@
           </span>
         </div>
         <div class='uk-width-1-2@m'>
-          <ServerInfo {serverInfo} rowMode={true}/>
+          <ServerInfo serverInfo={client.statistics.data.serverInfo} rowMode={true}/>
         </div>
       </div>
     {:else}

@@ -21,12 +21,13 @@ use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
 
 use crate::client_stat::statistics_query::{
-    StatisticsQueryStatisticsInputs, StatisticsQueryStatisticsOutputs,
+    StatisticsQueryStatisticsInputs, StatisticsQueryStatisticsOutputs, StatisticsQueryStatisticsServerInfo
 };
 
 use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
+use crate::state::ServerInfo;
 
 /// Poll of [`ClientJob`]s for getting statistics info from each [`Client`]
 #[derive(Debug)]
@@ -89,7 +90,19 @@ impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
     }
 }
 
-#[allow(clippy::cast_possible_truncation)]
+impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
+    fn from(item: StatisticsQueryStatisticsServerInfo) -> Self {
+        ServerInfo {
+            cpu_usage: item.cpu_usage,
+            ram_total: item.ram_total,
+            ram_free: item.ram_free,
+            rx_delta: item.rx_delta,
+            tx_delta: item.tx_delta,
+            error_msg: item.error_msg
+        }
+    }
+}
+
 impl From<StatisticsQueryStatisticsOutputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsOutputs) -> Self {
         StatusStatistics {
@@ -253,6 +266,7 @@ impl ClientJob {
                         .into_iter()
                         .map(Into::into)
                         .collect(),
+                    data.statistics.server_info.into()
                 )),
                 errors: Some(response_errors),
             }),

@@ -757,8 +757,7 @@ pub mod statistics {
                 let _ = AssertUnwindSafe(async {
                     let sys = System::new();
 
-                    // Reset state
-                    let mut info = ServerInfo::new();
+                    let mut info = ServerInfo::default();
 
                     // Update cpu usage
                     match sys.cpu_load_aggregate() {
@@ -837,7 +836,7 @@ pub mod statistics {
                         }
                     }
 
-                    state.server_info.lock_mut().apply(info);
+                    *state.server_info.lock_mut() = info;
                 })
                 .catch_unwind()
                 .await

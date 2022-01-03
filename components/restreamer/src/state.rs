@@ -119,10 +119,6 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-    pub fn new() -> ServerInfo {
-        ServerInfo::default()
-    }
-
     /// Updates cpu usage of this [`ServerInfo`], in percents
     pub fn update_cpu(&mut self, cpu: Option<f64>) {
         self.cpu_usage = cpu;
@@ -143,10 +139,6 @@ impl ServerInfo {
     pub fn update_traffic_usage(&mut self, tx_delta: Option<f64>, rx_delta: Option<f64>) {
         self.tx_delta = tx_delta;
         self.rx_delta = rx_delta;
-    }
-
-    pub fn apply(&mut self, new: ServerInfo) {
-        *self = new.clone();
     }
 }
 
@@ -831,7 +823,7 @@ impl State {
 
         let inputs_stat = self.get_inputs_statistics();
         let outputs_stat = self.get_outputs_statistics();
-        ClientStatistics::new(title, inputs_stat, outputs_stat)
+        ClientStatistics::new(title, inputs_stat, outputs_stat, self.server_info.lock_mut().clone())
     }
 
     fn update_stat(stat: &mut HashMap<Status, i32>, status: Status) {
@@ -883,7 +875,7 @@ impl State {
 /// Client represents server with running `ephyr` app and can return some
 /// statistics about status of [`Input`]s, [`Output`]s .
 #[derive(
-    Clone, Debug, Eq, GraphQLObject, PartialEq, Serialize, Deserialize,
+    Clone, Debug, GraphQLObject, PartialEq, Serialize, Deserialize,
 )]
 pub struct Client {
     /// Unique id of client. Url of the host.
@@ -2583,7 +2575,7 @@ pub struct StatusStatistics {
 
 /// Information about status of all [`Input`]s and [`Output`]s and
 /// server health info (CPU usage, memory usage, etc.)
-#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
+#[derive(Clone, Debug, GraphQLObject, PartialEq)]
 pub struct ClientStatistics {
     /// Client title
     pub client_title: String,
@@ -2596,6 +2588,9 @@ pub struct ClientStatistics {
 
     /// Count of outputs grouped by status
     pub outputs: Vec<StatusStatistics>,
+
+    /// Info about server info (CPU, Memory, Network)
+    pub server_info: ServerInfo,
 }
 
 impl ClientStatistics {
@@ -2606,18 +2601,20 @@ impl ClientStatistics {
         client_title: String,
         inputs: Vec<StatusStatistics>,
         outputs: Vec<StatusStatistics>,
+        server_info: ServerInfo
     ) -> Self {
         Self {
             client_title,
             timestamp: Utc::now(),
             inputs,
             outputs,
+            server_info
         }
     }
 }
 
 /// Current state of [`ClientStatistics`] request
-#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
+#[derive(Clone, Debug, GraphQLObject, PartialEq)]
 pub struct ClientStatisticsResponse {
     /// Statistics data
     pub data: Option<ClientStatistics>,

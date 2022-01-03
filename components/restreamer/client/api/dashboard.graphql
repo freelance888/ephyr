@@ -13,6 +13,14 @@ subscription Statistics {
                     status
                     count
                 }
+                serverInfo {
+                    cpuUsage
+                    ramTotal
+                    ramFree
+                    txDelta
+                    rxDelta
+                    errorMsg
+                }
             }
             errors
         }

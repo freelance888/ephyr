@@ -10,5 +10,13 @@ query StatisticsQuery {
             status
             count
         }
+        serverInfo {
+            cpuUsage
+            ramTotal
+            ramFree
+            txDelta
+            rxDelta
+            errorMsg
+        }
     }
 }
