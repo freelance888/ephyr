@@ -742,6 +742,12 @@ pub mod statistics {
     use std::panic::AssertUnwindSafe;
 
     /// Runs statistics monitoring
+    /// # Panics
+    ///
+    /// # Errors
+    /// No errors expected.
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_precision_loss)]
     pub async fn run(state: State) -> Result<(), Failure> {
         // we use tx_last and rx_last to compute the delta
         // we use tx_last and rx_last to compute the delta
@@ -752,6 +758,7 @@ pub mod statistics {
         let spawner = async move {
             loop {
                 let state = &state;
+
                 let _ = AssertUnwindSafe(async {
                     let sys = System::new();
 
@@ -775,7 +782,7 @@ pub mod statistics {
                         }
                         Err(x) => {
                             info.set_error(Some(x.to_string()));
-                            log::error!("Statistics. CPU load: error: {}", x)
+                            log::error!("Statistics. CPU load: error: {}", x);
                         }
                     }
 
@@ -784,15 +791,15 @@ pub mod statistics {
                         Ok(mem) => {
                             // in megabytes
                             let mem_total =
-                                (mem.total.as_u64() as f64) / 1024.0 / 1024.0;
+                                mem.total.as_u64() / 1024 / 1024;
                             // in megabytes
                             let mem_free =
-                                (mem.free.as_u64() as f64) / 1024.0 / 1024.0;
-                            info.update_ram(Some(mem_total), Some(mem_free));
+                                mem.free.as_u64() / 1024 / 1024;
+                            info.update_ram(Some(mem_total as f64), Some(mem_free as f64));
                         }
                         Err(x) => {
                             info.set_error(Some(x.to_string()));
-                            log::error!("Statistics. Memory: error: {}", x)
+                            log::error!("Statistics. Memory: error: {}", x);
                         }
                     }
 
@@ -810,13 +817,11 @@ pub mod statistics {
                                 let netstats =
                                     sys.network_stats(&netif.name).unwrap();
                                 // in megabytes
-                                tx = tx
-                                    + (netstats.tx_bytes.as_u64() as f64)
+                                tx += netstats.tx_bytes.as_u64() as f64
                                         / 1024.0
                                         / 1024.0;
                                 // in megabytes
-                                rx = rx
-                                    + (netstats.rx_bytes.as_u64() as f64)
+                                rx += netstats.rx_bytes.as_u64() as f64
                                         / 1024.0
                                         / 1024.0;
                             }
@@ -836,7 +841,7 @@ pub mod statistics {
                         }
                         Err(x) => {
                             info.set_error(Some(x.to_string()));
-                            log::error!("Statistics. Networks: error: {}", x)
+                            log::error!("Statistics. Networks: error: {}", x);
                         }
                     }
 

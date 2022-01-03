@@ -97,7 +97,7 @@ impl Default for Settings {
 }
 
 /// Server's info
-#[derive(Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, GraphQLObject, PartialEq, Default)]
 pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: Option<f64>,
@@ -147,19 +147,6 @@ impl ServerInfo {
     ) {
         self.tx_delta = tx_delta;
         self.rx_delta = rx_delta;
-    }
-}
-
-impl Default for ServerInfo {
-    fn default() -> ServerInfo {
-        ServerInfo {
-            cpu_usage: None,
-            ram_total: None,
-            ram_free: None,
-            tx_delta: None,
-            rx_delta: None,
-            error_msg: None,
-        }
     }
 }
 

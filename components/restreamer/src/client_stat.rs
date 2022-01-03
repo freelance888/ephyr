@@ -81,16 +81,6 @@ type DateTimeUtc = DateTime<Utc>;
 #[derive(Debug)]
 pub struct StatisticsQuery;
 
-#[allow(clippy::cast_possible_truncation)]
-impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
-    fn from(item: StatisticsQueryStatisticsInputs) -> Self {
-        StatusStatistics {
-            status: item.status.into(),
-            count: item.count as i32,
-        }
-    }
-}
-
 impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
     fn from(item: StatisticsQueryStatisticsServerInfo) -> Self {
         ServerInfo {
@@ -104,6 +94,17 @@ impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)]
+impl From<StatisticsQueryStatisticsInputs> for StatusStatistics {
+    fn from(item: StatisticsQueryStatisticsInputs) -> Self {
+        StatusStatistics {
+            status: item.status.into(),
+            count: item.count as i32,
+        }
+    }
+}
+
+#[allow(clippy::cast_possible_truncation)]
 impl From<StatisticsQueryStatisticsOutputs> for StatusStatistics {
     fn from(item: StatisticsQueryStatisticsOutputs) -> Self {
         StatusStatistics {
