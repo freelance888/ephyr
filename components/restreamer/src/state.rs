@@ -104,16 +104,16 @@ pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: Option<f64>,
 
-    /// Total RAM installed on current machine, bytes
+    /// Total RAM installed on current machine
     pub ram_total: Option<f64>,
 
-    /// Free (available) RAM, bytes
+    /// Free (available) RAM
     pub ram_free: Option<f64>,
 
-    /// Bytes, transfered last second
+    /// Network traffic, transferred last second
     pub tx_delta: Option<f64>,
 
-    /// Bytes, received last second
+    /// Network traffic, received last second
     pub rx_delta: Option<f64>,
 
     /// Error message
@@ -121,17 +121,17 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-    /// Updates cpu usage of this [`ServerInfo`], in percents
+    /// Updates cpu usage
     pub fn update_cpu(&mut self, cpu: Option<f64>) {
         self.cpu_usage = cpu;
     }
 
-    /// Sets error message of this [`ServerInfo`]
+    /// Sets error message
     pub fn set_error(&mut self, msg: Option<String>) {
         self.error_msg = msg;
     }
 
-    /// Updates ram usage info of this [`ServerInfo`], in megabytes
+    /// Updates ram usage
     pub fn update_ram(
         &mut self,
         ram_total: Option<f64>,
@@ -141,7 +141,7 @@ impl ServerInfo {
         self.ram_free = ram_free;
     }
 
-    /// Updates traffic usage info of this [`ServerInfo`], in megabites
+    /// Updates traffic usage
     pub fn update_traffic_usage(
         &mut self,
         tx_delta: Option<f64>,
@@ -157,7 +157,7 @@ impl ServerInfo {
 /// Any changes to it automatically propagate to the appropriate subscribers.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct State {
-    /// Global [`Settings`] of server
+    /// Global [`Settings`] of the server
     pub settings: Mutable<Settings>,
 
     /// All [`Restream`]s performed by this application.
@@ -166,7 +166,7 @@ pub struct State {
     /// All [`Client`]s for monitoring
     pub clients: Mutable<Vec<Client>>,
 
-    /// Global [`ServerInfo`] of server
+    /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 }
 

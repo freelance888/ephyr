@@ -742,14 +742,17 @@ pub mod statistics {
     use std::panic::AssertUnwindSafe;
 
     /// Runs statistics monitoring
+    ///
     /// # Panics
+    /// Panic is captured to log. Could be panicked during getting server
+    /// statistics.
     ///
     /// # Errors
-    /// No errors expected.
+    /// No return errors expected. Preserved return signature in order to
+    /// run in `future::try_join3`
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_precision_loss)]
     pub async fn run(state: State) -> Result<(), Failure> {
-        // we use tx_last and rx_last to compute the delta
         // we use tx_last and rx_last to compute the delta
         // (send/receive bytes last second)
         let mut tx_last: f64 = 0.0;
