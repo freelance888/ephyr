@@ -25,6 +25,7 @@
   $: canRenderMainComponent = isOnline && $state.data && $info.data;
   $: stateError = $state && $state.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
+  $: document.title = (isOnline ? '' : '🔴  ') + document.title;
 </script>
 
 <template>

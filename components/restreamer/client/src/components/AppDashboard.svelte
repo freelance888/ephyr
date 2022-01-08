@@ -17,8 +17,10 @@
   setClient(gqlClient);
 
   let isOnline = false;
-
   const dashboard = subscribe(Statistics, { errorPolicy: 'all' });
+
+  let title = document.title;
+  $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: canRenderToolbar = isOnline && $dashboard.data;
   $: error = $dashboard && $dashboard.error;
@@ -28,6 +30,7 @@
   $: clientsWithStatistics = clients ? clients.filter((x) => x.statistics) : [];
   $: inputFilters = [];
   $: outputFilters = [];
+
   $: filteredClients = () => {
     const hasFilteredInputs = (x) =>
       inputFilters.some(
@@ -101,8 +104,6 @@
         )
       : [];
   }
-
-  // $: console.log(JSON.stringify($dashboard.data))
 </script>
 
 <template>

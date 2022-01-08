@@ -45,7 +45,7 @@
         }
 
         const title = i.data.info.title;
-        document.title = title || 'Ephyr re-streamer';
+        document.title = title || ' Ephyr re-streamer';
       }
     })
   );

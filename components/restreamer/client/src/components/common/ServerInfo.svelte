@@ -15,6 +15,10 @@
   const formatCpuUsage = (value) => {
     return value ? value.toFixed() : '';
   };
+
+  const formatErrorMsg = (value) => {
+    return value ? value.substring(0, 100) : '';
+  };
 </script>
 
 <template>
@@ -45,6 +49,14 @@
             serverInfo.rxDelta
           )} Mb/s</span
         >
+        {#if serverInfo.errorMsg}
+          <span
+            class="error-icon value uk-text-danger"
+            title={formatErrorMsg(serverInfo.errorMsg)}
+          >
+            <i class="fas fa-info-circle" />
+          </span>
+        {/if}
       </div>
     </div>
   {/if}
@@ -58,4 +70,6 @@
     margin-right: 10px
   .value
     cursor: pointer
+  .error-icon
+    margin-left: 4px;
 </style>

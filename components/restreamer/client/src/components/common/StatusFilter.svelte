@@ -28,6 +28,7 @@
       class:initializing={status === 'INITIALIZING'}
       class:unstable={status === 'UNSTABLE'}
     >
+      <span class="circle" />
       {count}
     </div>
   </div>

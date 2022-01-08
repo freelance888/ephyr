@@ -62,6 +62,14 @@
     --primary-text-color: #777;
   }
 
+  .circle
+    background-color: currentColor
+    border-radius: 50%
+    width: 6px
+    height 6px
+    display: inline-block
+    margin-bottom: 2px
+
   .initializing
     color: #faa05a
   .online
