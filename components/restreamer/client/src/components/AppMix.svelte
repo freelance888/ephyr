@@ -29,6 +29,9 @@
     },
   });
 
+  let title = document.title;
+  $: document.title = (isOnline ? '' : '🔴  ') + title;
+
   $: error = $mix && $mix.error;
   $: isLoading = !isOnline || $mix.loading;
   $: canRenderMainComponent = isOnline && $mix.data;

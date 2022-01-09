@@ -114,3 +114,7 @@ export const getYoutubeVideoID = (url: string): string | undefined => {
   const result = url.match(YT_VIDEO_REGEX);
   return result && result.length ? result[1] : undefined;
 };
+
+export const isNumber = (value: unknown): boolean => {
+  return typeof value == 'number';
+};

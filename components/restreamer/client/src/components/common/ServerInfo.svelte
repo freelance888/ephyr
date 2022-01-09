@@ -1,19 +1,21 @@
 <script lang="js">
+  import { isNumber } from '../../utils/util';
+
   export let serverInfo;
   export let rowMode = false;
 
   const formatMem = (value) => {
-    return value
+    return isNumber(value)
       ? value.toLocaleString('en-US', { maximumFractionDigits: 0 })
       : '';
   };
 
   const formatNet = (value) => {
-    return value ? value.toFixed(1) : '';
+    return isNumber(value) ? value.toFixed(1) : '';
   };
 
   const formatCpuUsage = (value) => {
-    return value ? value.toFixed() : '';
+    return isNumber(value) ? value.toFixed() : '';
   };
 
   const formatErrorMsg = (value) => {
