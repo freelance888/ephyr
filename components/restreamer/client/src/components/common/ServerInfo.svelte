@@ -37,7 +37,7 @@
       </div>
       <div class="server-info-row">
         <span class="title">MEM</span> -
-        <span class="value uk-text-muted" title="Total memory / Used memory"
+        <span class="value uk-text-muted" title="Total memory / Free memory"
           >{formatMem(serverInfo.ramTotal)} Mb / {formatMem(serverInfo.ramFree)}
           Mb</span
         >
