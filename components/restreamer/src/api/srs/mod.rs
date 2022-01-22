@@ -31,7 +31,7 @@ impl Client {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi#kickoff-client
-    pub async fn kickoff_client(id: u32) -> Result<(), Error> {
+    pub async fn kickoff_client(id: String) -> Result<(), Error> {
         let resp = reqwest::Client::new()
             .delete(&format!("{}/clients/{}", Self::V1_URL, id))
             .send()

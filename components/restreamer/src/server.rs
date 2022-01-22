@@ -577,10 +577,13 @@ pub mod callback {
                 ));
             }
 
-            if endpoint.srs_publisher_id.as_ref().map(|id| **id)
-                != Some(req.client_id)
-            {
-                endpoint.srs_publisher_id = Some(req.client_id.into());
+            let publisher_id = match endpoint.srs_publisher_id.clone() {
+                Some(id) => id.get_value(),
+                None => None,
+            };
+
+            if publisher_id != Some(req.client_id.clone()) {
+                endpoint.srs_publisher_id = Some(req.client_id.clone().into());
             }
 
             endpoint.status = Status::Online;
@@ -589,7 +592,9 @@ pub mod callback {
             // careful here to not accidentally kick the client by creating a
             // temporary binding.
             if !endpoint.srs_player_ids.contains(&req.client_id) {
-                let _ = endpoint.srs_player_ids.insert(req.client_id.into());
+                let _ = endpoint
+                    .srs_player_ids
+                    .insert(req.client_id.clone().into());
             }
         }
         Ok(())
@@ -724,7 +729,8 @@ pub mod callback {
         // careful here to not accidentally kick the client by creating a
         // temporary binding.
         if !endpoint.srs_player_ids.contains(&req.client_id) {
-            let _ = endpoint.srs_player_ids.insert(req.client_id.into());
+            let _ =
+                endpoint.srs_player_ids.insert(req.client_id.clone().into());
         }
         Ok(())
     }

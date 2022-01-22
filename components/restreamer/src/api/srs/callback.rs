@@ -21,7 +21,7 @@ pub struct Request {
     /// ID of [SRS] client that happened event is related to.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    pub client_id: u32,
+    pub client_id: String,
 
     /// IP address of [SRS] client that happened event is related to.
     ///

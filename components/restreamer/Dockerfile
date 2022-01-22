@@ -93,7 +93,7 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 #
 
 # https://github.com/ossrs/srs-docker/blob/v3/Dockerfile
-FROM ossrs/srs:3 AS build-srs
+FROM ossrs/srs:4 AS build-srs
 
 
 
