@@ -254,7 +254,7 @@ pub struct Config {
 /// Severity of [SRS] [server logs][1].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_SrsLog#loglevel
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_SrsLog#loglevel
 #[derive(Clone, Copy, Debug, Display, SmartDefault)]
 pub enum LogLevel {
     /// Error level.

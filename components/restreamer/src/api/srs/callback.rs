@@ -1,7 +1,7 @@
 //! [HTTP Callback API][1] of [SRS] exposed by application.
 //!
 //! [SRS]: https://github.com/ossrs/srs
-//! [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+//! [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 
 use std::net::IpAddr;
 
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Request performed by [SRS] to [HTTP Callback API][1].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Request {
     /// Event that [SRS] reports about.
@@ -32,7 +32,7 @@ pub struct Request {
     /// related to.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_RtmpUrlVhost
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_RtmpUrlVhost
     pub vhost: String,
 
     /// [SRS] `app` of RTMP stream that happened event is related to.
@@ -51,7 +51,7 @@ pub struct Request {
 /// onto.
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[allow(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]

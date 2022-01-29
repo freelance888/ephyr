@@ -441,7 +441,7 @@ pub mod callback {
     /// The actual error is logged.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
     pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         Ok(HttpServer::new(move || {
             App::new()
@@ -465,7 +465,7 @@ pub mod callback {
     /// If [SRS] HTTP callback doesn't succeed.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPCallback
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
     #[allow(clippy::unused_async)]
     #[post("/")]
     async fn on_callback(

@@ -146,7 +146,9 @@ impl RestreamersPool {
                 )
             });
 
-        drop(new_pool.insert(id, process));
+        let old_process = new_pool.insert(id, process);
+        println!("OLD_INPUT_PROCESS: {:?}", old_process);
+        drop(old_process);
         Some(())
     }
 
@@ -185,7 +187,10 @@ impl RestreamersPool {
                 )
             });
 
-        drop(new_pool.insert(id, process));
+        let old_process = new_pool.insert(id, process);
+        println!("OLD_OUTPUT_PROCESS: {:?}", old_process);
+
+        drop(old_process);
         Some(())
     }
 }
@@ -205,6 +210,12 @@ pub struct Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     kind: RestreamerKind,
+}
+
+impl Drop for Restreamer {
+    fn drop(&mut self) {
+        println!("DROPPING {:?}", self.kind);
+    }
 }
 
 impl Restreamer {
@@ -236,6 +247,8 @@ impl Restreamer {
                             state,
                             Status::Initializing,
                         );
+
+                        println!("STARTING {:?}", kind);
 
                         kind.setup_ffmpeg(
                             cmd.kill_on_drop(true)
