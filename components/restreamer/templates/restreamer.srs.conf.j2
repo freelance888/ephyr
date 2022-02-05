@@ -33,8 +33,7 @@ vhost __defaultVhost__ {
 vhost hls {
   hls {
     enabled            on;
-    hls_path           {{ http_server_dir }}/hls;
-    hls_entry_prefix   /hls;
+    hls_path           {{ http_server_dir }};
     hls_on_error       disconnect;
     hls_dispose        3; # seconds
   }
