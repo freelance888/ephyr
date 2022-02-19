@@ -32,6 +32,29 @@
   $: globalInputsFilters = [];
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
+  $: filteredRestreams = allReStreams;
+
+  let search = '';
+
+  const getFilteredRestreams = (searchText) => {
+    if (!searchText) {
+      return allReStreams;
+    }
+
+    const regex = new RegExp(searchText, 'i');
+
+    return allReStreams.filter(x => {
+      const foundOutputs = x.outputs.filter(o => o.label && regex.test(o.label));
+      if (foundOutputs.length) {
+        x.outputs = foundOutputs;
+      }
+
+      const hasRestreamLabel = x.label && regex.test(x.label);
+      const hasInputLabel = x.input.endpoints.filter(e => e.label && regex.test(e.label)).length > 0;
+
+       return hasRestreamLabel || hasInputLabel || foundOutputs.length;
+    });
+  }
 
   let currentHash = undefined;
   onDestroy(
@@ -67,12 +90,14 @@
   }
 
   let openPasswordOutputModal = false;
+
 </script>
 
 <template>
   <OutputModal />
+
   <section class="uk-section-muted toolbar">
-    <span class="section-label">ALL</span>
+    <span class="section-label">Filters</span>
     <div class="uk-grid uk-grid-small">
       <div class="uk-width-1-2@m uk-width-1-3@s">
         <span class="toolbar-label total-inputs-label">
@@ -172,14 +197,17 @@
         </Confirm>
       </div>
     </div>
+
+    <input class="uk-input uk-width-1-3" bind:value={search} on:keyup={() => filteredRestreams = getFilteredRestreams(search)} placeholder="Search" />
   </section>
 
-  {#each allReStreams as restream}
+  {#each filteredRestreams as restream}
     <Restream
       public_host={$info.data.info.publicHost}
       value={restream}
-      hidden={hasActiveFilters &&
-        !globalInputsFilters.includes(restream.input.endpoints[0].status)}
+      hidden={
+        (hasActiveFilters && !globalInputsFilters.includes(restream.input.endpoints[0].status))
+      }
       {globalOutputsFilters}
     />
   {:else}
