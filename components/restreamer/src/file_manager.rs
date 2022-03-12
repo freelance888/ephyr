@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    path::PathBuf,
-};
+use std::path::PathBuf;
 use std::io::BufWriter;
 use std::io::Write;
 
@@ -13,9 +10,7 @@ use juniper::{
 use serde::{Deserialize, Serialize};
 use ephyr_log::log;
 
-use crate::{
-    state::State,
-};
+use crate::state::State;
 use std::result::Result::Err;
 use std::slice::Iter;
 use crate::cli::Opts;
@@ -32,18 +27,21 @@ impl FileManager {
     pub fn new(options: &Opts, state: State) -> Self {
         let root_path = options.file_root.as_path();
         std::fs::create_dir_all(root_path);
-        let mut files = HashMap::new();
-        std::fs::read_dir(root_path).unwrap()
-            .for_each(|file_res|
-                if let Ok(file) = file_res {
-                    if let Ok(filename) = file.file_name().into_string() {
-                        files.insert(filename.clone(), FileInfo {
-                            file_id: filename,
-                            state: FileState::Local,
-                            download_state: None,
-                        });
-                    };
-                });
+        state.files.lock_mut().tap_mut(|files| {
+            std::fs::read_dir(root_path)
+                .expect("Cannot read the provided file root directory")
+                .for_each(|file_res|
+                    if let Ok(file) = file_res {
+                        if let Ok(filename) = file.file_name().into_string() {
+                            files.push(FileInfo {
+                                file_id: filename.clone(),
+                                name: filename,
+                                state: FileState::Local,
+                                download_state: None,
+                            });
+                        };
+                    });
+        });
         Self {
             file_root_dir: options.file_root.clone(),
             state,
@@ -54,7 +52,6 @@ impl FileManager {
         restreams.for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs.iter().filter_map(|input| {
-                    log::info!("goiing through backup endpoints");
                     let endpoint = input.endpoints.first().unwrap();
                     if endpoint.is_file() {
                         endpoint.file_id.as_ref()
@@ -69,18 +66,23 @@ impl FileManager {
         });
     }
 
-    pub fn need_file(&self, filename: &str) {
-        log::info!("Requesting file id: {}", filename);
+    async fn request_file_info(file_id: &str) -> Result<String, reqwest::Error> {
+        Ok(reqwest::get(format!("https://www.googleapis.com/drive/v3/files/{}?fields=name&key={}", file_id,/* put the api key here*/ "").as_str())
+            .await?.json::<FileInfoResponse>().await?.name)
+    }
+
+    pub fn need_file(&self, file_id: &str) {
         let mut all_files = self.state.files.lock_mut();
-        if !all_files.iter().find(|file| file.file_id == filename).is_some() {
+        if !all_files.iter().find(|file| file.file_id == file_id).is_some() {
             let new_file = FileInfo {
-                file_id: filename.to_string(),
+                file_id: file_id.to_string(),
+                name: file_id.to_string(),
                 state: FileState::Pending,
                 download_state: None,
             };
             all_files.push(new_file);
             drop(all_files);
-            self.download_file(filename);
+            self.download_file(file_id);
         }
     }
 
@@ -91,15 +93,31 @@ impl FileManager {
         drop(tokio::spawn(async move {
             let client = reqwest::Client::new();
             log::info!("Creating client request");
+
+            // Get file name from the API
+            Self::request_file_info(&filename).await
+                .map_err(|err| "Could not get file info for the file")?
+                .pipe(|file_name|
+                    state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
+                        .pipe(|opt_file_info| {
+                            if let Some(file_info) = opt_file_info {
+                                file_info.name = file_name;
+                                Ok(())
+                            } else {
+                                Err("Could not find file with the provided id")
+                            }
+                        })
+                )?;
+
+            // Download the file contents
             if let Ok(mut response) = client.get(
                 format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename,/* put the api key here*/ "").as_str()).send().await
             {
                 let total = response.content_length();
                 let mut current: i32 = 0;
                 log::info!("Creating download state");
-                //todo remove unwrap
                 state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
-                    .unwrap()
+                    .ok_or("Could not find file with provided file ID")?
                     .tap_mut(|val|
                         val.download_state = Some(DownloadState {
                             max_progress: total.unwrap() as i32,
@@ -131,8 +149,6 @@ impl FileManager {
                                     status_changed_to_downloading = true
                                 });
                         }
-                        // let mut files = state.files.lock_mut();
-                        // log::info!("Bytes received, total count  {}", bytes.len());
                         current += bytes.len() as i32;
                         state.files.lock_mut().iter_mut()
                             .find(|file| file.file_id == filename)
@@ -140,24 +156,11 @@ impl FileManager {
                                     |val| {
                                         val.download_state.as_mut()
                                             .map_or(Err(format!("File that is currently downloading does not have a download state")), |val| Ok(val))?
-                                            // .unwrap_or_else(|| -> log::error!("File that is currently downloading does not have a download state"))
                                             .tap_mut(|val| val.current_progress = current.into())
-                                            // .tap()
                                             .current_progress = current.into();
                                         Ok(())
                                     }
                             )?;
-                            // .unwrap_or_else(|| {log::error!("File {} is no longer in required files, canceling download.", filename)})
-                        // if let Some(file) = files.iter_mut().find(|file| file.file_id == filename) {
-                        //     if let Some(ref mut download_state) = file.download_state {
-                        //         download_state.current_progress = current.into();
-                        //     } else {
-                        //         log::error!("File that is currently downloading does not have a download state")
-                        //     }
-                        // } else {
-                        //     log::error!("File {} is no longer in required files, canceling download.", filename);
-                        //     break;
-                        // }
                     }
                 }
 
@@ -175,6 +178,7 @@ impl FileManager {
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq)]
 pub struct FileInfo {
     file_id: String,
+    name: String,
     state: FileState,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     download_state: Option<DownloadState>,
@@ -192,4 +196,9 @@ pub enum FileState {
 pub struct DownloadState {
     max_progress: i32,
     current_progress: i32,
+}
+
+#[derive(Deserialize)]
+struct FileInfoResponse {
+    name: String,
 }

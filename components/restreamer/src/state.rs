@@ -1211,33 +1211,6 @@ impl Input {
             Vec::with_capacity(new.endpoints.len()),
         );
         for new_endpoint in new.endpoints {
-            // if new_endpoint.kind == InputEndpointKind::File && new.src.as_ref().is_some() {
-            //     print!("Found FIle endpoint");
-            //     if let spec::v1::InputSrc::RemoteUrl(tp) = new.src.as_ref().unwrap()
-            //     {
-            //         let address = tp.0.clone();
-            //         let filename = address.path_segments().iter().last().unwrap();
-            //         drop(tokio::spawn(async move {
-            //             print!("STARTING DOWNLOAD OF FILE \n\n");
-            //             let mut cmd = Command::new("wget");
-            //             pin_mut!(cmd);
-            //             if let Some(segments) = address.path_segments() {
-            //                 cmd
-            //                     .args(&["-O", ("/tmp/ephyr/".to_owned()+segments.last().expect("File Download: Could not find file name in URL.")).as_str()])
-            //                     .arg(address.as_str())
-            //                     .stdin(Stdio::null())
-            //                     .stdout(Stdio::piped())
-            //                     .stderr(Stdio::piped());
-            //                 //.status().await.expect("Cannot status");
-            //                 let mut status = cmd.spawn().expect("Cannot start wget").await.expect("Cannot run the wget command");
-            //                 print!("Download exit code: {}\n", status.code().unwrap());
-            //             } else {
-            //                 log::error!("File Download: No filename provided.")
-            //             }
-            //         }));
-            //     }
-            // }
-
             if let Some(mut old) = olds
                 .iter()
                 .enumerate()
@@ -1370,7 +1343,6 @@ pub struct InputEndpoint {
     /// User defined label for each Endpoint
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
-
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
