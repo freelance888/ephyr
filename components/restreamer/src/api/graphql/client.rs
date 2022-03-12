@@ -3,6 +3,7 @@
 //! [GraphQL]: https://graphql.com
 
 use std::collections::HashSet;
+use ephyr_log::log;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
@@ -26,6 +27,7 @@ use crate::{
 use super::Context;
 use crate::state::{EndpointId, ServerInfo, VolumeLevel};
 use url::Url;
+use crate::file_manager::FileInfo;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -151,46 +153,69 @@ impl MutationsRoot {
         label: Option<Label>,
         src: Option<InputSrcUrl>,
         backup_src: Option<InputSrcUrl>,
+        file_id: Option<String>,
         with_backup: bool,
         with_hls: bool,
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let input_src = if with_backup {
-            Some(spec::v1::InputSrc::FailoverInputs(vec![
+            let mut inputs = vec![
                 spec::v1::Input {
                     id: None,
                     key: InputKey::new("main").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
                         label: None,
+                        file_id: None,
                     }],
                     src: src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
                 },
-                spec::v1::Input {
+            ];
+            //todo change this to regular if without unwrapping if the file_id property stays
+            if let Some(f_id) = file_id {
+                log::info!("setting restream: found file_id");
+                inputs.push(spec::v1::Input {
+                    id: None,
+                    key: InputKey::new("backup").unwrap(),
+                    endpoints: vec![spec::v1::InputEndpoint {
+                        kind: InputEndpointKind::File,
+                        label: None,
+                        file_id: Some(f_id),
+                    }],
+                    src: None, //Some(spec::v1::InputSrc::RemoteUrl(InputSrcUrl::new(Url::from_str(std::format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key=AIzaSyAODM0BGyH8y86brt-S2mu2sRmjyzwqra4", f_id).as_str()).unwrap()).unwrap())),
+                    enabled: true,
+                });
+            } else {
+                inputs.push(spec::v1::Input {
                     id: None,
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
                         label: None,
+                        file_id: None
                     }],
                     src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
-                },
-            ]))
+                });
+            }
+            Some(spec::v1::InputSrc::FailoverInputs(inputs))
         } else {
             src.map(spec::v1::InputSrc::RemoteUrl)
         };
 
-        let mut endpoints = vec![spec::v1::InputEndpoint {
-            kind: InputEndpointKind::Rtmp,
-            label: None,
-        }];
+        let mut endpoints =
+            vec![spec::v1::InputEndpoint {
+                kind: InputEndpointKind::Rtmp,
+                label: None,
+                file_id: None
+            }];
         if with_hls {
             endpoints.push(spec::v1::InputEndpoint {
                 kind: InputEndpointKind::Hls,
                 label: None,
+                file_id: None
             });
         }
 
@@ -959,6 +984,12 @@ impl SubscriptionsRoot {
             .dedupe_cloned()
             .to_stream()
             .boxed()
+    }
+
+    async fn files(
+        context: &Context,
+    ) -> BoxStream<'static, Vec<FileInfo>> {
+        context.state().files.signal_cloned().dedupe_cloned().to_stream().boxed()
     }
 }
 

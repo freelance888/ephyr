@@ -14,11 +14,7 @@ use std::{
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
 use ephyr_log::log;
-use futures::{
-    future::TryFutureExt as _,
-    sink,
-    stream::{StreamExt as _, TryStreamExt as _},
-};
+use futures::{future::TryFutureExt as _, sink, stream::{StreamExt as _, TryStreamExt as _}};
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
     graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
@@ -35,6 +31,7 @@ use uuid::Uuid;
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use crate::file_manager::FileInfo;
 
 /// Server's settings.
 ///
@@ -168,6 +165,9 @@ pub struct State {
 
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
+
+    #[serde(skip)]
+    pub files: Mutable<Vec<FileInfo>>,
 }
 
 impl State {
@@ -1210,17 +1210,44 @@ impl Input {
             &mut self.endpoints,
             Vec::with_capacity(new.endpoints.len()),
         );
-        for new in new.endpoints {
+        for new_endpoint in new.endpoints {
+            // if new_endpoint.kind == InputEndpointKind::File && new.src.as_ref().is_some() {
+            //     print!("Found FIle endpoint");
+            //     if let spec::v1::InputSrc::RemoteUrl(tp) = new.src.as_ref().unwrap()
+            //     {
+            //         let address = tp.0.clone();
+            //         let filename = address.path_segments().iter().last().unwrap();
+            //         drop(tokio::spawn(async move {
+            //             print!("STARTING DOWNLOAD OF FILE \n\n");
+            //             let mut cmd = Command::new("wget");
+            //             pin_mut!(cmd);
+            //             if let Some(segments) = address.path_segments() {
+            //                 cmd
+            //                     .args(&["-O", ("/tmp/ephyr/".to_owned()+segments.last().expect("File Download: Could not find file name in URL.")).as_str()])
+            //                     .arg(address.as_str())
+            //                     .stdin(Stdio::null())
+            //                     .stdout(Stdio::piped())
+            //                     .stderr(Stdio::piped());
+            //                 //.status().await.expect("Cannot status");
+            //                 let mut status = cmd.spawn().expect("Cannot start wget").await.expect("Cannot run the wget command");
+            //                 print!("Download exit code: {}\n", status.code().unwrap());
+            //             } else {
+            //                 log::error!("File Download: No filename provided.")
+            //             }
+            //         }));
+            //     }
+            // }
+
             if let Some(mut old) = olds
                 .iter()
                 .enumerate()
-                .find_map(|(n, o)| (o.kind == new.kind).then(|| n))
+                .find_map(|(n, o)| (o.kind == new_endpoint.kind).then(|| n))
                 .map(|n| olds.swap_remove(n))
             {
-                old.apply(new);
+                old.apply(new_endpoint);
                 self.endpoints.push(old);
             } else {
-                self.endpoints.push(InputEndpoint::new(new));
+                self.endpoints.push(InputEndpoint::new(new_endpoint));
             }
         }
 
@@ -1229,7 +1256,7 @@ impl Input {
             (None, Some(new)) => self.src = Some(InputSrc::new(new)),
             _ => self.src = None,
         }
-    }
+    } // Ask whether file should be additional endpoint or instead of backup
 
     /// Exports this [`Input`] as a [`spec::v1::Input`].
     #[must_use]
@@ -1327,7 +1354,7 @@ impl Input {
     }
 }
 
-/// Endpoint of an `Input` serving a live stream for `Output`s and clients.
+        /// Endpoint of an `Input` serving a live stream for `Output`s and clients.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
@@ -1343,6 +1370,10 @@ pub struct InputEndpoint {
     /// User defined label for each Endpoint
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
+
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
 
     /// `Status` of this `InputEndpoint` indicating whether it actually serves a
     /// live stream ready to be consumed by `Output`s and clients.
@@ -1376,6 +1407,7 @@ impl InputEndpoint {
             id: EndpointId::random(),
             kind: spec.kind,
             status: Status::Offline,
+            file_id: spec.file_id,
             label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
@@ -1396,6 +1428,7 @@ impl InputEndpoint {
         spec::v1::InputEndpoint {
             kind: self.kind,
             label: self.label.clone(),
+            file_id: self.file_id.clone(),
         }
     }
 
@@ -1404,7 +1437,15 @@ impl InputEndpoint {
     #[inline]
     #[must_use]
     pub fn is_rtmp(&self) -> bool {
-        matches!(self.kind, InputEndpointKind::Rtmp)
+        matches!(self.kind, InputEndpointKind::Rtmp) || matches!(self.kind, InputEndpointKind::File)
+    }
+
+    /// Indicates whether this [`InputEndpoint`] is an
+    /// [`InputEndpointKind::Rtmp`].
+    #[inline]
+    #[must_use]
+    pub fn is_file(&self) -> bool {
+        matches!(self.kind, InputEndpointKind::File)
     }
 }
 
@@ -1439,6 +1480,10 @@ pub enum InputEndpointKind {
     /// [HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
     #[display(fmt = "HLS")]
     Hls,
+
+    /// File input.
+    #[display(fmt = "FILE")]
+    File,
 }
 
 impl InputEndpointKind {
@@ -1455,7 +1500,7 @@ impl InputEndpointKind {
             "rtmp://127.0.0.1:1935/{}{}/{}",
             restream,
             match self {
-                Self::Rtmp => "",
+                Self::Rtmp | Self::File => "",
                 Self::Hls => "?vhost=hls",
             },
             input,
@@ -1713,8 +1758,8 @@ impl InputSrcUrl {
             "rtmp" | "rtmps" => url.has_host(),
             "http" | "https" => {
                 url.has_host()
-                    && Path::new(url.path()).extension()
-                        == Some("m3u8".as_ref())
+                    // && Path::new(url.path()).extension()
+                    //     == Some("m3u8".as_ref())
             }
             _ => false,
         }

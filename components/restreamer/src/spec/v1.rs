@@ -238,6 +238,9 @@ pub struct InputEndpoint {
     /// Label for this input
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<state::Label>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
 }
 
 /// Shareable (exportable and importable) specification of a

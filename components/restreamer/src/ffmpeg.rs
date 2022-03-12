@@ -27,6 +27,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
+use std::str::FromStr;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -432,6 +433,19 @@ impl RestreamerKind {
                 }
                 .into()
             }
+
+            state::InputEndpointKind::File => {
+                TranscodingRestreamer {
+                    id: endpoint.id.into(),
+                    from_url: url::Url::from_str(("file:///tmp/ephyr/".to_owned() + &endpoint.file_id.as_ref().unwrap()).as_str()).unwrap(),
+                    to_url: endpoint.kind.rtmp_url(key, &input.key),
+                    vcodec: Some("libx264".into()),
+                    vprofile: Some("baseline".into()),
+                    vpreset: Some("superfast".into()),
+                    acodec: Some("libfdk_aac".into()),
+                }
+                .into()
+            }
         })
     }
 
@@ -652,17 +666,20 @@ impl CopyRestreamer {
     async fn setup_ffmpeg(&self, cmd: &mut Command) -> io::Result<()> {
         let _ = match self.from_url.scheme() {
             "http" | "https"
-                if Path::new(self.from_url.path()).extension()
-                    == Some("m3u8".as_ref()) =>
+            =>
             {
-                cmd.arg("-re")
+                if Path::new(self.from_url.path()).extension()
+                    == Some("m3u8".as_ref()) {
+                } else {
+                    cmd.arg("-re");
+                }
             }
 
-            "rtmp" | "rtmps" => cmd,
+            "rtmp" | "rtmps" => (),
 
             _ => unimplemented!(),
-        }
-        .args(&["-i", self.from_url.as_str()]);
+        };
+        cmd.args(&["-i", self.from_url.as_str()]);
 
         let _ = match self.to_url.scheme() {
             "file"
@@ -747,7 +764,24 @@ impl TranscodingRestreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     fn setup_ffmpeg(&self, cmd: &mut Command) {
-        let _ = cmd.args(&["-i", self.from_url.as_str()]);
+        if ephyr_log::logger().is_debug_enabled() {
+            let _ = cmd.stderr(Stdio::inherit()).args(&["-loglevel", "debug"]);
+        } else {
+            let _ = cmd.stderr(Stdio::null());
+        }
+
+        let _ = match self.from_url.scheme() {
+            "http" | "https"
+            =>(),
+
+            "rtmp" | "rtmps" => (),
+            "file" => {
+                cmd.arg("-re");
+                cmd.args(&["-stream_loop", "-1"]);
+            }
+            _ => unimplemented!(),
+        };
+        cmd.args(&["-i", self.from_url.as_str()]);
 
         if let Some(val) = self.vcodec.as_ref() {
             let _ = cmd.args(&["-c:v", val]);

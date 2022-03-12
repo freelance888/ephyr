@@ -10,6 +10,7 @@ use crate::{
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg, srs, teamspeak, State,
 };
+use crate::file_manager::FileManager;
 
 /// Initializes and runs all application's HTTP servers.
 ///
@@ -65,6 +66,14 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
         restreamers.apply(&restreams);
+        future::ready(())
+    });
+
+    let file_manager = FileManager::new(&cfg, state.clone());
+    file_manager.check_files(state.restreams.get_cloned().iter());
+    State::on_change("file_manager", &state.restreams, move |restreams| {
+        log::info!("Restreams changed, finding all file endpoints");
+        file_manager.check_files(restreams.iter());
         future::ready(())
     });
 
@@ -545,8 +554,8 @@ pub mod callback {
 
         let stream = req.stream.as_deref().unwrap_or_default();
         let kind = match req.vhost.as_str() {
-            "hls" => InputEndpointKind::Hls,
-            _ => InputEndpointKind::Rtmp,
+            "hls" => vec![InputEndpointKind::Hls],
+            _ => vec![InputEndpointKind::Rtmp, InputEndpointKind::File],
         };
 
         let mut restreams = state.restreams.lock_mut();
@@ -563,7 +572,7 @@ pub mod callback {
         let endpoint = input
             .endpoints
             .iter_mut()
-            .find(|e| e.kind == kind)
+            .find(|e| kind.contains(&e.kind))
             .ok_or_else(|| {
                 error::ErrorForbidden("Such `vhost` is not allowed")
             })?;

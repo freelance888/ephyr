@@ -134,6 +134,16 @@ pub struct Opts {
                 OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE"
     )]
     pub verbose: Option<slog::Level>,
+
+    /// Verbosity level of the server logs.
+    #[structopt(
+    long,
+    env = "EPHYR_RESTREAMER_VIDEO_FILE_ROOT",
+    default_value = "/tmp/ephyr",
+    help = "Path where video files will be stored",
+    long_help = "Here the video files that can be streamed to the output will be downloaded."
+    )]
+    pub file_root: PathBuf,
 }
 
 impl Opts {

@@ -27,6 +27,7 @@ pub mod cli;
 pub mod client_stat;
 pub mod dvr;
 pub mod ffmpeg;
+pub mod file_manager;
 pub mod serde;
 pub mod server;
 pub mod spec;
