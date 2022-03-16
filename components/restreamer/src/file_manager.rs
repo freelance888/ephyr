@@ -26,24 +26,28 @@ pub struct FileManager {
 }
 
 impl FileManager {
+    // todo - when exporting/importing JSON from GUI it does not accept FILE as InputEndpoint
     pub fn new(options: &Opts, state: State) -> Self {
         let root_path = options.file_root.as_path();
         std::fs::create_dir_all(root_path);
-        state.files.lock_mut().tap_mut(|files| {
-            std::fs::read_dir(root_path)
-                .expect("Cannot read the provided file root directory")
-                .for_each(|file_res|
-                    if let Ok(file) = file_res {
-                        if let Ok(filename) = file.file_name().into_string() {
-                            files.push(FileInfo {
-                                file_id: filename.clone(),
-                                name: filename,
-                                state: FileState::Local,
-                                download_state: None,
-                            });
-                        };
-                    });
-        });
+        let _ = state.files.lock_mut()
+            .tap_mut(|files| {
+                std::fs::read_dir(root_path)
+                    .expect("Cannot read the provided file root directory")
+                    .for_each(|file_res|
+                        if let Ok(file) = file_res {
+                            if let Ok(filename) = file.file_name().into_string() {
+                                files.push(FileInfo {
+                                    file_id: filename.clone(),
+                                    name: None,
+                                    state: FileState::Local,
+                                    download_state: None,
+                                });
+                            };
+                        }
+                    );
+            });
+
         Self {
             file_root_dir: options.file_root.clone(),
             state,
@@ -68,8 +72,8 @@ impl FileManager {
         });
     }
 
-    async fn request_file_info(file_id: &str) -> Result<String, reqwest::Error> {
-        Ok(reqwest::get(format!("https://www.googleapis.com/drive/v3/files/{}?fields=name&key={}", file_id,/* put the api key here*/ "").as_str())
+    async fn request_file_info(file_id: &str, api_key: &str) -> Result<String, reqwest::Error> {
+        Ok(reqwest::get(format!("https://www.googleapis.com/drive/v3/files/{}?fields=name&key={}", file_id, api_key).as_str())
             .await?.json::<FileInfoResponse>().await?.name)
     }
 
@@ -78,7 +82,7 @@ impl FileManager {
         if !all_files.iter().find(|file| file.file_id == file_id).is_some() {
             let new_file = FileInfo {
                 file_id: file_id.to_string(),
-                name: file_id.to_string(),
+                name: None,
                 state: FileState::Pending,
                 download_state: None,
             };
@@ -94,25 +98,29 @@ impl FileManager {
         let filename = filename_ref.to_string();
         drop(tokio::spawn(async move {
             async {
+                let api_key = state.settings.lock_mut().google_api_key.clone()
+                    .ok_or("No API key provided")?;
+
                 let client = reqwest::ClientBuilder::new()
                     .connection_verbose(false)
                     .build().map_err(|err| "Could not create a reqwest Client".to_string())?;
 
                 // Get file name from the API
-                let _ = Self::request_file_info(&filename).await
+                let _ = Self::request_file_info(&filename, &api_key).await
                     .map_err(|err| "Could not get file info for the file".to_string())?
                     .pipe(|file_name|
                         state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
                             .map_or(Err("Could not find file with the provided id".to_string()),
-                                    |file_info| Ok(file_info.name = file_name))
+                                    |file_info| Ok(file_info.name = Some(file_name)))
                     )?;
 
                 // Download the file contents
                 if let Ok(mut response) = client.get(
-                    format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename,/* put the api key here*/ "").as_str()).send().await
+                    format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename, api_key).as_str()).send().await
                 {
                     let total = response.content_length();
                     let mut current: i32 = 0;
+                    // Create FileInfo Download state and set the state to Downloading
                     state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
                         .ok_or("Could not find file with provided file ID".to_string())?
                         .tap_mut(|val|
@@ -123,10 +131,13 @@ impl FileManager {
                         )
                         .tap_mut(|val| val.state = FileState::Downloading);
 
+                    // Try opening the target file where the downloaded bytes will be written
                     if let Ok(file) = std::fs::OpenOptions::new().create_new(true).write(true).open(format!("{}/{}", root_dir, &filename)) {
                         let mut writer = BufWriter::new(file);
 
+                        // Download loop for updating the progress
                         while let Some(bytes) = response.chunk().await.unwrap_or(None) {
+                            // If there is a problem with writing the downloaded bytes to a file stop the download and print error
                             if writer.write_all(&bytes).is_err() {
                                 state.files.lock_mut().iter_mut()
                                     .find(|file| file.file_id == filename)
@@ -136,15 +147,16 @@ impl FileManager {
                             }
 
                             current += bytes.len() as i32;
+                            // Update download progress in the FileInfo
                             state.files.lock_mut().iter_mut()
                                 .find(|file| file.file_id == filename)
-                                .ok_or("File is no longer in required files, canceling download.".to_string())?
+                                .ok_or("File is no longer in the required files, canceling download.".to_string())?
                                 .download_state.as_mut()
                                 .ok_or("The file does not have a download state.".to_string())?
                                 .current_progress = current.into();
                         }
                     } else {
-                        return Err("Could not create a file for writing.".to_string());
+                        return Err("Could not create a file with writing privileges.".to_string());
                     }
 
                     Ok(response.status().as_u16())
@@ -156,14 +168,14 @@ impl FileManager {
                 .map_err(|err| {
                     log::error!("Could not download file {}: {}", &filename, err);
                 });
-        }))
+        }));
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq)]
 pub struct FileInfo {
     file_id: String,
-    name: String,
+    name: Option<String>,
     state: FileState,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     download_state: Option<DownloadState>,

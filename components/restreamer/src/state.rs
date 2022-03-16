@@ -58,6 +58,9 @@ pub struct Settings {
     /// Whether do we need to confirm enabling/disabling of inputs or outputs
     /// If `true` we should confirm, `false` - do not confirm
     pub enable_confirmation: Option<bool>,
+
+    /// Google API key for file playback and downloading
+    pub google_api_key: Option<String>,
 }
 
 impl Settings {
@@ -69,6 +72,7 @@ impl Settings {
             delete_confirmation: self.delete_confirmation,
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
+            google_api_key: self.google_api_key.clone(),
         }
     }
 
@@ -78,6 +82,7 @@ impl Settings {
         self.title = new.title;
         self.delete_confirmation = new.delete_confirmation;
         self.enable_confirmation = new.enable_confirmation;
+        self.google_api_key = new.google_api_key;
     }
 }
 
@@ -89,6 +94,7 @@ impl Default for Settings {
             title: None,
             delete_confirmation: Some(true),
             enable_confirmation: Some(true),
+            google_api_key: None,
         }
     }
 }

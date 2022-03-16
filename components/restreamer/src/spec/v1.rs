@@ -62,6 +62,9 @@ pub struct Settings {
     /// Whether do we need to confirm enabling/disabling of inputs \
     /// or outputs
     pub enable_confirmation: Option<bool>,
+
+    /// Google API key for file playback and downloading
+    pub google_api_key: Option<String>,
 }
 
 /// Shareable (exportable and importable) specification of a

@@ -818,6 +818,7 @@ impl MutationsRoot {
         title: Option<String>,
         delete_confirmation: Option<bool>,
         enable_confirmation: Option<bool>,
+        google_api_key: Option<String>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -832,6 +833,7 @@ impl MutationsRoot {
         settings.title = Some(value);
         settings.delete_confirmation = delete_confirmation;
         settings.enable_confirmation = enable_confirmation;
+        settings.google_api_key = google_api_key;
         Ok(true)
     }
 }
@@ -854,6 +856,7 @@ impl QueriesRoot {
             title: settings.title,
             delete_confirmation: settings.delete_confirmation,
             enable_confirmation: settings.enable_confirmation,
+            google_api_key: settings.google_api_key,
         }
     }
 
@@ -957,6 +960,7 @@ impl SubscriptionsRoot {
                 title: h.title,
                 delete_confirmation: h.delete_confirmation,
                 enable_confirmation: h.enable_confirmation,
+                google_api_key: h.google_api_key,
             })
             .to_stream()
             .boxed()
@@ -1023,4 +1027,7 @@ pub struct Info {
 
     /// Password hash for single output application
     pub password_output_hash: Option<String>,
+
+    /// Google API key for file downloading
+    pub google_api_key: Option<String>,
 }
