@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::io::BufWriter;
 use std::io::Write;
+use std::panic::AssertUnwindSafe;
 
 use tap::prelude::*;
 use juniper::{
@@ -13,6 +14,7 @@ use ephyr_log::log;
 use crate::state::State;
 use std::result::Result::Err;
 use std::slice::Iter;
+use futures::{FutureExt, StreamExt};
 use crate::cli::Opts;
 use crate::state::{InputSrc, Restream};
 
@@ -91,86 +93,69 @@ impl FileManager {
         let state = self.state.clone();
         let filename = filename_ref.to_string();
         drop(tokio::spawn(async move {
-            let client = reqwest::Client::new();
-            log::info!("Creating client request");
+            async {
+                let client = reqwest::ClientBuilder::new()
+                    .connection_verbose(false)
+                    .build().map_err(|err| "Could not create a reqwest Client".to_string())?;
 
-            // Get file name from the API
-            Self::request_file_info(&filename).await
-                .map_err(|err| "Could not get file info for the file")?
-                .pipe(|file_name|
+                // Get file name from the API
+                let _ = Self::request_file_info(&filename).await
+                    .map_err(|err| "Could not get file info for the file".to_string())?
+                    .pipe(|file_name|
+                        state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
+                            .map_or(Err("Could not find file with the provided id".to_string()),
+                                    |file_info| Ok(file_info.name = file_name))
+                    )?;
+
+                // Download the file contents
+                if let Ok(mut response) = client.get(
+                    format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename,/* put the api key here*/ "").as_str()).send().await
+                {
+                    let total = response.content_length();
+                    let mut current: i32 = 0;
                     state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
-                        .pipe(|opt_file_info| {
-                            if let Some(file_info) = opt_file_info {
-                                file_info.name = file_name;
-                                Ok(())
-                            } else {
-                                Err("Could not find file with the provided id")
+                        .ok_or("Could not find file with provided file ID".to_string())?
+                        .tap_mut(|val|
+                            val.download_state = Some(DownloadState {
+                                max_progress: total.unwrap() as i32,
+                                current_progress: current,
+                            })
+                        )
+                        .tap_mut(|val| val.state = FileState::Downloading);
+
+                    if let Ok(file) = std::fs::OpenOptions::new().create_new(true).write(true).open(format!("{}/{}", root_dir, &filename)) {
+                        let mut writer = BufWriter::new(file);
+
+                        while let Some(bytes) = response.chunk().await.unwrap_or(None) {
+                            if writer.write_all(&bytes).is_err() {
+                                state.files.lock_mut().iter_mut()
+                                    .find(|file| file.file_id == filename)
+                                    .ok_or_else(|| "Could not send file status to Error".to_string())?
+                                    .tap_mut(|val| val.state = FileState::Error);
+                                return Err("Could not write received bytes to a file, aborting download.".to_string());
                             }
-                        })
-                )?;
 
-            // Download the file contents
-            if let Ok(mut response) = client.get(
-                format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename,/* put the api key here*/ "").as_str()).send().await
-            {
-                let total = response.content_length();
-                let mut current: i32 = 0;
-                log::info!("Creating download state");
-                state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
-                    .ok_or("Could not find file with provided file ID")?
-                    .tap_mut(|val|
-                        val.download_state = Some(DownloadState {
-                            max_progress: total.unwrap() as i32,
-                            current_progress: current,
-                        })
-                    )
-                    .tap_mut(|val| val.state = FileState::Downloading);
-
-                if let Ok(file) = std::fs::OpenOptions::new().create_new(true).write(true).open(format!("{}/{}", root_dir, &filename)) {
-                    let mut writer = BufWriter::new(file);
-                    let mut status_changed_to_downloading = false;
-                    //todo check the errors if some
-
-                    while let Some(bytes) = response.chunk().await.unwrap_or(None) {
-                        if writer.write_all(&bytes).is_err() {
-                            log::error!("Could not write received bytes to a file, aborting download.");
+                            current += bytes.len() as i32;
                             state.files.lock_mut().iter_mut()
                                 .find(|file| file.file_id == filename)
-                                .ok_or_else(|| {log::error!("Could not send file status to Error");"Err"})?
-                                .tap_mut(|val| val.state = FileState::Error);
-                            break;
+                                .ok_or("File is no longer in required files, canceling download.".to_string())?
+                                .download_state.as_mut()
+                                .ok_or("The file does not have a download state.".to_string())?
+                                .current_progress = current.into();
                         }
-                        if !status_changed_to_downloading {
-                            state.files.lock_mut().iter_mut()
-                                .find(|file| file.file_id == filename)
-                                .ok_or_else(|| {log::error!("Could not set file status to Downloading");"Err"})?
-                                .tap_mut(|val| {
-                                    val.state = FileState::Downloading;
-                                    status_changed_to_downloading = true
-                                });
-                        }
-                        current += bytes.len() as i32;
-                        state.files.lock_mut().iter_mut()
-                            .find(|file| file.file_id == filename)
-                            .map_or(Err(format!("File {} is no longer in required files, canceling download.", filename)),
-                                    |val| {
-                                        val.download_state.as_mut()
-                                            .map_or(Err(format!("File that is currently downloading does not have a download state")), |val| Ok(val))?
-                                            .tap_mut(|val| val.current_progress = current.into())
-                                            .current_progress = current.into();
-                                        Ok(())
-                                    }
-                            )?;
+                    } else {
+                        return Err("Could not create a file for writing.".to_string());
                     }
-                }
 
-                let result = response.status().as_u16();
-                Ok(result)
-            } else {
-                log::error!("Could not send download request for file {}", filename);
-                reqwest::StatusCode::BAD_REQUEST.as_u16();
-                Err("Error".to_string())
+                    Ok(response.status().as_u16())
+                } else {
+                    Err("Could not send download request for the file".to_string())
+                }
             }
+                .await
+                .map_err(|err| {
+                    log::error!("Could not download file {}: {}", &filename, err);
+                });
         }))
     }
 }
