@@ -72,7 +72,6 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     let file_manager = FileManager::new(&cfg, state.clone());
     file_manager.check_files(state.restreams.get_cloned().iter());
     State::on_change("file_manager", &state.restreams, move |restreams| {
-        log::info!("Restreams changed, finding all file endpoints");
         file_manager.check_files(restreams.iter());
         future::ready(())
     });

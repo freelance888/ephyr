@@ -30,8 +30,9 @@ impl FileManager {
     pub fn new(options: &Opts, state: State) -> Self {
         let root_path = options.file_root.as_path();
         std::fs::create_dir_all(root_path);
-        let _ = state.files.lock_mut()
-            .tap_mut(|files| {
+        let file_id_list = state.files.lock_mut()
+            .pipe_borrow_mut(|files| {
+                let mut list = Vec::new();
                 std::fs::read_dir(root_path)
                     .expect("Cannot read the provided file root directory")
                     .for_each(|file_res|
@@ -43,10 +44,28 @@ impl FileManager {
                                     state: FileState::Local,
                                     download_state: None,
                                 });
+                                list.push(filename.clone());
                             };
                         }
                     );
+                return list;
             });
+
+        let api_key_opt = state.settings.lock_mut().google_api_key.clone();
+        if let Some(api_key) = api_key_opt {
+            let state_cpy = state.clone();
+            drop(tokio::spawn(async move {
+                for file_id in file_id_list {
+                    if let Ok(filename) = Self::request_file_info(&file_id, &api_key).await {
+                        state_cpy.files.lock_mut().iter_mut().find(|file| file.file_id == file_id)
+                            .map_or_else(|| log::error!("Could not find file with the provided id: {}", file_id),
+                                    |file_info| file_info.name = Some(filename));
+                    } else {
+                        log::error!("Could not get info for the file: {}", file_id);
+                    }
+                }
+            }));
+        }
 
         Self {
             file_root_dir: options.file_root.clone(),
