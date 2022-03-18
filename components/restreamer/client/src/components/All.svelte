@@ -3,7 +3,7 @@
 
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
-  import { showError } from '../utils/util';
+  import { isFailoverInput, showError } from '../utils/util';
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
@@ -35,26 +35,47 @@
   $: filteredRestreams = allReStreams;
 
   let search = '';
+  let searchInInputs = true;
+  let searchInOutputs = true;
 
   const getFilteredRestreams = (searchText) => {
     if (!searchText) {
       return allReStreams;
     }
 
+    // Case-insensitive search
     const regex = new RegExp(searchText, 'i');
 
-    return allReStreams.filter(x => {
-      const foundOutputs = x.outputs.filter(o => o.label && regex.test(o.label));
-      if (foundOutputs.length) {
-        x.outputs = foundOutputs;
+    return allReStreams.filter((x) => {
+      let foundOutputs = [];
+      if (searchInOutputs) {
+        foundOutputs = x.outputs.filter((o) => o.label && regex.test(o.label));
+        if (foundOutputs.length) {
+          x.outputs = foundOutputs;
+        }
       }
 
-      const hasRestreamLabel = x.label && regex.test(x.label);
-      const hasInputLabel = x.input.endpoints.filter(e => e.label && regex.test(e.label)).length > 0;
+      const hasRestreamLabel = searchInInputs && x.label && regex.test(x.label);
+      const hasInputLabel =
+        searchInInputs &&
+        x.input.endpoints.filter((e) => e.label && regex.test(e.label)).length >
+          0;
 
-       return hasRestreamLabel || hasInputLabel || foundOutputs.length;
+      const hasFailoverInputLabel =
+        searchInInputs &&
+        isFailoverInput(x.input) &&
+        x.input.src.inputs
+          .flatMap((x) => x.endpoints)
+          .filter((e) => e.label && regex.test(e.label)).length > 0;
+
+      return (
+        hasRestreamLabel ||
+        hasInputLabel ||
+        hasFailoverInputLabel ||
+        foundOutputs.length
+      );
     });
-  }
+  };
 
   let currentHash = undefined;
   onDestroy(
@@ -91,6 +112,25 @@
 
   let openPasswordOutputModal = false;
 
+  function onChangeSearchInInput() {
+    if (!searchInInputs && !searchInOutputs) {
+      searchInInputs = true;
+    }
+
+    doSearch();
+  }
+
+  function onChangeSearchInOutputs() {
+    if (!searchInInputs && !searchInOutputs) {
+      searchInOutputs = true;
+    }
+
+    doSearch();
+  }
+
+  function doSearch() {
+    filteredRestreams = getFilteredRestreams(search);
+  }
 </script>
 
 <template>
@@ -198,16 +238,38 @@
       </div>
     </div>
 
-    <input class="uk-input uk-width-1-3" bind:value={search} on:keyup={() => filteredRestreams = getFilteredRestreams(search)} placeholder="Search" />
+    <input
+      class="uk-input uk-width-1-3 uk-margin-small-top"
+      bind:value={search}
+      on:keyup={doSearch}
+      placeholder="Search by labels (regex)"
+    />
+    <div class="uk-margin-small-top">
+      <label>
+        <input
+          class="uk-checkbox"
+          bind:checked={searchInInputs}
+          on:change={onChangeSearchInInput}
+          type="checkbox"
+        /> in inputs
+      </label>
+      <label>
+        <input
+          class="uk-checkbox uk-margin-small-left"
+          bind:checked={searchInOutputs}
+          on:change={onChangeSearchInOutputs}
+          type="checkbox"
+        /> in outputs
+      </label>
+    </div>
   </section>
 
   {#each filteredRestreams as restream}
     <Restream
       public_host={$info.data.info.publicHost}
       value={restream}
-      hidden={
-        (hasActiveFilters && !globalInputsFilters.includes(restream.input.endpoints[0].status))
-      }
+      hidden={hasActiveFilters &&
+        !globalInputsFilters.includes(restream.input.endpoints[0].status)}
       {globalOutputsFilters}
     />
   {:else}
