@@ -1,7 +1,7 @@
 //! [HTTP API] definitions of [SRS].
 //!
 //! [SRS]: https://github.com/ossrs/srs
-//! [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi
+//! [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
 
 pub mod callback;
 
@@ -10,7 +10,7 @@ use derive_more::{Display, Error};
 /// Client for performing requests to [HTTP API][1] of locally spawned [SRS].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
 #[derive(Clone, Copy, Debug)]
 pub struct Client;
 
@@ -19,7 +19,7 @@ impl Client {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     /// [URL]: https://en.wikipedia.org/wiki/URL
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
     const V1_URL: &'static str = "http://127.0.0.1:8002/api/v1";
 
     /// [Kicks off][1] a client connected to [SRS] server by its `id`.
@@ -30,8 +30,8 @@ impl Client {
     /// for details.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi#kickoff-client
-    pub async fn kickoff_client(id: u32) -> Result<(), Error> {
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi#kickoff-client
+    pub async fn kickoff_client(id: String) -> Result<(), Error> {
         let resp = reqwest::Client::new()
             .delete(&format!("{}/clients/{}", Self::V1_URL, id))
             .send()
@@ -46,7 +46,7 @@ impl Client {
 
 /// Possible errors of performing requests to [SRS HTTP API][1].
 ///
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
 #[derive(Debug, Display, Error)]
 pub enum Error {
     /// Performing HTTP request failed itself.
@@ -56,7 +56,7 @@ pub enum Error {
     /// [SRS HTTP API][1] responded with a bad [`StatusCode`].
     ///
     /// [`StatusCode`]: reqwest::StatusCode
-    /// [1]: https://github.com/ossrs/srs/wiki/v3_EN_HTTPApi
+    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
     #[display(fmt = "SRS HTTP API responded with bad status: {}", _0)]
     BadStatus(#[error(not(source))] reqwest::StatusCode),
 }

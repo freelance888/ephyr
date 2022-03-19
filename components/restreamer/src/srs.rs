@@ -174,17 +174,25 @@ impl Drop for ServerProcess {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ClientId(Arc<u32>);
+pub struct ClientId(Arc<String>);
 
-impl From<u32> for ClientId {
+impl ClientId {
+    /// Returns value of `client_id`
+    #[must_use]
+    pub fn get_value(&self) -> Option<String> {
+        Some(self.0.as_ref().to_string())
+    }
+}
+
+impl From<String> for ClientId {
     #[inline]
-    fn from(id: u32) -> Self {
+    fn from(id: String) -> Self {
         Self(Arc::new(id))
     }
 }
 
 impl Deref for ClientId {
-    type Target = u32;
+    type Target = String;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -192,9 +200,9 @@ impl Deref for ClientId {
     }
 }
 
-impl Borrow<u32> for ClientId {
+impl Borrow<String> for ClientId {
     #[inline]
-    fn borrow(&self) -> &u32 {
+    fn borrow(&self) -> &String {
         &*self
     }
 }
@@ -205,15 +213,17 @@ impl Drop for ClientId {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     fn drop(&mut self) {
-        if let Some(&mut client_id) = Arc::get_mut(&mut self.0) {
+        if let Some(client_id) = Arc::get_mut(&mut self.0).cloned() {
             drop(tokio::spawn(
-                api::srs::Client::kickoff_client(client_id).map_err(move |e| {
-                    log::warn!(
-                        "Failed to kickoff client {} from SRS: {}",
-                        client_id,
-                        e,
-                    );
-                }),
+                api::srs::Client::kickoff_client(client_id.clone()).map_err(
+                    move |e| {
+                        log::warn!(
+                            "Failed to kickoff client {} from SRS: {}",
+                            client_id,
+                            e,
+                        );
+                    },
+                ),
             ));
         }
     }
@@ -244,7 +254,7 @@ pub struct Config {
 /// Severity of [SRS] [server logs][1].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v3_EN_SrsLog#loglevel
+/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_SrsLog#loglevel
 #[derive(Clone, Copy, Debug, Display, SmartDefault)]
 pub enum LogLevel {
     /// Error level.

@@ -42,7 +42,7 @@
 
   function getInputUrl(endpoint) {
     if (endpoint.kind === 'HLS')
-      return `http://${public_host}:8000/hls/${restream_key}/${value.key}.m3u8`;
+      return `http://${public_host}:8000/${restream_key}/${value.key}.m3u8?vHost=hls`;
     else if (isPull) return value.src.url;
     else return `rtmp://${public_host}/${restream_key}/${value.key}`;
   }

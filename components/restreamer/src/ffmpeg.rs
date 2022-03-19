@@ -146,7 +146,8 @@ impl RestreamersPool {
                 )
             });
 
-        drop(new_pool.insert(id, process));
+        let old_process = new_pool.insert(id, process);
+        drop(old_process);
         Some(())
     }
 
@@ -185,7 +186,8 @@ impl RestreamersPool {
                 )
             });
 
-        drop(new_pool.insert(id, process));
+        let old_process = new_pool.insert(id, process);
+        drop(old_process);
         Some(())
     }
 }
