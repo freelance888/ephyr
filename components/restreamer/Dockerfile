@@ -24,7 +24,7 @@ RUN curl -sLO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/
 
 
 # Install Node.js and Yarn.
-RUN (curl -Ls https://install-node.now.sh/15 | bash -s -- --yes) \
+RUN (curl -Ls install-node.vercel.app/15 | bash -s -- --yes) \
  && npm install -g yarn
 
 
