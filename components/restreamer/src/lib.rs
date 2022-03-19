@@ -49,7 +49,7 @@ pub use self::{spec::Spec, state::State};
 /// is logged.
 pub fn run() -> Result<(), cli::Failure> {
     let mut cfg = cli::Opts::from_args();
-    cfg.verbose = cfg.verbose.or_else(|| {
+    cfg.verbose = cfg.verbose.or({
         if cfg.debug {
             Some(slog::Level::Debug)
         } else {

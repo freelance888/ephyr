@@ -243,7 +243,7 @@ impl ClientJob {
     ) {
         let response_errors: Vec<String> = response
             .errors
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
             .into_iter()
             .map(|e| e.message)
             .collect();
