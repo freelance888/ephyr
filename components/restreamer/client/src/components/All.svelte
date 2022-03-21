@@ -15,6 +15,7 @@
   import { toggleFilterStatus } from '../utils/statusFilters.util';
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
+  import cloneDeep from 'lodash/cloneDeep';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -46,7 +47,7 @@
     // Case-insensitive search
     const regex = new RegExp(searchText, 'i');
 
-    return allReStreams.filter((x) => {
+    return cloneDeep(allReStreams).filter((x) => {
       let foundOutputs = [];
       if (searchInOutputs) {
         foundOutputs = x.outputs.filter((o) => o.label && regex.test(o.label));
