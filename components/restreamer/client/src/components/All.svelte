@@ -3,7 +3,7 @@
 
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
-  import { isFailoverInput, showError } from '../utils/util';
+  import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
@@ -13,7 +13,7 @@
   import { getAggregatedStreamsData } from '../utils/allHelpers.util';
   import { statusesList } from '../constants/statuses';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
 
@@ -27,43 +27,72 @@
   export let state;
   export let info;
 
-  $: allReStreams = $state.data.allRestreams;
+  let searchInInputs = true;
+  let searchInOutputs = true;
+
+  const searchQueryKey = 'search';
+  let params = new URLSearchParams(location.search);
+  const searchString = params.get(searchQueryKey);
+  let searchText = decodeURIComponent(searchString ? searchString : '');
+
+  $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
   $: globalInputsFilters = [];
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
-  $: filteredRestreams = allReStreams;
 
-  let search = '';
-  let searchInInputs = true;
-  let searchInOutputs = true;
+  $: {
+    allReStreams = getFilteredRestreams(
+      searchText,
+      $state.data.allRestreams,
+      searchInInputs,
+      searchInOutputs
+    );
+  }
 
-  const getFilteredRestreams = (searchText) => {
-    if (!searchText) {
-      return allReStreams;
+  const storeSearchTextInQueryParams = () => {
+    if (searchText) {
+      const queryParams = new URLSearchParams();
+      queryParams.set(searchQueryKey, encodeURIComponent(searchText));
+      history.replaceState(null, null, '?' + queryParams.toString());
+    } else {
+      history.replaceState(null, null, '/');
+    }
+  };
+
+  const getFilteredRestreams = (
+    substring,
+    originalRestreams,
+    onlyInInputs,
+    onlyInOutputs
+  ) => {
+    storeSearchTextInQueryParams();
+
+    if (!substring) {
+      return originalRestreams;
     }
 
     // Case-insensitive search
-    const regex = new RegExp(searchText, 'i');
+    const regex = new RegExp(escapeRegExp(substring), 'i');
 
-    return cloneDeep(allReStreams).filter((x) => {
+    return cloneDeep(originalRestreams).filter((x) => {
       let foundOutputs = [];
-      if (searchInOutputs) {
+      if (onlyInOutputs) {
         foundOutputs = x.outputs.filter((o) => o.label && regex.test(o.label));
         if (foundOutputs.length) {
           x.outputs = foundOutputs;
         }
       }
 
-      const hasRestreamLabel = searchInInputs && x.label && regex.test(x.label);
+      const hasRestreamLabel = onlyInInputs && x.label && regex.test(x.label);
       const hasInputLabel =
-        searchInInputs &&
+        onlyInInputs &&
         x.input.endpoints.filter((e) => e.label && regex.test(e.label)).length >
           0;
 
       const hasFailoverInputLabel =
-        searchInInputs &&
+        onlyInInputs &&
         isFailoverInput(x.input) &&
         x.input.src.inputs
           .flatMap((x) => x.endpoints)
@@ -117,20 +146,12 @@
     if (!searchInInputs && !searchInOutputs) {
       searchInInputs = true;
     }
-
-    doSearch();
   }
 
   function onChangeSearchInOutputs() {
     if (!searchInInputs && !searchInOutputs) {
       searchInOutputs = true;
     }
-
-    doSearch();
-  }
-
-  function doSearch() {
-    filteredRestreams = getFilteredRestreams(search);
   }
 </script>
 
@@ -241,9 +262,14 @@
 
     <input
       class="uk-input uk-width-1-3 uk-margin-small-top"
-      bind:value={search}
-      on:keyup={doSearch}
+      bind:value={searchText}
       placeholder="Search by labels (regex)"
+    />
+    <button
+      type="button"
+      class="clear-search"
+      uk-close
+      on:click={() => (searchText = '')}
     />
     <div class="uk-margin-small-top">
       <label>
@@ -265,7 +291,7 @@
     </div>
   </section>
 
-  {#each filteredRestreams as restream}
+  {#each allReStreams as restream}
     <Restream
       public_host={$info.data.info.publicHost}
       value={restream}
@@ -292,4 +318,8 @@
     &:hover
       color: #444
 
+  .clear-search
+    position: relative
+    left: -30px;
+    top: 4px;
 </style>
