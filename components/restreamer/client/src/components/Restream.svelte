@@ -41,6 +41,7 @@
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
+  export let files;
 
   let outputMutations = {
     DisableOutput,
@@ -245,6 +246,7 @@
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
+      {files}
     />
     {#if !!value.input.src && value.input.src.__typename === 'FailoverInputSrc'}
       {#each value.input.src.inputs as input}
@@ -253,6 +255,7 @@
           restream_id={value.id}
           restream_key={value.key}
           value={input}
+          {files}
         />
       {/each}
     {/if}

@@ -6,6 +6,7 @@ subscription Info {
         enableConfirmation
         passwordHash
         passwordOutputHash
+        googleApiKey
     }
 }
 
@@ -17,6 +18,18 @@ subscription ServerInfo {
         txDelta
         rxDelta
         errorMsg
+    }
+}
+
+subscription Files {
+    files {
+        fileId,
+        name,
+        downloadState {
+            maxProgress,
+            currentProgress,
+        },
+        state,
     }
 }
 
@@ -33,6 +46,7 @@ subscription State {
                 kind
                 status
                 label
+                fileId
             }
             src {
                 ... on RemoteInputSrc {
@@ -48,6 +62,7 @@ subscription State {
                             kind
                             status
                             label
+                            fileId
                         }
                         src {
                             ... on RemoteInputSrc {
@@ -109,6 +124,7 @@ mutation SetRestream(
     $with_backup: Boolean
     $backup_url: InputSrcUrl
     $with_hls: Boolean
+    $file_id: String
 ) {
     setRestream(
         key: $key
@@ -116,6 +132,7 @@ mutation SetRestream(
         label: $label
         withBackup: $with_backup
         backupSrc: $backup_url
+        fileId: $file_id
         withHls: $with_hls
         id: $id
     )
@@ -235,10 +252,12 @@ mutation SetSettings(
     $title: String
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
+    $googleApiKey: String
 ) {
     setSettings(
         title: $title
         deleteConfirmation: $deleteConfirmation
         enableConfirmation: $enableConfirmation
+        googleApiKey: $googleApiKey
     )
 }

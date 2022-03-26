@@ -1,7 +1,7 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
 
-  import { SetEndpointLabel } from '../../api/client.graphql';
+  import { Files, SetEndpointLabel } from '../../api/client.graphql';
 
   import Url from './common/Url.svelte';
   import { showError } from '../utils/util';
@@ -12,6 +12,7 @@
   export let input;
   export let input_url;
   export let restream_id;
+  export let files;
 
   let label_component;
   let label_input;
@@ -19,6 +20,17 @@
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
+  $: all_files = $files.data;
+  $: current_file = test(all_files);
+
+  function test(all_files) {
+    if (all_files && all_files.files) {
+      return all_files.files.find(val => val.fileId === endpoint.fileId);
+    } else {
+      return undefined;
+    }
+    //return 0;// all_files.find(val => val.fileId === endpoint.file_id);
+  }
 
   async function editLabel(startEdit) {
     if (startEdit) {
@@ -60,53 +72,66 @@
       class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
       class:uk-alert-success={endpoint.status === 'ONLINE'}
     >
-      {#if isFailover || endpoint.kind !== 'RTMP'}
-        {#if endpoint.status === 'ONLINE'}
+      {#if endpoint.kind === "FILE"}
+        <span
+        ><i
+                class="fas fa-file"
+                title="Serves live {endpoint.kind} stream"
+        /></span
+        >
+      {:else}
+        {#if isFailover || endpoint.kind !== 'RTMP'}
+          {#if endpoint.status === 'ONLINE'}
+            <span
+              ><i
+                class="fas fa-circle"
+                title="Serves {isFailover
+                  ? 'failover '
+                  : ''}live {endpoint.kind} stream"
+              /></span
+            >
+          {:else if endpoint.status === 'INITIALIZING'}
+            <span
+              ><i
+                class="fas fa-dot-circle"
+                title="Serves {isFailover
+                  ? 'failover '
+                  : ''} live {endpoint.kind} stream"
+              /></span
+            >
+          {:else}
+            <span
+              ><i
+                class="far fa-dot-circle"
+                title="Serves {isFailover
+                  ? 'failover '
+                  : ''} live {endpoint.kind} stream"
+              /></span
+            >
+          {/if}
+        {:else if isPull}
           <span
             ><i
-              class="fas fa-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream"
-            /></span
-          >
-        {:else if endpoint.status === 'INITIALIZING'}
-          <span
-            ><i
-              class="fas fa-dot-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''} live {endpoint.kind} stream"
-            /></span
-          >
+              class="fas fa-arrow-down"
+              title="Pulls {input.key} live {endpoint.kind} stream"
+            />
+          </span>
         {:else}
           <span
             ><i
-              class="far fa-dot-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''} live {endpoint.kind} stream"
-            /></span
-          >
+              class="fas fa-arrow-right"
+              title="Accepts {input.key} live {endpoint.kind} stream"
+            />
+          </span>
         {/if}
-      {:else if isPull}
-        <span
-          ><i
-            class="fas fa-arrow-down"
-            title="Pulls {input.key} live {endpoint.kind} stream"
-          />
-        </span>
-      {:else}
-        <span
-          ><i
-            class="fas fa-arrow-right"
-            title="Accepts {input.key} live {endpoint.kind} stream"
-          />
-        </span>
       {/if}
     </div>
 
-    <Url url={input_url} />
+    {#if endpoint.kind === "FILE" && current_file}
+      <Url url="{current_file.name ? current_file.name : current_file.fileId} {current_file.downloadState ? (current_file.downloadState.currentProgress / current_file.downloadState.maxProgress * 100) + '%' : ''}"/>
+    {:else}
+      <Url url={input_url} />
+    {/if}
     <div class="endpoint-label">
       <span bind:this={label_component} class:hidden={editing_label}
         >{endpoint.label ? endpoint.label : ''}</span

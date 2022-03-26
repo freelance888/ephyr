@@ -67,6 +67,9 @@
     if (v.edit_id) {
       variables.id = v.edit_id;
     }
+    if (v.file_id) {
+      variables.file_id = v.file_id;
+    }
 
     try {
       await setRestreamMutation({ variables });
@@ -171,6 +174,12 @@
                   placeholder="rtmp://..."
                 />
               {/if}
+              <input
+                      class="uk-input"
+                      type="text"
+                      bind:value={$value.file_id}
+                      placeholder="Google file id"
+              />
             {/if}
           </div>
           <div class="hls">

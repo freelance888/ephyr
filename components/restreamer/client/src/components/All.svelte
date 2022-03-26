@@ -25,6 +25,7 @@
 
   export let state;
   export let info;
+  export let files;
 
   $: allReStreams = $state.data.allRestreams;
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
@@ -181,6 +182,7 @@
       hidden={hasActiveFilters &&
         !globalInputsFilters.includes(restream.input.endpoints[0].status)}
       {globalOutputsFilters}
+      {files}
     />
   {:else}
     <div

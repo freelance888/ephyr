@@ -114,6 +114,8 @@ export class RestreamModalState {
    */
   prev_backup_pull_url: string | null = null;
 
+  file_id: string;
+
   /**
    * Indicator whether a an additional endpoint is required to server a live
    * stream via [HLS].

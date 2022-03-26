@@ -141,6 +141,16 @@
                 "defaultValue": null
               },
               {
+                "name": "fileId",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
                 "name": "withBackup",
                 "description": "Indicator whether the `Restream` should have a backup endpoint for a live stream.",
                 "type": {
@@ -968,6 +978,16 @@
                   "ofType": null
                 },
                 "defaultValue": null
+              },
+              {
+                "name": "googleApiKey",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
               }
             ],
             "type": {
@@ -1505,6 +1525,18 @@
             "deprecationReason": null
           },
           {
+            "name": "fileId",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "status",
             "description": "`Status` of this `InputEndpoint` indicating whether it actually serves a\nlive stream ready to be consumed by `Output`s and clients.",
             "args": [],
@@ -1674,6 +1706,16 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "Int",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "ENUM",
         "name": "InputEndpointKind",
         "description": "Possible kinds of an `InputEndpoint`.",
@@ -1692,8 +1734,57 @@
             "description": "[HLS] endpoint.\n\nOnly serves a live stream for playing and is not able to accept one.\n\n[HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming",
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "FILE",
+            "description": "File input.",
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "DownloadState",
+        "description": null,
+        "fields": [
+          {
+            "name": "maxProgress",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "currentProgress",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -2355,6 +2446,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "googleApiKey",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -2381,7 +2484,7 @@
           },
           {
             "name": "ramTotal",
-            "description": "Total RAM installed on current machine, bytes",
+            "description": "Total RAM installed on current machine",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2393,7 +2496,7 @@
           },
           {
             "name": "ramFree",
-            "description": "Free (available) RAM, bytes",
+            "description": "Free (available) RAM",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2405,7 +2508,7 @@
           },
           {
             "name": "txDelta",
-            "description": "Bytes, transfered last second",
+            "description": "Network traffic, transferred last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2417,7 +2520,7 @@
           },
           {
             "name": "rxDelta",
-            "description": "Bytes, received last second",
+            "description": "Network traffic, received last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2578,6 +2681,185 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "files",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "FileInfo",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
+        "name": "FileState",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "PENDING",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "DOWNLOADING",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "LOCAL",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "ERROR",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "RestreamId",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "RemoteInputSrc",
+        "description": "Remote upstream source to pull a live stream by an `Input` from.",
+        "fields": [
+          {
+            "name": "url",
+            "description": "URL of this `RemoteInputSrc`.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "InputSrcUrl",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "label",
+            "description": "Label for this Endpoint",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Label",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "FileInfo",
+        "description": null,
+        "fields": [
+          {
+            "name": "fileId",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "state",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "FileState",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "downloadState",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "DownloadState",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -2641,55 +2923,6 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "RestreamId",
-        "description": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "RemoteInputSrc",
-        "description": "Remote upstream source to pull a live stream by an `Input` from.",
-        "fields": [
-          {
-            "name": "url",
-            "description": "URL of this `RemoteInputSrc`.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "InputSrcUrl",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "label",
-            "description": "Label for this Endpoint",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Label",
               "ofType": null
             },
             "isDeprecated": false,
