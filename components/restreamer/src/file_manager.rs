@@ -4,10 +4,9 @@ use std::io::Write;
 use std::panic::AssertUnwindSafe;
 
 use tap::prelude::*;
-use juniper::{
-    GraphQLEnum, GraphQLObject, GraphQLScalarValue,
-    GraphQLUnion, ParseScalarResult, ParseScalarValue, ScalarValue, Value,
-};
+use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalarValue,
+              graphql_scalar,
+              ParseScalarResult, ParseScalarValue, ScalarValue};
 use serde::{Deserialize, Serialize};
 use ephyr_log::log;
 
@@ -138,13 +137,13 @@ impl FileManager {
                     format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key={}", filename, api_key).as_str()).send().await
                 {
                     let total = response.content_length();
-                    let mut current: i32 = 0;
+                    let mut current: NetworkByteSize = NetworkByteSize(0);
                     // Create FileInfo Download state and set the state to Downloading
                     state.files.lock_mut().iter_mut().find(|file| file.file_id == filename)
                         .ok_or("Could not find file with provided file ID".to_string())?
                         .tap_mut(|val|
                             val.download_state = Some(DownloadState {
-                                max_progress: total.unwrap() as i32,
+                                max_progress: NetworkByteSize(total.unwrap()),
                                 current_progress: current,
                             })
                         )
@@ -165,7 +164,7 @@ impl FileManager {
                                 return Err("Could not write received bytes to a file, aborting download.".to_string());
                             }
 
-                            current += bytes.len() as i32;
+                            current.0 += bytes.len() as u64;
                             // Update download progress in the FileInfo
                             state.files.lock_mut().iter_mut()
                                 .find(|file| file.file_id == filename)
@@ -210,8 +209,25 @@ pub enum FileState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq)]
 pub struct DownloadState {
-    max_progress: i32,
-    current_progress: i32,
+    max_progress: NetworkByteSize,
+    current_progress: NetworkByteSize,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+struct NetworkByteSize(u64);
+#[graphql_scalar()]
+impl<S> juniper::GraphQLScalar for NetworkByteSize where S: juniper::ScalarValue {
+    fn resolve(&self) -> juniper::Value {
+        juniper::Value::scalar(self.0.to_owned() as f64)
+    }
+
+    fn from_input_value(value: &juniper::InputValue) -> Option<NetworkByteSize> {
+        value.as_scalar_value().map(|s| NetworkByteSize(s.as_float().unwrap() as u64))
+    }
+
+    fn from_str<'a>(value: juniper::ScalarToken<'a>) -> juniper::ParseScalarResult<'a, S> {
+        <NetworkByteSize as juniper::ParseScalarValue<S>>::from_str(value)
+    }
 }
 
 #[derive(Deserialize)]
