@@ -184,7 +184,7 @@ impl MutationsRoot {
                         label: None,
                         file_id: Some(f_id),
                     }],
-                    src: None, //Some(spec::v1::InputSrc::RemoteUrl(InputSrcUrl::new(Url::from_str(std::format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key=AIzaSyAODM0BGyH8y86brt-S2mu2sRmjyzwqra4", f_id).as_str()).unwrap()).unwrap())),
+                    src: None,
                     enabled: true,
                 });
             } else {

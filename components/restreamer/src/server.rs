@@ -63,7 +63,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     );
 
     let mut restreamers =
-        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone(), cfg.file_root.clone());
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
         restreamers.apply(&restreams);
         future::ready(())

@@ -11,6 +11,7 @@ use std::{
     sync::Arc,
     time::Duration,
 };
+use std::ops::Deref;
 
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
@@ -28,6 +29,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
 use std::str::FromStr;
+use crate::file_manager::{FileInfo, FileManager, FileState};
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -38,6 +40,9 @@ pub struct RestreamersPool {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     ffmpeg_path: PathBuf,
+
+    /// Path to where local video files are downloaded to and played by ffmpeg
+    files_root: PathBuf,
 
     /// Pool of currently running [FFmpeg] re-streaming processes identified by
     /// an ID of the correspondent element in a [`State`].
@@ -57,10 +62,11 @@ impl RestreamersPool {
     /// Creates a new [`RestreamersPool`] out of the given parameters.
     #[inline]
     #[must_use]
-    pub fn new<P: Into<PathBuf>>(ffmpeg_path: P, state: State) -> Self {
+    pub fn new<P: Into<PathBuf>>(ffmpeg_path: P, state: State, file_root: PathBuf) -> Self {
         Self {
             ffmpeg_path: ffmpeg_path.into(),
             pool: HashMap::new(),
+            files_root: file_root,
             state,
         }
     }
@@ -133,7 +139,7 @@ impl RestreamersPool {
     ) -> Option<()> {
         let id = endpoint.id.into();
 
-        let new_kind = RestreamerKind::from_input(input, endpoint, key)?;
+        let new_kind = RestreamerKind::from_input(input, endpoint, key, self.state.files.lock_ref().deref(), &self.files_root)?;
 
         let process = self
             .pool
@@ -389,6 +395,8 @@ impl RestreamerKind {
         input: &state::Input,
         endpoint: &state::InputEndpoint,
         key: &state::RestreamKey,
+        files: &Vec<FileInfo>,
+        file_root: &PathBuf,
     ) -> Option<Self> {
         if !input.enabled {
             return None;
@@ -405,6 +413,11 @@ impl RestreamerKind {
                             i.endpoints.iter().find_map(|e| {
                                 (e.is_rtmp() && e.status == Status::Online)
                                     .then(|| e.kind.rtmp_url(key, &i.key))
+                                    .or_else(||
+                                        (i.enabled && e.is_file() && e.file_id.is_some() && files.iter()
+                                            .any(|f| f.file_id.eq(e.file_id.as_ref().unwrap()) && f.state == FileState::Local)
+                                        ).then(|| url::Url::from_file_path(file_root.join(e.file_id.as_ref().unwrap())).unwrap())
+                                    )
                             })
                         })?
                     }
@@ -435,6 +448,7 @@ impl RestreamerKind {
             }
 
             state::InputEndpointKind::File => {
+                return None;
                 TranscodingRestreamer {
                     id: endpoint.id.into(),
                     from_url: url::Url::from_str(("file:///tmp/ephyr/".to_owned() + &endpoint.file_id.as_ref().unwrap()).as_str()).unwrap(),
@@ -668,14 +682,16 @@ impl CopyRestreamer {
             "http" | "https"
             =>
             {
-                if Path::new(self.from_url.path()).extension()
-                    == Some("m3u8".as_ref()) {
-                } else {
+                if Path::new(self.from_url.path()).extension() != Some("m3u8".as_ref()) {
                     cmd.arg("-re");
                 }
             }
 
             "rtmp" | "rtmps" => (),
+            "file" => {
+                cmd.arg("-re");
+                cmd.args(&["-stream_loop", "-1"]);
+            }
 
             _ => unimplemented!(),
         };

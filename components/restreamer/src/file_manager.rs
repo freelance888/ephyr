@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::io::BufWriter;
 use std::io::Write;
+use std::ops::DerefMut;
 use std::panic::AssertUnwindSafe;
 
 use tap::prelude::*;
@@ -10,9 +11,10 @@ use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalarValue,
 use serde::{Deserialize, Serialize};
 use ephyr_log::log;
 
-use crate::state::State;
+use crate::state::{InputEndpointKind, State, Status};
 use std::result::Result::Err;
 use std::slice::Iter;
+use chrono::Utc;
 use futures::{FutureExt, StreamExt};
 use crate::cli::Opts;
 use crate::state::{InputSrc, Restream};
@@ -152,27 +154,49 @@ impl FileManager {
                     // Try opening the target file where the downloaded bytes will be written
                     if let Ok(file) = std::fs::OpenOptions::new().create_new(true).write(true).open(format!("{}/{}", root_dir, &filename)) {
                         let mut writer = BufWriter::new(file);
+                        let mut last_update = Utc::now();
 
                         // Download loop for updating the progress
                         while let Some(bytes) = response.chunk().await.unwrap_or(None) {
                             // If there is a problem with writing the downloaded bytes to a file stop the download and print error
                             if writer.write_all(&bytes).is_err() {
-                                state.files.lock_mut().iter_mut()
-                                    .find(|file| file.file_id == filename)
-                                    .ok_or_else(|| "Could not send file status to Error".to_string())?
-                                    .tap_mut(|val| val.state = FileState::Error);
                                 return Err("Could not write received bytes to a file, aborting download.".to_string());
                             }
 
                             current.0 += bytes.len() as u64;
-                            // Update download progress in the FileInfo
-                            state.files.lock_mut().iter_mut()
-                                .find(|file| file.file_id == filename)
-                                .ok_or("File is no longer in the required files, canceling download.".to_string())?
-                                .download_state.as_mut()
-                                .ok_or("The file does not have a download state.".to_string())?
-                                .current_progress = current.into();
+                            // Update download progress in the FileInfo, but only each 400ms
+                            if Utc::now().signed_duration_since(last_update).num_milliseconds() > 400 {
+                                state.files.lock_mut().iter_mut()
+                                    .find(|file| file.file_id == filename)
+                                    .ok_or("File is no longer in the required files, canceling download.".to_string())?
+                                    .download_state.as_mut()
+                                    .ok_or("The file does not have a download state.".to_string())?
+                                    .current_progress = current.into();
+                                last_update = Utc::now();
+                            }
                         }
+                        writer.flush().map_err(|err| "Could not write all downloaded bytes to the file.".to_string())?;
+
+                        state.files.lock_mut().iter_mut()
+                            .find(|file| file.file_id == filename)
+                            .ok_or("File is no longer in the required files, canceling download.".to_string())?
+                            .tap_mut(|file| {
+                                // The download state should be definitely present at this point
+                                file.download_state.as_mut().unwrap().current_progress = current.into();
+                                file.state = FileState::Local;
+                            });
+
+                        // set the endpoints with this file ID to Online, this also sends the update to Restrams to restart the ffmpeg processes
+                        // without this the ffmpeg won't get notified that the file has become available
+                        state.restreams.lock_mut().iter_mut().for_each(|restream| {
+                            if let Some(InputSrc::Failover(input_src)) = restream.input.src.as_mut() {
+                                input_src.inputs.iter_mut().for_each(|failover|
+                                    failover.endpoints.iter_mut()
+                                        .filter(|endpoint|
+                                            endpoint.kind == InputEndpointKind::File && endpoint.file_id.is_some() && endpoint.file_id.as_ref().unwrap().eq(&filename))
+                                        .for_each(|endpoint| endpoint.status = Status::Online))
+                            }
+                        });
                     } else {
                         return Err("Could not create a file with writing privileges.".to_string());
                     }
@@ -185,6 +209,10 @@ impl FileManager {
                 .await
                 .map_err(|err| {
                     log::error!("Could not download file {}: {}", &filename, err);
+                    state.files.lock_mut().iter_mut()
+                        .find(|file| file.file_id == filename)
+                        .map_or_else(|| log::error!("Could not set the file state to error"),
+                                     |val| val.state = FileState::Error);
                 });
         }));
     }
@@ -192,9 +220,9 @@ impl FileManager {
 
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq)]
 pub struct FileInfo {
-    file_id: String,
+    pub file_id: String,
     name: Option<String>,
-    state: FileState,
+    pub state: FileState,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     download_state: Option<DownloadState>,
 }

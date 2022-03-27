@@ -31,6 +31,7 @@ use uuid::Uuid;
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use std::str::FromStr;
 use crate::file_manager::FileInfo;
 
 /// Server's settings.
@@ -1235,7 +1236,7 @@ impl Input {
             (None, Some(new)) => self.src = Some(InputSrc::new(new)),
             _ => self.src = None,
         }
-    } // Ask whether file should be additional endpoint or instead of backup
+    }
 
     /// Exports this [`Input`] as a [`spec::v1::Input`].
     #[must_use]
@@ -1397,6 +1398,7 @@ impl InputEndpoint {
     pub fn apply(&mut self, new: spec::v1::InputEndpoint) {
         self.kind = new.kind;
         self.label = new.label;
+        self.file_id = new.file_id;
     }
 
     /// Exports this [`InputEndpoint`] as a [`spec::v1::InputEndpoint`].
@@ -1415,7 +1417,7 @@ impl InputEndpoint {
     #[inline]
     #[must_use]
     pub fn is_rtmp(&self) -> bool {
-        matches!(self.kind, InputEndpointKind::Rtmp) || matches!(self.kind, InputEndpointKind::File)
+        matches!(self.kind, InputEndpointKind::Rtmp)
     }
 
     /// Indicates whether this [`InputEndpoint`] is an
