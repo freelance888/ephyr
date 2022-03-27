@@ -14,7 +14,11 @@ use std::{
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
 use ephyr_log::log;
-use futures::{future::TryFutureExt as _, sink, stream::{StreamExt as _, TryStreamExt as _}};
+use futures::{
+    future::TryFutureExt as _,
+    sink,
+    stream::{StreamExt as _, TryStreamExt as _},
+};
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
     graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
@@ -28,11 +32,11 @@ use tokio::{fs, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
 
-use crate::{display_panic, serde::is_false, spec, srs, Spec};
+use crate::{
+    display_panic, file_manager::FileInfo, serde::is_false, spec, srs, Spec,
+};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use std::str::FromStr;
-use crate::file_manager::FileInfo;
 
 /// Server's settings.
 ///
@@ -173,6 +177,7 @@ pub struct State {
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 
+    /// List of the files that are used as sources of video
     #[serde(skip)]
     pub files: Mutable<Vec<FileInfo>>,
 }
@@ -1334,7 +1339,7 @@ impl Input {
     }
 }
 
-        /// Endpoint of an `Input` serving a live stream for `Output`s and clients.
+/// Endpoint of an `Input` serving a live stream for `Output`s and clients.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
@@ -1351,6 +1356,8 @@ pub struct InputEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
 
+    /// If the endpoint is of type FILE, then this contains
+    /// the file ID that is in the ['State::files']
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 
@@ -1738,8 +1745,8 @@ impl InputSrcUrl {
             "rtmp" | "rtmps" => url.has_host(),
             "http" | "https" => {
                 url.has_host()
-                    // && Path::new(url.path()).extension()
-                    //     == Some("m3u8".as_ref())
+                // && Path::new(url.path()).extension()
+                //     == Some("m3u8".as_ref())
             }
             _ => false,
         }

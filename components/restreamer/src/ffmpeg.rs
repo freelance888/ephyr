@@ -11,7 +11,6 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use std::ops::Deref;
 
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
@@ -22,14 +21,13 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
+    file_manager::{FileInfo, FileState},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
     types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
-use std::str::FromStr;
-use crate::file_manager::{FileInfo, FileManager, FileState};
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -62,7 +60,11 @@ impl RestreamersPool {
     /// Creates a new [`RestreamersPool`] out of the given parameters.
     #[inline]
     #[must_use]
-    pub fn new<P: Into<PathBuf>>(ffmpeg_path: P, state: State, file_root: PathBuf) -> Self {
+    pub fn new<P: Into<PathBuf>>(
+        ffmpeg_path: P,
+        state: State,
+        file_root: PathBuf,
+    ) -> Self {
         Self {
             ffmpeg_path: ffmpeg_path.into(),
             pool: HashMap::new(),
@@ -139,7 +141,13 @@ impl RestreamersPool {
     ) -> Option<()> {
         let id = endpoint.id.into();
 
-        let new_kind = RestreamerKind::from_input(input, endpoint, key, self.state.files.lock_ref().deref(), &self.files_root)?;
+        let new_kind = RestreamerKind::from_input(
+            input,
+            endpoint,
+            key,
+            &self.state.files.lock_ref(),
+            &self.files_root,
+        )?;
 
         let process = self
             .pool
@@ -395,8 +403,8 @@ impl RestreamerKind {
         input: &state::Input,
         endpoint: &state::InputEndpoint,
         key: &state::RestreamKey,
-        files: &Vec<FileInfo>,
-        file_root: &PathBuf,
+        files: &[FileInfo],
+        file_root: &Path,
     ) -> Option<Self> {
         if !input.enabled {
             return None;
@@ -411,13 +419,27 @@ impl RestreamerKind {
                     state::InputSrc::Failover(s) => {
                         s.inputs.iter().find_map(|i| {
                             i.endpoints.iter().find_map(|e| {
-                                (e.is_rtmp() && e.status == Status::Online)
-                                    .then(|| e.kind.rtmp_url(key, &i.key))
-                                    .or_else(||
-                                        (i.enabled && e.is_file() && e.file_id.is_some() && files.iter()
-                                            .any(|f| f.file_id.eq(e.file_id.as_ref().unwrap()) && f.state == FileState::Local)
-                                        ).then(|| url::Url::from_file_path(file_root.join(e.file_id.as_ref().unwrap())).unwrap())
+                                if e.is_rtmp() && e.status == Status::Online {
+                                    Some(e.kind.rtmp_url(key, &i.key))
+                                } else if i.enabled
+                                    && e.is_file()
+                                    && e.file_id.is_some()
+                                    && files.iter().any(|f| {
+                                        e.file_id.as_ref() == Some(&f.file_id)
+                                            && f.state == FileState::Local
+                                    })
+                                {
+                                    url::Url::from_file_path(
+                                        file_root.join(
+                                            e.file_id
+                                                .as_ref()
+                                                .unwrap_or(&"".to_string()),
+                                        ),
                                     )
+                                    .ok()
+                                } else {
+                                    None
+                                }
                             })
                         })?
                     }
@@ -449,16 +471,6 @@ impl RestreamerKind {
 
             state::InputEndpointKind::File => {
                 return None;
-                TranscodingRestreamer {
-                    id: endpoint.id.into(),
-                    from_url: url::Url::from_str(("file:///tmp/ephyr/".to_owned() + &endpoint.file_id.as_ref().unwrap()).as_str()).unwrap(),
-                    to_url: endpoint.kind.rtmp_url(key, &input.key),
-                    vcodec: Some("libx264".into()),
-                    vprofile: Some("baseline".into()),
-                    vpreset: Some("superfast".into()),
-                    acodec: Some("libfdk_aac".into()),
-                }
-                .into()
             }
         })
     }
@@ -678,24 +690,23 @@ impl CopyRestreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     async fn setup_ffmpeg(&self, cmd: &mut Command) -> io::Result<()> {
-        let _ = match self.from_url.scheme() {
-            "http" | "https"
-            =>
-            {
-                if Path::new(self.from_url.path()).extension() != Some("m3u8".as_ref()) {
-                    cmd.arg("-re");
+        match self.from_url.scheme() {
+            "http" | "https" => {
+                if Path::new(self.from_url.path()).extension()
+                    != Some("m3u8".as_ref())
+                {
+                    let _ = cmd.arg("-re");
                 }
             }
 
             "rtmp" | "rtmps" => (),
             "file" => {
-                cmd.arg("-re");
-                cmd.args(&["-stream_loop", "-1"]);
+                let _ = cmd.arg("-re").args(&["-stream_loop", "-1"]);
             }
 
             _ => unimplemented!(),
         };
-        cmd.args(&["-i", self.from_url.as_str()]);
+        let _ = cmd.args(&["-i", self.from_url.as_str()]);
 
         let _ = match self.to_url.scheme() {
             "file"
@@ -786,18 +797,14 @@ impl TranscodingRestreamer {
             let _ = cmd.stderr(Stdio::null());
         }
 
-        let _ = match self.from_url.scheme() {
-            "http" | "https"
-            =>(),
-
-            "rtmp" | "rtmps" => (),
+        match self.from_url.scheme() {
+            "http" | "https" | "rtmp" | "rtmps" => (),
             "file" => {
-                cmd.arg("-re");
-                cmd.args(&["-stream_loop", "-1"]);
+                let _ = cmd.arg("-re").args(&["-stream_loop", "-1"]);
             }
             _ => unimplemented!(),
-        };
-        cmd.args(&["-i", self.from_url.as_str()]);
+        }
+        let _ = cmd.args(&["-i", self.from_url.as_str()]);
 
         if let Some(val) = self.vcodec.as_ref() {
             let _ = cmd.args(&["-c:v", val]);

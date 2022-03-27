@@ -8,9 +8,10 @@ use tokio::{fs, time};
 
 use crate::{
     cli::{Failure, Opts},
-    client_stat, dvr, ffmpeg, srs, teamspeak, State,
+    client_stat, dvr, ffmpeg,
+    file_manager::FileManager,
+    srs, teamspeak, State,
 };
-use crate::file_manager::FileManager;
 
 /// Initializes and runs all application's HTTP servers.
 ///
@@ -62,8 +63,11 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     );
 
-    let mut restreamers =
-        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone(), cfg.file_root.clone());
+    let mut restreamers = ffmpeg::RestreamersPool::new(
+        ffmpeg_path,
+        state.clone(),
+        cfg.file_root.clone(),
+    );
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
         restreamers.apply(&restreams);
         future::ready(())

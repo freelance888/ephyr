@@ -3,7 +3,6 @@
 //! [GraphQL]: https://graphql.com
 
 use std::collections::HashSet;
-use ephyr_log::log;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
@@ -25,9 +24,11 @@ use crate::{
 };
 
 use super::Context;
-use crate::state::{EndpointId, ServerInfo, VolumeLevel};
+use crate::{
+    file_manager::FileInfo,
+    state::{EndpointId, ServerInfo, VolumeLevel},
+};
 use url::Url;
-use crate::file_manager::FileInfo;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -160,29 +161,26 @@ impl MutationsRoot {
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let input_src = if with_backup {
-            let mut inputs = vec![
-                spec::v1::Input {
-                    id: None,
-                    key: InputKey::new("main").unwrap(),
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::Rtmp,
-                        label: None,
-                        file_id: None,
-                    }],
-                    src: src.map(spec::v1::InputSrc::RemoteUrl),
-                    enabled: true,
-                },
-            ];
-            //todo change this to regular if without unwrapping if the file_id property stays
-            if let Some(f_id) = file_id {
-                log::info!("setting restream: found file_id");
+            let mut inputs = vec![spec::v1::Input {
+                id: None,
+                key: InputKey::new("main").unwrap(),
+                endpoints: vec![spec::v1::InputEndpoint {
+                    kind: InputEndpointKind::Rtmp,
+                    label: None,
+                    file_id: None,
+                }],
+                src: src.map(spec::v1::InputSrc::RemoteUrl),
+                enabled: true,
+            }];
+
+            if file_id.is_some() {
                 inputs.push(spec::v1::Input {
                     id: None,
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::File,
                         label: None,
-                        file_id: Some(f_id),
+                        file_id,
                     }],
                     src: None,
                     enabled: true,
@@ -194,7 +192,7 @@ impl MutationsRoot {
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
                         label: None,
-                        file_id: None
+                        file_id: None,
                     }],
                     src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
@@ -205,17 +203,16 @@ impl MutationsRoot {
             src.map(spec::v1::InputSrc::RemoteUrl)
         };
 
-        let mut endpoints =
-            vec![spec::v1::InputEndpoint {
-                kind: InputEndpointKind::Rtmp,
-                label: None,
-                file_id: None
-            }];
+        let mut endpoints = vec![spec::v1::InputEndpoint {
+            kind: InputEndpointKind::Rtmp,
+            label: None,
+            file_id: None,
+        }];
         if with_hls {
             endpoints.push(spec::v1::InputEndpoint {
                 kind: InputEndpointKind::Hls,
                 label: None,
-                file_id: None
+                file_id: None,
             });
         }
 
@@ -990,10 +987,14 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn files(
-        context: &Context,
-    ) -> BoxStream<'static, Vec<FileInfo>> {
-        context.state().files.signal_cloned().dedupe_cloned().to_stream().boxed()
+    async fn files(context: &Context) -> BoxStream<'static, Vec<FileInfo>> {
+        context
+            .state()
+            .files
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
     }
 }
 
