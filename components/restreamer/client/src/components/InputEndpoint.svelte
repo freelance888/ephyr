@@ -1,7 +1,7 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
 
-  import { Files, SetEndpointLabel } from '../../api/client.graphql';
+  import { SetEndpointLabel } from '../../api/client.graphql';
 
   import Url from './common/Url.svelte';
   import { showError } from '../utils/util';
@@ -20,8 +20,7 @@
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
-  $: all_files = $files.data;
-  $: current_file = test(all_files);
+  $: current_file = test($files.data);
 
   function test(all_files) {
     if (all_files && all_files.files) {
@@ -29,7 +28,6 @@
     } else {
       return undefined;
     }
-    //return 0;// all_files.find(val => val.fileId === endpoint.file_id);
   }
 
   async function editLabel(startEdit) {
@@ -68,9 +66,9 @@
     <div
       class:endpoint-status-icon={true}
       data-testid={`endpoint-status:${endpoint.status}`}
-      class:uk-alert-danger={endpoint.status === 'OFFLINE'}
-      class:uk-alert-warning={endpoint.status === 'INITIALIZING'}
-      class:uk-alert-success={endpoint.status === 'ONLINE'}
+      class:uk-alert-danger={endpoint.kind === "FILE" ? (current_file ? current_file.state === "ERROR" : false) : endpoint.status === 'OFFLINE'}
+      class:uk-alert-warning={endpoint.kind === "FILE" ? (current_file ? current_file.state === "PENDING" || current_file.state === "DOWNLOADING" : false) : endpoint.status === 'INITIALIZING'}
+      class:uk-alert-success={endpoint.kind === "FILE" ? (current_file ? current_file.state === "LOCAL" : false) : endpoint.status === 'ONLINE'}
     >
       {#if endpoint.kind === "FILE"}
         <span
@@ -128,7 +126,9 @@
     </div>
 
     {#if endpoint.kind === "FILE" && current_file}
-      <Url url="{current_file.name ? current_file.name : current_file.fileId} {current_file.downloadState ? (current_file.downloadState.currentProgress / current_file.downloadState.maxProgress * 100) + '%' : ''}"/>
+      <Url url="{current_file.name ? current_file.name : current_file.fileId}
+      {current_file.downloadState && current_file.downloadState.currentProgress !== current_file.downloadState.maxProgress ?
+       (current_file.downloadState.currentProgress / current_file.downloadState.maxProgress * 100).toFixed(2) + '%' : ''}"/>
     {:else}
       <Url url={input_url} />
     {/if}
