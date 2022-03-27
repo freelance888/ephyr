@@ -114,7 +114,8 @@ export class RestreamModalState {
    */
   prev_backup_pull_url: string | null = null;
 
-  file_id: string;
+  file_id: string | null = '';
+  prev_file_id: string | null = null;
 
   /**
    * Indicator whether a an additional endpoint is required to server a live
@@ -198,6 +199,7 @@ export class RestreamModal implements Writable<RestreamModalState> {
    * @param pull_url    Current pull URL of the `Restream` before editing.
    * @param backup      Current backup pull URL of the `Restream` before
    *                    editing.
+   * @param fileId      ID of the file that is used as backup input
    * @param with_hls    Indicator the `Restream` has had HLS endpoint before
    *                    editing.
    */
@@ -207,6 +209,7 @@ export class RestreamModal implements Writable<RestreamModalState> {
     label: string | null,
     pull_url: string | null,
     backup: string | boolean | null,
+    fileId: string | null,
     with_hls: boolean
   ) {
     this.update((v) => {
@@ -233,6 +236,9 @@ export class RestreamModal implements Writable<RestreamModalState> {
         if (typeof backup === 'string') {
           v.prev_backup_pull_url = sanitizeUrl(backup);
           v.backup_pull_url = v.prev_backup_pull_url;
+        } else {
+          v.prev_file_id = fileId;
+          v.file_id = v.prev_file_id;
         }
       }
 
@@ -283,6 +289,9 @@ export class RestreamModal implements Writable<RestreamModalState> {
       }
       v.backup_pull_url = '';
       v.prev_backup_pull_url = null;
+
+      v.file_id = '';
+      v.prev_file_id = null;
 
       if (v.prev_with_hls !== null) {
         v.with_hls = false;

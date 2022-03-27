@@ -38,6 +38,8 @@
           if (!!v.edit_id) {
             changed |= v.backup_pull_url !== v.prev_backup_pull_url;
           }
+        } else {
+          changed |= v.file_id !== v.prev_file_id;
         }
       }
       if (!!v.edit_id) {
@@ -173,13 +175,14 @@
                   bind:value={$value.backup_pull_url}
                   placeholder="rtmp://..."
                 />
+              {:else}
+                <input
+                        class="uk-input"
+                        type="text"
+                        bind:value={$value.file_id}
+                        placeholder="Google file id"
+                />
               {/if}
-              <input
-                      class="uk-input"
-                      type="text"
-                      bind:value={$value.file_id}
-                      placeholder="Google file id"
-              />
             {/if}
           </div>
           <div class="hls">

@@ -75,6 +75,7 @@
 
     let pull_url = null;
     let backup = null;
+    let fileId = null;
 
     if (!!value.input.src && value.input.src.__typename === 'RemoteInputSrc') {
       pull_url = value.input.src.url;
@@ -91,6 +92,9 @@
       if (!!value.input.src.inputs[1].src) {
         backup = value.input.src.inputs[1].src.url;
       }
+      if (!!value.input.src.inputs[1].endpoints[0].fileId) {
+        fileId = value.input.src.inputs[1].endpoints[0].fileId
+      }
     }
 
     restreamModal.openEdit(
@@ -99,6 +103,7 @@
       value.label,
       pull_url,
       backup,
+      fileId,
       with_hls
     );
   }
