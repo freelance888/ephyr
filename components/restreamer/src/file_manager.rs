@@ -69,9 +69,10 @@ impl FileManager {
         }
     }
 
-    /// Checks all the [`Input`]s and if some has [`Endpoint`] of type
-    /// [`File`] tries to download it, if the given ID does not exist
-    /// in the file list.
+    /// Checks all the [`crate::state::Input`]s and if some has
+    /// [`crate::state::InputEndpoint`] of type
+    /// [`crate::state::InputEndpointKind::File`] tries to download it,
+    /// if the given ID does not exist in the file list.
     pub fn check_files(&self, restreams: Iter<'_, Restream>) {
         restreams.for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
@@ -242,6 +243,8 @@ impl FileManager {
         }));
     }
 
+    /// Runs the while loop receiving bytes in packets, writes them to file
+    /// and tracks progress
     async fn download_and_write_bytes(
         file_id: &str,
         root_dir: &str,
