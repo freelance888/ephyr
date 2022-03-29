@@ -24,7 +24,7 @@
 
   function test(all_files) {
     if (all_files && all_files.files) {
-      return all_files.files.find(val => val.fileId === endpoint.fileId);
+      return all_files.files.find((val) => val.fileId === endpoint.fileId);
     } else {
       return undefined;
     }
@@ -66,69 +66,91 @@
     <div
       class:endpoint-status-icon={true}
       data-testid={`endpoint-status:${endpoint.status}`}
-      class:uk-alert-danger={endpoint.kind === "FILE" ? (current_file ? current_file.state === "ERROR" : false) : endpoint.status === 'OFFLINE'}
-      class:uk-alert-warning={endpoint.kind === "FILE" ? (current_file ? current_file.state === "PENDING" || current_file.state === "DOWNLOADING" : false) : endpoint.status === 'INITIALIZING'}
-      class:uk-alert-success={endpoint.kind === "FILE" ? (current_file ? current_file.state === "LOCAL" : false) : endpoint.status === 'ONLINE'}
+      class:uk-alert-danger={endpoint.kind === 'FILE'
+        ? current_file
+          ? current_file.state === 'ERROR'
+          : false
+        : endpoint.status === 'OFFLINE'}
+      class:uk-alert-warning={endpoint.kind === 'FILE'
+        ? current_file
+          ? current_file.state === 'PENDING' ||
+            current_file.state === 'DOWNLOADING'
+          : false
+        : endpoint.status === 'INITIALIZING'}
+      class:uk-alert-success={endpoint.kind === 'FILE'
+        ? current_file
+          ? current_file.state === 'LOCAL'
+          : false
+        : endpoint.status === 'ONLINE'}
     >
-      {#if endpoint.kind === "FILE"}
+      {#if endpoint.kind === 'FILE'}
         <span
-        ><i
-                class="fas fa-file"
-                title="Serves live {endpoint.kind} stream"
-        /></span
+          ><i
+            class="fas fa-file"
+            title="Serves live {endpoint.kind} stream"
+          /></span
         >
-      {:else}
-        {#if isFailover || endpoint.kind !== 'RTMP'}
-          {#if endpoint.status === 'ONLINE'}
-            <span
-              ><i
-                class="fas fa-circle"
-                title="Serves {isFailover
-                  ? 'failover '
-                  : ''}live {endpoint.kind} stream"
-              /></span
-            >
-          {:else if endpoint.status === 'INITIALIZING'}
-            <span
-              ><i
-                class="fas fa-dot-circle"
-                title="Serves {isFailover
-                  ? 'failover '
-                  : ''} live {endpoint.kind} stream"
-              /></span
-            >
-          {:else}
-            <span
-              ><i
-                class="far fa-dot-circle"
-                title="Serves {isFailover
-                  ? 'failover '
-                  : ''} live {endpoint.kind} stream"
-              /></span
-            >
-          {/if}
-        {:else if isPull}
+      {:else if isFailover || endpoint.kind !== 'RTMP'}
+        {#if endpoint.status === 'ONLINE'}
           <span
             ><i
-              class="fas fa-arrow-down"
-              title="Pulls {input.key} live {endpoint.kind} stream"
-            />
-          </span>
+              class="fas fa-circle"
+              title="Serves {isFailover
+                ? 'failover '
+                : ''}live {endpoint.kind} stream"
+            /></span
+          >
+        {:else if endpoint.status === 'INITIALIZING'}
+          <span
+            ><i
+              class="fas fa-dot-circle"
+              title="Serves {isFailover
+                ? 'failover '
+                : ''} live {endpoint.kind} stream"
+            /></span
+          >
         {:else}
           <span
             ><i
-              class="fas fa-arrow-right"
-              title="Accepts {input.key} live {endpoint.kind} stream"
-            />
-          </span>
+              class="far fa-dot-circle"
+              title="Serves {isFailover
+                ? 'failover '
+                : ''} live {endpoint.kind} stream"
+            /></span
+          >
         {/if}
+      {:else if isPull}
+        <span
+          ><i
+            class="fas fa-arrow-down"
+            title="Pulls {input.key} live {endpoint.kind} stream"
+          />
+        </span>
+      {:else}
+        <span
+          ><i
+            class="fas fa-arrow-right"
+            title="Accepts {input.key} live {endpoint.kind} stream"
+          />
+        </span>
       {/if}
     </div>
 
-    {#if endpoint.kind === "FILE" && current_file}
-      <Url url="{current_file.name ? current_file.name : current_file.fileId}
-      {current_file.downloadState && current_file.downloadState.currentProgress !== current_file.downloadState.maxProgress ?
-       (current_file.downloadState.currentProgress / current_file.downloadState.maxProgress * 100).toFixed(2) + '%' : ''}"/>
+    {#if endpoint.kind === 'FILE' && current_file}
+      <Url
+        url="{current_file.name
+          ? current_file.name
+          : current_file.fileId}
+      {current_file.downloadState &&
+        current_file.downloadState.currentProgress !==
+          current_file.downloadState.maxProgress
+          ? (
+              (current_file.downloadState.currentProgress /
+                current_file.downloadState.maxProgress) *
+              100
+            ).toFixed(2) + '%'
+          : ''}"
+      />
     {:else}
       <Url url={input_url} />
     {/if}

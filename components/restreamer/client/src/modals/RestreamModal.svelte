@@ -177,10 +177,10 @@
                 />
               {:else}
                 <input
-                        class="uk-input"
-                        type="text"
-                        bind:value={$value.file_id}
-                        placeholder="Google file id"
+                  class="uk-input"
+                  type="text"
+                  bind:value={$value.file_id}
+                  placeholder="Google file id"
                 />
               {/if}
             {/if}

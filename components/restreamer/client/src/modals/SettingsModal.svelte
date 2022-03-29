@@ -62,10 +62,14 @@
         <div class="uk-alert">
           Whether do we need to confirm enabling/disabling of inputs or outputs
         </div>
-        <input class="uk-input" bind:value={info.googleApiKey} placeholder="Google API key" />
+        <input
+          class="uk-input"
+          bind:value={info.googleApiKey}
+          placeholder="Google API key"
+        />
         <div class="uk-alert">
-          Google API key for downloading video and audio files.
-          It is necessary for file inputs.
+          Google API key for downloading video and audio files. It is necessary
+          for file inputs.
         </div>
       </fieldset>
 

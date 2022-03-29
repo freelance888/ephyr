@@ -23,13 +23,13 @@ subscription ServerInfo {
 
 subscription Files {
     files {
-        fileId,
-        name,
+        fileId
+        name
         downloadState {
-            maxProgress,
-            currentProgress,
-        },
-        state,
+            maxProgress
+            currentProgress
+        }
+        state
     }
 }
 

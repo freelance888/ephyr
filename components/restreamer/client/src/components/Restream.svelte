@@ -93,7 +93,7 @@
         backup = value.input.src.inputs[1].src.url;
       }
       if (!!value.input.src.inputs[1].endpoints[0].fileId) {
-        fileId = value.input.src.inputs[1].endpoints[0].fileId
+        fileId = value.input.src.inputs[1].endpoints[0].fileId;
       }
     }
 
