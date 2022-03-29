@@ -15,7 +15,8 @@ use crate::{
     state::{InputEndpointKind, InputSrc, Restream, State, Status},
 };
 use chrono::Utc;
-use std::{result::Result::Err, slice::Iter};
+use reqwest::Response;
+use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
 
 /// Manages file downloads and files in the provided [`State`]
 #[derive(Debug, Default)]
@@ -55,30 +56,9 @@ impl FileManager {
             let state_cpy = state.clone();
             drop(tokio::spawn(async move {
                 for file_id in file_id_list {
-                    if let Ok(filename) =
-                        Self::request_file_info(&file_id, &api_key).await
-                    {
-                        state_cpy
-                            .files
-                            .lock_mut()
-                            .iter_mut()
-                            .find(|file| file.file_id == file_id)
-                            .map_or_else(
-                                || {
-                                    log::error!(
-                                        "Could not find file \
-                                         with the provided id: {}",
-                                        file_id
-                                    )
-                                },
-                                |file_info| file_info.name = Some(filename),
-                            );
-                    } else {
-                        log::error!(
-                            "Could not get info for the file: {}",
-                            file_id
-                        );
-                    }
+                    let _ =
+                        Self::update_file_info(&file_id, &api_key, &state_cpy)
+                            .await;
                 }
             }));
         }
@@ -111,25 +91,6 @@ impl FileManager {
         });
     }
 
-    /// Retrieves file info (currently only the file name) from the Google API
-    async fn request_file_info(
-        file_id: &str,
-        api_key: &str,
-    ) -> Result<String, reqwest::Error> {
-        Ok(reqwest::get(
-            format!(
-                "https://www.googleapis.com/drive/v3/files/{}?fields=name&\
-                         key={}",
-                file_id, api_key
-            )
-            .as_str(),
-        )
-        .await?
-        .json::<FileInfoResponse>()
-        .await?
-        .name)
-    }
-
     /// Checks if the provided file ID already exists in the file list,
     /// if not the download of the given file is queued.
     pub fn need_file(&self, file_id: &str) {
@@ -145,6 +106,48 @@ impl FileManager {
             drop(all_files);
             self.download_file(file_id);
         }
+    }
+
+    /// Retrieves file info (currently only the file name) from the Google API
+    async fn update_file_info<'a>(
+        file_id: &'a str,
+        api_key: &'a str,
+        state: &'a State,
+    ) -> Result<(), &'static str> {
+        let filename = reqwest::get(
+            format!(
+                "https://www.googleapis.com/drive/v3/files/{}?fields=name&\
+                 key={}",
+                file_id, api_key
+            )
+            .as_str(),
+        )
+        .await
+        .map_err(|_err| "No valid response from the API")?
+        .json::<FileInfoResponse>()
+        .await
+        .map_err(|_err| "Could not parse the JSON received from the API")?
+        .name;
+
+        state
+            .files
+            .lock_mut()
+            .iter_mut()
+            .find(|file| file.file_id == file_id)
+            .map_or_else(
+                || {
+                    log::error!(
+                        "Could not find file \
+                             with the provided id: {}",
+                        file_id
+                    );
+                    Err("Could not find the provided file ID")
+                },
+                |file_info| {
+                    file_info.name = Some(filename);
+                    Ok(())
+                },
+            )
     }
 
     /// Spawns a separate process that tries to download given file ID
@@ -169,34 +172,18 @@ impl FileManager {
                     })?;
 
                 // Get file name from the API
-                let file_name = Self::request_file_info(&file_id, &api_key)
+                Self::update_file_info(&file_id, &api_key, &state)
                     .await
                     .map_err(|_err| {
                         "Could not get file info for the file".to_string()
                     })?;
-                state
-                    .files
-                    .lock_mut()
-                    .iter_mut()
-                    .find(|file| file.file_id == file_id)
-                    .map_or_else(
-                        || {
-                            Err("Could not find file with \
-                                                the provided id"
-                                .to_string())
-                        },
-                        |file_info| {
-                            file_info.name = Some(file_name);
-                            Ok(())
-                        },
-                    )?;
 
                 // Download the file contents
                 if let Ok(mut response) = client
                     .get(
                         format!(
                             "https://www.googleapis.com/drive/v3/files/{}?\
-                    alt=media&key={}",
+                             alt=media&key={}",
                             file_id, api_key
                         )
                         .as_str(),
@@ -205,7 +192,6 @@ impl FileManager {
                     .await
                 {
                     let total = response.content_length();
-                    let mut current: NetworkByteSize = NetworkByteSize(0);
                     // Create FileInfo Download state and set the state
                     // to Downloading
                     state
@@ -214,127 +200,25 @@ impl FileManager {
                         .iter_mut()
                         .find(|file| file.file_id == file_id)
                         .ok_or_else(|| {
-                            "Could not find file with \
-                                        provided file ID"
+                            "Could not find file with the \
+                             provided file ID"
                                 .to_string()
                         })?
                         .pipe_borrow_mut(|val| {
                             val.download_state = Some(DownloadState {
                                 max_progress: NetworkByteSize(total.unwrap()),
-                                current_progress: current,
+                                current_progress: NetworkByteSize(0),
                             });
                             val.state = FileState::Downloading;
                         });
 
-                    // Try opening the target file where the downloaded
-                    // bytes will be written
-                    if let Ok(file) = std::fs::OpenOptions::new()
-                        .create_new(true)
-                        .write(true)
-                        .open(format!("{}/{}", root_dir, &file_id))
-                    {
-                        let mut writer = BufWriter::new(file);
-                        let mut last_update = Utc::now();
-
-                        // Download loop for updating the progress
-                        while let Some(bytes) =
-                            response.chunk().await.unwrap_or(None)
-                        {
-                            // If there is a problem with writing the downloaded
-                            // bytes to a file stop the download and print error
-                            if writer.write_all(&bytes).is_err() {
-                                return Err(
-                                    "Could not write received bytes to \
-                                       a file, aborting download."
-                                        .to_string(),
-                                );
-                            }
-
-                            current.0 += bytes.len() as u64;
-                            // Update download progress in the FileInfo,
-                            // but only each 400ms
-                            if Utc::now()
-                                .signed_duration_since(last_update)
-                                .num_milliseconds()
-                                > 400
-                            {
-                                state
-                                    .files
-                                    .lock_mut()
-                                    .iter_mut()
-                                    .find(|file| file.file_id == file_id)
-                                    .ok_or_else(|| {
-                                        "File is no longer in the required \
-                                        files, canceling download."
-                                            .to_string()
-                                    })?
-                                    .download_state
-                                    .as_mut()
-                                    .ok_or_else(|| {
-                                        "The file does not have a \
-                                        download state."
-                                            .to_string()
-                                    })?
-                                    .current_progress = current;
-                                last_update = Utc::now();
-                            }
-                        }
-                        writer.flush().map_err(|_err| {
-                            "Could not write all downloaded bytes to the file."
-                                .to_string()
-                        })?;
-
-                        state
-                            .files
-                            .lock_mut()
-                            .iter_mut()
-                            .find(|file| file.file_id == file_id)
-                            .ok_or_else(|| {
-                                "File is no longer in the required \
-                                files, canceling download."
-                                    .to_string()
-                            })?
-                            .pipe_borrow_mut(|file| {
-                                // The download state should be definitely
-                                // present at this point
-                                file.download_state
-                                    .as_mut()
-                                    .unwrap()
-                                    .current_progress = current;
-                                file.state = FileState::Local;
-                            });
-
-                        // set the endpoints with this file ID to Online, this
-                        // also sends the update to Restrams to restart the
-                        // ffmpeg processes without this the ffmpeg won't get
-                        // notified that the file has become available
-                        state.restreams.lock_mut().iter_mut().for_each(
-                            |restream| {
-                                if let Some(InputSrc::Failover(input_src)) =
-                                    restream.input.src.as_mut()
-                                {
-                                    input_src.inputs.iter_mut().for_each(
-                                        |failover| {
-                                            failover.endpoints.iter_mut()
-                                        .filter(|endpoint|
-                                        endpoint.kind == InputEndpointKind::File
-                                            && endpoint.file_id.is_some()
-                                            && endpoint.file_id.as_ref()
-                                            .unwrap().eq(&file_id)
-                                        )
-                                        .for_each(|endpoint|
-                                            endpoint.status = Status::Online
-                                        )
-                                        },
-                                    );
-                                }
-                            },
-                        );
-                    } else {
-                        return Err("Could not create a file with \
-                                    writing privileges."
-                            .to_string());
-                    }
+                    Self::download_and_write_bytes(
+                        &file_id,
+                        &root_dir,
+                        response.borrow_mut(),
+                        &state,
+                    )
+                    .await?;
 
                     Ok(response.status().as_u16())
                 } else {
@@ -356,6 +240,119 @@ impl FileManager {
                     );
             });
         }));
+    }
+
+    async fn download_and_write_bytes(
+        file_id: &str,
+        root_dir: &str,
+        response: &mut Response,
+        state: &State,
+    ) -> Result<(), String> {
+        // Try opening the target file where the downloaded
+        // bytes will be written
+        if let Ok(file) = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(format!("{}/{}", root_dir, &file_id))
+        {
+            let mut writer = BufWriter::new(file);
+            let mut last_update = Utc::now();
+
+            let mut current: NetworkByteSize = NetworkByteSize(0);
+            // Download loop for updating the progress
+            while let Some(bytes) = response.chunk().await.unwrap_or(None) {
+                // If there is a problem with writing the downloaded
+                // bytes to a file stop the download and print error
+                if writer.write_all(&bytes).is_err() {
+                    return Err("Could not write received bytes to \
+                                     a file, aborting download."
+                        .to_string());
+                }
+
+                current.0 += bytes.len() as u64;
+                // Update download progress in the FileInfo,
+                // but only each 400ms
+                if Utc::now()
+                    .signed_duration_since(last_update)
+                    .num_milliseconds()
+                    > 400
+                {
+                    state
+                        .files
+                        .lock_mut()
+                        .iter_mut()
+                        .find(|file| file.file_id == file_id)
+                        .ok_or_else(|| {
+                            "File is no longer in the required \
+                                        files, canceling download."
+                                .to_string()
+                        })?
+                        .download_state
+                        .as_mut()
+                        .ok_or_else(|| {
+                            "The file does not have a \
+                                        download state."
+                                .to_string()
+                        })?
+                        .current_progress = current;
+                    last_update = Utc::now();
+                }
+            }
+            writer.flush().map_err(|_err| {
+                "Could not write all downloaded bytes to the file.".to_string()
+            })?;
+
+            state
+                .files
+                .lock_mut()
+                .iter_mut()
+                .find(|file| file.file_id == file_id)
+                .ok_or_else(|| {
+                    "File is no longer in the required \
+                                files, canceling download."
+                        .to_string()
+                })?
+                .pipe_borrow_mut(|file| {
+                    // The download state should be definitely
+                    // present at this point
+                    file.download_state.as_mut().unwrap().current_progress =
+                        current;
+                    file.state = FileState::Local;
+                });
+
+            // set the endpoints with this file ID to Online, this
+            // also sends the update to Restrams to restart the
+            // ffmpeg processes without this the ffmpeg won't get
+            // notified that the file has become available
+            state.restreams.lock_mut().iter_mut().for_each(|restream| {
+                if let Some(InputSrc::Failover(input_src)) =
+                    restream.input.src.as_mut()
+                {
+                    input_src.inputs.iter_mut().for_each(|failover| {
+                        failover
+                            .endpoints
+                            .iter_mut()
+                            .filter(|endpoint| {
+                                endpoint.kind == InputEndpointKind::File
+                                    && endpoint.file_id.is_some()
+                                    && endpoint
+                                        .file_id
+                                        .as_ref()
+                                        .unwrap()
+                                        .eq(&file_id)
+                            })
+                            .for_each(|endpoint| {
+                                endpoint.status = Status::Online;
+                            });
+                    });
+                }
+            });
+            Ok(())
+        } else {
+            Err("Could not create a file with \
+                                    writing privileges."
+                .to_string())
+        }
     }
 }
 

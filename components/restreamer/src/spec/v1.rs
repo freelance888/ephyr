@@ -171,8 +171,8 @@ impl<'de> Deserialize<'de> for Input {
                 )));
             }
         }
-        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp) &&
-            !unique_endpoints.contains(&state::InputEndpointKind::File)
+        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp)
+            && !unique_endpoints.contains(&state::InputEndpointKind::File)
         {
             return Err(D::Error::custom(format!(
                 "Input.endpoints should contain at least one {} or {} endpoint",

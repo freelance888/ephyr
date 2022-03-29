@@ -444,13 +444,9 @@ impl MutationsRoot {
             }
         }
 
-        let existing_output;
-        if let Some(&id_unwrap) = id.as_ref() {
-            existing_output =
-                context.state().get_output(restream_id, id_unwrap);
-        } else {
-            existing_output = None;
-        }
+        let existing_output = id.as_ref().and_then(|output_id| {
+            context.state().get_output(restream_id, *output_id)
+        });
         let mut original_volume = Volume::ORIGIN.export();
         if let Some(output) = existing_output.as_ref() {
             if !mixins.is_empty() {
