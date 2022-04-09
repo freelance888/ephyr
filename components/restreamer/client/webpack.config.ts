@@ -14,6 +14,7 @@ const config: webpack.Configuration = {
     main: './src/AppRestreamer.ts',
     'mix/main': './src/AppMix.ts',
     'dashboard/main': './src/AppDashboard.ts',
+    'full-stream/main': './src/AppFullStream.ts',
   },
   resolve: {
     alias: {
@@ -70,6 +71,8 @@ const config: webpack.Configuration = {
         { from: 'static/assets', to: 'mix' },
         { from: 'static/dashboard', to: 'dashboard' },
         { from: 'static/assets', to: 'dashboard' },
+        { from: 'static/full-stream', to: 'full-stream' },
+        { from: 'static/assets', to: 'full-stream' },
         { from: 'static/assets' },
       ],
     }),
