@@ -5,6 +5,7 @@
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Restream from './Restream.svelte';
+  import Playlist from './Playlist.svelte';
 
   const gqlClient = createGraphQlClient(
     '/api',
@@ -31,9 +32,7 @@
   const urlParams = new URLSearchParams(window.location.search);
   const restream_id = urlParams.get('id');
 
-  function getRestream() {
-    return canRenderMainComponent && $state.data.allRestreams.find(x => x.id === restream_id);
-  }
+  $: restream = canRenderMainComponent && $state.data.allRestreams.find(x => x.id === restream_id)
 
 </script>
 
@@ -44,14 +43,16 @@
     error={stateError || infoError}
     serverInfo={sInfo}
   >
-  <div slot="main" >
-      <Restream
-        public_host={$info.data.info.publicHost}
-        value={getRestream()}
-        {files}
-        isFullView="true"
-        globalOutputsFilters={[]}
-      />
-  </div>
+    <div slot="main" >
+        <Restream
+          public_host={$info.data.info.publicHost}
+          value={restream}
+          {files}
+          isFullView="true"
+          globalOutputsFilters={[]}
+        />
+      <Playlist/>
+    </div>
+
   </Shell>
 </template>
