@@ -193,58 +193,56 @@
       <span class="section-label">{value.label}</span>
     {/if}
 
-    {#if value.outputs && value.outputs.length > 0}
-      <div class='uk-float-right uk-flex uk-flex-column uk-flex-bottom'>
-        <a
-          href="/full-stream?id={value.id}"
-          hidden={isFullView}
-          target="_blank"
-          title="Open full view"
-        >
-          Full view
-        </a>
-        <span class="total">
-          {#each statusesList as status (status)}
-            <StatusFilter
-              {status}
-              count={reStreamOutputsCountByStatus[status]}
-              active={reStreamOutputsFilters.includes(status)}
-              disabled={hasGlobalOutputsFilters}
-              title={hasGlobalOutputsFilters &&
-                'Filter is disabled while global output filters are active'}
-              handleClick={() =>
-                (reStreamOutputsFilters = toggleFilterStatus(
-                  reStreamOutputsFilters,
-                  status
-                ))}
-            />
-          {/each}
+    <div class='uk-float-right uk-flex uk-flex-column uk-flex-bottom'>
+      <a
+        href="/full-stream?id={value.id}"
+        hidden={isFullView}
+        target="_blank"
+        title="Open full view"
+      >
+        Full view
+      </a>
+      <span class="total">
+        {#each statusesList as status (status)}
+          <StatusFilter
+            {status}
+            count={reStreamOutputsCountByStatus[status]}
+            active={reStreamOutputsFilters.includes(status)}
+            disabled={hasGlobalOutputsFilters}
+            title={hasGlobalOutputsFilters &&
+              'Filter is disabled while global output filters are active'}
+            handleClick={() =>
+              (reStreamOutputsFilters = toggleFilterStatus(
+                reStreamOutputsFilters,
+                status
+              ))}
+          />
+        {/each}
 
-          <Confirm let:confirm>
-            <Toggle
-              data-testid="toggle-all-outputs-status"
-              id="all-outputs-toggle-{value.id}"
-              checked={allEnabled}
-              title="{toggleStatusText} all outputs"
-              confirmFn={enableConfirmation ? confirm : undefined}
-              onChangeFn={toggleAllOutputs}
-            />
-            <span slot="title"
-              >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
-            >
-            <span slot="description">Are you sure about it?</span>
-            <span slot="confirm">{toggleStatusText}</span>
-          </Confirm>
-        </span>
-        <button
-          class="uk-button uk-button-primary uk-button-small"
-          data-testid="add-output:open-modal-btn"
-          on:click={openAddOutputModal}
-        >
-          <i class="fas fa-plus" />&nbsp;<span>Output</span>
-        </button>
-      </div>
-    {/if}
+        <Confirm let:confirm>
+          <Toggle
+            data-testid="toggle-all-outputs-status"
+            id="all-outputs-toggle-{value.id}"
+            checked={allEnabled}
+            title="{toggleStatusText} all outputs"
+            confirmFn={enableConfirmation ? confirm : undefined}
+            onChangeFn={toggleAllOutputs}
+          />
+          <span slot="title"
+            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+          >
+          <span slot="description">Are you sure about it?</span>
+          <span slot="confirm">{toggleStatusText}</span>
+        </Confirm>
+      </span>
+      <button
+        class="uk-button uk-button-primary uk-button-small"
+        data-testid="add-output:open-modal-btn"
+        on:click={openAddOutputModal}
+      >
+        <i class="fas fa-plus" />&nbsp;<span>Output</span>
+      </button>
+    </div>
 
     <a
       class="edit-input"
