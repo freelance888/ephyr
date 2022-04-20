@@ -4,7 +4,7 @@ Ephyr re-streamer changelog
 All user visible changes to this project will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
 
-## [0.5.0] · Unreleased
+## [0.5.0] · 2022-04-20
 [0.5.0]: /../../tree/restreamer-v0.5.0
 
 [Diff](/../../compare/restreamer-v0.4.0...restreamer-v0.5.0)
@@ -19,14 +19,22 @@ All user visible changes to this project will be documented in this file. This p
   - Add filters and export/import for Dashboard ([#152], [#157]);
   - Show circles next to input numbers ([#154], [#157]);
   - Show in title indicator if connection to server lost ([#157]);
-  
+  - Add search by label ([#163], [#176]).
+
+### Miscellaneous
+- Server updates:
+  - `SRS` server updated to v4 ([#160]).
+
 [#154]: /../../issues/154
+[#163]: /../../issues/163
 
 [#140]: /../../pull/140
 [#152]: /../../pull/152
 [#153]: /../../pull/153
 [#156]: /../../pull/156
 [#157]: /../../pull/157
+[#160]: /../../pull/160
+[#176]: /../../pull/176
 
 
 
