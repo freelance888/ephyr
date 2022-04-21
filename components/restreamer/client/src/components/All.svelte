@@ -13,7 +13,7 @@
   import { getAggregatedStreamsData } from '../utils/allHelpers.util';
   import { statusesList } from '../constants/statuses';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
 
