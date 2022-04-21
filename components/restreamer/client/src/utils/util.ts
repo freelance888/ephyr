@@ -104,7 +104,8 @@ export function createGraphQlClient(
   });
 }
 
-const YT_VIDEO_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+const YT_VIDEO_REGEX =
+  /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 export const isYoutubeVideo = (url: string): boolean => {
   return YT_VIDEO_REGEX.test(url);
