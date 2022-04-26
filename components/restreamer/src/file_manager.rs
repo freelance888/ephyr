@@ -379,7 +379,7 @@ pub struct LocalFileInfo {
 }
 
 impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
-    fn from(file_response: ExtendedFileInfoResponse) -> Self {
+    fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
         LocalFileInfo {
             file_id: file_response.id,
             name: Some(file_response.name),
@@ -460,6 +460,12 @@ where
     ) -> juniper::ParseScalarResult<'_, S> {
         <NetworkByteSize as juniper::ParseScalarValue<S>>::from_str(value)
     }
+}
+
+pub async fn get_drive_folder(api_key: &str, folder_id: &str) -> Result<Vec<PlaylistFileInfo>, &'static str> {
+    let mut response = api_response::FileListResponse::retrieve_dir_content_from_api(api_key, folder_id).await?;
+    response.filter_only_video_files();
+    Ok(response.files.drain(..).map(|f| PlaylistFileInfo::from(f)).collect())
 }
 
 mod api_response {

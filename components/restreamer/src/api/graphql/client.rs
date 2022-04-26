@@ -30,6 +30,7 @@ use crate::{
     state::{EndpointId, ServerInfo, VolumeLevel},
 };
 use url::Url;
+use crate::file_manager::get_drive_folder;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -300,8 +301,16 @@ impl MutationsRoot {
     }
 
     /// Sends request to Google API and appends found files to the provided restream's playlist
-    fn get_playlist_from_drive(restream_id: RestreamId, folder_id: String, context: &Context) -> Option<bool> {
-        return Some(true);
+    async fn get_playlist_from_drive(restream_id: RestreamId, folder_id: String, context: &Context) -> Option<bool> {
+        let api_key = context.state().settings.lock_mut().google_api_key.clone()?;
+        if let Ok(mut playlist_files) = get_drive_folder(&api_key, &folder_id).await {
+            context.state().restreams.lock_mut().iter_mut()
+                .find(|r| r.id == restream_id)?
+                .playlist.queue.append(playlist_files.as_mut());
+            Some(true)
+        } else {
+            None
+        }
     }
 
     /// Enables an `Input` by its `id`.
