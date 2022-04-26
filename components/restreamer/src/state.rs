@@ -33,10 +33,11 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    display_panic, file_manager::FileInfo, serde::is_false, spec, srs, Spec,
+    display_panic, file_manager::LocalFileInfo, serde::is_false, spec, srs, Spec,
 };
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use crate::file_manager::PlaylistFileInfo;
 
 /// Server's settings.
 ///
@@ -179,7 +180,7 @@ pub struct State {
 
     /// List of the files that are used as sources of video
     #[serde(skip)]
-    pub files: Mutable<Vec<FileInfo>>,
+    pub files: Mutable<Vec<LocalFileInfo>>,
 }
 
 impl State {
@@ -972,6 +973,8 @@ pub struct Restream {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
 
+    pub playlist: Playlist,
+
     /// `Input` that a live stream is received from.
     pub input: Input,
 
@@ -991,6 +994,10 @@ impl Restream {
             label: spec.label,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
+            playlist: Playlist {
+                queue: vec![],
+                currently_playing_file: None
+            }
         }
     }
 
@@ -1147,6 +1154,15 @@ impl PartialEq<str> for RestreamKey {
     fn eq(&self, other: &str) -> bool {
         self.0 == other
     }
+}
+
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize, Default
+)]
+pub struct Playlist {
+    pub queue: Vec<PlaylistFileInfo>,
+
+    pub currently_playing_file: Option<PlaylistFileInfo>,
 }
 
 /// Upstream source that a `Restream` receives a live stream from.

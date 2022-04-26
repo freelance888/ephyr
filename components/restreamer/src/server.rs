@@ -836,16 +836,18 @@ pub mod statistics {
                             // computed among all the available network
                             // interfaces
                             for netif in netifs.values() {
-                                let netstats =
-                                    sys.network_stats(&netif.name).unwrap();
-                                // in megabytes
-                                tx += netstats.tx_bytes.as_u64() as f64
-                                    / 1024.0
-                                    / 1024.0;
-                                // in megabytes
-                                rx += netstats.rx_bytes.as_u64() as f64
-                                    / 1024.0
-                                    / 1024.0;
+                                if let Ok(netstats) =
+                                    sys.network_stats(&netif.name)
+                                {
+                                    // in megabytes
+                                    tx += netstats.tx_bytes.as_u64() as f64
+                                        / 1024.0
+                                        / 1024.0;
+                                    // in megabytes
+                                    rx += netstats.rx_bytes.as_u64() as f64
+                                        / 1024.0
+                                        / 1024.0;
+                                }
                             }
 
                             // Compute delta

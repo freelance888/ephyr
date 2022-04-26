@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    file_manager::{FileInfo, FileState},
+    file_manager::{LocalFileInfo, FileState},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
     types::DroppableAbortHandle,
@@ -403,7 +403,7 @@ impl RestreamerKind {
         input: &state::Input,
         endpoint: &state::InputEndpoint,
         key: &state::RestreamKey,
-        files: &[FileInfo],
+        files: &[LocalFileInfo],
         file_root: &Path,
     ) -> Option<Self> {
         if !input.enabled {

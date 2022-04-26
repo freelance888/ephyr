@@ -38,7 +38,7 @@ impl FileManager {
                 .for_each(|file_res| {
                     if let Ok(file) = file_res {
                         if let Ok(filename) = file.file_name().into_string() {
-                            files.push(FileInfo {
+                            files.push(LocalFileInfo {
                                 file_id: filename.clone(),
                                 name: None,
                                 state: FileState::Local,
@@ -97,7 +97,7 @@ impl FileManager {
     pub fn need_file(&self, file_id: &str) {
         let mut all_files = self.state.files.lock_mut();
         if !all_files.iter().any(|file| file.file_id == file_id) {
-            let new_file = FileInfo {
+            let new_file = LocalFileInfo {
                 file_id: file_id.to_string(),
                 name: None,
                 state: FileState::Pending,
@@ -125,7 +125,7 @@ impl FileManager {
         )
         .await
         .map_err(|_err| "No valid response from the API")?
-        .json::<FileInfoResponse>()
+        .json::<api_response::FileNameResponse>()
         .await
         .map_err(|_err| "Could not parse the JSON received from the API")?
         .name;
@@ -363,19 +363,49 @@ impl FileManager {
 #[derive(
     Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
 )]
-pub struct FileInfo {
+pub struct LocalFileInfo {
     /// ID of the file
     pub file_id: String,
 
     /// Name of the file if API call for the name was successful
-    name: Option<String>,
+    pub name: Option<String>,
 
     /// State of the file
     pub state: FileState,
 
     /// If the file is downloading the state of the download
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    download_state: Option<DownloadState>,
+    pub download_state: Option<DownloadState>,
+}
+
+impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
+    fn from(file_response: ExtendedFileInfoResponse) -> Self {
+        LocalFileInfo {
+            file_id: file_response.id,
+            name: Some(file_response.name),
+            state: FileState::Pending,
+            download_state: None,
+        }
+    }
+}
+
+#[derive(
+Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
+)]
+pub struct PlaylistFileInfo {
+    pub file_id: String,
+    pub name: String,
+    pub was_played: bool,
+}
+
+impl From<api_response::ExtendedFileInfoResponse> for PlaylistFileInfo {
+    fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
+        PlaylistFileInfo {
+            file_id: file_response.id,
+            name: file_response.name,
+            was_played: false,
+        }
+    }
 }
 
 /// State in which the file represented by [`FileInfo`] can be in
@@ -432,9 +462,71 @@ where
     }
 }
 
-/// Used to deserialize Google API call for the file details
-#[derive(Deserialize)]
-struct FileInfoResponse {
-    /// Name of the file
-    name: String,
+mod api_response {
+    use serde::{Deserialize, Serialize};
+
+    /// Used to deserialize Google API call for the file details
+    #[derive(Deserialize)]
+    pub struct FileNameResponse {
+        /// Name of the file
+        pub name: String,
+    }
+
+    #[derive(Deserialize,Debug)]
+    pub struct ExtendedFileInfoResponse {
+        pub id: String,
+        pub name: String,
+        pub mime_type: String,
+    }
+
+    impl ExtendedFileInfoResponse {
+        pub fn is_dir(&self) -> bool {
+            self.mime_type == "application/vnd.google-apps.folder"
+        }
+
+        pub fn is_video(&self) -> bool {
+            self.mime_type.starts_with("video")
+        }
+    }
+
+    // - folders are shared by link or by mail
+    // - load files -> meaning just list of files or also download the physical files
+    // - manage -> just remove locally (from list, from storage) or also from gdrive
+    //          -> reorder - playlist?
+    // what kind of api (probably json), on separate port?
+    // when playing files should the language be taken into account -> name searching and matching
+    // showing the available files in dashboard or in ephyr
+
+    #[derive(Deserialize)]
+    pub struct FileListResponse {
+        pub kind: String,
+        pub incomplete_search: bool,
+        pub files: Vec<ExtendedFileInfoResponse>,
+    }
+
+    impl FileListResponse {
+        pub async fn retrieve_dir_content_from_api(api_key: &str, dir_id: &str) -> Result<Self, &'static str> {
+            let mut dir_content = reqwest::get(
+                format!(
+                    "https://www.googleapis.com/drive/v3/files?\
+                     key={}&q='{}'%20in%20parents&\
+                     fields=files/id,files/name,files/mimeType",
+                    api_key,
+                    dir_id
+                )
+                    .as_str(),
+            )
+                .await
+                .map_err(|_err| "No valid response from the API")?
+                .json::<Self>()
+                .await
+                .map_err(|_err| "Could not parse the JSON received from the API")?;
+            Ok(dir_content)
+        }
+
+        pub fn filter_only_video_files(&mut self) {
+            self.files.retain(|file_info| file_info.is_video());
+        }
+    }
 }
+

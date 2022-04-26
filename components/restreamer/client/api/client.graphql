@@ -100,6 +100,81 @@ subscription State {
     }
 }
 
+subscription Restream($restreamId: RestreamId!) {
+    restream(restreamId: $restreamId) {
+        id
+        key
+        label
+        input {
+            id
+            key
+            endpoints {
+                id
+                kind
+                status
+                label
+                fileId
+            }
+            src {
+                ... on RemoteInputSrc {
+                    url
+                    label
+                }
+                ... on FailoverInputSrc {
+                    inputs {
+                        id
+                        key
+                        endpoints {
+                            id
+                            kind
+                            status
+                            label
+                            fileId
+                        }
+                        src {
+                            ... on RemoteInputSrc {
+                                url
+                                label
+                            }
+                        }
+                        enabled
+                    }
+                }
+            }
+            enabled
+        }
+        outputs {
+            id
+            dst
+            label
+            previewUrl
+            volume {
+                level
+                muted
+            }
+            mixins {
+                id
+                src
+                volume {
+                    level
+                    muted
+                }
+                delay
+            }
+            enabled
+            status
+        }
+        playlist {
+            currently_playing
+            queue {
+                fileId
+                name
+                was_played
+            }
+        }
+    }
+}
+
 query DvrFiles($id: OutputId!) {
     dvrFiles(id: $id)
 }
@@ -140,6 +215,18 @@ mutation SetRestream(
 
 mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
+}
+
+mutation SetPlaylist($id: RestreamId!, $playlist: [String]!) {
+    setPlaylist(restreamId: $input_id, playlist: $playlist)
+}
+
+mutation PlayFileFromPlaylist($id: RestreamId!, $file_id: String!) {
+    playFileFromPlaylist(restreamId: $id, fileId: $file_id)
+}
+
+mutation GetPlaylistFromDrive($id: RestreamId!, $folder_id: String!) {
+    getPlaylistFromDrive(restreamId: $id, folderId: $folder_id)
 }
 
 mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {

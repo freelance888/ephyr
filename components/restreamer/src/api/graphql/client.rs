@@ -7,6 +7,7 @@ use std::collections::HashSet;
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
 use futures::stream::BoxStream;
+use futures::{StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -25,7 +26,7 @@ use crate::{
 
 use super::Context;
 use crate::{
-    file_manager::FileInfo,
+    file_manager::LocalFileInfo,
     state::{EndpointId, ServerInfo, VolumeLevel},
 };
 use url::Url;
@@ -287,6 +288,20 @@ impl MutationsRoot {
     )))]
     fn disable_restream(id: RestreamId, context: &Context) -> Option<bool> {
         context.state().disable_restream(id)
+    }
+
+    fn set_playlist(restream_id: RestreamId, playlist: Vec<String>, context: &Context) -> Option<bool> {
+        return Some(true);
+    }
+
+    /// Starts playing the provided file from playlist
+    fn play_file_from_playlist(restream_id: RestreamId, file_id: String, context: &Context) -> Option<bool> {
+        return Some(true);
+    }
+
+    /// Sends request to Google API and appends found files to the provided restream's playlist
+    fn get_playlist_from_drive(restream_id: RestreamId, folder_id: String, context: &Context) -> Option<bool> {
+        return Some(true);
     }
 
     /// Enables an `Input` by its `id`.
@@ -983,13 +998,24 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn files(context: &Context) -> BoxStream<'static, Vec<FileInfo>> {
+    async fn files(context: &Context) -> BoxStream<'static, Vec<LocalFileInfo>> {
         context
             .state()
             .files
             .signal_cloned()
             .dedupe_cloned()
             .to_stream()
+            .boxed()
+    }
+
+    async fn restream(id: RestreamId, context: &Context) -> BoxStream<'static, Restream> {
+        context
+            .state()
+            .restreams
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .filter_map(move |vec| async move {vec.iter().find(|r| r.id == id).cloned()})
             .boxed()
     }
 }
