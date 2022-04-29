@@ -118,3 +118,11 @@ export const getYoutubeVideoID = (url: string): string | undefined => {
 export const isNumber = (value: unknown): boolean => {
   return typeof value == 'number';
 };
+
+export const isFailoverInput = (input: any) => {
+  return !!input && !!input.src && input.src.__typename === 'FailoverInputSrc';
+};
+
+export const escapeRegExp = (str: string) => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+};

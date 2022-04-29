@@ -3,7 +3,7 @@
 
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
-  import { showError } from '../utils/util';
+  import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
@@ -13,8 +13,9 @@
   import { getAggregatedStreamsData } from '../utils/allHelpers.util';
   import { statusesList } from '../constants/statuses';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import Restream from './Restream.svelte';
+  import cloneDeep from 'lodash/cloneDeep';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -27,12 +28,85 @@
   export let info;
   export let files;
 
-  $: allReStreams = $state.data.allRestreams;
+  let searchInInputs = true;
+  let searchInOutputs = true;
+
+  const searchQueryKey = 'search';
+  let params = new URLSearchParams(location.search);
+  const searchString = params.get(searchQueryKey);
+  let searchText = decodeURIComponent(searchString ? searchString : '');
+
+  $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
   $: globalInputsFilters = [];
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
+
+  $: {
+    allReStreams = getFilteredRestreams(
+      searchText,
+      $state.data.allRestreams,
+      searchInInputs,
+      searchInOutputs
+    );
+  }
+
+  const storeSearchTextInQueryParams = () => {
+    if (searchText) {
+      const queryParams = new URLSearchParams();
+      queryParams.set(searchQueryKey, encodeURIComponent(searchText));
+      history.replaceState(null, null, '?' + queryParams.toString());
+    } else {
+      history.replaceState(null, null, '/');
+    }
+  };
+
+  const getFilteredRestreams = (
+    substring,
+    originalRestreams,
+    onlyInInputs,
+    onlyInOutputs
+  ) => {
+    storeSearchTextInQueryParams();
+
+    if (!substring) {
+      return originalRestreams;
+    }
+
+    // Case-insensitive search
+    const regex = new RegExp(escapeRegExp(substring), 'i');
+
+    return cloneDeep(originalRestreams).filter((x) => {
+      let foundOutputs = [];
+      if (onlyInOutputs) {
+        foundOutputs = x.outputs.filter((o) => o.label && regex.test(o.label));
+        if (foundOutputs.length) {
+          x.outputs = foundOutputs;
+        }
+      }
+
+      const hasRestreamLabel = onlyInInputs && x.label && regex.test(x.label);
+      const hasInputLabel =
+        onlyInInputs &&
+        x.input.endpoints.filter((e) => e.label && regex.test(e.label)).length >
+          0;
+
+      const hasFailoverInputLabel =
+        onlyInInputs &&
+        isFailoverInput(x.input) &&
+        x.input.src.inputs
+          .flatMap((x) => x.endpoints)
+          .filter((e) => e.label && regex.test(e.label)).length > 0;
+
+      return (
+        hasRestreamLabel ||
+        hasInputLabel ||
+        hasFailoverInputLabel ||
+        foundOutputs.length
+      );
+    });
+  };
 
   let currentHash = undefined;
   onDestroy(
@@ -68,12 +142,25 @@
   }
 
   let openPasswordOutputModal = false;
+
+  function onChangeSearchInInput() {
+    if (!searchInInputs && !searchInOutputs) {
+      searchInInputs = true;
+    }
+  }
+
+  function onChangeSearchInOutputs() {
+    if (!searchInInputs && !searchInOutputs) {
+      searchInOutputs = true;
+    }
+  }
 </script>
 
 <template>
   <OutputModal />
+
   <section class="uk-section-muted toolbar">
-    <span class="section-label">ALL</span>
+    <span class="section-label">Filters</span>
     <div class="uk-grid uk-grid-small">
       <div class="uk-width-1-2@m uk-width-1-3@s">
         <span class="toolbar-label total-inputs-label">
@@ -173,6 +260,36 @@
         </Confirm>
       </div>
     </div>
+
+    <input
+      class="uk-input uk-width-1-3 uk-margin-small-top"
+      bind:value={searchText}
+      placeholder="Search by labels (regex)"
+    />
+    <button
+      type="button"
+      class="clear-search"
+      uk-close
+      on:click={() => (searchText = '')}
+    />
+    <div class="uk-margin-small-top">
+      <label>
+        <input
+          class="uk-checkbox"
+          bind:checked={searchInInputs}
+          on:change={onChangeSearchInInput}
+          type="checkbox"
+        /> in inputs
+      </label>
+      <label>
+        <input
+          class="uk-checkbox uk-margin-small-left"
+          bind:checked={searchInOutputs}
+          on:change={onChangeSearchInOutputs}
+          type="checkbox"
+        /> in outputs
+      </label>
+    </div>
   </section>
 
   {#each allReStreams as restream}
@@ -203,4 +320,8 @@
     &:hover
       color: #444
 
+  .clear-search
+    position: relative
+    left: -30px;
+    top: 4px;
 </style>

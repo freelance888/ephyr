@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
 use futures::stream::BoxStream;
-use futures::{StreamExt};
+use futures::StreamExt;
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -25,12 +25,12 @@ use crate::{
 };
 
 use super::Context;
+use crate::file_manager::get_drive_folder;
 use crate::{
     file_manager::LocalFileInfo,
     state::{EndpointId, ServerInfo, VolumeLevel},
 };
 use url::Url;
-use crate::file_manager::get_drive_folder;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -291,22 +291,43 @@ impl MutationsRoot {
         context.state().disable_restream(id)
     }
 
-    fn set_playlist(restream_id: RestreamId, playlist: Vec<String>, context: &Context) -> Option<bool> {
+    fn set_playlist(
+        restream_id: RestreamId,
+        playlist: Vec<String>,
+        context: &Context,
+    ) -> Option<bool> {
         return Some(true);
     }
 
     /// Starts playing the provided file from playlist
-    fn play_file_from_playlist(restream_id: RestreamId, file_id: String, context: &Context) -> Option<bool> {
+    fn play_file_from_playlist(
+        restream_id: RestreamId,
+        file_id: String,
+        context: &Context,
+    ) -> Option<bool> {
         return Some(true);
     }
 
     /// Sends request to Google API and appends found files to the provided restream's playlist
-    async fn get_playlist_from_drive(restream_id: RestreamId, folder_id: String, context: &Context) -> Option<bool> {
-        let api_key = context.state().settings.lock_mut().google_api_key.clone()?;
-        if let Ok(mut playlist_files) = get_drive_folder(&api_key, &folder_id).await {
-            context.state().restreams.lock_mut().iter_mut()
+    async fn get_playlist_from_drive(
+        restream_id: RestreamId,
+        folder_id: String,
+        context: &Context,
+    ) -> Option<bool> {
+        let api_key =
+            context.state().settings.lock_mut().google_api_key.clone()?;
+        if let Ok(mut playlist_files) =
+            get_drive_folder(&api_key, &folder_id).await
+        {
+            context
+                .state()
+                .restreams
+                .lock_mut()
+                .iter_mut()
                 .find(|r| r.id == restream_id)?
-                .playlist.queue.append(playlist_files.as_mut());
+                .playlist
+                .queue
+                .append(playlist_files.as_mut());
             Some(true)
         } else {
             None
@@ -1007,7 +1028,9 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn files(context: &Context) -> BoxStream<'static, Vec<LocalFileInfo>> {
+    async fn files(
+        context: &Context,
+    ) -> BoxStream<'static, Vec<LocalFileInfo>> {
         context
             .state()
             .files
@@ -1017,14 +1040,19 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn restream(id: RestreamId, context: &Context) -> BoxStream<'static, Restream> {
+    async fn restream(
+        id: RestreamId,
+        context: &Context,
+    ) -> BoxStream<'static, Restream> {
         context
             .state()
             .restreams
             .signal_cloned()
             .dedupe_cloned()
             .to_stream()
-            .filter_map(move |vec| async move {vec.iter().find(|r| r.id == id).cloned()})
+            .filter_map(move |vec| async move {
+                vec.iter().find(|r| r.id == id).cloned()
+            })
             .boxed()
     }
 }
