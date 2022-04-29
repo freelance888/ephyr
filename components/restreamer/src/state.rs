@@ -14,7 +14,11 @@ use std::{
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
 use ephyr_log::log;
-use futures::{future::TryFutureExt as _, sink, stream::{StreamExt as _, TryStreamExt as _}};
+use futures::{
+    future::TryFutureExt as _,
+    sink,
+    stream::{StreamExt as _, TryStreamExt as _},
+};
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
     graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
@@ -28,10 +32,12 @@ use tokio::{fs, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
 
-use crate::{display_panic, serde::is_false, spec, srs, Spec};
+use crate::{
+    display_panic, file_manager::LocalFileInfo, serde::is_false, spec, srs, Spec,
+};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use crate::file_manager::FileInfo;
+use crate::file_manager::PlaylistFileInfo;
 
 /// Server's settings.
 ///
@@ -172,8 +178,9 @@ pub struct State {
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 
+    /// List of the files that are used as sources of video
     #[serde(skip)]
-    pub files: Mutable<Vec<FileInfo>>,
+    pub files: Mutable<Vec<LocalFileInfo>>,
 }
 
 impl State {
@@ -966,6 +973,8 @@ pub struct Restream {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
 
+    pub playlist: Playlist,
+
     /// `Input` that a live stream is received from.
     pub input: Input,
 
@@ -985,6 +994,10 @@ impl Restream {
             label: spec.label,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
+            playlist: Playlist {
+                queue: vec![],
+                currently_playing_file: None
+            }
         }
     }
 
@@ -1143,6 +1156,15 @@ impl PartialEq<str> for RestreamKey {
     }
 }
 
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize, Default
+)]
+pub struct Playlist {
+    pub queue: Vec<PlaylistFileInfo>,
+
+    pub currently_playing_file: Option<PlaylistFileInfo>,
+}
+
 /// Upstream source that a `Restream` receives a live stream from.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
@@ -1235,7 +1257,7 @@ impl Input {
             (None, Some(new)) => self.src = Some(InputSrc::new(new)),
             _ => self.src = None,
         }
-    } // Ask whether file should be additional endpoint or instead of backup
+    }
 
     /// Exports this [`Input`] as a [`spec::v1::Input`].
     #[must_use]
@@ -1333,7 +1355,7 @@ impl Input {
     }
 }
 
-        /// Endpoint of an `Input` serving a live stream for `Output`s and clients.
+/// Endpoint of an `Input` serving a live stream for `Output`s and clients.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
@@ -1350,6 +1372,8 @@ pub struct InputEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
 
+    /// If the endpoint is of type FILE, then this contains
+    /// the file ID that is in the ['State::files']
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 
@@ -1397,6 +1421,7 @@ impl InputEndpoint {
     pub fn apply(&mut self, new: spec::v1::InputEndpoint) {
         self.kind = new.kind;
         self.label = new.label;
+        self.file_id = new.file_id;
     }
 
     /// Exports this [`InputEndpoint`] as a [`spec::v1::InputEndpoint`].
@@ -1415,7 +1440,7 @@ impl InputEndpoint {
     #[inline]
     #[must_use]
     pub fn is_rtmp(&self) -> bool {
-        matches!(self.kind, InputEndpointKind::Rtmp) || matches!(self.kind, InputEndpointKind::File)
+        matches!(self.kind, InputEndpointKind::Rtmp)
     }
 
     /// Indicates whether this [`InputEndpoint`] is an
@@ -1736,8 +1761,8 @@ impl InputSrcUrl {
             "rtmp" | "rtmps" => url.has_host(),
             "http" | "https" => {
                 url.has_host()
-                    // && Path::new(url.path()).extension()
-                    //     == Some("m3u8".as_ref())
+                // && Path::new(url.path()).extension()
+                //     == Some("m3u8".as_ref())
             }
             _ => false,
         }

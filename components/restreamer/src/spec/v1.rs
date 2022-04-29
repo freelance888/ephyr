@@ -171,10 +171,13 @@ impl<'de> Deserialize<'de> for Input {
                 )));
             }
         }
-        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp) {
+        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp)
+            && !unique_endpoints.contains(&state::InputEndpointKind::File)
+        {
             return Err(D::Error::custom(format!(
-                "Input.endpoints should contain at least one {} endpoint",
+                "Input.endpoints should contain at least one {} or {} endpoint",
                 state::InputEndpointKind::Rtmp,
+                state::InputEndpointKind::File,
             )));
         }
 
@@ -242,6 +245,7 @@ pub struct InputEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<state::Label>,
 
+    /// If the endpoint has kind FILE then this contains the file ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 }

@@ -3,11 +3,11 @@
 //! [GraphQL]: https://graphql.com
 
 use std::collections::HashSet;
-use ephyr_log::log;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
 use futures::stream::BoxStream;
+use futures::{StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -25,9 +25,12 @@ use crate::{
 };
 
 use super::Context;
-use crate::state::{EndpointId, ServerInfo, VolumeLevel};
+use crate::{
+    file_manager::LocalFileInfo,
+    state::{EndpointId, ServerInfo, VolumeLevel},
+};
 use url::Url;
-use crate::file_manager::FileInfo;
+use crate::file_manager::get_drive_folder;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -160,31 +163,28 @@ impl MutationsRoot {
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let input_src = if with_backup {
-            let mut inputs = vec![
-                spec::v1::Input {
-                    id: None,
-                    key: InputKey::new("main").unwrap(),
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::Rtmp,
-                        label: None,
-                        file_id: None,
-                    }],
-                    src: src.map(spec::v1::InputSrc::RemoteUrl),
-                    enabled: true,
-                },
-            ];
-            //todo change this to regular if without unwrapping if the file_id property stays
-            if let Some(f_id) = file_id {
-                log::info!("setting restream: found file_id");
+            let mut inputs = vec![spec::v1::Input {
+                id: None,
+                key: InputKey::new("main").unwrap(),
+                endpoints: vec![spec::v1::InputEndpoint {
+                    kind: InputEndpointKind::Rtmp,
+                    label: None,
+                    file_id: None,
+                }],
+                src: src.map(spec::v1::InputSrc::RemoteUrl),
+                enabled: true,
+            }];
+
+            if file_id.is_some() {
                 inputs.push(spec::v1::Input {
                     id: None,
                     key: InputKey::new("backup").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::File,
                         label: None,
-                        file_id: Some(f_id),
+                        file_id,
                     }],
-                    src: None, //Some(spec::v1::InputSrc::RemoteUrl(InputSrcUrl::new(Url::from_str(std::format!("https://www.googleapis.com/drive/v3/files/{}?alt=media&key=AIzaSyAODM0BGyH8y86brt-S2mu2sRmjyzwqra4", f_id).as_str()).unwrap()).unwrap())),
+                    src: None,
                     enabled: true,
                 });
             } else {
@@ -194,7 +194,7 @@ impl MutationsRoot {
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
                         label: None,
-                        file_id: None
+                        file_id: None,
                     }],
                     src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
@@ -205,17 +205,16 @@ impl MutationsRoot {
             src.map(spec::v1::InputSrc::RemoteUrl)
         };
 
-        let mut endpoints =
-            vec![spec::v1::InputEndpoint {
-                kind: InputEndpointKind::Rtmp,
-                label: None,
-                file_id: None
-            }];
+        let mut endpoints = vec![spec::v1::InputEndpoint {
+            kind: InputEndpointKind::Rtmp,
+            label: None,
+            file_id: None,
+        }];
         if with_hls {
             endpoints.push(spec::v1::InputEndpoint {
                 kind: InputEndpointKind::Hls,
                 label: None,
-                file_id: None
+                file_id: None,
             });
         }
 
@@ -290,6 +289,28 @@ impl MutationsRoot {
     )))]
     fn disable_restream(id: RestreamId, context: &Context) -> Option<bool> {
         context.state().disable_restream(id)
+    }
+
+    fn set_playlist(restream_id: RestreamId, playlist: Vec<String>, context: &Context) -> Option<bool> {
+        return Some(true);
+    }
+
+    /// Starts playing the provided file from playlist
+    fn play_file_from_playlist(restream_id: RestreamId, file_id: String, context: &Context) -> Option<bool> {
+        return Some(true);
+    }
+
+    /// Sends request to Google API and appends found files to the provided restream's playlist
+    async fn get_playlist_from_drive(restream_id: RestreamId, folder_id: String, context: &Context) -> Option<bool> {
+        let api_key = context.state().settings.lock_mut().google_api_key.clone()?;
+        if let Ok(mut playlist_files) = get_drive_folder(&api_key, &folder_id).await {
+            context.state().restreams.lock_mut().iter_mut()
+                .find(|r| r.id == restream_id)?
+                .playlist.queue.append(playlist_files.as_mut());
+            Some(true)
+        } else {
+            None
+        }
     }
 
     /// Enables an `Input` by its `id`.
@@ -447,13 +468,9 @@ impl MutationsRoot {
             }
         }
 
-        let existing_output;
-        if let Some(&id_unwrap) = id.as_ref() {
-            existing_output =
-                context.state().get_output(restream_id, id_unwrap);
-        } else {
-            existing_output = None;
-        }
+        let existing_output = id.as_ref().and_then(|output_id| {
+            context.state().get_output(restream_id, *output_id)
+        });
         let mut original_volume = Volume::ORIGIN.export();
         if let Some(output) = existing_output.as_ref() {
             if !mixins.is_empty() {
@@ -990,10 +1007,25 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn files(
-        context: &Context,
-    ) -> BoxStream<'static, Vec<FileInfo>> {
-        context.state().files.signal_cloned().dedupe_cloned().to_stream().boxed()
+    async fn files(context: &Context) -> BoxStream<'static, Vec<LocalFileInfo>> {
+        context
+            .state()
+            .files
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    async fn restream(id: RestreamId, context: &Context) -> BoxStream<'static, Restream> {
+        context
+            .state()
+            .restreams
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .filter_map(move |vec| async move {vec.iter().find(|r| r.id == id).cloned()})
+            .boxed()
     }
 }
 

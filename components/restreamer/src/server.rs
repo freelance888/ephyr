@@ -8,9 +8,10 @@ use tokio::{fs, time};
 
 use crate::{
     cli::{Failure, Opts},
-    client_stat, dvr, ffmpeg, srs, teamspeak, State,
+    client_stat, dvr, ffmpeg,
+    file_manager::FileManager,
+    srs, teamspeak, State,
 };
-use crate::file_manager::FileManager;
 
 /// Initializes and runs all application's HTTP servers.
 ///
@@ -62,8 +63,11 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     );
 
-    let mut restreamers =
-        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+    let mut restreamers = ffmpeg::RestreamersPool::new(
+        ffmpeg_path,
+        state.clone(),
+        cfg.file_root.clone(),
+    );
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
         restreamers.apply(&restreams);
         future::ready(())
@@ -832,16 +836,18 @@ pub mod statistics {
                             // computed among all the available network
                             // interfaces
                             for netif in netifs.values() {
-                                let netstats =
-                                    sys.network_stats(&netif.name).unwrap();
-                                // in megabytes
-                                tx += netstats.tx_bytes.as_u64() as f64
-                                    / 1024.0
-                                    / 1024.0;
-                                // in megabytes
-                                rx += netstats.rx_bytes.as_u64() as f64
-                                    / 1024.0
-                                    / 1024.0;
+                                if let Ok(netstats) =
+                                    sys.network_stats(&netif.name)
+                                {
+                                    // in megabytes
+                                    tx += netstats.tx_bytes.as_u64() as f64
+                                        / 1024.0
+                                        / 1024.0;
+                                    // in megabytes
+                                    rx += netstats.rx_bytes.as_u64() as f64
+                                        / 1024.0
+                                        / 1024.0;
+                                }
                             }
 
                             // Compute delta
