@@ -51,6 +51,7 @@
     "stylus-loader": "^4.3",
     "svelte": "^3.0",
     "svelte-check": "^1.1",
+    "svelte-dnd-action": "^0.8.9",
     "svelte-loader": "^2.13",
     "svelte-preprocess": "^4.6",
     "ts-loader": "^8.0",

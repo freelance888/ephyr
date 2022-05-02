@@ -299,6 +299,26 @@ impl MutationsRoot {
         return Some(true);
     }
 
+    // fn stop_playing_file_from_playlist(
+    //     restream_id: RestreamId,
+    //     file_id: String,
+    //     context: &Context,
+    // ) -> Option<bool> {
+    //     // context
+    //     //     .state()
+    //     //     .restreams
+    //     //     .lock_mut()
+    //     //     .iter_mut()
+    //     //     .find(|r| r.id == restream_id)?
+    //     //     .playlist
+    //     //     .queue
+    //     //     .iter_mut()
+    //     //     .find(|f| f.file_id == file_id)
+    //     //     .and_then(|mut f| f)
+    //     //
+    //     // Some(true)
+    // }
+
     /// Starts playing the provided file from playlist
     fn play_file_from_playlist(
         restream_id: RestreamId,

@@ -1,6 +1,7 @@
 <script lang='js'>
   import orderBy from 'lodash/orderBy';
   import Confirm from './common/Confirm.svelte';
+  import { dndzone } from 'svelte-dnd-action';
 
   $: playlist = [];
 
@@ -73,6 +74,10 @@
     playlist = getOrderedPlaylist(playlist);
   }
 
+  function handleSort(e) {
+    playlist = e.detail.items;
+  }
+
 </script>
 
 <template>
@@ -96,9 +101,10 @@
       </button>
 
     </div>
-    <div class='playlist-items'>
 
-        {#each playlist as item}
+    <div class='playlist-items' use:dndzone={{items: playlist}} on:consider={handleSort} on:finalize={handleSort} >
+
+        {#each playlist as item(item.id)}
           <div class='item'>
             <span class='item-drag-zone uk-icon' uk-icon='table'></span>
 
