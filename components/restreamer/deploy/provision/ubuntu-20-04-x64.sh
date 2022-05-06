@@ -25,7 +25,7 @@ curl -sL https://get.docker.com | bash -s
 # Login to custom Docker Registry if provided
 REGISTRY_USER=${REGISTRY_USER:-0}
 REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
-REGISTRY_URL=${REGISTRY_URL:'docker.io'}
+REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
 if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != "docker.io" ]]; then
   docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
 fi
