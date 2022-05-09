@@ -3,6 +3,9 @@
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
+  let dragDisabled = true;
+  const flipDurationMs = 200;
+
   $: playlist = [];
 
   let remote_playlist = [{
@@ -74,8 +77,16 @@
     playlist = getOrderedPlaylist(playlist);
   }
 
+
   function handleSort(e) {
     playlist = e.detail.items;
+    dragDisabled = true;
+  }
+
+  function startDrag(e) {
+    // preventing default to prevent lag on touch devices (because of the browser checking for screen scrolling)
+    e.preventDefault();
+    dragDisabled = false;
   }
 
 </script>
@@ -102,11 +113,11 @@
 
     </div>
 
-    <div class='playlist-items' use:dndzone={{items: playlist}} on:consider={handleSort} on:finalize={handleSort} >
+    <div class='playlist-items' use:dndzone={{items: playlist, dragDisabled, flipDurationMs}} on:consider={handleSort} on:finalize={handleSort} >
 
         {#each playlist as item(item.id)}
           <div class='item'>
-            <span class='item-drag-zone uk-icon' uk-icon='table'></span>
+            <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
 
             <Confirm let:confirm>
               <span slot="title">{item.isPlaying ? 'Stop' : 'Start'} playing file</span>
@@ -160,9 +171,8 @@
     margin-top: 8px
 
     & > *
+      margin-top: 4px;
       border-top: 1px solid #ddd
-
-    & > *:last-child
       border-bottom: 1px solid #ddd
 
   .item
@@ -183,6 +193,7 @@
       padding: 8px
 
   .item-drag-zone
+    padding: 8px
     cursor: grab
 
   .item-icon
