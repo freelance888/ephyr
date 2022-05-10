@@ -113,7 +113,7 @@
 
     </div>
 
-    <div class='playlist-items' use:dndzone={{items: playlist, dragDisabled, flipDurationMs}} on:consider={handleSort} on:finalize={handleSort} >
+    <div class='playlist-items' use:dndzone={{items: playlist, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
 
         {#each playlist as item(item.id)}
           <div class='item'>
@@ -158,6 +158,10 @@
 </template>
 
 <style lang='stylus'>
+  :global(.drop-target) {
+    outline: none !important;
+  }
+
   .google-drive-dir
     input
       max-width: 500px
@@ -172,8 +176,7 @@
 
     & > *
       margin-top: 4px;
-      border-top: 1px solid #ddd
-      border-bottom: 1px solid #ddd
+      border: 1px solid #ddd
 
   .item
     display: flex
