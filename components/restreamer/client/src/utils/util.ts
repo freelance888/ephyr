@@ -126,3 +126,8 @@ export const isFailoverInput = (input: any) => {
 export const escapeRegExp = (str: string) => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+export const getFullStreamUrl = (restremId: string, outputId: string) => {
+  return `/full-stream?tran_restream_id=${restremId}&parent_output_id=${outputId}`;
+}
+

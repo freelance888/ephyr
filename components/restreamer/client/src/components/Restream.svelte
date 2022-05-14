@@ -16,7 +16,7 @@
     Info,
   } from '../../api/client.graphql';
 
-  import { showError } from '../utils/util';
+  import { getFullStreamUrl, showError } from '../utils/util';
   import { statusesList } from '../constants/statuses';
 
   import { restreamModal, outputModal, exportModal } from '../stores';
@@ -43,6 +43,7 @@
   export let hidden = false;
   export let files;
   export let isFullView = false;
+  export let parentOutputId;
 
   let outputMutations = {
     DisableOutput,
@@ -155,6 +156,7 @@
       );
     }
   }
+
 </script>
 
 <template>
@@ -200,8 +202,8 @@
 
     <div class='uk-float-right uk-flex uk-flex-column uk-flex-bottom'>
       <a
-        href="/full-stream?id={value.id}"
-        hidden={isFullView}
+        href={getFullStreamUrl(value.id, parentOutputId)}
+        hidden={isFullView || !parentOutputId}
         target="_blank"
         title="Open full view"
       >

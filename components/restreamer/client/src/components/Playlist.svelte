@@ -110,11 +110,9 @@
       >
         <i class='uk-icon' uk-icon='cloud-download' />&nbsp;<span>Load files</span>
       </button>
-
     </div>
 
     <div class='playlist-items' use:dndzone={{items: playlist, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
-
         {#each playlist as item(item.id)}
           <div class='item'>
             <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
@@ -147,8 +145,8 @@
             </Confirm>
           </div>
         {:else}
-          <div class='uk-section uk-section-xsmall uk-text-center'>
-            <div>
+          <div class='uk-section uk-section-xsmall uk-text-center uk-padding-remove'>
+            <div class='no-files uk-text-middle'>
               No files in playlist
             </div>
           </div>
@@ -178,11 +176,16 @@
       margin-top: 4px;
       border: 1px solid #ddd
 
+  .no-files
+    line-height: 4em
+    background-color: #fff
+
   .item
     display: flex
     align-items: center
     align-content: left
     min-height: 4em
+    background-color: #fff
 
     &:hover
       background-color: #f8f8f8
