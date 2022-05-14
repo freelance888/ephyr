@@ -95,7 +95,7 @@
   <div class='playlist'>
     <div class='google-drive-dir uk-flex'>
       <label class='uk-flex-none'>
-        Add files from google drive
+        Add files from Google Drive
       </label>
       <input
         bind:value={googleDriveUrl}
@@ -114,7 +114,7 @@
 
     <div class='playlist-items' use:dndzone={{items: playlist, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
         {#each playlist as item(item.id)}
-          <div class='item'>
+          <div class='item uk-card uk-card-default'>
             <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
 
             <Confirm let:confirm>
@@ -133,7 +133,7 @@
                 </div>
             </Confirm>
             <Confirm let:confirm>
-              <span slot="title">Delete file</span>
+              <span slot="title">Delete file from playlist</span>
               <span slot="description">This action will stop playing and delete file from playlist</span>
               <span slot="confirm">Delete</span>
                 <button
@@ -146,7 +146,7 @@
           </div>
         {:else}
           <div class='uk-section uk-section-xsmall uk-text-center uk-padding-remove'>
-            <div class='no-files uk-text-middle'>
+            <div class='no-files uk-text-middle uk-card uk-card-default'>
               No files in playlist
             </div>
           </div>
@@ -174,7 +174,6 @@
 
     & > *
       margin-top: 4px;
-      border: 1px solid #ddd
 
   .no-files
     line-height: 4em

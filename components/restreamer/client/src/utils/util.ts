@@ -73,12 +73,24 @@ export function sanitizeUrl(url: string): string {
   return url.replace(/[\s]+/g, '');
 }
 
+const MixPage = 'mix';
 export function isMixPage(): boolean {
-  const pathname = window.location.pathname;
-  const p = window.location.hash.split('/');
-
-  return pathname === '/mix';
+  return window.location.pathname === `/${MixPage}`;
 }
+
+export const getMixPageUrl = (restreamId: string, outputId: string) => {
+  return `/${MixPage}?id=${restreamId}&output=${outputId}`;
+}
+
+const FullStreamPage = 'full-stream';
+export function isFullStreamPage(): boolean {
+  return window.location.pathname === `/${FullStreamPage}`;
+}
+
+export const getFullStreamUrl = (restreamId: string, parentOutputId: string) => {
+  return `/${FullStreamPage}?tran_restream_id=${restreamId}&parent_output_id=${parentOutputId}`;
+}
+
 
 /**
  * Creates graphQL client for specified apiUrl
@@ -126,8 +138,3 @@ export const isFailoverInput = (input: any) => {
 export const escapeRegExp = (str: string) => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
-
-export const getFullStreamUrl = (restremId: string, outputId: string) => {
-  return `/full-stream?tran_restream_id=${restremId}&parent_output_id=${outputId}`;
-}
-

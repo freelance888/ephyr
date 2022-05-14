@@ -1,6 +1,6 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
-  import { showError, isMixPage } from '../utils/util';
+  import { showError, isMixPage, getMixPageUrl, isFullStreamPage } from '../utils/util';
 
   import { outputModal } from '../stores';
 
@@ -18,6 +18,7 @@
   export let deleteConfirmation;
   export let enableConfirmation;
   export let mutations;
+  export let isReadOnly = false;
 
   const disableOutputMutation = mutations.DisableOutput
     ? mutation(mutations.DisableOutput)
@@ -63,6 +64,7 @@
       value.mixins.map((m) => m.src)
     );
   }
+
 </script>
 
 <template>
@@ -70,10 +72,10 @@
     class="uk-card uk-card-default uk-card-body uk-flex"
     data-testid={value.label}
     class:hidden
-    class:grouped={!isMixPage()}
-    class:uk-margin-left={!isMixPage()}
+    class:grouped={!isReadOnly}
+    class:uk-margin-left={!isReadOnly}
   >
-    {#if !isMixPage()}
+    {#if !isReadOnly}
       <Confirm let:confirm>
         <button
           type="button"
@@ -99,7 +101,7 @@
       <span class="label" title={value.label}>{value.label}</span>
     {/if}
 
-    {#if !isMixPage()}
+    {#if !isReadOnly}
       <div class="left-buttons-area" />
       <a
         class="edit-output"
@@ -170,10 +172,10 @@
       </div>
 
       {#if value.mixins.length > 0}
-        {#if !isMixPage()}
+        {#if !isReadOnly}
           <a
             class="single-view"
-            href="/mix?id={restream_id}&output={value.id}"
+            href={getMixPageUrl(restream_id, value.id)}
             target="_blank"
             title="Open in a separate window"
             ><i class="fas fa-external-link-alt" />

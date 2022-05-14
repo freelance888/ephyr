@@ -2,20 +2,23 @@
   import { createGraphQlClient } from '../utils/util';
 
   import {
+    DisableOutput,
+    EnableOutput,
     Files,
     Info,
+    RemoveOutput,
     ServerInfo,
     State,
-    TuneVolume,
     TuneDelay,
-    DisableOutput,
-    EnableOutput, RemoveOutput
+    TuneVolume
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Restream from './Restream.svelte';
   import Playlist from './Playlist.svelte';
   import Output from './Output.svelte';
+  import RestreamModal from '../modals/RestreamModal.svelte';
+  import OutputModal from '../modals/OutputModal.svelte';
 
   let outputMutations = {
     DisableOutput,
@@ -59,6 +62,7 @@
 </script>
 
 <template>
+
   <Shell
     {isLoading}
     {canRenderMainComponent}
@@ -66,6 +70,8 @@
     serverInfo={sInfo}
   >
     <div slot='main'>
+      <RestreamModal public_host={$info.data.info.publicHost} />
+      <OutputModal/>
       <div class='section-title'>{translationRestream.key}</div>
       <Restream
         public_host={$info.data.info.publicHost}
@@ -75,11 +81,14 @@
         globalOutputsFilters={[]}
       />
       <div class='section-title'>Sound mixer</div>
-      <section class='uk-section uk-section-muted custom-section single-output'>
-        <Output restream_id={parentRestreamWithMixOutput.restreamId} value={parentRestreamWithMixOutput.output} mutations={outputMutations} />
+      <section class='uk-section uk-section-muted single-output'>
+        <Output restream_id={parentRestreamWithMixOutput.restreamId}
+                value={parentRestreamWithMixOutput.output}
+                isReadOnly='true'
+                mutations={outputMutations} />
       </section>
       <div class='section-title'>Playlist</div>
-      <section class='uk-section uk-section-muted custom-section'>
+      <section class='uk-section uk-section-muted uk-padding-remove'>
         <Playlist />
       </section>
 
@@ -94,10 +103,8 @@
     font-size: 1.2rem
     text-transform: uppercase
 
-  .custom-section
-    padding: 10px 20px 20px 0
-
   .single-output
+    padding: 16px
     :global(.volume input)
       width: 90% !important
 </style>
