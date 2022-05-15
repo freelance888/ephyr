@@ -1,5 +1,5 @@
 <script lang='js'>
-  import { createGraphQlClient } from '../utils/util';
+  import { createGraphQlClient, isYoutubeVideo } from '../utils/util';
 
   import {
     DisableOutput,
@@ -19,6 +19,7 @@
   import Output from './Output.svelte';
   import RestreamModal from '../modals/RestreamModal.svelte';
   import OutputModal from '../modals/OutputModal.svelte';
+  import YoutubePlayer from './common/YoutubePlayer.svelte';
 
   let outputMutations = {
     DisableOutput,
@@ -57,12 +58,17 @@
   $: translationRestream = canRenderMainComponent && $state.data.allRestreams.find(x => x.id === translationRestreamId)
   $: parentRestreamWithMixOutput = canRenderMainComponent && $state.data.allRestreams
     .reduce((acc, x) => acc.concat(x.outputs.map(o => ({restreamId: x.id, output: o}))), [])
-    .find(x => x.output.id === parentOutputId)
+    .find(x => x.output.id === parentOutputId);
+
+  $: translationYoutubeUrl = canRenderMainComponent
+    && translationRestream
+    && translationRestream.outputs
+          .filter(x => isYoutubeVideo(x.previewUrl))
+          .map(x => x.previewUrl)[0]
 
 </script>
 
 <template>
-
   <Shell
     {isLoading}
     {canRenderMainComponent}
@@ -91,7 +97,12 @@
       <section class='uk-section uk-section-muted uk-padding-remove'>
         <Playlist />
       </section>
-
+      {#if translationYoutubeUrl}
+        <div class='section-title'>Watch translation</div>
+        <section class="uk-section uk-section-muted video-player">
+          <YoutubePlayer preview_url={translationYoutubeUrl} />
+        </section>
+      {/if}
     </div>
 
   </Shell>
@@ -107,4 +118,10 @@
     padding: 16px
     :global(.volume input)
       width: 90% !important
+
+  .video-player
+    @extend .single-output
+    max-height: 800px
+    min-height: 150px
+
 </style>

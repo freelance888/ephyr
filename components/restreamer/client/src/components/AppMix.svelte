@@ -53,7 +53,7 @@
         </section>
         {#if isYoutubeVideo(output.previewUrl)}
           <section class="uk-section uk-section-muted video-player">
-            <YoutubePlayer {restream_id} preview_url={output.previewUrl} />
+            <YoutubePlayer preview_url={output.previewUrl} />
           </section>
         {/if}
       {/if}

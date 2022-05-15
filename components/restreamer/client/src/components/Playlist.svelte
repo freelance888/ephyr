@@ -45,7 +45,10 @@
       isFinished: false
     }];
 
+  let isSortAsc = true;
   let googleDriveUrl = '';
+  $: hasPlaylistLoaded = playlist.length > 0
+
 
   function getOrderedPlaylist(list) {
     return orderBy(list, ['isFinished', 'isPlaying', 'name'], ['desc', 'desc', 'asc']);
@@ -110,6 +113,11 @@
       >
         <i class='uk-icon' uk-icon='cloud-download' />&nbsp;<span>Load files</span>
       </button>
+    </div>
+    <div class="uk-margin uk-grid-small uk-child-width-auto uk-grid">
+      <span>Sort:</span>
+      <label><input class="uk-radio" type="radio" name="sortRadio" checked={isSortAsc} disabled={!hasPlaylistLoaded} >&nbsp;A-Z</label>
+      <label><input class="uk-radio" type="radio" name="sortRadio" checked={!isSortAsc} disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
     </div>
 
     <div class='playlist-items' use:dndzone={{items: playlist, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
