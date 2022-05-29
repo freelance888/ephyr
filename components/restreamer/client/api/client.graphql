@@ -233,12 +233,16 @@ mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
 }
 
-mutation SetPlaylist($id: RestreamId!, $playlist: [String]!) {
-    setPlaylist(restreamId: $input_id, playlist: $playlist)
+mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [String!]!) {
+    setPlaylist(restreamId: $restreamId, playlist: $fileIds)
 }
 
-mutation PlayFileFromPlaylist($id: RestreamId!, $file_id: String!) {
-    playFileFromPlaylist(restreamId: $id, fileId: $file_id)
+mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: String!) {
+    playFileFromPlaylist(restreamId: $restreamId, fileId: $file_id)
+}
+
+mutation StopPlayingFileFromPlaylist($restreamId: RestreamId!) {
+    stopPlayingFileFromPlaylist(restreamId: $restreamId)
 }
 
 mutation GetPlaylistFromDrive($id: RestreamId!, $folder_id: String!) {

@@ -390,7 +390,7 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
 }
 
 #[derive(
-Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
+    Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
 )]
 pub struct PlaylistFileInfo {
     pub file_id: String,
@@ -462,10 +462,21 @@ where
     }
 }
 
-pub async fn get_drive_folder(api_key: &str, folder_id: &str) -> Result<Vec<PlaylistFileInfo>, &'static str> {
-    let mut response = api_response::FileListResponse::retrieve_dir_content_from_api(api_key, folder_id).await?;
+pub async fn get_drive_folder(
+    api_key: &str,
+    folder_id: &str,
+) -> Result<Vec<PlaylistFileInfo>, &'static str> {
+    let mut response =
+        api_response::FileListResponse::retrieve_dir_content_from_api(
+            api_key, folder_id,
+        )
+        .await?;
     response.filter_only_video_files();
-    Ok(response.files.drain(..).map(|f| PlaylistFileInfo::from(f)).collect())
+    Ok(response
+        .files
+        .drain(..)
+        .map(|f| PlaylistFileInfo::from(f))
+        .collect())
 }
 
 mod api_response {
@@ -478,7 +489,7 @@ mod api_response {
         pub name: String,
     }
 
-    #[derive(Deserialize,Debug)]
+    #[derive(Deserialize, Debug)]
     pub struct ExtendedFileInfoResponse {
         pub id: String,
         pub name: String,
@@ -511,22 +522,24 @@ mod api_response {
     }
 
     impl FileListResponse {
-        pub async fn retrieve_dir_content_from_api(api_key: &str, dir_id: &str) -> Result<Self, &'static str> {
+        pub async fn retrieve_dir_content_from_api(
+            api_key: &str,
+            dir_id: &str,
+        ) -> Result<Self, &'static str> {
             let mut dir_content = reqwest::get(
                 format!(
                     "https://www.googleapis.com/drive/v3/files?\
                      key={}&q='{}'%20in%20parents&\
                      fields=files/id,files/name,files/mimeType",
-                    api_key,
-                    dir_id
+                    api_key, dir_id
                 )
-                    .as_str(),
+                .as_str(),
             )
-                .await
-                .map_err(|_err| "No valid response from the API")?
-                .json::<Self>()
-                .await
-                .map_err(|_err| "Could not parse the JSON received from the API")?;
+            .await
+            .map_err(|_err| "No valid response from the API")?
+            .json::<Self>()
+            .await
+            .map_err(|_err| "Could not parse the JSON received from the API")?;
             Ok(dir_content)
         }
 
@@ -535,4 +548,3 @@ mod api_response {
         }
     }
 }
-

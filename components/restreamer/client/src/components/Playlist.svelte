@@ -3,11 +3,14 @@
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
-  import { GetPlaylistFromDrive } from '../../api/client.graphql';
+  import { GetPlaylistFromDrive, SetPlaylist, PlayFileFromPlaylist, StopPlayingFileFromPlaylist } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromDrive);
+  const setPlaylist = mutation(SetPlaylist);
+  const playFileFromPlaylist = mutation(PlayFileFromPlaylist)
+  const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist)
 
   let dragDisabled = true;
   const flipDurationMs = 200;
@@ -15,90 +18,75 @@
   export let restreamId;
   export let playlist;
 
-  $: queue = playlist ? playlist.queue.map(x => ({id: x.fileId, name: x.name, isPlaying: false, isFinished: false})) : [];
-
-  let remote_playlist = [{
-    id: 1,
-    name: 'File1',
-    isPlaying: false,
-    isFinished: true
-  },
-    {
-      id: 2,
-      name: 'File2',
-      isPlaying: false,
-      isFinished: true
-    },
-    {
-      id: 3,
-      name: 'Потребительский Формат_Consumer Format',
-      isPlaying: true,
-      isFinished: false
-    },
-    {
-      id: 4,
-      name: 'Melting ice and viruses_Таяние льдов и вирусы',
-      isPlaying: false,
-      isFinished: false
-    },
-    {
-      id: 5,
-      name: 'Alternative Sources of Energy_Альтерантивные источники энергии',
-      isPlaying: false,
-      isFinished: false
-    },
-    {
-      id: 6,
-      name: 'Suzuki and Greta. A Scheme of Great Fraud. СО2_Ролик Грета и Сузуки_История великого обмана СО2',
-      isPlaying: false,
-      isFinished: false
-    }];
+  $: queue = playlist
+    ? playlist.queue.map(x => (
+      {
+        id: x.fileId,
+        name: x.name,
+        isPlaying: playlist.currentlyPlayingFile
+          ? playlist.currentlyPlayingFile.fileId === x.fileId
+          : false,
+        wasPlayed: x.wasPlayed
+      }))
+    : [];
+  $: hasPlaylistLoaded = queue && queue.length > 0
 
   let isSortAsc = true;
   let googleDriveFolderId = '';
-  $: hasPlaylistLoaded = queue && queue.length > 0
-
 
   function getOrderedPlaylist(list) {
-    return orderBy(list, ['isFinished', 'isPlaying', 'name'], ['desc', 'desc', 'asc']);
+     return orderBy(list, ['isFinished', 'isPlaying', 'name'], ['desc', 'desc', 'asc']);
   }
 
   async function loadPlaylist(folderId) {
-    //playlist = getOrderedPlaylist(remote_playlist);
     const variables = { id: restreamId, folder_id: folderId };
       try {
          await getPlaylistFromDrive({ variables });
+        googleDriveFolderId = '';
       } catch (e) {
         showError(e.message);
       }
   }
 
-  const getById = (id) => {
-    return queue.find((value) => value.id === id);
-  };
-
-  function deleteFile(id) {
-    queue = queue.filter((value) => {
-      return value.id !== id;
-    });
+  async function deleteFile(id) {
+    const fileIds = queue.filter((value) => value.id !== id).map(x => x.id)
+    await updatePlaylist(fileIds);
   }
 
-  function startStopPlaying(id) {
-    const current = getById(id);
-    queue.forEach(x => {
-      x.isPlaying = x.id === id ? !x.isPlaying : false;
-      if(x.id === id) {
-        x.isFinished = !x.isPlaying;
+  async function updatePlaylist(fileIds) {
+    const variables = { restreamId, fileIds };
+    try {
+      await setPlaylist({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function startStopPlaying(file_id) {
+    try {
+      if (playlist.currentlyPlayingFile) {
+        const variables = { restreamId }
+        await stopPlayingFileFromPlaylist({ variables });
+      } else {
+        const variables = { restreamId, file_id }
+        await playFileFromPlaylist({ variables });
       }
-    })
-    ;
-    queue = getOrderedPlaylist(queue);
-  }
+    } catch (e) {
+      showError(e.message);
+    }
 
+  }
 
   function handleSort(e) {
     queue = e.detail.items;
     dragDisabled = true;
+  }
+
+  async function onDrop(e) {
+    handleSort(e);
+
+    const fileIds = queue.map(x => x.id);
+    await updatePlaylist(fileIds);
   }
 
   function startDrag(e) {
@@ -135,7 +123,7 @@
       <label><input class="uk-radio" type="radio" name="sortRadio" checked={!isSortAsc} disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
     </div>
 
-    <div class='playlist-items' use:dndzone={{items: queue, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
+    <div class='playlist-items' use:dndzone={{items: queue, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={onDrop} >
         {#each queue as item(item.id)}
           <div class='item uk-card uk-card-default'>
             <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
@@ -146,7 +134,7 @@
               <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
                 <div class="item-name uk-height-1-1 uk-width-1-1"
                      class:is-playing={item.isPlaying}
-                     class:is-finished={item.isFinished}
+                     class:is-finished={item.wasPlayed}
                      on:click={() => confirm(() => startStopPlaying(item.id))}
                 >
                   <span class='item-icon uk-icon'

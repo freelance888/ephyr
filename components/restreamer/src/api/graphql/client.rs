@@ -304,17 +304,15 @@ impl MutationsRoot {
             .iter_mut()
             .find_map(|r| {
                 (r.id == restream_id).then(|| {
-                    let files: Vec<PlaylistFileInfo> = r
-                        .playlist
-                        .queue
+                    let files: Vec<PlaylistFileInfo> = playlist
                         .clone()
                         .into_iter()
-                        .filter(|f| {
-                            playlist
+                        .filter_map(|id| {
+                            r.playlist
+                                .queue
                                 .clone()
                                 .into_iter()
-                                .find(|id| id == &f.file_id)
-                                .is_some()
+                                .find(|f| id == f.file_id)
                         })
                         .collect();
 
@@ -327,25 +325,23 @@ impl MutationsRoot {
         Some(true)
     }
 
-    // fn stop_playing_file_from_playlist(
-    //     restream_id: RestreamId,
-    //     file_id: String,
-    //     context: &Context,
-    // ) -> Option<bool> {
-    //     // context
-    //     //     .state()
-    //     //     .restreams
-    //     //     .lock_mut()
-    //     //     .iter_mut()
-    //     //     .find(|r| r.id == restream_id)?
-    //     //     .playlist
-    //     //     .queue
-    //     //     .iter_mut()
-    //     //     .find(|f| f.file_id == file_id)
-    //     //     .and_then(|mut f| f)
-    //     //
-    //     // Some(true)
-    // }
+    fn stop_playing_file_from_playlist(
+        restream_id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .find_map(|r| {
+                (r.id == restream_id).then(|| {
+                    r.playlist.currently_playing_file = None;
+                })
+            })?;
+
+        Some(true)
+    }
 
     /// Starts playing the provided file from playlist
     fn play_file_from_playlist(
@@ -391,26 +387,22 @@ impl MutationsRoot {
                 (r.id == restream_id).then(|| {
                     r.playlist.apply(vec![
                         PlaylistFileInfo {
-                            file_id: "1FqKsSK31nwGuagXZVPIFDDeLMkaoTwxx"
-                                .to_string(),
+                            file_id: "1".to_string(),
                             name: "septonika_900_sec.mp4".to_string(),
                             was_played: false,
                         },
                         PlaylistFileInfo {
-                            file_id: "1CIZOa9sSqsc4NRpGB-LrjFpViIRGZAK6"
-                                .to_string(),
+                            file_id: "2-LrjFpViIRGZAK6".to_string(),
                             name: "septonika_15_sec.mp4".to_string(),
                             was_played: false,
                         },
                         PlaylistFileInfo {
-                            file_id: "1usD86g6etW_yJoYnFgAnJcEH5RuH1uO7"
-                                .to_string(),
+                            file_id: "3".to_string(),
                             name: "allat_islam_158_sec.mp4".to_string(),
                             was_played: false,
                         },
                         PlaylistFileInfo {
-                            file_id: "1usD86g6etW_yJoYnFgAnJcEH5RuH112"
-                                .to_string(),
+                            file_id: "4".to_string(),
                             name: "Потребительский Формат_Consumer Format.mp4"
                                 .to_string(),
                             was_played: true,
