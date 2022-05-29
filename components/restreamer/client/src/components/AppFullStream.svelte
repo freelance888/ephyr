@@ -14,12 +14,12 @@
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
-  import Restream from './Restream.svelte';
   import Playlist from './Playlist.svelte';
   import Output from './Output.svelte';
   import RestreamModal from '../modals/RestreamModal.svelte';
   import OutputModal from '../modals/OutputModal.svelte';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
+  import Restream from './Restream.svelte';
 
   let outputMutations = {
     DisableOutput,
@@ -66,6 +66,8 @@
           .filter(x => isYoutubeVideo(x.previewUrl))
           .map(x => x.previewUrl)[0]
 
+  $: playlist = translationRestream && translationRestream.playlist;
+
 </script>
 
 <template>
@@ -95,7 +97,7 @@
       </section>
       <div class='section-title'>Playlist</div>
       <section class='uk-section uk-section-muted uk-padding-remove'>
-        <Playlist />
+        <Playlist restreamId={translationRestreamId} {playlist}/>
       </section>
       {#if translationYoutubeUrl}
         <div class='section-title'>Watch translation</div>

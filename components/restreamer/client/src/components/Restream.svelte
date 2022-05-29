@@ -72,6 +72,10 @@
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
 
+  $: {
+    console.log(value.playlist)
+  }
+
   function openEditRestreamModal() {
     const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
 

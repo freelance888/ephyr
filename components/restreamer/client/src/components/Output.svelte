@@ -1,6 +1,6 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
-  import { showError, isMixPage, getMixPageUrl, isFullStreamPage } from '../utils/util';
+  import { getMixPageUrl, showError } from '../utils/util';
 
   import { outputModal } from '../stores';
 

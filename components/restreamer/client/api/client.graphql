@@ -97,11 +97,23 @@ subscription State {
             enabled
             status
         }
+        playlist {
+            currentlyPlayingFile {
+                fileId
+                name
+                wasPlayed
+            }
+            queue {
+                fileId
+                name
+                wasPlayed
+            }
+        }
     }
 }
 
-subscription Restream($restreamId: RestreamId!) {
-    restream(restreamId: $restreamId) {
+subscription Restream($id: RestreamId!) {
+    restream(id: $id) {
         id
         key
         label
@@ -165,11 +177,15 @@ subscription Restream($restreamId: RestreamId!) {
             status
         }
         playlist {
-            currently_playing
+            currentlyPlayingFile {
+                fileId
+                name
+                wasPlayed
+            }
             queue {
                 fileId
                 name
-                was_played
+                wasPlayed
             }
         }
     }

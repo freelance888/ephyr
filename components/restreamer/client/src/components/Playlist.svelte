@@ -3,10 +3,19 @@
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
+  import { GetPlaylistFromDrive } from '../../api/client.graphql';
+  import { mutation } from 'svelte-apollo';
+  import { showError } from '../utils/util';
+
+  const getPlaylistFromDrive = mutation(GetPlaylistFromDrive);
+
   let dragDisabled = true;
   const flipDurationMs = 200;
 
-  $: playlist = [];
+  export let restreamId;
+  export let playlist;
+
+  $: queue = playlist ? playlist.queue.map(x => ({id: x.fileId, name: x.name, isPlaying: false, isFinished: false})) : [];
 
   let remote_playlist = [{
     id: 1,
@@ -46,43 +55,49 @@
     }];
 
   let isSortAsc = true;
-  let googleDriveUrl = '';
-  $: hasPlaylistLoaded = playlist.length > 0
+  let googleDriveFolderId = '';
+  $: hasPlaylistLoaded = queue && queue.length > 0
 
 
   function getOrderedPlaylist(list) {
     return orderBy(list, ['isFinished', 'isPlaying', 'name'], ['desc', 'desc', 'asc']);
   }
 
-  function loadPlaylist() {
-    playlist = getOrderedPlaylist(remote_playlist);
+  async function loadPlaylist(folderId) {
+    //playlist = getOrderedPlaylist(remote_playlist);
+    const variables = { id: restreamId, folder_id: folderId };
+      try {
+         await getPlaylistFromDrive({ variables });
+      } catch (e) {
+        showError(e.message);
+      }
   }
 
   const getById = (id) => {
-    return playlist.find((value) => value.id === id);
+    return queue.find((value) => value.id === id);
   };
 
   function deleteFile(id) {
-    playlist = playlist.filter((value) => {
+    queue = queue.filter((value) => {
       return value.id !== id;
     });
   }
 
   function startStopPlaying(id) {
     const current = getById(id);
-    playlist.forEach(x => {
+    queue.forEach(x => {
       x.isPlaying = x.id === id ? !x.isPlaying : false;
       if(x.id === id) {
         x.isFinished = !x.isPlaying;
       }
     })
     ;
-    playlist = getOrderedPlaylist(playlist);
+    queue = getOrderedPlaylist(queue);
   }
 
 
   function handleSort(e) {
-    playlist = e.detail.items;
+    queue = e.detail.items;
     dragDisabled = true;
   }
 
@@ -101,15 +116,15 @@
         Add files from Google Drive
       </label>
       <input
-        bind:value={googleDriveUrl}
+        bind:value={googleDriveFolderId}
         class='google-drive-link uk-input uk-form-small uk-flex-1'
         type='text'
         placeholder='Add link to Google Drive folder'
       />
       <button
-        disabled={!googleDriveUrl.trim()}
+        disabled={!googleDriveFolderId.trim()}
         class='uk-button uk-button-primary uk-button-small uk-flex-none'
-        on:click={() => loadPlaylist()}
+        on:click={() => loadPlaylist(googleDriveFolderId)}
       >
         <i class='uk-icon' uk-icon='cloud-download' />&nbsp;<span>Load files</span>
       </button>
@@ -120,8 +135,8 @@
       <label><input class="uk-radio" type="radio" name="sortRadio" checked={!isSortAsc} disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
     </div>
 
-    <div class='playlist-items' use:dndzone={{items: playlist, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
-        {#each playlist as item(item.id)}
+    <div class='playlist-items' use:dndzone={{items: queue, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={handleSort} >
+        {#each queue as item(item.id)}
           <div class='item uk-card uk-card-default'>
             <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
 

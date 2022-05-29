@@ -25,7 +25,8 @@ use crate::{
 };
 
 use super::Context;
-use crate::file_manager::get_drive_folder;
+use crate::file_manager::{get_drive_folder, PlaylistFileInfo};
+use crate::state::Playlist;
 use crate::{
     file_manager::LocalFileInfo,
     state::{EndpointId, ServerInfo, VolumeLevel},
@@ -296,7 +297,34 @@ impl MutationsRoot {
         playlist: Vec<String>,
         context: &Context,
     ) -> Option<bool> {
-        return Some(true);
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .find_map(|r| {
+                (r.id == restream_id).then(|| {
+                    let files: Vec<PlaylistFileInfo> = r
+                        .playlist
+                        .queue
+                        .clone()
+                        .into_iter()
+                        .filter(|f| {
+                            playlist
+                                .clone()
+                                .into_iter()
+                                .find(|id| id == &f.file_id)
+                                .is_some()
+                        })
+                        .collect();
+
+                    if files.len() > 0 {
+                        r.playlist.queue = files;
+                    }
+                })
+            })?;
+
+        Some(true)
     }
 
     // fn stop_playing_file_from_playlist(
@@ -325,7 +353,22 @@ impl MutationsRoot {
         file_id: String,
         context: &Context,
     ) -> Option<bool> {
-        return Some(true);
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .find_map(|r| {
+                (r.id == restream_id).then(|| {
+                    let file =
+                        r.playlist.queue.iter().find(|f| f.file_id == file_id);
+                    if let Some(f) = file {
+                        r.playlist.currently_playing_file = Some(f.clone());
+                    }
+                })
+            })?;
+
+        Some(true)
     }
 
     /// Sends request to Google API and appends found files to the provided restream's playlist
@@ -334,24 +377,53 @@ impl MutationsRoot {
         folder_id: String,
         context: &Context,
     ) -> Option<bool> {
-        let api_key =
-            context.state().settings.lock_mut().google_api_key.clone()?;
-        if let Ok(mut playlist_files) =
-            get_drive_folder(&api_key, &folder_id).await
-        {
-            context
-                .state()
-                .restreams
-                .lock_mut()
-                .iter_mut()
-                .find(|r| r.id == restream_id)?
-                .playlist
-                .queue
-                .append(playlist_files.as_mut());
-            Some(true)
-        } else {
-            None
-        }
+        // let api_key =
+        //     context.state().settings.lock_mut().google_api_key.clone()?;
+        // if let Ok(mut playlist_files) =
+        //     get_drive_folder(&api_key, &folder_id).await
+        // {
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .find_map(|r| {
+                (r.id == restream_id).then(|| {
+                    r.playlist.apply(vec![
+                        PlaylistFileInfo {
+                            file_id: "1FqKsSK31nwGuagXZVPIFDDeLMkaoTwxx"
+                                .to_string(),
+                            name: "septonika_900_sec.mp4".to_string(),
+                            was_played: false,
+                        },
+                        PlaylistFileInfo {
+                            file_id: "1CIZOa9sSqsc4NRpGB-LrjFpViIRGZAK6"
+                                .to_string(),
+                            name: "septonika_15_sec.mp4".to_string(),
+                            was_played: false,
+                        },
+                        PlaylistFileInfo {
+                            file_id: "1usD86g6etW_yJoYnFgAnJcEH5RuH1uO7"
+                                .to_string(),
+                            name: "allat_islam_158_sec.mp4".to_string(),
+                            was_played: false,
+                        },
+                        PlaylistFileInfo {
+                            file_id: "1usD86g6etW_yJoYnFgAnJcEH5RuH112"
+                                .to_string(),
+                            name: "Потребительский Формат_Consumer Format.mp4"
+                                .to_string(),
+                            was_played: true,
+                        },
+                    ])
+                })
+            })?;
+
+        Some(true)
+        // }
+        //     else {
+        //     None
+        // }
     }
 
     /// Enables an `Input` by its `id`.

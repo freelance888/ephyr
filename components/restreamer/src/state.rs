@@ -32,12 +32,13 @@ use tokio::{fs, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
 
+use crate::file_manager::PlaylistFileInfo;
 use crate::{
-    display_panic, file_manager::LocalFileInfo, serde::is_false, spec, srs, Spec,
+    display_panic, file_manager::LocalFileInfo, serde::is_false, spec, srs,
+    Spec,
 };
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use crate::file_manager::PlaylistFileInfo;
 
 /// Server's settings.
 ///
@@ -996,8 +997,8 @@ impl Restream {
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
             playlist: Playlist {
                 queue: vec![],
-                currently_playing_file: None
-            }
+                currently_playing_file: None,
+            },
         }
     }
 
@@ -1157,12 +1158,19 @@ impl PartialEq<str> for RestreamKey {
 }
 
 #[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize, Default
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize, Default,
 )]
 pub struct Playlist {
     pub queue: Vec<PlaylistFileInfo>,
 
     pub currently_playing_file: Option<PlaylistFileInfo>,
+}
+
+impl Playlist {
+    pub fn apply(&mut self, queue: Vec<PlaylistFileInfo>) {
+        self.queue = queue;
+        self.currently_playing_file = None;
+    }
 }
 
 /// Upstream source that a `Restream` receives a live stream from.
