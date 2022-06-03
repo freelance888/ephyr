@@ -168,4 +168,12 @@
     border-top-left-radius: 4px
     border-top-right-radius: 4px
     background-color: #f8f8f8
+
+  .uk-alert
+    font-size: 14px
+    margin: 5px 0 10px 0
+
+  .uk-checkbox
+    margin: 10px 0 10px 0
+
 </style>

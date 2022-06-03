@@ -177,7 +177,7 @@
                 />
               {:else}
                 <input
-                  class="uk-input"
+                  class="uk-input google-api-key"
                   type="text"
                   bind:value={$value.file_id}
                   placeholder="Google file id"
@@ -193,6 +193,16 @@
                 bind:checked={$value.with_hls}
               /> with HLS endpoint</label
             >
+          </div>
+          <input
+            class="uk-input uk-width-1-4 files-limit"
+            type="number"
+            min="2"
+            step="1"
+            placeholder='Files limit'
+          />
+          <div class="uk-alert">
+            Max amount of files in a playlist.
           </div>
         </fieldset>
 
@@ -220,10 +230,6 @@
     border: none
     padding: 0
 
-  .uk-alert
-    font-size: 14px
-    margin: 10px 0
-
   .restream
     .uk-form-small
       display: block
@@ -245,4 +251,8 @@
   .backup
     label + label
       margin-left: 15px
+
+  .files-limit
+    margin-top: 5px;
+
 </style>

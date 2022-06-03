@@ -72,9 +72,7 @@
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
 
-  $: {
-    console.log(value.playlist)
-  }
+  $: hasVideos = value.playlist && value.playlist.queue.length > 0;
 
   function openEditRestreamModal() {
     const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
@@ -209,43 +207,50 @@
         href={getFullStreamUrl(value.id, parentOutputId)}
         hidden={isFullView || !parentOutputId}
         target="_blank"
-        title="Open full view"
+        class='uk-text-uppercase uk-text-small'
+        title="Open Full Stream Page"
       >
         Full view
       </a>
-      <span class="total">
-        {#each statusesList as status (status)}
-          <StatusFilter
-            {status}
-            count={reStreamOutputsCountByStatus[status]}
-            active={reStreamOutputsFilters.includes(status)}
-            disabled={hasGlobalOutputsFilters}
-            title={hasGlobalOutputsFilters &&
-              'Filter is disabled while global output filters are active'}
-            handleClick={() =>
-              (reStreamOutputsFilters = toggleFilterStatus(
-                reStreamOutputsFilters,
-                status
-              ))}
-          />
-        {/each}
+      <div class='uk-flex'>
+        <span class='item-icon uk-icon uk-margin-right'
+              hidden={!hasVideos || isFullView}
+              uk-icon="icon: youtube; ratio: 1.5"
+        ></span>
+        <span class="total">
+          {#each statusesList as status (status)}
+            <StatusFilter
+              {status}
+              count={reStreamOutputsCountByStatus[status]}
+              active={reStreamOutputsFilters.includes(status)}
+              disabled={hasGlobalOutputsFilters}
+              title={hasGlobalOutputsFilters &&
+                'Filter is disabled while global output filters are active'}
+              handleClick={() =>
+                (reStreamOutputsFilters = toggleFilterStatus(
+                  reStreamOutputsFilters,
+                  status
+                ))}
+            />
+          {/each}
 
-        <Confirm let:confirm>
-          <Toggle
-            data-testid="toggle-all-outputs-status"
-            id="all-outputs-toggle-{value.id}"
-            checked={allEnabled}
-            title="{toggleStatusText} all outputs"
-            confirmFn={enableConfirmation ? confirm : undefined}
-            onChangeFn={toggleAllOutputs}
-          />
-          <span slot="title"
-            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
-          >
-          <span slot="description">Are you sure about it?</span>
-          <span slot="confirm">{toggleStatusText}</span>
-        </Confirm>
-      </span>
+          <Confirm let:confirm>
+            <Toggle
+              data-testid="toggle-all-outputs-status"
+              id="all-outputs-toggle-{value.id}"
+              checked={allEnabled}
+              title="{toggleStatusText} all outputs"
+              confirmFn={enableConfirmation ? confirm : undefined}
+              onChangeFn={toggleAllOutputs}
+            />
+            <span slot="title"
+              >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+            >
+            <span slot="description">Are you sure about it?</span>
+            <span slot="confirm">{toggleStatusText}</span>
+          </Confirm>
+        </span>
+      </div>
       <button
         class="uk-button uk-button-primary uk-button-small"
         data-testid="add-output:open-modal-btn"
