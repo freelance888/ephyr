@@ -22,7 +22,8 @@ use futures::{
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
     graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
-    GraphQLUnion, ParseScalarResult, ParseScalarValue, ScalarValue, Value,
+    GraphQLUnion, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue,
+    Value,
 };
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -38,6 +39,7 @@ use crate::{
     Spec,
 };
 use chrono::{DateTime, Utc};
+use juniper::parser::ScalarToken;
 use std::collections::HashMap;
 
 /// Server's settings.
@@ -68,6 +70,9 @@ pub struct Settings {
 
     /// Google API key for file playback and downloading
     pub google_api_key: Option<String>,
+
+    /// Max number of files allowed in [Restream]'s playlist
+    pub max_files_in_playlist: Option<NumberOfItems>,
 }
 
 impl Settings {
@@ -80,6 +85,7 @@ impl Settings {
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
             google_api_key: self.google_api_key.clone(),
+            max_files_in_playlist: self.max_files_in_playlist.clone(),
         }
     }
 
@@ -90,6 +96,7 @@ impl Settings {
         self.delete_confirmation = new.delete_confirmation;
         self.enable_confirmation = new.enable_confirmation;
         self.google_api_key = new.google_api_key;
+        self.max_files_in_playlist = new.max_files_in_playlist;
     }
 }
 
@@ -102,6 +109,7 @@ impl Default for Settings {
             delete_confirmation: Some(true),
             enable_confirmation: Some(true),
             google_api_key: None,
+            max_files_in_playlist: None,
         }
     }
 }
@@ -976,6 +984,9 @@ pub struct Restream {
 
     pub playlist: Playlist,
 
+    /// Max number of files allowed in a playlist
+    pub max_files_in_playlist: Option<NumberOfItems>,
+
     /// `Input` that a live stream is received from.
     pub input: Input,
 
@@ -993,6 +1004,7 @@ impl Restream {
             id: RestreamId::random(),
             key: spec.key,
             label: spec.label,
+            max_files_in_playlist: spec.max_files_in_playlist,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
             playlist: Playlist {
@@ -1010,6 +1022,7 @@ impl Restream {
     pub fn apply(&mut self, new: spec::v1::Restream, replace: bool) {
         self.key = new.key;
         self.label = new.label;
+        self.max_files_in_playlist = new.max_files_in_playlist;
         self.input.apply(new.input);
         if replace {
             let mut olds = mem::replace(
@@ -1050,6 +1063,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
+            max_files_in_playlist: self.max_files_in_playlist.clone(),
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }
@@ -2615,6 +2629,30 @@ mod volume_spec {
             let actual = Volume::new(input).display_as_fraction();
             assert_eq!(&actual, *expected);
         }
+    }
+}
+
+/// Represents number of something with GraphQL support.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NumberOfItems(u16);
+
+#[graphql_scalar]
+impl<S> GraphQLScalar for NumberOfItems
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
+        Value::scalar(i32::from(self.0))
+    }
+
+    fn from_input_value(v: &InputValue) -> Option<Self> {
+        v.as_scalar()
+            .and_then(ScalarValue::as_int)
+            .and_then(|x| Some(NumberOfItems(x as u16)))
+    }
+
+    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 

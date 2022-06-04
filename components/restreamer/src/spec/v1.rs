@@ -7,6 +7,7 @@ use std::collections::HashSet;
 
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 
+use crate::state::NumberOfItems;
 use crate::{serde::is_false, state};
 use url::Url;
 
@@ -65,6 +66,9 @@ pub struct Settings {
 
     /// Google API key for file playback and downloading
     pub google_api_key: Option<String>,
+
+    /// Max number of files allowed in [Restream]'s playlist
+    pub max_files_in_playlist: Option<NumberOfItems>,
 }
 
 /// Shareable (exportable and importable) specification of a
@@ -84,6 +88,9 @@ pub struct Restream {
 
     /// [`Input`] that a live stream is received from.
     pub input: Input,
+
+    /// Max number of files allowed in [Restream]'s playlist
+    pub max_files_in_playlist: Option<NumberOfItems>,
 
     /// [`Output`]s that a live stream is re-streamed to.
     #[serde(

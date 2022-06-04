@@ -26,7 +26,7 @@ use crate::{
 
 use super::Context;
 use crate::file_manager::{get_drive_folder, PlaylistFileInfo};
-use crate::state::Playlist;
+use crate::state::{NumberOfItems, Playlist};
 use crate::{
     file_manager::LocalFileInfo,
     state::{EndpointId, ServerInfo, VolumeLevel},
@@ -160,6 +160,7 @@ impl MutationsRoot {
         file_id: Option<String>,
         with_backup: bool,
         with_hls: bool,
+        max_files_in_playlist: Option<NumberOfItems>,
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -223,6 +224,7 @@ impl MutationsRoot {
             id: None,
             key,
             label,
+            max_files_in_playlist,
             input: spec::v1::Input {
                 id: None,
                 key: InputKey::new("origin").unwrap(),
@@ -941,6 +943,7 @@ impl MutationsRoot {
         delete_confirmation: Option<bool>,
         enable_confirmation: Option<bool>,
         google_api_key: Option<String>,
+        max_files_in_playlist: Option<NumberOfItems>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -956,6 +959,7 @@ impl MutationsRoot {
         settings.delete_confirmation = delete_confirmation;
         settings.enable_confirmation = enable_confirmation;
         settings.google_api_key = google_api_key;
+        settings.max_files_in_playlist = max_files_in_playlist;
         Ok(true)
     }
 }
@@ -979,6 +983,7 @@ impl QueriesRoot {
             delete_confirmation: settings.delete_confirmation,
             enable_confirmation: settings.enable_confirmation,
             google_api_key: settings.google_api_key,
+            max_files_in_playlist: settings.max_files_in_playlist,
         }
     }
 
@@ -1083,6 +1088,7 @@ impl SubscriptionsRoot {
                 delete_confirmation: h.delete_confirmation,
                 enable_confirmation: h.enable_confirmation,
                 google_api_key: h.google_api_key,
+                max_files_in_playlist: h.max_files_in_playlist,
             })
             .to_stream()
             .boxed()
@@ -1174,4 +1180,8 @@ pub struct Info {
 
     /// Google API key for file downloading
     pub google_api_key: Option<String>,
+
+    /// Max number of files allowed in [Restream]'s playlist
+    /// This value can be overwritten by the similar setting on particular [Restream]
+    pub max_files_in_playlist: Option<NumberOfItems>,
 }

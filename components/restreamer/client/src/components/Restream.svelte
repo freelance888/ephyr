@@ -108,7 +108,8 @@
       pull_url,
       backup,
       fileId,
-      with_hls
+      with_hls,
+      value.maxFilesInPlaylist
     );
   }
 

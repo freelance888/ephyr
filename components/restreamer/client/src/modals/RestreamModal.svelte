@@ -21,7 +21,8 @@
           v.key !== v.prev_key ||
           v.label !== v.prev_label ||
           v.is_pull !== v.prev_is_pull ||
-          v.with_backup !== v.prev_with_backup;
+          v.with_backup !== v.prev_with_backup ||
+          v.max_files_in_playlist !== v.prev_max_files_in_playlist;
       }
       if (v.is_pull) {
         submitable &= v.pull_url !== '';
@@ -71,6 +72,10 @@
     }
     if (v.file_id) {
       variables.file_id = v.file_id;
+    }
+
+    if (v.max_files_in_playlist) {
+      variables.max_files_in_playlist = v.max_files_in_playlist;
     }
 
     try {
@@ -199,6 +204,7 @@
             type="number"
             min="2"
             step="1"
+            bind:value={$value.max_files_in_playlist}
             placeholder='Files limit'
           />
           <div class="uk-alert">

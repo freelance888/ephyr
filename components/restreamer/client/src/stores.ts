@@ -117,6 +117,9 @@ export class RestreamModalState {
   file_id: string | null = '';
   prev_file_id: string | null = null;
 
+  max_files_in_playlist: number | null = null;
+  prev_max_files_in_playlist: number | null = null;
+
   /**
    * Indicator whether a an additional endpoint is required to server a live
    * stream via [HLS].
@@ -202,7 +205,8 @@ export class RestreamModal implements Writable<RestreamModalState> {
    * @param fileId      ID of the file that is used as backup input
    * @param with_hls    Indicator the `Restream` has had HLS endpoint before
    *                    editing.
-   */
+   * @param max_files_in_playlist Limit of files in Restream's playlist
+   **/
   openEdit(
     id: string,
     key: string,
@@ -210,7 +214,8 @@ export class RestreamModal implements Writable<RestreamModalState> {
     pull_url: string | null,
     backup: string | boolean | null,
     fileId: string | null,
-    with_hls: boolean
+    with_hls: boolean,
+    max_files_in_playlist: number | null
   ) {
     this.update((v) => {
       v.edit_id = id;
@@ -244,6 +249,9 @@ export class RestreamModal implements Writable<RestreamModalState> {
 
       v.prev_with_hls = with_hls;
       v.with_hls = v.prev_with_hls;
+
+      v.prev_max_files_in_playlist = max_files_in_playlist;
+      v.max_files_in_playlist = v.prev_max_files_in_playlist;
 
       v.visible = true;
       return v;
@@ -292,6 +300,9 @@ export class RestreamModal implements Writable<RestreamModalState> {
 
       v.file_id = '';
       v.prev_file_id = null;
+
+      v.max_files_in_playlist = null;
+      v.prev_max_files_in_playlist = null;
 
       if (v.prev_with_hls !== null) {
         v.with_hls = false;

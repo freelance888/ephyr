@@ -70,6 +70,7 @@
           type="number"
           min="2"
           step="1"
+          bind:value={info.maxFilesInPlaylist}
           placeholder='Files limit'
         />
         <div class="uk-alert">
