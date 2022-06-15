@@ -6,8 +6,8 @@ use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
+use ephyr_log::log;
 use futures::stream::BoxStream;
-use futures::StreamExt;
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -25,11 +25,9 @@ use crate::{
 };
 
 use super::Context;
-use crate::file_manager::{get_drive_folder, PlaylistFileInfo};
-use crate::state::{NumberOfItems, Playlist};
 use crate::{
-    file_manager::LocalFileInfo,
-    state::{EndpointId, ServerInfo, VolumeLevel},
+    file_manager::{get_video_list_from_drive_folder, LocalFileInfo},
+    state::{EndpointId, NumberOfItems, ServerInfo, VolumeLevel},
 };
 use url::Url;
 
@@ -304,27 +302,11 @@ impl MutationsRoot {
             .restreams
             .lock_mut()
             .iter_mut()
-            .find_map(|r| {
-                (r.id == restream_id).then(|| {
-                    let files: Vec<PlaylistFileInfo> = playlist
-                        .clone()
-                        .into_iter()
-                        .filter_map(|id| {
-                            r.playlist
-                                .queue
-                                .clone()
-                                .into_iter()
-                                .find(|f| id == f.file_id)
-                        })
-                        .collect();
-
-                    if files.len() > 0 {
-                        r.playlist.queue = files;
-                    }
-                })
-            })?;
-
-        Some(true)
+            .find(|r| r.id == restream_id)?
+            .playlist
+            .queue
+            .retain(|p| playlist.contains(&p.file_id));
+        return Some(true);
     }
 
     fn stop_playing_file_from_playlist(
@@ -369,55 +351,32 @@ impl MutationsRoot {
         Some(true)
     }
 
-    /// Sends request to Google API and appends found files to the provided restream's playlist
+    /// Sends request to Google API and appends found files to the provided
+    /// restream's playlist.
     async fn get_playlist_from_drive(
         restream_id: RestreamId,
         folder_id: String,
         context: &Context,
     ) -> Option<bool> {
-        // let api_key =
-        //     context.state().settings.lock_mut().google_api_key.clone()?;
-        // if let Ok(mut playlist_files) =
-        //     get_drive_folder(&api_key, &folder_id).await
-        // {
-        context
-            .state()
-            .restreams
-            .lock_mut()
-            .iter_mut()
-            .find_map(|r| {
-                (r.id == restream_id).then(|| {
-                    r.playlist.apply(vec![
-                        PlaylistFileInfo {
-                            file_id: "1".to_string(),
-                            name: "septonika_900_sec.mp4".to_string(),
-                            was_played: false,
-                        },
-                        PlaylistFileInfo {
-                            file_id: "2-LrjFpViIRGZAK6".to_string(),
-                            name: "septonika_15_sec.mp4".to_string(),
-                            was_played: false,
-                        },
-                        PlaylistFileInfo {
-                            file_id: "3".to_string(),
-                            name: "allat_islam_158_sec.mp4".to_string(),
-                            was_played: false,
-                        },
-                        PlaylistFileInfo {
-                            file_id: "4".to_string(),
-                            name: "Потребительский Формат_Consumer Format.mp4"
-                                .to_string(),
-                            was_played: true,
-                        },
-                    ])
-                })
-            })?;
+        let api_key =
+            context.state().settings.lock_mut().google_api_key.clone()?;
+        let result =
+            get_video_list_from_drive_folder(&api_key, &folder_id).await;
+        if let Ok(playlist_files) = result {
+            context
+                .state()
+                .restreams
+                .lock_mut()
+                .iter_mut()
+                .find(|r| r.id == restream_id)?
+                .playlist
+                .apply(playlist_files);
 
-        Some(true)
-        // }
-        //     else {
-        //     None
-        // }
+            Some(true)
+        } else {
+            log::error!("{}", result.err().unwrap());
+            None
+        }
     }
 
     /// Enables an `Input` by its `id`.
@@ -1182,6 +1141,7 @@ pub struct Info {
     pub google_api_key: Option<String>,
 
     /// Max number of files allowed in [Restream]'s playlist
-    /// This value can be overwritten by the similar setting on particular [Restream]
+    /// This value can be overwritten by the similar setting
+    /// on a particular [Restream]
     pub max_files_in_playlist: Option<NumberOfItems>,
 }

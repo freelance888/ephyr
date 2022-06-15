@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    file_manager::{LocalFileInfo, FileState},
+    file_manager::{FileState, LocalFileInfo},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
     types::DroppableAbortHandle,
@@ -82,9 +82,20 @@ impl RestreamersPool {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
         for r in restreams {
-            self.apply_input(&r.key, &r.input, &mut new_pool);
+            if r.playlist.currently_playing_file.is_some() {
+                //TODO resolve: stop input endpoint process when playing file
+                //TODO do not kill HLS endpoints when playing files -- maybe
+                //     move this to apply_input and selectively try applying
+                //     endpoints
+                self.apply_playlist(&r, &mut new_pool);
+            } else {
+                self.apply_input(&r.key, &r.input, &mut new_pool);
+            }
 
-            if !r.input.enabled || !r.input.is_ready_to_serve() {
+            if !r.input.enabled
+                || (!r.input.is_ready_to_serve()
+                    && r.playlist.currently_playing_file.is_none())
+            {
                 continue;
             }
 
@@ -104,6 +115,37 @@ impl RestreamersPool {
         }
 
         self.pool = new_pool;
+    }
+
+    fn apply_playlist(
+        &mut self,
+        restream: &state::Restream,
+        new_pool: &mut HashMap<Uuid, Restreamer>,
+    ) {
+        if restream.playlist.currently_playing_file.is_some() {
+            let id = restream.playlist.id.into();
+            let new_kind = RestreamerKind::from_playlist(
+                &restream.playlist,
+                &restream.key,
+                &restream.input.key,
+                &self.files_root,
+            );
+
+            let process = self
+                .pool
+                .remove(&id)
+                .and_then(|mut p| (!p.kind.needs_restart(&new_kind)).then(|| p))
+                .unwrap_or_else(|| {
+                    Restreamer::run(
+                        self.ffmpeg_path.clone(),
+                        new_kind,
+                        self.state.clone(),
+                    )
+                });
+
+            let old_process = new_pool.insert(id, process);
+            drop(old_process);
+        }
     }
 
     /// Traverses the given [`state::Input`] filling the `new_pool` with
@@ -312,6 +354,16 @@ impl Restreamer {
                     );
                 });
 
+                if let RestreamerKind::File(_) = kind {
+                    let _ = state
+                        .restreams
+                        .lock_mut()
+                        .iter_mut()
+                        .find(|r| r.playlist.id == kind.id())
+                        .map(|r| r.playlist.currently_playing_file = None);
+                    break;
+                }
+
                 time::delay_for(Duration::from_secs(2)).await;
             }
         });
@@ -375,6 +427,10 @@ pub enum RestreamerKind {
     /// Mixing a live stream from one URL endpoint with additional live streams
     /// and re-streaming the result to another endpoint.
     Mixing(MixingRestreamer),
+
+    /// Sourcing a video and audio from local file and streaming it to input
+    /// endpoint.
+    File(FileRestreamer),
 }
 
 impl RestreamerKind {
@@ -388,6 +444,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.id.into(),
             Self::Transcoding(c) => c.id.into(),
             Self::Mixing(m) => m.id.into(),
+            Self::File(m) => m.id.into(),
         }
     }
 
@@ -475,6 +532,36 @@ impl RestreamerKind {
         })
     }
 
+    /// Creates a new [FFmpeg] process streaming a file from playlist to
+    /// [`state::Input`] endpoint.
+    ///
+    /// Returns [`None`] if a [FFmpeg] re-streaming process cannot not be
+    /// created for the given [`state::Playlist`].
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    pub fn from_playlist(
+        playlist: &state::Playlist,
+        main_key: &state::RestreamKey,
+        input_key: &state::InputKey,
+        file_root: &Path,
+    ) -> Self {
+        let file_id =
+            &playlist.currently_playing_file.as_ref().unwrap().file_id;
+        let from_url = Url::from_file_path(file_root.join(file_id)).unwrap();
+        Self::File(
+            FileRestreamer {
+                id: playlist.id.into(),
+                from_url,
+                to_url: Url::parse(&format!(
+                    "rtmp://127.0.0.1:1935/{}/{}",
+                    main_key, input_key,
+                ))
+                .unwrap(),
+            }
+            .into(),
+        )
+    }
+
     /// Creates a new [FFmpeg] process re-streaming a live stream from a
     /// [`state::Restream::input`] to the given [`state::Output::dst`] endpoint.
     ///
@@ -530,6 +617,7 @@ impl RestreamerKind {
                 old.needs_restart(new)
             }
             (Self::Mixing(old), Self::Mixing(new)) => old.needs_restart(new),
+            (Self::File(old), Self::File(new)) => old.needs_restart(new),
             _ => true,
         }
     }
@@ -555,6 +643,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),
             Self::Mixing(m) => m.setup_ffmpeg(cmd, state).await?,
+            Self::File(m) => m.setup_ffmpeg(cmd, false).await?,
         };
         Ok(())
     }
@@ -701,7 +790,92 @@ impl CopyRestreamer {
 
             "rtmp" | "rtmps" => (),
             "file" => {
-                let _ = cmd.arg("-re").args(&["-stream_loop", "-1"]);
+                let _ = cmd.arg("-re");
+                let _ = cmd.args(&["-stream_loop", "-1"]);
+            }
+
+            _ => unimplemented!(),
+        };
+        let _ = cmd.args(&["-i", self.from_url.as_str()]);
+
+        let _ = match self.to_url.scheme() {
+            "file"
+                if Path::new(self.to_url.path()).extension()
+                    == Some("flv".as_ref()) =>
+            {
+                cmd.args(&["-c", "copy"])
+                    .arg(dvr::new_file_path(&self.to_url).await?)
+            }
+
+            "icecast" => cmd
+                .args(&["-c:a", "libmp3lame", "-b:a", "64k"])
+                .args(&["-f", "mp3", "-content_type", "audio/mpeg"])
+                .arg(self.to_url.as_str()),
+
+            "rtmp" | "rtmps" => cmd
+                .args(&["-c", "copy"])
+                .args(&["-f", "flv"])
+                .arg(self.to_url.as_str()),
+
+            "srt" => cmd
+                .args(&["-c", "copy"])
+                .args(&["-strict", "-2", "-y", "-f", "mpegts"])
+                .arg(self.to_url.as_str()),
+
+            _ => unimplemented!(),
+        };
+        Ok(())
+    }
+}
+
+/// Kind of a [FFmpeg] re-streaming process that streams a local file to input
+/// endpoint "as is", without performing any live stream modifications.
+///
+/// [FFmpeg]: https://ffmpeg.org
+#[derive(Clone, Debug)]
+pub struct FileRestreamer {
+    /// ID of an element in a [`State`] this [`CopyRestreamer`] process is
+    /// related to.
+    pub id: Uuid,
+
+    // TODO change this to file_ID
+    /// [`Url`] to pull a live stream from.
+    pub from_url: Url,
+
+    /// [`Url`] to publish the pulled live stream onto.
+    pub to_url: Url,
+}
+
+impl FileRestreamer {
+    /// Checks whether this [`CopyRestreamer`] process must be restarted, as
+    /// cannot apply the new `actual` params on itself correctly, without
+    /// interruptions.
+    #[inline]
+    #[must_use]
+    pub fn needs_restart(&self, actual: &Self) -> bool {
+        self.from_url != actual.from_url || self.to_url != actual.to_url
+    }
+
+    /// Properly setups the given [FFmpeg] [`Command`] for this
+    /// [`CopyRestreamer`] before running it.
+    ///
+    /// # Errors
+    ///
+    /// If the given [FFmpeg] [`Command`] fails to be setup.
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    async fn setup_ffmpeg(
+        &self,
+        cmd: &mut Command,
+        repeat: bool,
+    ) -> io::Result<()> {
+        let _ = cmd.stderr(Stdio::inherit()).args(&["-loglevel", "debug"]);
+        match self.from_url.scheme() {
+            "file" => {
+                let _ = cmd.arg("-re");
+                if repeat {
+                    let _ = cmd.args(&["-stream_loop", "-1"]);
+                }
             }
 
             _ => unimplemented!(),

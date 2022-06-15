@@ -87,14 +87,17 @@ impl FileManager {
                             }
                         })
                     })
-                    .for_each(|file_id| self.need_file(file_id));
+                    .for_each(|file_id| self.need_file(file_id, None));
             }
+            restream.playlist.queue.iter().for_each(|file| {
+                self.need_file(&file.file_id, Some(file.name.clone()));
+            });
         });
     }
 
     /// Checks if the provided file ID already exists in the file list,
     /// if not the download of the given file is queued.
-    pub fn need_file(&self, file_id: &str) {
+    pub fn need_file(&self, file_id: &str, file_name: Option<String>) {
         let mut all_files = self.state.files.lock_mut();
         if !all_files.iter().any(|file| file.file_id == file_id) {
             let new_file = LocalFileInfo {
@@ -105,7 +108,7 @@ impl FileManager {
             };
             all_files.push(new_file);
             drop(all_files);
-            self.download_file(file_id);
+            self.download_file(file_id, file_name);
         }
     }
 
@@ -152,7 +155,7 @@ impl FileManager {
     }
 
     /// Spawns a separate process that tries to download given file ID
-    fn download_file(&self, file_id_ref: &str) {
+    fn download_file(&self, file_id_ref: &str, file_name: Option<String>) {
         let root_dir = self.file_root_dir.to_str().unwrap().to_string();
         let state = self.state.clone();
         let file_id = file_id_ref.to_string();
@@ -173,11 +176,20 @@ impl FileManager {
                     })?;
 
                 // Get file name from the API
-                Self::update_file_info(&file_id, &api_key, &state)
-                    .await
-                    .map_err(|_err| {
-                        "Could not get file info for the file".to_string()
-                    })?;
+                if file_name.is_none() {
+                    Self::update_file_info(&file_id, &api_key, &state)
+                        .await
+                        .map_err(|_err| {
+                            "Could not get file info for the file".to_string()
+                        })?;
+                } else {
+                    let _ = state
+                        .files
+                        .lock_mut()
+                        .iter_mut()
+                        .find(|file| file.file_id == file_id)
+                        .map(|file_info| file_info.name = file_name);
+                }
 
                 // Download the file contents
                 if let Ok(mut response) = client
@@ -389,12 +401,18 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
     }
 }
 
+/// Information necessary for every video in playlist
 #[derive(
     Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
 )]
 pub struct PlaylistFileInfo {
+    /// Google ID of this file
     pub file_id: String,
+
+    /// Name of this file
     pub name: String,
+
+    /// Whether the file was already played
     pub was_played: bool,
 }
 
@@ -462,7 +480,8 @@ where
     }
 }
 
-pub async fn get_drive_folder(
+/// Retrieves list of video files from a Google drive folder
+pub async fn get_video_list_from_drive_folder(
     api_key: &str,
     folder_id: &str,
 ) -> Result<Vec<PlaylistFileInfo>, &'static str> {
@@ -479,54 +498,49 @@ pub async fn get_drive_folder(
         .collect())
 }
 
-mod api_response {
-    use serde::{Deserialize, Serialize};
+pub(crate) mod api_response {
+    use ephyr_log::log;
+    use serde::Deserialize;
 
     /// Used to deserialize Google API call for the file details
     #[derive(Deserialize)]
-    pub struct FileNameResponse {
+    pub(crate) struct FileNameResponse {
         /// Name of the file
-        pub name: String,
+        pub(crate) name: String,
     }
 
     #[derive(Deserialize, Debug)]
-    pub struct ExtendedFileInfoResponse {
-        pub id: String,
-        pub name: String,
-        pub mime_type: String,
+    pub(crate) struct ExtendedFileInfoResponse {
+        pub(crate) id: String,
+        pub(crate) name: String,
+        #[serde(alias = "mimeType")]
+        pub(crate) mime_type: String,
     }
 
     impl ExtendedFileInfoResponse {
-        pub fn is_dir(&self) -> bool {
+        pub(crate) fn is_dir(&self) -> bool {
             self.mime_type == "application/vnd.google-apps.folder"
         }
 
-        pub fn is_video(&self) -> bool {
+        pub(crate) fn is_video(&self) -> bool {
             self.mime_type.starts_with("video")
         }
     }
 
-    // - folders are shared by link or by mail
-    // - load files -> meaning just list of files or also download the physical files
-    // - manage -> just remove locally (from list, from storage) or also from gdrive
-    //          -> reorder - playlist?
-    // what kind of api (probably json), on separate port?
-    // when playing files should the language be taken into account -> name searching and matching
-    // showing the available files in dashboard or in ephyr
-
     #[derive(Deserialize)]
-    pub struct FileListResponse {
-        pub kind: String,
-        pub incomplete_search: bool,
-        pub files: Vec<ExtendedFileInfoResponse>,
+    pub(crate) struct FileListResponse {
+        // TODO fix this
+        // pub(crate) kind: String,
+        // pub(crate) incomplete_search: bool,
+        pub(crate) files: Vec<ExtendedFileInfoResponse>,
     }
 
     impl FileListResponse {
-        pub async fn retrieve_dir_content_from_api(
+        pub(crate) async fn retrieve_dir_content_from_api(
             api_key: &str,
             dir_id: &str,
         ) -> Result<Self, &'static str> {
-            let mut dir_content = reqwest::get(
+            let dir_content = reqwest::get(
                 format!(
                     "https://www.googleapis.com/drive/v3/files?\
                      key={}&q='{}'%20in%20parents&\
@@ -543,7 +557,7 @@ mod api_response {
             Ok(dir_content)
         }
 
-        pub fn filter_only_video_files(&mut self) {
+        pub(crate) fn filter_only_video_files(&mut self) {
             self.files.retain(|file_info| file_info.is_video());
         }
     }

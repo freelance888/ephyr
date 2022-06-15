@@ -22,8 +22,7 @@ use futures::{
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
     graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
-    GraphQLUnion, InputValue, ParseScalarResult, ParseScalarValue, ScalarValue,
-    Value,
+    GraphQLUnion, ParseScalarResult, ParseScalarValue, ScalarValue, Value,
 };
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -33,13 +32,13 @@ use tokio::{fs, io::AsyncReadExt as _};
 use url::Url;
 use uuid::Uuid;
 
-use crate::file_manager::PlaylistFileInfo;
 use crate::{
-    display_panic, file_manager::LocalFileInfo, serde::is_false, spec, srs,
-    Spec,
+    display_panic,
+    file_manager::{LocalFileInfo, PlaylistFileInfo},
+    serde::is_false,
+    spec, srs, Spec,
 };
 use chrono::{DateTime, Utc};
-use juniper::parser::ScalarToken;
 use std::collections::HashMap;
 
 /// Server's settings.
@@ -982,6 +981,7 @@ pub struct Restream {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
 
+    /// Playlist for this restream
     pub playlist: Playlist,
 
     /// Max number of files allowed in a playlist
@@ -1008,6 +1008,7 @@ impl Restream {
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
             playlist: Playlist {
+                id: PlaylistId::random(),
                 queue: vec![],
                 currently_playing_file: None,
             },
@@ -1171,16 +1172,50 @@ impl PartialEq<str> for RestreamKey {
     }
 }
 
+/// ID of a `Playlist`.
 #[derive(
-    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize, Default,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Display,
+    Eq,
+    From,
+    GraphQLScalarValue,
+    Into,
+    PartialEq,
+    Serialize,
+)]
+pub struct PlaylistId(Uuid);
+
+impl PlaylistId {
+    /// Generates a new random [`InputId`].
+    #[inline]
+    #[must_use]
+    pub fn random() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+/// Video playlist for each restream as an alternative to stream input
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
 pub struct Playlist {
+    /// Unique ID of this playlist
+    pub id: PlaylistId,
+
+    /// List of video files in this playlist
     pub queue: Vec<PlaylistFileInfo>,
 
+    /// Currently playing file.
+    /// Setting this value to `Some(...)` will override current restreamer input
+    /// and this file will be streamed instead.
     pub currently_playing_file: Option<PlaylistFileInfo>,
 }
 
 impl Playlist {
+    /// Apply new playlist to this one
     pub fn apply(&mut self, queue: Vec<PlaylistFileInfo>) {
         self.queue = queue;
         self.currently_playing_file = None;

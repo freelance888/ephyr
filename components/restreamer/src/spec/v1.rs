@@ -7,8 +7,7 @@ use std::collections::HashSet;
 
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 
-use crate::state::NumberOfItems;
-use crate::{serde::is_false, state};
+use crate::{serde::is_false, state, state::NumberOfItems};
 use url::Url;
 
 /// Shareable (exportable and importable) specification of a [`State`].
