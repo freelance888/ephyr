@@ -25,8 +25,8 @@ curl -sL https://get.docker.com | bash -s
 # Login to custom Docker Registry if provided
 REGISTRY_USER=${REGISTRY_USER:-0}
 REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
-REGISTRY_URL=${REGISTRY_URL:-0}
-if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != 0 ]]; then
+REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
+if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != "docker.io" ]]; then
   docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
 fi
 
@@ -92,7 +92,7 @@ Requires=local-fs.target
 
 [Service]
 Environment=EPHYR_CONTAINER_NAME=ephyr-restreamer
-Environment=EPHYR_IMAGE_NAME=docker.io/allatra/ephyr
+Environment=EPHYR_IMAGE_NAME=${REGISTRY_URL}/allatra/ephyr
 Environment=EPHYR_IMAGE_TAG=restreamer${EPHYR_VER}
 
 ExecStartPre=/usr/bin/mkdir -p /var/lib/\${EPHYR_CONTAINER_NAME}/

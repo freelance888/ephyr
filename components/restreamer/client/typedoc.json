@@ -1,5 +1,10 @@
 {
-  "entryPoints": ["src"],
+  "entryPoints": [
+    "src/AppMix.ts",
+    "src/AppDashboard.ts",
+    "src/AppRestreamer.ts",
+    "src/utils/util.ts"
+  ],
   "out": "docs/ts/",
   "excludeExternals": true,
   "includeVersion": true
