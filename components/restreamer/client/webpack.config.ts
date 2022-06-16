@@ -24,7 +24,7 @@ const config: webpack.Configuration = {
     mainFields: ['svelte', 'browser', 'module', 'main'],
   },
   output: {
-    path: __dirname + '/public',
+    path: path.join(__dirname, '/public'),
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
   },
@@ -35,9 +35,12 @@ const config: webpack.Configuration = {
         use: {
           loader: 'svelte-loader',
           options: {
-            preprocess: SveltePreprocess({}),
+            preprocess: SveltePreprocess(),
             emitCss: true,
             hotReload: true,
+            compilerOptions: {
+              dev: !is_prod,
+            }
           },
         },
       },
@@ -49,10 +52,13 @@ const config: webpack.Configuration = {
       {
         test: /\.css$/,
         use: [
-          // 'mini-css-extract-plugin' doesn't support HMR.
-          // Use 'style-loader' instead for development.
-          is_prod ? MiniCssExtractPlugin.loader : 'style-loader',
-          'css-loader',
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: {
+              url: false,
+            }
+          },
         ],
       },
       {
@@ -77,7 +83,7 @@ const config: webpack.Configuration = {
       ],
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].css',
+      filename: is_prod ? '[name].[contenthash].css' : '[name].css',
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
