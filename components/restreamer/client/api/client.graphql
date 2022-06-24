@@ -36,161 +36,20 @@ subscription Files {
 
 subscription State {
     allRestreams {
-        id
-        key
-        label
-        input {
-            id
-            key
-            endpoints {
-                id
-                kind
-                status
-                label
-                fileId
-            }
-            src {
-                ... on RemoteInputSrc {
-                    url
-                    label
-                }
-                ... on FailoverInputSrc {
-                    inputs {
-                        id
-                        key
-                        endpoints {
-                            id
-                            kind
-                            status
-                            label
-                            fileId
-                        }
-                        src {
-                            ... on RemoteInputSrc {
-                                url
-                                label
-                            }
-                        }
-                        enabled
-                    }
-                }
-            }
-            enabled
-        }
-        outputs {
-            id
-            dst
-            label
-            previewUrl
-            volume {
-                level
-                muted
-            }
-            mixins {
-                id
-                src
-                volume {
-                    level
-                    muted
-                }
-                delay
-            }
-            enabled
-            status
-        }
-        playlist {
-            currentlyPlayingFile {
-                fileId
-                name
-                wasPlayed
-            }
-            queue {
-                fileId
-                name
-                wasPlayed
-            }
-        }
-        maxFilesInPlaylist
+        ...restreamBasic
     }
 }
 
-subscription Restream($id: RestreamId!) {
+subscription RestreamSubscription($id: RestreamId!) {
     restream(id: $id) {
-        id
-        key
-        label
-        input {
+        restream {
+            ...restreamBasic
+            ...restreamPlaylist
+        }
+        parent {
             id
-            key
-            endpoints {
-                id
-                kind
-                status
-                label
-                fileId
-            }
-            src {
-                ... on RemoteInputSrc {
-                    url
-                    label
-                }
-                ... on FailoverInputSrc {
-                    inputs {
-                        id
-                        key
-                        endpoints {
-                            id
-                            kind
-                            status
-                            label
-                            fileId
-                        }
-                        src {
-                            ... on RemoteInputSrc {
-                                url
-                                label
-                            }
-                        }
-                        enabled
-                    }
-                }
-            }
-            enabled
+            ...restreamOutputs
         }
-        outputs {
-            id
-            dst
-            label
-            previewUrl
-            volume {
-                level
-                muted
-            }
-            mixins {
-                id
-                src
-                volume {
-                    level
-                    muted
-                }
-                delay
-            }
-            enabled
-            status
-        }
-        playlist {
-            currentlyPlayingFile {
-                fileId
-                name
-                wasPlayed
-            }
-            queue {
-                fileId
-                name
-                wasPlayed
-            }
-        }
-        maxFilesInPlaylist
     }
 }
 
@@ -374,4 +233,89 @@ mutation SetSettings(
         googleApiKey: $googleApiKey
         maxFilesInPlaylist: $maxFilesInPlaylist
     )
+}
+
+fragment restreamBasic on Restream {
+    id
+    key
+    label
+    input {
+        id
+        key
+        endpoints {
+            id
+            kind
+            status
+            label
+            fileId
+        }
+        src {
+            ... on RemoteInputSrc {
+                url
+                label
+            }
+            ... on FailoverInputSrc {
+                inputs {
+                    id
+                    key
+                    endpoints {
+                        id
+                        kind
+                        status
+                        label
+                        fileId
+                    }
+                    src {
+                        ... on RemoteInputSrc {
+                            url
+                            label
+                        }
+                    }
+                    enabled
+                }
+            }
+        }
+        enabled
+    }
+    ...restreamOutputs
+    maxFilesInPlaylist
+}
+
+fragment restreamPlaylist on Restream {
+    playlist {
+        currentlyPlayingFile {
+            fileId
+            name
+            wasPlayed
+        }
+        queue {
+            fileId
+            name
+            wasPlayed
+        }
+    }
+}
+
+fragment restreamOutputs on Restream {
+    outputs {
+        id
+        dst
+        label
+        previewUrl
+        volume {
+            level
+            muted
+        }
+        mixins {
+            id
+            src
+            volume {
+                level
+                muted
+            }
+            delay
+        }
+        enabled
+        status
+    }
 }
