@@ -20,9 +20,9 @@
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
-  $: current_file = test($files.data);
+  $: current_file = searchFile($files.data);
 
-  function test(all_files) {
+  function searchFile(all_files) {
     if (all_files && all_files.files) {
       return all_files.files.find((val) => val.fileId === endpoint.fileId);
     } else {
