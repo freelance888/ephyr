@@ -8,9 +8,9 @@
     Info,
     RemoveOutput,
     ServerInfo,
-    State,
     TuneDelay,
-    TuneVolume
+    TuneVolume,
+    RestreamSubscription,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -38,11 +38,10 @@
 
   const urlParams = new URLSearchParams(window.location.search);
   const translationRestreamId = urlParams.get('tran_restream_id');
-  const parentOutputId = urlParams.get('parent_output_id');
 
   let isOnline = false;
+  const restream_sub = subscribe(RestreamSubscription, { variables: { 'id': translationRestreamId.toString() }, errorPolicy: 'all' });
   const info = subscribe(Info, { errorPolicy: 'all' });
-  const state = subscribe(State, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
   const files = subscribe(Files, { errorPolicy: 'all' });
 
@@ -50,15 +49,15 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info && $info.error;
-  $: isLoading = !isOnline || $state.loading;
-  $: canRenderMainComponent = isOnline && $state.data && $info.data;
-  $: stateError = $state && $state.error;
+  $: isLoading = !isOnline || $restream_sub.loading;
+  $: canRenderMainComponent = isOnline && $restream_sub.data && $info.data;
+  $: stateError = $restream_sub && $restream_sub.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
+  $: restream = canRenderMainComponent && $restream_sub.data.restream;
 
-  $: translationRestream = canRenderMainComponent && $state.data.allRestreams.find(x => x.id === translationRestreamId)
-  $: parentRestreamWithMixOutput = canRenderMainComponent && $state.data.allRestreams
-    .reduce((acc, x) => acc.concat(x.outputs.map(o => ({restreamId: x.id, output: o}))), [])
-    .find(x => x.output.id === parentOutputId);
+  $: translationRestream = canRenderMainComponent && restream.restream;
+  $: parentRestream = canRenderMainComponent && restream.parent;
+  $: parentRestreamOutput = parentRestream && parentRestream.restream.outputs.find(o => o.id === parentRestream.outputId);
 
   $: translationYoutubeUrl = canRenderMainComponent
     && translationRestream
@@ -88,13 +87,15 @@
         isFullView='true'
         globalOutputsFilters={[]}
       />
-      <div class='section-title'>Sound mixer</div>
-      <section class='uk-section uk-section-muted single-output'>
-        <Output restream_id={parentRestreamWithMixOutput.restreamId}
-                value={parentRestreamWithMixOutput.output}
-                isReadOnly='true'
-                mutations={outputMutations} />
-      </section>
+      {#if parentRestreamOutput && parentRestreamOutput.mixins.length > 0}
+        <div class='section-title'>Sound mixer</div>
+        <section class='uk-section uk-section-muted single-output'>
+          <Output restream_id={parentRestream.id}
+                  value={parentRestreamOutput}
+                  isReadOnly='true'
+                  mutations={outputMutations} />
+        </section>
+      {/if}
       <div class='section-title'>Playlist</div>
       <section class='uk-section uk-section-muted uk-padding-remove'>
         <Playlist restreamId={translationRestreamId} {playlist}/>

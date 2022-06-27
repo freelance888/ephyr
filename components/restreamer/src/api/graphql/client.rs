@@ -1092,16 +1092,46 @@ impl SubscriptionsRoot {
     async fn restream(
         id: RestreamId,
         context: &Context,
-    ) -> BoxStream<'static, Restream> {
+    ) -> BoxStream<'static, Option<RestreamWithParent>> {
+        let public_host = context.config().public_host.clone().unwrap();
         context
             .state()
             .restreams
             .signal_cloned()
+            .filter_map(move |vec| {
+                let restream = vec.iter().find(|r| r.id == id);
+                let parent = restream
+                    .map(|restream| {
+                        vec.iter().find_map(|r| {
+                            r.outputs
+                                .iter()
+                                .find(|o| {
+                                    o.dst
+                                        .is_address_of_restream(
+                                            &restream.key,
+                                            &public_host,
+                                        )
+                                        .unwrap_or(false)
+                                })
+                                .map(|out| RestreamParent {
+                                    restream: r.clone(),
+                                    output_id: out.id,
+                                })
+                        })
+                    })
+                    .flatten();
+
+                if restream.is_some() {
+                    Some(RestreamWithParent {
+                        restream: restream.unwrap().clone(),
+                        parent,
+                    })
+                } else {
+                    None
+                }
+            })
             .dedupe_cloned()
             .to_stream()
-            .filter_map(move |vec| async move {
-                vec.iter().find(|r| r.id == id).cloned()
-            })
             .boxed()
     }
 }
@@ -1144,4 +1174,24 @@ pub struct Info {
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
     pub max_files_in_playlist: Option<NumberOfItems>,
+}
+
+/// Restream with its source output if it has any
+#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
+pub struct RestreamWithParent {
+    /// Restream info
+    restream: Restream,
+
+    /// Restream parent if it has any
+    parent: Option<RestreamParent>,
+}
+
+/// Restream parent which contains output that streams to the current restream
+#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
+pub struct RestreamParent {
+    /// parent restream
+    restream: Restream,
+
+    /// output ID of the parent restream output that streams to the child
+    output_id: OutputId,
 }

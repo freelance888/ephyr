@@ -2075,6 +2075,23 @@ impl OutputDstUrl {
             _ => false,
         }
     }
+
+    pub fn is_address_of_restream(
+        &self,
+        key: &RestreamKey,
+        public_host: &str,
+    ) -> Option<bool> {
+        let host = self.0.host_str()?;
+        let match_host = (host == "localhost")
+            || (host == "127.0.0.1")
+            || (host == public_host);
+
+        // Get the restream key
+        let segment = self.0.path_segments()?.next()?;
+        let path_match = segment == format!("{}", key);
+
+        return Some(match_host && path_match);
+    }
 }
 
 impl<'de> Deserialize<'de> for OutputDstUrl {

@@ -47,8 +47,11 @@ subscription RestreamSubscription($id: RestreamId!) {
             ...restreamPlaylist
         }
         parent {
-            id
-            ...restreamOutputs
+            restream {
+                id
+                ...restreamOutputs
+            }
+            outputId
         }
     }
 }
