@@ -481,7 +481,7 @@ where
 }
 
 /// Retrieves list of video files from a Google drive folder
-pub async fn get_video_list_from_drive_folder(
+pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
 ) -> Result<Vec<PlaylistFileInfo>, &'static str> {

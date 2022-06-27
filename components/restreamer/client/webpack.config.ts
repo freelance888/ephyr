@@ -40,7 +40,7 @@ const config: webpack.Configuration = {
             hotReload: true,
             compilerOptions: {
               dev: !is_prod,
-            }
+            },
           },
         },
       },
@@ -57,7 +57,7 @@ const config: webpack.Configuration = {
             loader: 'css-loader',
             options: {
               url: false,
-            }
+            },
           },
         ],
       },

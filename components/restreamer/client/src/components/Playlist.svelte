@@ -3,11 +3,11 @@
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
-  import { GetPlaylistFromDrive, SetPlaylist, PlayFileFromPlaylist, StopPlayingFileFromPlaylist } from '../../api/client.graphql';
+  import { GetPlaylistFromGdrive, SetPlaylist, PlayFileFromPlaylist, StopPlayingFileFromPlaylist } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
 
-  const getPlaylistFromDrive = mutation(GetPlaylistFromDrive);
+  const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist)
   const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist)
@@ -33,10 +33,6 @@
 
   let isSortAsc = true;
   let googleDriveFolderId = '';
-
-  function getOrderedPlaylist(list) {
-     return orderBy(list, ['isFinished', 'isPlaying', 'name'], ['desc', 'desc', 'asc']);
-  }
 
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
@@ -64,7 +60,7 @@
 
   async function startStopPlaying(file_id) {
     try {
-      if (playlist.currentlyPlayingFile) {
+      if (playlist.currentlyPlayingFile && playlist.currentlyPlayingFile.fileId === file_id) {
         const variables = { restreamId }
         await stopPlayingFileFromPlaylist({ variables });
       } else {

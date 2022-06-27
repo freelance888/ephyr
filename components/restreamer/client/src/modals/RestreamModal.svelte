@@ -205,11 +205,9 @@
             min="2"
             step="1"
             bind:value={$value.max_files_in_playlist}
-            placeholder='Files limit'
+            placeholder="Files limit"
           />
-          <div class="uk-alert">
-            Max amount of files in a playlist.
-          </div>
+          <div class="uk-alert">Max amount of files in a playlist.</div>
         </fieldset>
 
         <button

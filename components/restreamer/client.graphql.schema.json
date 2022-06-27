@@ -586,7 +586,7 @@
             "deprecationReason": null
           },
           {
-            "name": "getPlaylistFromDrive",
+            "name": "getPlaylistFromGdrive",
             "description": "Sends request to Google API and appends found files to the provided\nrestream's playlist.",
             "args": [
               {

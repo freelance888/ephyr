@@ -42,14 +42,14 @@
           Title for the server. This title is visible in current tab of the
           browser
         </div>
-        <label class='uk-display-block'
+        <label class="uk-display-block"
           ><input
             class="uk-checkbox"
             bind:checked={info.deleteConfirmation}
             type="checkbox"
           /> Confirm deletion</label
         >
-        <label class='uk-display-block'
+        <label class="uk-display-block"
           ><input
             class="uk-checkbox"
             bind:checked={info.enableConfirmation}
@@ -71,11 +71,9 @@
           min="2"
           step="1"
           bind:value={info.maxFilesInPlaylist}
-          placeholder='Files limit'
+          placeholder="Files limit"
         />
-        <div class="uk-alert">
-          Max amount of files in a playlist.
-        </div>
+        <div class="uk-alert">Max amount of files in a playlist.</div>
       </fieldset>
 
       <button class="uk-button uk-button-primary" on:click={submit_change}

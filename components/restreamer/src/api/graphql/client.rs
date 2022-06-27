@@ -12,6 +12,7 @@ use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
 use rand::Rng as _;
+use tap::Tap;
 
 use crate::{
     api::graphql,
@@ -26,7 +27,7 @@ use crate::{
 
 use super::Context;
 use crate::{
-    file_manager::{get_video_list_from_drive_folder, LocalFileInfo},
+    file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
     state::{EndpointId, NumberOfItems, ServerInfo, VolumeLevel},
 };
 use url::Url;
@@ -303,9 +304,15 @@ impl MutationsRoot {
             .lock_mut()
             .iter_mut()
             .find(|r| r.id == restream_id)?
-            .playlist
-            .queue
-            .retain(|p| playlist.contains(&p.file_id));
+            .tap_mut(|restream| {
+                restream.playlist.queue = playlist.iter()
+                    .filter_map(|order_id| {
+                        restream.playlist.queue.iter().find(|f| f.file_id == *order_id)
+                    })
+                    .map(|v| v.clone())
+                    .collect();
+                ()
+            });
         return Some(true);
     }
 
@@ -340,11 +347,7 @@ impl MutationsRoot {
             .iter_mut()
             .find_map(|r| {
                 (r.id == restream_id).then(|| {
-                    let file =
-                        r.playlist.queue.iter().find(|f| f.file_id == file_id);
-                    if let Some(f) = file {
-                        r.playlist.currently_playing_file = Some(f.clone());
-                    }
+                        r.playlist.currently_playing_file = r.playlist.queue.iter().find(|f| f.file_id == file_id).cloned();
                 })
             })?;
 
@@ -353,7 +356,7 @@ impl MutationsRoot {
 
     /// Sends request to Google API and appends found files to the provided
     /// restream's playlist.
-    async fn get_playlist_from_drive(
+    async fn get_playlist_from_gdrive(
         restream_id: RestreamId,
         folder_id: String,
         context: &Context,
@@ -361,7 +364,7 @@ impl MutationsRoot {
         let api_key =
             context.state().settings.lock_mut().google_api_key.clone()?;
         let result =
-            get_video_list_from_drive_folder(&api_key, &folder_id).await;
+            get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(playlist_files) = result {
             context
                 .state()

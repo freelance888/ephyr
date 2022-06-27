@@ -80,17 +80,19 @@ export function isMixPage(): boolean {
 
 export const getMixPageUrl = (restreamId: string, outputId: string) => {
   return `/${MixPage}?id=${restreamId}&output=${outputId}`;
-}
+};
 
 const FullStreamPage = 'full-stream';
 export function isFullStreamPage(): boolean {
   return window.location.pathname === `/${FullStreamPage}`;
 }
 
-export const getFullStreamUrl = (restreamId: string, parentOutputId: string) => {
+export const getFullStreamUrl = (
+  restreamId: string,
+  parentOutputId: string
+) => {
   return `/${FullStreamPage}?tran_restream_id=${restreamId}&parent_output_id=${parentOutputId}`;
-}
-
+};
 
 /**
  * Creates graphQL client for specified apiUrl

@@ -83,7 +83,12 @@ impl RestreamersPool {
 
         for r in restreams {
             self.apply_playlist(&r, &mut new_pool);
-            self.apply_input(&r.key, &r.input, r.playlist.currently_playing_file.is_some(), &mut new_pool);
+            self.apply_input(
+                &r.key,
+                &r.input,
+                r.playlist.currently_playing_file.is_some(),
+                &mut new_pool,
+            );
 
             if !r.input.enabled
                 || (!r.input.is_ready_to_serve()
@@ -147,7 +152,6 @@ impl RestreamersPool {
         }
 
         for endpoint in &input.endpoints {
-
             let id = endpoint.id.into();
 
             let kind = RestreamerKind::from_input(
@@ -164,7 +168,6 @@ impl RestreamersPool {
             }
         }
     }
-
 
     /// Inspects the given [`state::Output`] filling the `new_pool` with a
     /// required [FFmpeg] re-streaming process. Tries to preserve already
@@ -192,12 +195,16 @@ impl RestreamersPool {
         self.apply_new_kind(id, new_kind, new_pool)
     }
 
-
     /// Tries to remove process with provided `id` from current process pool
     /// and checks if it needs to be restarted bases on `new_kind`. If not
     /// the process is inserted to `new_pool`, otherwise a new process is
     /// created with new settings.
-    fn apply_new_kind(&mut self, id: Uuid, new_kind: RestreamerKind, new_pool: &mut HashMap<Uuid, Restreamer>) -> Option<()> {
+    fn apply_new_kind(
+        &mut self,
+        id: Uuid,
+        new_kind: RestreamerKind,
+        new_pool: &mut HashMap<Uuid, Restreamer>,
+    ) -> Option<()> {
         let process = self
             .pool
             .remove(&id)
@@ -805,7 +812,7 @@ impl CopyRestreamer {
 /// [FFmpeg]: https://ffmpeg.org
 #[derive(Clone, Debug)]
 pub struct FileRestreamer {
-    /// ID of an element in a [`State`] this [`CopyRestreamer`] process is
+    /// ID of an element in a [`State`] this [`FileRestreamer`] process is
     /// related to.
     pub id: Uuid,
 
@@ -818,7 +825,7 @@ pub struct FileRestreamer {
 }
 
 impl FileRestreamer {
-    /// Checks whether this [`CopyRestreamer`] process must be restarted, as
+    /// Checks whether this [`FileRestreamer`] process must be restarted, as
     /// cannot apply the new `actual` params on itself correctly, without
     /// interruptions.
     #[inline]
@@ -828,7 +835,7 @@ impl FileRestreamer {
     }
 
     /// Properly setups the given [FFmpeg] [`Command`] for this
-    /// [`CopyRestreamer`] before running it.
+    /// [`FileRestreamer`] before running it.
     ///
     /// # Errors
     ///

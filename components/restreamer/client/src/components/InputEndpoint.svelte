@@ -21,6 +21,17 @@
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
   $: current_file = searchFile($files.data);
+  $: isFile = endpoint.kind === 'FILE';
+  $: alertDanger = isFile
+    ? current_file && current_file.state === 'ERROR'
+    : endpoint.status === 'OFFLINE';
+  $: alertWarning = isFile
+    ? current_file &&
+      (current_file.state === 'PENDING' || current_file.state === 'DOWNLOADING')
+    : endpoint.status === 'INITIALIZING';
+  $: alertSuccess = isFile
+    ? current_file && current_file.state === 'LOCAL'
+    : endpoint.status === 'ONLINE';
 
   function searchFile(all_files) {
     if (all_files && all_files.files) {
@@ -66,22 +77,9 @@
     <div
       class:endpoint-status-icon={true}
       data-testid={`endpoint-status:${endpoint.status}`}
-      class:uk-alert-danger={endpoint.kind === 'FILE'
-        ? current_file
-          ? current_file.state === 'ERROR'
-          : false
-        : endpoint.status === 'OFFLINE'}
-      class:uk-alert-warning={endpoint.kind === 'FILE'
-        ? current_file
-          ? current_file.state === 'PENDING' ||
-            current_file.state === 'DOWNLOADING'
-          : false
-        : endpoint.status === 'INITIALIZING'}
-      class:uk-alert-success={endpoint.kind === 'FILE'
-        ? current_file
-          ? current_file.state === 'LOCAL'
-          : false
-        : endpoint.status === 'ONLINE'}
+      class:uk-alert-danger={alertDanger}
+      class:uk-alert-warning={alertWarning}
+      class:uk-alert-success={alertSuccess}
     >
       {#if endpoint.kind === 'FILE'}
         <span
@@ -138,9 +136,7 @@
 
     {#if endpoint.kind === 'FILE' && current_file}
       <Url
-        url="{current_file.name
-          ? current_file.name
-          : current_file.fileId}
+        url="{current_file.name ? current_file.name : current_file.fileId}
       {current_file.downloadState &&
         current_file.downloadState.currentProgress !==
           current_file.downloadState.maxProgress
