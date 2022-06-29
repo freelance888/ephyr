@@ -30,9 +30,13 @@
       }))
     : [];
   $: hasPlaylistLoaded = queue && queue.length > 0
-
-  let isSortAsc = true;
   let googleDriveFolderId = '';
+  let isSortAsc = true;
+
+  async function orderPlaylist(isSortAsc) {
+      const fileIds = orderBy(queue, ['name'], [isSortAsc ? 'asc' : 'desc']).map(x => x.id);
+      await updatePlaylist(fileIds);
+  }
 
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
@@ -115,8 +119,8 @@
     </div>
     <div class="uk-margin uk-grid-small uk-child-width-auto uk-grid">
       <span>Sort:</span>
-      <label><input class="uk-radio" type="radio" name="sortRadio" checked={isSortAsc} disabled={!hasPlaylistLoaded} >&nbsp;A-Z</label>
-      <label><input class="uk-radio" type="radio" name="sortRadio" checked={!isSortAsc} disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
+      <label on:change={async () => await orderPlaylist(true)}><input class="uk-radio" checked='checked' type="radio" name="sortRadio" disabled={!hasPlaylistLoaded} >&nbsp;A-Z</label>
+      <label on:change={async () => await orderPlaylist(false)}><input class="uk-radio" type="radio" name="sortRadio" disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
     </div>
 
     <div class='playlist-items' use:dndzone={{items: queue, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={onDrop} >
