@@ -7,10 +7,11 @@ publish = false
 default-run = "ephyr-restreamer"
 
 [dependencies]
-actix-service = "1.0"
-actix-web = "3.3"
-actix-web-httpauth = "0.5"
-actix-web-static-files = "3.0"
+actix-service = "2.0.2"
+actix-web = "4.1"
+actix-web-httpauth = "0.6"
+actix-web-static-files = "4.0"
+static-files = "0.2.3"
 anyhow = "1.0"
 argon2 = { version = "0.8", package = "rust-argon2", default-features = false }
 askama = { version = "0.10", default-features = false }
@@ -23,9 +24,9 @@ futures-signals = "0.3"
 graphql_client = "0.10.0"
 hex = "0.4"
 humantime = "2.1"
-juniper = "0.15"
-juniper_actix = { version = "0.2", features = ["subscriptions"] }
-juniper_graphql_ws = "0.2"
+juniper = "0.15.9"
+juniper_actix = { version = "0.4.0", features = ["subscriptions"] }
+juniper_graphql_ws = "0.3.0"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.1"
 rand = "0.8"
@@ -40,23 +41,26 @@ structopt = "0.3"
 systemstat = "0.1.8"
 url = { version = "2.1", features = ["serde"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
+zeromq = "0.3.3"
+tsclientlib = "0.2.0"
+tsproto-packets = "0.1.0"
 [dependencies.derive_more]
     version = "0.99.11"
     features = ["as_ref", "deref", "display", "error", "from"]
     default-features = false
 [dependencies.tokio]
-    version = "0.2"
-    features = ["fs", "io-util", "process", "rt-core", "stream", "sync", "time"]
-[dependencies.tsclientlib]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "ee95d775ad6dda552847bf9f484ab3ff1a70f833" # branch = "master"
-[dependencies.tsproto-packets]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "ee95d775ad6dda552847bf9f484ab3ff1a70f833" # branch = "master"
-[dependencies.zeromq]
-    git = "https://github.com/zeromq/zmq.rs"
-    rev = "5bc792a5b8876d7281e9bd933519d49a62b76caf" # tokio = "0.2"
+    version = "1.19.2"
+    features = ["fs", "io-util", "process", "sync", "time"]
+#[dependencies.juniper]
+#    git="https://github.com/graphql-rust/juniper"
+#    rev = "a32140cd46f17491d3f7a93b4a6c67732a29b0e8" # branch = "master"
+#[dependencies.juniper_actix]
+#    git="https://github.com/graphql-rust/juniper"
+#    rev = "a32140cd46f17491d3f7a93b4a6c67732a29b0e8" # branch = "master"
+#    features = ["subscriptions"]
+#[dependencies.juniper_graphql_ws]
+#    git="https://github.com/graphql-rust/juniper"
+#    rev = "a32140cd46f17491d3f7a93b4a6c67732a29b0e8" # branch = "master"
 
 [build-dependencies]
-anyhow = "1.0"
-actix-web-static-files = "3.0"
+static-files = "0.2.3"

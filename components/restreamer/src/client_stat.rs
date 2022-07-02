@@ -175,7 +175,7 @@ impl ClientJob {
                         log::error!("{}", error_message);
                     });
 
-                time::delay_for(Duration::from_secs(2)).await;
+                time::sleep(Duration::from_secs(2)).await;
             }
         });
 

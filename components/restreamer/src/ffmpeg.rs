@@ -260,7 +260,7 @@ impl Restreamer {
                         let set_online = async move {
                             // If ffmpeg process does not fail within 10 sec
                             // than set `Online` status.
-                            time::delay_for(Duration::from_secs(10)).await;
+                            time::sleep(Duration::from_secs(10)).await;
                             kind.renew_status(Status::Online, state);
                             future::pending::<()>().await;
                             Ok(())
@@ -297,7 +297,7 @@ impl Restreamer {
                     );
                 });
 
-                time::delay_for(Duration::from_secs(2)).await;
+                time::sleep(Duration::from_secs(2)).await;
             }
         });
 
@@ -1197,7 +1197,7 @@ fn new_unique_zmq_port() -> u16 {
 /// [FFmpeg]: https://ffmpeg.org
 /// [ZeroMQ]: https://zeromq.org
 fn tune_volume(track: Uuid, port: u16, volume: Volume) {
-    use zeromq::{BlockingRecv as _, BlockingSend as _, Socket as _};
+    use zeromq::{Socket as _, SocketRecv as _, SocketSend as _};
 
     drop(tokio::spawn(
         AssertUnwindSafe(async move {

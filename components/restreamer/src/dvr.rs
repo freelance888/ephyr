@@ -11,7 +11,6 @@ use std::{
 
 use anyhow::anyhow;
 use ephyr_log::log;
-use futures::{future, TryFutureExt as _, TryStreamExt as _};
 use once_cell::sync::OnceCell;
 use tokio::fs;
 use url::Url;
@@ -85,22 +84,45 @@ impl Storage {
 
         let mut output_dir = dir.clone();
         output_dir.push(id.to_string());
-
-        fs::read_dir(output_dir)
-            .try_flatten_stream()
-            .try_filter_map(|i| async move {
-                Ok(i.file_type().await?.is_file().then(|| i.path()).and_then(
-                    |p| Some(p.strip_prefix(dir).ok()?.display().to_string()),
-                ))
-            })
-            .try_collect()
-            .await
-            .unwrap_or_else(|e| {
+        let mut entries = match fs::read_dir(output_dir).await {
+            Ok(d) => d,
+            Err(e) => {
                 if e.kind() != io::ErrorKind::NotFound {
                     log::error!("Failed to list {} DVR files: {}", id, e);
                 }
-                vec![]
-            })
+
+                return vec![];
+            }
+        };
+
+        let mut lists = vec![];
+        while let next_entry = entries.next_entry().await {
+            match next_entry {
+                Ok(Some(entry)) => match entry.file_type().await {
+                    Ok(file_type) => {
+                        if file_type.is_file() {
+                            match entry.file_name().to_str() {
+                                None => continue,
+                                Some(s) => lists.push(s.to_string()),
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to list {} DVR files: {}", id, e);
+
+                        return vec![];
+                    }
+                },
+                Err(e) => {
+                    log::error!("Failed to list {} DVR files: {}", id, e);
+
+                    return vec![];
+                }
+                _ => {}
+            }
+        }
+
+        lists
     }
 
     /// Removes a [DVR] file from this [`Storage`] identified by its relative
@@ -134,11 +156,22 @@ impl Storage {
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
     pub async fn cleanup(&self, restreams: &[state::Restream]) {
         // TODO: Consider only `file:///` outputs?
-        fs::read_dir(&self.root_path)
-            .try_flatten_stream()
-            .try_filter(|i| {
-                future::ready(
-                    i.file_name()
+
+        let mut entries = match fs::read_dir(&self.root_path).await {
+            Ok(d) => d,
+            Err(e) => {
+                if e.kind() != io::ErrorKind::NotFound {
+                    log::error!("reading directory: {}", e);
+                }
+
+                return;
+            }
+        };
+        while let next_entry = entries.next_entry().await {
+            match next_entry {
+                Ok(Some(entry)) => {
+                    let can_delete = entry
+                        .file_name()
                         .to_str()
                         .and_then(|n| Uuid::parse_str(n).ok())
                         .map_or(true, |id| {
@@ -146,20 +179,37 @@ impl Storage {
                             !restreams
                                 .iter()
                                 .any(|r| r.outputs.iter().any(|o| o.id == id))
-                        }),
-                )
-            })
-            .try_for_each_concurrent(4, |i| async move {
-                if i.file_type().await?.is_dir() {
-                    fs::remove_dir_all(i.path()).await
-                } else {
-                    fs::remove_file(i.path()).await
+                        });
+                    if !can_delete {
+                        continue;
+                    }
+                    match entry.file_type().await {
+                        Ok(file_type) => {
+                            if file_type.is_dir() {
+                                if let Err(e) =
+                                    fs::remove_dir_all(entry.path()).await
+                                {
+                                    log::error!("can't remove dir all: {}", e);
+                                }
+                            } else {
+                                if let Err(e) =
+                                    fs::remove_file(entry.path()).await
+                                {
+                                    log::error!("can't remove file: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            log::error!("can't cast file_type: {}", e);
+                        }
+                    }
                 }
-            })
-            .await
-            .unwrap_or_else(|e| {
-                log::error!("Failed to cleanup DVR files: {}", e);
-            });
+                Err(e) => {
+                    log::error!("get next entry from directory {}", e);
+                }
+                _ => {}
+            }
+        }
     }
 }
 

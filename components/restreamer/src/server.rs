@@ -51,12 +51,13 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     )
     .await
     .map_err(|e| log::error!("Failed to initialize SRS server: {}", e))?;
+
     State::on_change(
         "cleanup_dvr_files",
         &state.restreams,
         |restreams| async move {
             // Wait for all the re-streaming processes to release DVR files.
-            time::delay_for(Duration::from_secs(1)).await;
+            time::sleep(Duration::from_secs(1)).await;
             dvr::Storage::global().cleanup(&restreams).await;
         },
     );
@@ -176,10 +177,10 @@ pub mod client {
                 .app_data(
                     basic::Config::default().realm("Any login is allowed"),
                 )
-                .data(api::graphql::client::schema())
-                .data(api::graphql::mix::schema())
-                .data(api::graphql::dashboard::schema())
-                .data(api::graphql::statistics::schema())
+                .app_data(web::Data::new(api::graphql::client::schema()))
+                .app_data(web::Data::new(api::graphql::mix::schema()))
+                .app_data(web::Data::new(api::graphql::dashboard::schema()))
+                .app_data(web::Data::new(api::graphql::statistics::schema()))
                 .wrap(middleware::Logger::default())
                 .wrap_fn(|req, srv| match authorize(req) {
                     Ok(req) => srv.call(req).left_future(),
@@ -781,7 +782,7 @@ pub mod statistics {
                             // Do not change delay time, since it is also used
                             // further to compute network statistics
                             // (bytes sent/received last second)
-                            time::delay_for(Duration::from_secs(1)).await;
+                            time::sleep(Duration::from_secs(1)).await;
                             let cpu = cpu.done().unwrap();
 
                             // in percents
