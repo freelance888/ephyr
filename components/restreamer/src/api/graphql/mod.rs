@@ -71,6 +71,9 @@ impl Deref for Context {
     }
 }
 
+// To make our context usable by Juniper, we have to implement a marker trait.
+impl juniper::Context for Context {}
+
 /// Error returned to the client by GraphQL API.
 #[derive(Clone, Debug, Display, Error, SmartDefault)]
 #[display(fmt = "{}", message)]
@@ -192,12 +195,12 @@ impl<S: ScalarValue> IntoFieldError<S> for Error {
     }
 }
 
-impl From<Error> for GraphQLResponse<'_> {
-    #[inline]
-    fn from(err: Error) -> Self {
-        Self::error(err.into_field_error())
-    }
-}
+// impl From<Error> for GraphQLResponse<'_> {
+//     #[inline]
+//     fn from(err: Error) -> Self {
+//         Self::error(err.into_field_error())
+//     }
+// }
 
 impl From<Infallible> for Error {
     #[inline]
