@@ -5,12 +5,12 @@
 use std::{
     borrow::Cow,
     collections::HashMap,
+    fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     process::Stdio,
     sync::Arc,
     time::Duration,
-    fmt::Write as _,
 };
 
 use derive_more::From;
@@ -956,9 +956,12 @@ impl MixingRestreamer {
             };
 
             if !mixin.delay.is_zero() {
-                let _ = write!(extra_filters, "adelay=delays={}:all=1,", mixin.delay.as_millis());
+                let _ = write!(
+                    extra_filters,
+                    "adelay=delays={}:all=1,",
+                    mixin.delay.as_millis()
+                );
             }
-
 
             let volume = output
                 .as_ref()
