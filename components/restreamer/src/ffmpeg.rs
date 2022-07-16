@@ -1211,7 +1211,6 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     e,
                 );
             })?;
-
             socket
                 .send(
                     format!(
@@ -1238,12 +1237,13 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                 );
             })?;
 
-            if resp.data.as_ref() != "0 Success".as_bytes() {
+            let data = resp.into_vec().pop().unwrap();
+            if data.as_ref() != "0 Success".as_bytes() {
                 log::error!(
                     "Received invalid ZeroMQ response from {} : {}",
                     addr,
-                    std::str::from_utf8(&*resp.data).map_or_else(
-                        |_| Cow::Owned(format!("{:?}", &*resp.data)),
+                    std::str::from_utf8(&data).map_or_else(
+                        |_| Cow::Owned(format!("{:?}", &data)),
                         Cow::Borrowed,
                     ),
                 );
