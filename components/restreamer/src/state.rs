@@ -2400,7 +2400,7 @@ impl VolumeLevel {
         }
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[allow(clippy::wrong_self_convention,clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
