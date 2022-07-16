@@ -2,6 +2,10 @@
 //!
 //! [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 
+#![allow(  // TODO: Find a way to ignore in generated code instead globally
+    clippy::unreadable_literal,
+    clippy::wildcard_imports)
+]
 #![deny(
     rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
