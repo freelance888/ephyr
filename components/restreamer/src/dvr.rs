@@ -191,12 +191,10 @@ impl Storage {
                                 {
                                     log::error!("can't remove dir all: {}", e);
                                 }
-                            } else {
-                                if let Err(e) =
-                                    fs::remove_file(entry.path()).await
-                                {
-                                    log::error!("can't remove file: {}", e);
-                                }
+                            } else if let Err(e) =
+                                fs::remove_file(entry.path()).await
+                            {
+                                log::error!("can't remove file: {}", e);
                             }
                         }
                         Err(e) => {

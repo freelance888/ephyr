@@ -10,6 +10,7 @@ use std::{
     process::Stdio,
     sync::Arc,
     time::Duration,
+    fmt::Write as _,
 };
 
 use derive_more::From;
@@ -955,11 +956,9 @@ impl MixingRestreamer {
             };
 
             if !mixin.delay.is_zero() {
-                extra_filters.push_str(&format!(
-                    "adelay=delays={}:all=1,",
-                    mixin.delay.as_millis(),
-                ));
+                let _ = write!(extra_filters, "adelay=delays={}:all=1,", mixin.delay.as_millis());
             }
+
 
             let volume = output
                 .as_ref()

@@ -919,6 +919,7 @@ impl ClientId {
         Self(url)
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(self.0.as_str().to_owned())
     }
@@ -2399,6 +2400,7 @@ impl VolumeLevel {
         }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
@@ -2469,6 +2471,7 @@ impl Delay {
         self.0 == Duration::default()
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(self.as_millis())
     }
