@@ -300,13 +300,13 @@ impl Manager {
                     e,
                 )
             })?;
-            fs::remove_file(&tmp_path).await.map_err(|e| {
-                anyhow!(
-                    "Failed to remove '{}' file: {}",
-                    tmp_path.display(),
-                    e,
-                )
-            })?;
+            fs::remove_file(&tmp_path)
+                .await
+                .map_err(|e|
+                    anyhow!(
+                        "Failed to remove '{}' file: {}",
+                        tmp_path.display(), e,)
+                )?;
         }
 
         log::info!(

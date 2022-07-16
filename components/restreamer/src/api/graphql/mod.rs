@@ -11,10 +11,7 @@ use std::{borrow::Cow, convert::Infallible, fmt, ops::Deref};
 
 use actix_web::{http, HttpRequest};
 use derive_more::{Display, Error};
-use juniper::{
-    graphql_value, http::GraphQLResponse, FieldError, IntoFieldError,
-    ScalarValue,
-};
+use juniper::{graphql_value, FieldError, IntoFieldError, ScalarValue};
 use send_wrapper::SendWrapper;
 use smart_default::SmartDefault;
 

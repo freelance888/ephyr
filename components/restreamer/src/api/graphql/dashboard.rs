@@ -8,8 +8,7 @@ use crate::{
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
-use futures::stream::BoxStream;
-use futures::StreamExt;
+use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 

@@ -6,8 +6,7 @@ use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
-use futures::stream::BoxStream;
-use futures::StreamExt;
+use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -67,8 +66,8 @@ impl MutationsRoot {
         )]
         replace: bool,
         #[graphql(
-            description = "Optional ID of a concrete `Restream` to apply the `spec` \
-                           to without touching other `Restream`s."
+            description = "Optional ID of a concrete `Restream` to apply \
+                           the `spec` to without touching other `Restream`s."
         )]
         restream_id: Option<RestreamId>,
         context: &Context,
@@ -115,6 +114,7 @@ impl MutationsRoot {
     ///
     /// Returns `null` if a `Restream` with the given `id` doesn't exist,
     /// otherwise always returns `true`.
+    #[allow(clippy::too_many_arguments)]
     fn set_restream(
         #[graphql(description = "Unique key to set the `Restream` with.")]
         key: RestreamKey,
@@ -144,14 +144,13 @@ impl MutationsRoot {
         with_backup: bool,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
-                               additional endpoint for serving a live stream via \
-                               HLS.",
+                           additional endpoint for serving a live stream via \
+                           HLS.",
             default = false
         )]
         with_hls: bool,
-        #[graphql(
-            description = "ID of the `Restream` to be updated rather than creating a new one."
-        )]
+        #[graphql(description = "ID of the `Restream` to be updated \
+                                 rather than creating a new one.")]
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -385,9 +384,8 @@ impl MutationsRoot {
             default = Vec::new(),
         )]
         mixins: Vec<MixinSrcUrl>,
-        #[graphql(
-            description = "ID of the `Output` to be updated rather than creating a new one."
-        )]
+        #[graphql(description = "ID of the `Output` to be updated \
+                                 rather than creating a new one.")]
         id: Option<OutputId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -650,9 +648,8 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
         output_id: OutputId,
         #[graphql(description = "ID of the tuned `Mixin`.")] mixin_id: MixinId,
-        #[graphql(
-            description = "Number of milliseconds to delay the `Mixin` before mix it into its `Output`."
-        )]
+        #[graphql(description = "Number of milliseconds to delay \
+                                 the `Mixin` before mix it into its `Output`.")]
         delay: Delay,
         context: &Context,
     ) -> Option<bool> {
@@ -670,8 +667,8 @@ impl MutationsRoot {
     async fn remove_dvr_file(
         #[graphql(
             description = "Relative path of the recorded file to be removed.\
-                                 \n\n\
-                                 Use the exact value returned by `Query.dvrFiles`."
+                           \n\n \
+                           Use the exact value returned by `Query.dvrFiles`."
         )]
         path: String,
     ) -> Result<bool, graphql::Error> {
@@ -697,13 +694,11 @@ impl MutationsRoot {
     ///
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
     fn set_password(
-        #[graphql(
-            description = "New password to be set. In `null` then unsets the current password."
-        )]
+        #[graphql(description = "New password to be set. \
+                                 In `null` then unsets the current password.")]
         new: Option<String>,
-        #[graphql(
-            description = "Old password for authorization, if it was set previously."
-        )]
+        #[graphql(description = "Old password for authorization, \
+                                 if it was set previously.")]
         old: Option<String>,
         kind: Option<PasswordKind>,
         context: &Context,
@@ -768,12 +763,12 @@ impl MutationsRoot {
     /// characters length. Otherwise returns `true`
     fn set_settings(
         #[graphql(description = "Title for the server")] title: Option<String>,
-        #[graphql(
-            description = "Whether do we need to confirm deletion of inputs and outputs"
-        )]
+        #[graphql(description = "Whether do we need to confirm deletion \
+                                 of inputs and outputs")]
         delete_confirmation: Option<bool>,
         #[graphql(
-            description = "Whether do we need to confirm enabling/disabling of inputs or outputs"
+            description = "Whether do we need to confirm enabling/disabling \
+                           of inputs or outputs"
         )]
         enable_confirmation: Option<bool>,
         context: &Context,
@@ -861,9 +856,9 @@ impl QueriesRoot {
     /// this server at the moment.
     fn export(
         #[graphql(
-            description = "IDs of `Restream`s to be exported.\
-                           \n\n\
-                           If empty, then all the `Restream`s will be exported.",
+            description = "IDs of `Restream`s to be exported. \n\n \
+                           If empty, then all the `Restream`s \
+                           will be exported.",
             default = Vec::new(),
         )]
         ids: Vec<RestreamId>,

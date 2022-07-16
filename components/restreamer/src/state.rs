@@ -33,7 +33,6 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 /// Server's settings.

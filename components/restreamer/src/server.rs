@@ -424,8 +424,9 @@ pub mod client {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 pub mod callback {
-    use actix_web::web::Data;
-    use actix_web::{error, middleware, post, web, App, Error, HttpServer};
+    use actix_web::{
+        error, middleware, post, web, web::Data, App, Error, HttpServer,
+    };
     use ephyr_log::log;
 
     use crate::{
@@ -472,7 +473,7 @@ pub mod callback {
     #[post("/")]
     async fn on_callback(
         req: web::Json<callback::Request>,
-        state: web::Data<State>,
+        state: Data<State>,
     ) -> Result<&'static str, Error> {
         match req.action {
             callback::Event::OnConnect => on_connect(&req, &*state),

@@ -2,8 +2,7 @@
 //!
 //! [GraphQL]: https://graphql.com
 
-use futures::stream::BoxStream;
-use futures::StreamExt;
+use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 
