@@ -21,9 +21,8 @@ use futures::{
 };
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
-    graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalar, GraphQLUnion,
-    GraphQLValue, InputValue, ParseScalarResult, ParseScalarValue, ScalarToken,
-    ScalarValue, Value,
+    GraphQLEnum, GraphQLObject, GraphQLScalar, GraphQLUnion, InputValue,
+    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 use once_cell::sync::Lazy;
 use regex::Regex;

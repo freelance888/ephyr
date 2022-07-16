@@ -215,7 +215,7 @@ impl AsyncRead for Input {
         if self.cursor >= self.frame.len() {
             // `time::Interval` stream never returns `None`, so we can omit
             // checking it to be finished.
-            let _ = ready!(Pin::new(&mut self.ticker).poll_next(cx));
+            let _ = ready!(Pin::new(&mut self.ticker).poll_tick(cx));
 
             self.cursor = 0;
             self.frame.fill(0.0);
@@ -244,8 +244,7 @@ impl AsyncRead for Input {
             &self.frame[cursor..(cursor + size)],
             unfilled,
         );
-        buf.put_slice(unfilled);
-        self.cursor += size;
+        buf.advance(size);
 
         Poll::Ready(Ok(()))
     }

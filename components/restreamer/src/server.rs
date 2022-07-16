@@ -424,6 +424,7 @@ pub mod client {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 pub mod callback {
+    use actix_web::web::Data;
     use actix_web::{error, middleware, post, web, App, Error, HttpServer};
     use ephyr_log::log;
 
@@ -446,7 +447,7 @@ pub mod callback {
     pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         Ok(HttpServer::new(move || {
             App::new()
-                .data(state.clone())
+                .app_data(Data::new(state.clone()))
                 .wrap(middleware::Logger::default())
                 .service(on_callback)
         })

@@ -237,7 +237,7 @@ endif
 	           -p 80:80 -p 1935:1935 -p 8000:8000 \
 	           -v '$(PWD)/state.json:/state.json' \
 	           -v '$(PWD)/../../.cache/restreamer/dvr/:/var/www/srs/dvr/' \
-		$(IMAGE_NAME):restreamer-$(IMAGE_TAG) \
+		$(IMAGE_NAME):restreamer-edge \
 			$(if $(call eq,$(debug),no),,--debug)
 
 
