@@ -79,6 +79,7 @@ impl Storage {
     /// Returns them as relative paths to this [`Storage::root_path`].
     ///
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
+    #[allow(irrefutable_let_patterns)]
     pub async fn list_files(&self, id: state::OutputId) -> Vec<String> {
         let dir = &self.root_path;
 
@@ -154,6 +155,7 @@ impl Storage {
     /// [`state::Output`]s of the given renewed [`state::Restream`]s.
     ///
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
+    #[allow(irrefutable_let_patterns)]
     pub async fn cleanup(&self, restreams: &[state::Restream]) {
         // TODO: Consider only `file:///` outputs?
 
