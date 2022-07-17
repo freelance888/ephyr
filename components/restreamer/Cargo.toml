@@ -54,6 +54,8 @@ tsproto-packets = "0.1.0"
 [dependencies.juniper]
     git="https://github.com/graphql-rust/juniper"
     branch = "master"
+    version = "0.16.0-dev"
+    features = ["chrono"]
     # rev = "a32140cd46f17491d3f7a93b4a6c67732a29b0e8"
 [dependencies.juniper_actix]
     git="https://github.com/graphql-rust/juniper"

@@ -33,6 +33,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{display_panic, serde::is_false, spec, srs, Spec};
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 /// Server's settings.
@@ -2591,8 +2592,9 @@ pub struct ClientStatistics {
     /// Client title
     pub client_title: String,
 
-    // /// Time when statistics was taken
-    // pub timestamp: DateTime<Utc>,
+    /// Time when statistics was taken
+    pub timestamp: DateTime<Utc>,
+
     /// Count of inputs grouped by status
     pub inputs: Vec<StatusStatistics>,
 
@@ -2615,7 +2617,7 @@ impl ClientStatistics {
     ) -> Self {
         Self {
             client_title,
-            //            timestamp: Utc::now(),
+            timestamp: Utc::now(),
             inputs,
             outputs,
             server_info,
