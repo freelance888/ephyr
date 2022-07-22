@@ -37,10 +37,11 @@ subscription Files {
 subscription State {
     allRestreams {
         ...restreamBasic
+        ...restreamPlaylist
     }
 }
 
-subscription RestreamSubscription($id: RestreamId!) {
+subscription RestreamWithParent($id: RestreamId!) {
     restream(id: $id) {
         restream {
             ...restreamBasic

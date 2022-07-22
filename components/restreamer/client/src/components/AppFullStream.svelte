@@ -10,7 +10,7 @@
     ServerInfo,
     TuneDelay,
     TuneVolume,
-    RestreamSubscription,
+    RestreamWithParent,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -40,7 +40,7 @@
   const translationRestreamId = urlParams.get('tran_restream_id');
 
   let isOnline = false;
-  const restream_sub = subscribe(RestreamSubscription, { variables: { 'id': translationRestreamId.toString() }, errorPolicy: 'all' });
+  const restreamWithParent = subscribe(RestreamWithParent, { variables: { 'id': translationRestreamId.toString() }, errorPolicy: 'all' });
   const info = subscribe(Info, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
   const files = subscribe(Files, { errorPolicy: 'all' });
@@ -49,11 +49,11 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info && $info.error;
-  $: isLoading = !isOnline || $restream_sub.loading;
-  $: canRenderMainComponent = isOnline && $restream_sub.data && $info.data;
-  $: stateError = $restream_sub && $restream_sub.error;
+  $: isLoading = !isOnline || $restreamWithParent.loading;
+  $: canRenderMainComponent = isOnline && $restreamWithParent.data && $info.data;
+  $: stateError = $restreamWithParent && $restreamWithParent.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
-  $: restream = canRenderMainComponent && $restream_sub.data.restream;
+  $: restream = canRenderMainComponent && $restreamWithParent.data.restream;
 
   $: translationRestream = canRenderMainComponent && restream.restream;
   $: parentRestream = canRenderMainComponent && restream.parent;
