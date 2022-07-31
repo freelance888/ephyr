@@ -265,6 +265,23 @@ graphql.schema.mix:
 	cargo run --bin export_schema -- --api=mix --out-dir=./
 
 
+# Generate Dashboard GraphQL schema JSON from project sources.
+#
+# Usage:
+#	make graphql.schema.dashboard
+
+graphql.schema.dashboard:
+	cargo run --bin export_schema -- --api=dashboard --out-dir=./
+
+
+# Generate All GraphQL schema JSON from project sources.
+#
+# Usage:
+#	make graphql.schema
+
+graphql.schema:	graphql.schema.client graphql.schema.dashboard graphql.schema.mix
+
+
 ##################
 # .PHONY section #
 ##################
