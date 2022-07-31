@@ -522,7 +522,7 @@ impl AudioCaptureError {
         if is_permanent {
             backoff::Error::Permanent(self)
         } else {
-            backoff::Error::Transient(self)
+            backoff::Error::transient(self)
         }
     }
 }

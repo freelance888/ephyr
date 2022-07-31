@@ -9,7 +9,7 @@ default-run = "ephyr-restreamer"
 [dependencies]
 actix-service = "2.0"
 actix-web = "4.1"
-actix-web-httpauth = "0.8"
+actix-web-httpauth = "0.7"
 actix-web-static-files = "4.0"
 static-files = "0.2.3"
 anyhow = "1.0"
