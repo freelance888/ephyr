@@ -33,7 +33,7 @@ const config: webpack.Configuration = {
     static: path.join(__dirname, 'public'),
     compress: true,
     port: 8080,
-    host: "0.0.0.0"
+    host: '0.0.0.0',
   },
   module: {
     rules: [

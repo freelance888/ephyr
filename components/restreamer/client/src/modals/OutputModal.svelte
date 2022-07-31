@@ -163,7 +163,7 @@
       let vars = {
         restream_id: v.restream_id,
         url: sanitizeUrl(v.url),
-        mixins: []
+        mixins: [],
       };
       const label = sanitizeLabel(v.label);
       if (label !== '') {
