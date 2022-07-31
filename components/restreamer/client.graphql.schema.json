@@ -1,5 +1,6 @@
 {"data":{
   "__schema": {
+    "description": null,
     "queryType": {
       "name": "Query"
     },
@@ -13,7 +14,8 @@
       {
         "kind": "SCALAR",
         "name": "OutputId",
-        "description": null,
+        "description": "ID of an `Output`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -23,7 +25,8 @@
       {
         "kind": "SCALAR",
         "name": "Delay",
-        "description": null,
+        "description": "Delay of a [`Mixin`] being mixed with an [`Output`].",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -33,7 +36,8 @@
       {
         "kind": "SCALAR",
         "name": "Label",
-        "description": null,
+        "description": "Label of a [`Restream`] or an [`Output`].",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -44,6 +48,7 @@
         "kind": "OBJECT",
         "name": "Mutation",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "import",
@@ -67,9 +72,13 @@
                 "name": "replace",
                 "description": "Indicator whether the `spec` should replace existing definitions.",
                 "type": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
                 },
                 "defaultValue": "false"
               },
@@ -144,9 +153,13 @@
                 "name": "withBackup",
                 "description": "Indicator whether the `Restream` should have a backup endpoint for a live stream.",
                 "type": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
                 },
                 "defaultValue": "false"
               },
@@ -154,9 +167,13 @@
                 "name": "withHls",
                 "description": "Indicator whether the `Restream` should have an additional endpoint for serving a live stream via HLS.",
                 "type": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
                 },
                 "defaultValue": "false"
               },
@@ -467,15 +484,19 @@
                 "name": "mixins",
                 "description": "Optional `MixinSrcUrl`s to mix into this `Output`.",
                 "type": {
-                  "kind": "LIST",
+                  "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
-                    "kind": "NON_NULL",
+                    "kind": "LIST",
                     "name": null,
                     "ofType": {
-                      "kind": "SCALAR",
-                      "name": "MixinSrcUrl",
-                      "ofType": null
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "MixinSrcUrl",
+                        "ofType": null
+                      }
                     }
                   }
                 },
@@ -753,7 +774,7 @@
               },
               {
                 "name": "level",
-                "description": null,
+                "description": "Volume rate in percents to be set.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -863,7 +884,7 @@
             "args": [
               {
                 "name": "path",
-                "description": "Relative path of the recorded file to be removed.\n\nUse the exact value returned by `Query.dvrFiles`.",
+                "description": "Relative path of the recorded file to be removed.\n\n Use the exact value returned by `Query.dvrFiles`.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -991,7 +1012,8 @@
       {
         "kind": "SCALAR",
         "name": "EndpointId",
-        "description": null,
+        "description": "ID of an `InputEndpoint`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1002,6 +1024,7 @@
         "kind": "OBJECT",
         "name": "Input",
         "description": "Upstream source that a `Restream` receives a live stream from.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "id",
@@ -1096,7 +1119,8 @@
       {
         "kind": "SCALAR",
         "name": "InputSrcUrl",
-        "description": null,
+        "description": "[`Url`] of a [`RemoteInputSrc`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [HLS] URL (starting with `http://` or `https://` scheme, having a host,\n  and with `.m3u8` extension in its path).\n\n[HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1107,6 +1131,7 @@
         "kind": "SCALAR",
         "name": "Float",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1117,6 +1142,7 @@
         "kind": "ENUM",
         "name": "PasswordKind",
         "description": "Specifies kind of password",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1140,6 +1166,7 @@
         "kind": "ENUM",
         "name": "Status",
         "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1175,7 +1202,20 @@
         "kind": "OBJECT",
         "name": "__Schema",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
+          {
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
           {
             "name": "types",
             "description": null,
@@ -1274,6 +1314,7 @@
         "kind": "OBJECT",
         "name": "__Type",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -1289,6 +1330,18 @@
           },
           {
             "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "specifiedByUrl",
             "description": null,
             "args": [],
             "type": {
@@ -1459,6 +1512,7 @@
         "kind": "OBJECT",
         "name": "InputEndpoint",
         "description": "Endpoint of an `Input` serving a live stream for `Output`s and clients.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "id",
@@ -1530,6 +1584,7 @@
         "kind": "OBJECT",
         "name": "Query",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "info",
@@ -1632,17 +1687,21 @@
             "args": [
               {
                 "name": "ids",
-                "description": "IDs of `Restream`s to be exported.\n\nIf empty, then all the `Restream`s will be exported.",
+                "description": "IDs of `Restream`s to be exported. \n\n If empty, then all the `Restream`s will be exported.",
                 "type": {
-                  "kind": "LIST",
+                  "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
-                    "kind": "NON_NULL",
+                    "kind": "LIST",
                     "name": null,
                     "ofType": {
-                      "kind": "SCALAR",
-                      "name": "RestreamId",
-                      "ofType": null
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "RestreamId",
+                        "ofType": null
+                      }
                     }
                   }
                 },
@@ -1666,7 +1725,8 @@
       {
         "kind": "SCALAR",
         "name": "Url",
-        "description": "Url",
+        "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1677,6 +1737,7 @@
         "kind": "ENUM",
         "name": "InputEndpointKind",
         "description": "Possible kinds of an `InputEndpoint`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1700,6 +1761,7 @@
         "kind": "SCALAR",
         "name": "Boolean",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1710,6 +1772,7 @@
         "kind": "OBJECT",
         "name": "Output",
         "description": "Downstream destination that a `Restream` re-streams a live stream to.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "id",
@@ -1849,6 +1912,7 @@
         "kind": "OBJECT",
         "name": "FailoverInputSrc",
         "description": "Failover source of multiple `Input`s to pull a live stream by an `Input`\nfrom.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "inputs",
@@ -1884,6 +1948,7 @@
         "kind": "OBJECT",
         "name": "__InputValue",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -1951,6 +2016,7 @@
         "kind": "SCALAR",
         "name": "String",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1961,6 +2027,7 @@
         "kind": "OBJECT",
         "name": "__Field",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -2067,7 +2134,8 @@
       {
         "kind": "SCALAR",
         "name": "InputKey",
-        "description": null,
+        "description": "Key of an [`Input`] used to form its endpoint URL.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2078,6 +2146,7 @@
         "kind": "UNION",
         "name": "InputSrc",
         "description": "Source to pull a live stream by an `Input` from.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2099,6 +2168,7 @@
         "kind": "OBJECT",
         "name": "Mixin",
         "description": "Additional source for an `Output` to be mixed with before re-streaming to\nthe destination.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "id",
@@ -2189,7 +2259,8 @@
       {
         "kind": "SCALAR",
         "name": "MixinSrcUrl",
-        "description": null,
+        "description": "[`Url`] of a [`Mixin::src`].\n\nOnly the following URLs are allowed at the moment:\n- [TeamSpeak] URL (starting with `ts://` scheme and having a host);\n- [MP3] HTTP URL (starting with `http://` or `https://` scheme, having a\n  host and `.mp3` extension in its path).\n\n[MP3]: https://en.wikipedia.org/wiki/MP3\n[TeamSpeak]: https://teamspeak.com",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2199,7 +2270,8 @@
       {
         "kind": "SCALAR",
         "name": "InputId",
-        "description": null,
+        "description": "ID of an `Input`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2210,6 +2282,7 @@
         "kind": "ENUM",
         "name": "__TypeKind",
         "description": "GraphQL type kind\n\nThe GraphQL specification defines a number of type kinds - the meta type of a type.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2268,7 +2341,8 @@
       {
         "kind": "SCALAR",
         "name": "OutputDstUrl",
-        "description": null,
+        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV] file URL (starting with `file:///` scheme, without host and\n  subdirectories, and with `.flv` extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2279,6 +2353,7 @@
         "kind": "OBJECT",
         "name": "Info",
         "description": "Information about parameters that this server operates with.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "publicHost",
@@ -2366,6 +2441,7 @@
         "kind": "OBJECT",
         "name": "ServerInfo",
         "description": "Server's info",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "cpuUsage",
@@ -2381,7 +2457,7 @@
           },
           {
             "name": "ramTotal",
-            "description": "Total RAM installed on current machine, bytes",
+            "description": "Total RAM installed on current machine",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2393,7 +2469,7 @@
           },
           {
             "name": "ramFree",
-            "description": "Free (available) RAM, bytes",
+            "description": "Free (available) RAM",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2405,7 +2481,7 @@
           },
           {
             "name": "txDelta",
-            "description": "Bytes, transfered last second",
+            "description": "Network traffic, transferred last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2417,7 +2493,7 @@
           },
           {
             "name": "rxDelta",
-            "description": "Bytes, received last second",
+            "description": "Network traffic, received last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2448,7 +2524,8 @@
       {
         "kind": "SCALAR",
         "name": "RestreamKey",
-        "description": null,
+        "description": "Key of a [`Restream`] identifying it, and used to form its endpoints URLs.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2459,6 +2536,7 @@
         "kind": "OBJECT",
         "name": "Volume",
         "description": "Volume rate of an audio track in percents and flag if it is muted.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "level",
@@ -2501,7 +2579,8 @@
       {
         "kind": "SCALAR",
         "name": "VolumeLevel",
-        "description": null,
+        "description": "Volume rate of an audio track in percents.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2511,7 +2590,8 @@
       {
         "kind": "SCALAR",
         "name": "MixinId",
-        "description": null,
+        "description": "ID of a `Mixin`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2522,6 +2602,7 @@
         "kind": "OBJECT",
         "name": "Subscription",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "info",
@@ -2589,6 +2670,7 @@
         "kind": "OBJECT",
         "name": "__EnumValue",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -2655,7 +2737,8 @@
       {
         "kind": "SCALAR",
         "name": "RestreamId",
-        "description": null,
+        "description": "ID of a `Restream`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2666,6 +2749,7 @@
         "kind": "OBJECT",
         "name": "RemoteInputSrc",
         "description": "Remote upstream source to pull a live stream by an `Input` from.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "url",
@@ -2705,6 +2789,7 @@
         "kind": "ENUM",
         "name": "__DirectiveLocation",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2734,7 +2819,25 @@
             "deprecationReason": null
           },
           {
+            "name": "SCALAR",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "FRAGMENT_DEFINITION",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "FIELD_DEFINITION",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "VARIABLE_DEFINITION",
             "description": null,
             "isDeprecated": false,
             "deprecationReason": null
@@ -2750,6 +2853,12 @@
             "description": null,
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "ENUM_VALUE",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "possibleTypes": null
@@ -2758,6 +2867,7 @@
         "kind": "OBJECT",
         "name": "Restream",
         "description": "Re-stream of a live stream from one `Input` to many `Output`s.",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "id",
@@ -2853,6 +2963,7 @@
         "kind": "OBJECT",
         "name": "__Directive",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -2901,6 +3012,22 @@
                     "ofType": null
                   }
                 }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "isRepeatable",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
               }
             },
             "isDeprecated": false,
@@ -2989,6 +3116,7 @@
       {
         "name": "include",
         "description": null,
+        "isRepeatable": false,
         "locations": [
           "FIELD",
           "FRAGMENT_SPREAD",
@@ -3012,8 +3140,58 @@
         ]
       },
       {
+        "name": "deprecated",
+        "description": null,
+        "isRepeatable": false,
+        "locations": [
+          "FIELD_DEFINITION",
+          "ENUM_VALUE"
+        ],
+        "args": [
+          {
+            "name": "reason",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          }
+        ]
+      },
+      {
+        "name": "specifiedBy",
+        "description": null,
+        "isRepeatable": false,
+        "locations": [
+          "SCALAR"
+        ],
+        "args": [
+          {
+            "name": "url",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          }
+        ]
+      },
+      {
         "name": "skip",
         "description": null,
+        "isRepeatable": false,
         "locations": [
           "FIELD",
           "FRAGMENT_SPREAD",

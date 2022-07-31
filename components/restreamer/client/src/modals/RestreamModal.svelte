@@ -51,7 +51,7 @@
     if (!submitable) return;
     const v = get(value);
 
-    let variables = { key: v.key, with_hls: v.with_hls };
+    let variables = { key: v.key, with_hls: v.with_hls, with_backup: false };
     if (v.label !== '') {
       variables.label = v.label;
     }
