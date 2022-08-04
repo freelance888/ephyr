@@ -3,7 +3,7 @@
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
+FROM jrottenberg/ffmpeg:5.1-centos7 AS build-ephyr
 
 
 # Install Rust.
@@ -92,8 +92,8 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 # Stage 'build-srs' prepares SRS distribution for the final stage.
 #
 
-# https://github.com/ossrs/srs-docker/blob/v3/Dockerfile
-FROM ossrs/srs:4 AS build-srs
+# https://github.com/ossrs/srs/releases/tag/v4.0-b10
+FROM ossrs/srs:v4.0-b10 AS build-srs
 
 
 
@@ -103,7 +103,7 @@ FROM ossrs/srs:4 AS build-srs
 #
 
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
+FROM jrottenberg/ffmpeg:5.1-centos7 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 
