@@ -1,4 +1,4 @@
-describe('ADD MULTIPLE OTPUT', () => {
+describe('ADD MULTIPLE OUTPUT', () => {
   it('Goes to the homepage', () => {
     cy.visit('/');
   });

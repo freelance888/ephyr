@@ -1,4 +1,4 @@
-describe('ADD MIXIN OTPUT', () => {
+describe('ADD MIXIN OUTPUT', () => {
   it('Goes to the homepage', () => {
     cy.visit('/');
   });
