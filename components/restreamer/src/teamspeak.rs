@@ -240,11 +240,14 @@ impl AsyncRead for Input {
 
         let size = src_size.min(buf.remaining() / 4);
         let unfilled = buf.initialize_unfilled();
+        let size_in_bytes = size * 4;
+
         BigEndian::write_f32_into(
             &self.frame[cursor..(cursor + size)],
-            unfilled,
+            &mut unfilled[0..(size_in_bytes)],
         );
-        buf.advance(size);
+        buf.advance(size_in_bytes);
+        self.cursor += size;
 
         Poll::Ready(Ok(()))
     }
