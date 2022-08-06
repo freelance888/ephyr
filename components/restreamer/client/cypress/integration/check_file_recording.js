@@ -16,23 +16,23 @@ describe('CHECK FILE RECORDING', () => {
     cy.allOutputStop();
   });
 
-  it('Open file modal', ()=>{
-    cy.get('[data-testid="File Record"] .output-mixes a').click()
+  it('Open file modal', () => {
+    cy.get('[data-testid="File Record"] .output-mixes a').click();
   });
 
-  it('Should be 2 file records', ()=>{
-    cy.get('.record').should('have.length',2)
-  })
+  it('Should be 2 file records', () => {
+    cy.get('.record').should('have.length', 2);
+  });
 
-  it('Remove 1 file record', ()=>{
-    cy.get('.record').first().find('[title="Remove recorded file"]').click()
-  })
+  it('Remove 1 file record', () => {
+    cy.get('.record').first().find('[title="Remove recorded file"]').click();
+  });
 
-  it('Should be 1 file record', ()=>{
-    cy.get('.record').should('have.length',1)
-  })
+  it('Should be 1 file record', () => {
+    cy.get('.record').should('have.length', 1);
+  });
 
-  it('File record should be downloaded', ()=>{
-    cy.get('.record').first().find('[title="Download recorded file"]').click()
-  })
+  it('File record should be downloaded', () => {
+    cy.get('.record').first().find('[title="Download recorded file"]').click();
+  });
 });

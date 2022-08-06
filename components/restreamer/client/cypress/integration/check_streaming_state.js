@@ -68,9 +68,9 @@ describe('CHECK STREAMING STATE', () => {
     );
 
     cy.get('[data-testid="File Record"] [data-icon="circle"]').should(
-        'have.css',
-        'color',
-        greenColor
+      'have.css',
+      'color',
+      greenColor
     );
   });
 });
