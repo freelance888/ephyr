@@ -5,6 +5,7 @@
 use std::{
     borrow::Cow,
     collections::HashMap,
+    fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     process::Stdio,
@@ -955,10 +956,11 @@ impl MixingRestreamer {
             };
 
             if !mixin.delay.is_zero() {
-                extra_filters.push_str(&format!(
+                let _ = write!(
+                    extra_filters,
                     "adelay=delays={}:all=1,",
-                    mixin.delay.as_millis(),
-                ));
+                    mixin.delay.as_millis()
+                );
             }
 
             let volume = output
@@ -1211,7 +1213,6 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     e,
                 );
             })?;
-
             socket
                 .send(
                     format!(
