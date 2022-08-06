@@ -1,4 +1,4 @@
-describe('ALL OTPUTS STOP', () => {
+describe('ALL OUTPUTS STOP', () => {
   it('Goes to the homepage', () => {
     cy.visit('/');
   });

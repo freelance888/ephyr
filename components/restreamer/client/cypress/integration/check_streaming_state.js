@@ -6,12 +6,9 @@ describe('CHECK STREAMING STATE', () => {
     cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
   });
 
-  it('Goes to the homepage', () => {
-    cy.visit('/');
-  });
-
   it('Click Start All', () => {
     cy.allOutputStart();
+    cy.wait(5000);
   });
 
   const greenColor = 'rgb(50, 210, 150)';
@@ -69,6 +66,12 @@ describe('CHECK STREAMING STATE', () => {
       'have.css',
       'color',
       brownColor
+    );
+
+    cy.get('[data-testid="File Record"] [data-icon="circle"]').should(
+      'have.css',
+      'color',
+      greenColor
     );
   });
 });
