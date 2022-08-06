@@ -6,10 +6,6 @@ describe('CHECK STREAMING STATE', () => {
     cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
   });
 
-  it('Goes to the homepage', () => {
-    cy.visit('/');
-  });
-
   it('Click Start All', () => {
     cy.allOutputStart();
   });
