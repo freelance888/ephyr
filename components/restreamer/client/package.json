@@ -48,7 +48,7 @@
     "style-loader": "^0.23",
     "stylus": "^0.57",
     "stylus-loader": "^4.3",
-    "svelte": "^3.48",
+    "svelte": "^3.49",
     "svelte-check": "^2.7",
     "svelte-loader": "^3.1",
     "svelte-preprocess": "^4.10",
