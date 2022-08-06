@@ -412,13 +412,13 @@ impl MutationsRoot {
                         )));
                 }
             }
-            if mixins.iter().filter(|u| u.scheme() == "ts").take(2).count() > 1
+            if mixins.iter().filter(|u| u.scheme() == "ts").take(4).count() > 3
             {
                 return Err(graphql::Error::new(
                     "TOO_MUCH_TEAMSPEAK_MIXIN_URLS",
                 )
                 .status(StatusCode::BAD_REQUEST)
-                .message("Only one TeamSpeak URL is allowed"));
+                .message("Only 3 TeamSpeak URLs are allowed"));
             }
         }
 
