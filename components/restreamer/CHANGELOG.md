@@ -4,6 +4,16 @@ Ephyr re-streamer changelog
 All user visible changes to this project will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
 
+
+## [0.6.0] · Unreleased
+[0.6.0]: /../../tree/restreamer-v0.6.0
+
+[Diff](/../../compare/restreamer-v0.5.0...restreamer-v0.6.0)
+
+### Miscellaneous
+- Added test for check file recording
+
+
 ## [0.5.0] · 2022-04-20
 [0.5.0]: /../../tree/restreamer-v0.5.0
 
