@@ -933,15 +933,17 @@ impl MixingRestreamer {
         for (n, mixin) in self.mixins.iter().enumerate() {
             let mut extra_filters = String::new();
 
+            let mut ts_pipe: i8 = -1;
             let _ = match mixin.url.scheme() {
                 "ts" => {
                     extra_filters.push_str("aresample=async=1,");
+                    ts_pipe += 1;
                     cmd.args(&["-thread_queue_size", "512"])
                         .args(&["-f", "f32be"])
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", "pipe:0"])
+                        .args(&["-i", &format!("pipe:{}", ts_pipe)])
                 }
 
                 "http" | "https"
