@@ -22,9 +22,9 @@
   "dependencies": {
     "@apollo/client": "~3.6",
     "clipboard-copy": "^4.0",
-    "graphql": "^15.8",
+    "graphql": "^16.5",
     "subscriptions-transport-ws": "^0.11",
-    "svelte-apollo": "^0.4",
+    "svelte-apollo": "^0.5",
     "svelte-spa-router": "^3.2",
     "uikit": "^3",
     "uikit-icons": "^0.5"
