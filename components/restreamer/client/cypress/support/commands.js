@@ -121,6 +121,12 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "label": "[Manual Start] YT",
           "preview_url": "https://youtu.be/jKl7txehM78",
           "enabled": true
+        },
+        {
+          "id": "3433de9d-5910-4ff2-a5fc-23bcc677c85b",
+          "dst": "file:///record.flv",
+          "label": "File Record",
+          "enabled": true
         }
       ]
     },
