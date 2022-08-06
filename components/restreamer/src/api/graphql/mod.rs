@@ -193,13 +193,6 @@ impl<S: ScalarValue> IntoFieldError<S> for Error {
     }
 }
 
-// impl From<Error> for GraphQLResponse<'_> {
-//     #[inline]
-//     fn from(err: Error) -> Self {
-//         Self::error(err.into_field_error())
-//     }
-// }
-
 impl From<Infallible> for Error {
     #[inline]
     fn from(err: Infallible) -> Self {
