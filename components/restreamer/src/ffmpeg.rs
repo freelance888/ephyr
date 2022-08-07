@@ -17,6 +17,7 @@ use derive_more::From;
 use ephyr_log::{log, Drain as _};
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use tokio::{io, process::Command, sync::Mutex, time};
+use unix_named_pipe;
 use url::Url;
 use uuid::Uuid;
 
@@ -908,10 +909,6 @@ impl MixingRestreamer {
             let _ = cmd.stderr(Stdio::null());
         }
 
-        if self.mixins.iter().any(|m| m.stdin.is_some()) {
-            let _ = cmd.stdin(Stdio::piped());
-        }
-
         let orig_volume = output
             .as_ref()
             .map_or(self.orig_volume.clone(), |o| o.volume.clone());
@@ -933,17 +930,15 @@ impl MixingRestreamer {
         for (n, mixin) in self.mixins.iter().enumerate() {
             let mut extra_filters = String::new();
 
-            let mut ts_pipe: i8 = -1;
             let _ = match mixin.url.scheme() {
                 "ts" => {
                     extra_filters.push_str("aresample=async=1,");
-                    ts_pipe += 1;
                     cmd.args(&["-thread_queue_size", "512"])
                         .args(&["-f", "f32be"])
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", &format!("pipe:{}", ts_pipe)])
+                        .args(&["-i", mixin.pipe_file.to_str().unwrap()])
                 }
 
                 "http" | "https"
@@ -1052,12 +1047,12 @@ impl MixingRestreamer {
         if let Some(m) = self.mixins.iter().find_map(|m| m.stdin.as_ref()) {
             let process = cmd.spawn()?;
 
-            let ffmpeg_stdin = &mut process.stdin.ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    "FFmpeg's STDIN hasn't been captured",
-                )
-            })?;
+            // let ffmpeg_stdin = &mut process.stdin.ok_or_else(|| {
+            //     io::Error::new(
+            //         io::ErrorKind::Other,
+            //         "FFmpeg's STDIN hasn't been captured",
+            //     )
+            // })?;
 
             let mut src = m.lock().await;
             let _ = io::copy(&mut *src, ffmpeg_stdin).await.map_err(|e| {
@@ -1101,11 +1096,18 @@ pub struct Mixin {
 
     /// Actual live audio stream captured from the [TeamSpeak] server.
     ///
-    /// If present, it should be fed into [FFmpeg]'s STDIN.
+    /// If present, it should be fed into FIFO STDIN.
+    ///
+    /// [TeamSpeak]: https://teamspeak.com
+    stdin: Option<Arc<Mutex<teamspeak::Input>>>,
+
+    /// FIFO where stream captures from the [TeamSpeak] server.
+    ///
+    /// If present, it should be fed into [FFmpeg]'s as file input.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    stdin: Option<Arc<Mutex<teamspeak::Input>>>,
+    pipe_file: PathBuf,
 }
 
 impl Mixin {
@@ -1125,6 +1127,12 @@ impl Mixin {
         label: Option<&state::Label>,
         prev: Option<&Mixin>,
     ) -> Self {
+        let tmp_dir = std::env::temp_dir();
+        log::debug!("TMP DIR: {:?}", tmp_dir);
+        let pipe_file = tmp_dir.join(format!("ephyr_{}.pipe", state.id));
+        if !pipe_file.exists() {
+            unix_named_pipe::create(&pipe_file, Some(0o777)).unwrap();
+        }
         let stdin = (state.src.scheme() == "ts")
             .then(|| {
                 prev.and_then(|m| m.stdin.clone()).or_else(|| {
@@ -1148,6 +1156,7 @@ impl Mixin {
                         teamspeak::Connection::build(host.into_owned())
                             .channel(channel.to_owned())
                             .name(name),
+                        pipe_file.clone(),
                     ))))
                 })
             })
@@ -1160,6 +1169,7 @@ impl Mixin {
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
+            pipe_file,
         }
     }
 
