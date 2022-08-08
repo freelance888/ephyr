@@ -2,6 +2,8 @@
 //!
 //! [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 
+// `too_many_lines` only for generated static needed. TODO: find a way to remove
+#![allow(clippy::too_many_lines)]
 #![deny(
     rustdoc::broken_intra_doc_links,
     missing_debug_implementations,

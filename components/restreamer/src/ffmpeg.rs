@@ -15,7 +15,7 @@ use std::{
 
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
-use futures::{future, pin_mut, FutureExt as _, StreamExt, TryFutureExt as _};
+use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{io, process::Command, sync::Mutex, time};
 use url::Url;
@@ -25,7 +25,6 @@ use crate::{
     display_panic, dvr,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
-    teamspeak::Input,
     types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
@@ -1047,10 +1046,24 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
+        async fn run_copy(
+            input: Arc<Mutex<teamspeak::Input>>,
+            pipe_file_path: PathBuf,
+        ) -> io::Result<()> {
+            let mut src = input.lock().await;
+            log::debug!("Connect to FIFO file: {:?}", &pipe_file_path);
+            let mut file = File::create(&pipe_file_path).await?;
+            log::debug!("FIFO file created for: {:?}", &pipe_file_path);
+
+            let _ = io::copy(&mut *src, &mut file).await?;
+
+            Ok(())
+        }
+
         let process = cmd.spawn()?;
 
-        let mut copy_futures = FuturesUnordered::new();
-        for m in self.mixins.iter() {
+        let copy_futures = FuturesUnordered::new();
+        for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
                 copy_futures.push(tokio::spawn(run_copy(
                     Arc::clone(i),
@@ -1059,32 +1072,14 @@ impl MixingRestreamer {
             }
         }
 
-        async fn run_copy(
-            input: Arc<Mutex<Input>>,
-            pipe_file_path: PathBuf,
-        ) -> io::Result<()> {
-            let mut src = input.lock().await;
-            log::debug!("Connect to FIFO file: {:?}", &pipe_file_path);
-            let mut file = File::create(&pipe_file_path).await?;
-            log::debug!("FIFO file created for: {:?}", &pipe_file_path);
-
-            io::copy(&mut *src, &mut file).await?;
-
-            Ok(())
-        }
         let out = process.wait_with_output().await?;
-
-        while let Some(future) = copy_futures.next().await {
-            let _ = future.map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::BrokenPipe,
-                    format!("Failed to write into FIFO: {}", e),
-                )
-            })?;
-        }
         Err(io::Error::new(
-            io::ErrorKind::UnexpectedEof,
-            "FFmpeg re-streamer stopped unexpectedly",
+            io::ErrorKind::Other,
+            format!(
+                "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                out.status,
+                String::from_utf8_lossy(&out.stderr),
+            ),
         ))
     }
 }
@@ -1135,6 +1130,10 @@ impl Mixin {
     ///
     /// Optional `label` may be used to identify this [`Mixin`] in a [TeamSpeak]
     /// channel.
+    ///
+    /// # Panics
+    ///
+    /// In case not possible to create FIFO file.
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
