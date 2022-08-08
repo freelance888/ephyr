@@ -15,7 +15,7 @@ use std::{
 
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
-use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use futures::{future, pin_mut, FutureExt as _, StreamExt, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{io, process::Command, sync::Mutex, time};
 use url::Url;
@@ -28,6 +28,7 @@ use crate::{
     types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
+use futures::stream::FuturesUnordered;
 use std::result::Result::Err;
 use tokio::fs::File;
 
@@ -1046,20 +1047,26 @@ impl MixingRestreamer {
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
         let _ = cmd.spawn()?;
-
+        let mut src_to_file = vec![];
         for m in self.mixins.iter() {
             if let Some(i) = m.stdin.as_ref() {
                 let mut src = i.lock().await;
                 let mut write_to_pipe = File::create(&m.pipe_file_path).await?;
-                let _ = io::copy(&mut *src, &mut write_to_pipe).await.map_err(
-                    |e| {
-                        io::Error::new(
-                            io::ErrorKind::BrokenPipe,
-                            format!("Failed to write into FIFO: {}", e),
-                        )
-                    },
-                )?;
+                src_to_file.push((src, write_to_pipe));
             }
+        }
+        let mut copy_futures = FuturesUnordered::new();
+        for (mut src, mut file) in src_to_file.iter_mut() {
+            copy_futures.push(io::copy(&mut *src, &mut file));
+        }
+
+        while let Some(future) = copy_futures.next().await {
+            let _ = future.map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::BrokenPipe,
+                    format!("Failed to write into FIFO: {}", e),
+                )
+            })?;
         }
         Err(io::Error::new(
             io::ErrorKind::UnexpectedEof,
