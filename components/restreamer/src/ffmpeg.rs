@@ -28,7 +28,6 @@ use crate::{
     types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
-use futures::stream::FuturesUnordered;
 use std::result::Result::Err;
 use tokio::fs::File;
 
@@ -1053,19 +1052,19 @@ impl MixingRestreamer {
             let mut src = input.lock().await;
             log::debug!("Connect to FIFO file: {:?}", &pipe_file_path);
             let mut file = File::create(&pipe_file_path).await?;
-            log::debug!("FIFO file created for: {:?}", &pipe_file_path);
 
-            let _ = io::copy(&mut *src, &mut file).await?;
+            let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
+                log::error!("Failed to write into FFmpeg's FIFO: {}", e);
+            });
 
             Ok(())
         }
 
         let process = cmd.spawn()?;
 
-        let copy_futures = FuturesUnordered::new();
         for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
-                copy_futures.push(tokio::spawn(run_copy(
+                drop(tokio::spawn(run_copy(
                     Arc::clone(i),
                     m.pipe_file_path.clone(),
                 )));
