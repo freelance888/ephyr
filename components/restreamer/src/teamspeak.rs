@@ -5,11 +5,8 @@
 use std::{
     collections::HashMap,
     fmt,
-    fs::File,
     future::Future,
-    io::Write,
     mem::ManuallyDrop,
-    path::PathBuf,
     pin::Pin,
     str,
     sync::{
@@ -19,7 +16,6 @@ use std::{
     task::{Context, Poll},
     time::Duration,
 };
-use unix_named_pipe;
 
 use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
@@ -99,9 +95,6 @@ pub struct Input {
     /// Indicator whether the spawned [`AudioCapture`] is unable to recover from
     /// its last error, and so this [`Input`] should return an error too.
     is_conn_unrecoverable: Arc<AtomicBool>,
-
-    pipe_file: PathBuf,
-    ref_to_write_pipe: Option<File>,
 }
 
 impl Input {
@@ -121,7 +114,7 @@ impl Input {
 
     /// Creates a new [`Input`] with the provided [`Config`].
     #[must_use]
-    pub fn new<C: Into<Config>>(cfg: C, pipe_file: PathBuf) -> Self {
+    pub fn new<C: Into<Config>>(cfg: C) -> Self {
         let cfg = {
             use ephyr_log::Drain as _;
 
@@ -149,8 +142,6 @@ impl Input {
         let lgr = ephyr_log::logger();
         Self {
             cfg,
-            pipe_file,
-            ref_to_write_pipe: None,
             ticker: time::interval(Duration::from_millis(
                 Self::FREQUENCY_MILLIS as u64,
             )),
@@ -216,10 +207,6 @@ impl AsyncRead for Input {
     ) -> Poll<io::Result<usize>> {
         if self.conn.is_none() {
             self.spawn_audio_capturing();
-            self.ref_to_write_pipe = Some(
-                unix_named_pipe::open_write(&self.pipe_file)
-                    .expect("could not create fifo"),
-            );
         }
         if self.is_conn_unrecoverable.load(Ordering::SeqCst) {
             return Poll::Ready(Err(InputError::NoData.into()));
@@ -260,11 +247,6 @@ impl AsyncRead for Input {
             &mut buf[..size_in_bytes],
         );
 
-        if let Some(ref mut pipe_to_write) = self.ref_to_write_pipe {
-            let _ = pipe_to_write
-                .write(&buf[..size_in_bytes])
-                .expect("Failed write to the pipe.");
-        }
         self.cursor += size;
 
         Poll::Ready(Ok(size_in_bytes))

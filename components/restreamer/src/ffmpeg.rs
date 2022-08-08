@@ -16,8 +16,8 @@ use std::{
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{io, process::Command, sync::Mutex, time};
-use unix_named_pipe;
 use url::Url;
 use uuid::Uuid;
 
@@ -29,6 +29,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
+use tokio::fs::File;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -938,7 +939,7 @@ impl MixingRestreamer {
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", mixin.pipe_file.to_str().unwrap()])
+                        .args(&["-i", mixin.pipe_file_path.to_str().unwrap()])
                 }
 
                 "http" | "https"
@@ -1044,31 +1045,26 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
-        if let Some(m) = self.mixins.iter().find_map(|m| m.stdin.as_ref()) {
-            let process = cmd.spawn()?;
+        let _ = cmd.spawn()?;
 
-            // let ffmpeg_stdin = &mut process.stdin.ok_or_else(|| {
-            //     io::Error::new(
-            //         io::ErrorKind::Other,
-            //         "FFmpeg's STDIN hasn't been captured",
-            //     )
-            // })?;
-
-            let mut src = m.lock().await;
-            let _ = io::copy(&mut *src, ffmpeg_stdin).await.map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::BrokenPipe,
-                    format!("Failed to write into FFmpeg's STDIN: {}", e),
-                )
-            })?;
-
-            Err(io::Error::new(
-                io::ErrorKind::UnexpectedEof,
-                "FFmpeg re-streamer stopped unexpectedly",
-            ))
-        } else {
-            RestreamerKind::run_ffmpeg_no_stdin(cmd).await
+        for m in self.mixins.iter() {
+            if let Some(i) = m.stdin.as_ref() {
+                let mut src = i.lock().await;
+                let mut write_to_pipe = File::create(&m.pipe_file_path).await?;
+                let _ = io::copy(&mut *src, &mut write_to_pipe).await.map_err(
+                    |e| {
+                        io::Error::new(
+                            io::ErrorKind::BrokenPipe,
+                            format!("Failed to write into FIFO: {}", e),
+                        )
+                    },
+                )?;
+            }
         }
+        Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "FFmpeg re-streamer stopped unexpectedly",
+        ))
     }
 }
 
@@ -1107,7 +1103,7 @@ pub struct Mixin {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    pipe_file: PathBuf,
+    pipe_file_path: PathBuf,
 }
 
 impl Mixin {
@@ -1131,7 +1127,7 @@ impl Mixin {
         log::debug!("TMP DIR: {:?}", tmp_dir);
         let pipe_file = tmp_dir.join(format!("ephyr_{}.pipe", state.id));
         if !pipe_file.exists() {
-            unix_named_pipe::create(&pipe_file, Some(0o777)).unwrap();
+            create_fifo(&pipe_file, 0o777).unwrap();
         }
         let stdin = (state.src.scheme() == "ts")
             .then(|| {
@@ -1156,7 +1152,6 @@ impl Mixin {
                         teamspeak::Connection::build(host.into_owned())
                             .channel(channel.to_owned())
                             .name(name),
-                        pipe_file.clone(),
                     ))))
                 })
             })
@@ -1169,7 +1164,7 @@ impl Mixin {
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
-            pipe_file,
+            pipe_file_path: pipe_file,
         }
     }
 

@@ -40,7 +40,7 @@ structopt = "0.3"
 systemstat = "0.1.8"
 url = { version = "2.1", features = ["serde"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
-unix-named-pipe = "0.2.0"
+interprocess = "1.1.1"
 [dependencies.derive_more]
     version = "0.99.11"
     features = ["as_ref", "deref", "display", "error", "from"]
