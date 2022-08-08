@@ -21,11 +21,11 @@ use tokio::{io, process::Command, sync::Mutex, time};
 use url::Url;
 use uuid::Uuid;
 
-use crate::teamspeak::Input;
 use crate::{
     display_panic, dvr,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Status, Volume},
     teamspeak,
+    teamspeak::Input,
     types::DroppableAbortHandle,
 };
 use chrono::{DateTime, Utc};
@@ -1049,29 +1049,28 @@ impl MixingRestreamer {
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
         let _ = cmd.spawn()?;
 
-        let mut src_to_file = vec![];
+        let mut copy_futures = FuturesUnordered::new();
         for m in self.mixins.iter() {
             if let Some(i) = m.stdin.as_ref() {
-                let mut src = Arc::clone(i);
-                let mut write_to_pipe = File::create(&m.pipe_file_path).await?;
-
-                src_to_file.push((src, write_to_pipe));
+                copy_futures.push(tokio::spawn(run_copy(
+                    Arc::clone(i),
+                    m.pipe_file_path.clone(),
+                )));
             }
         }
 
         async fn run_copy(
             input: Arc<Mutex<Input>>,
-            mut file: File,
+            pipe_file_path: PathBuf,
         ) -> io::Result<()> {
             let mut src = input.lock().await;
+            log::debug!("Connect to FIFO file: {:?}", &pipe_file_path);
+            let mut file = File::create(&pipe_file_path).await?;
+            log::debug!("FIFO file created for: {:?}", &pipe_file_path);
+
             io::copy(&mut *src, &mut file).await?;
 
             Ok(())
-        }
-
-        let mut copy_futures = FuturesUnordered::new();
-        for (input, file) in src_to_file {
-            copy_futures.push(tokio::spawn(run_copy(input, file)));
         }
 
         while let Some(future) = copy_futures.next().await {
