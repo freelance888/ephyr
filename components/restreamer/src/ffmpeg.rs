@@ -1047,7 +1047,7 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
-        let _ = cmd.spawn()?;
+        let process = cmd.spawn()?;
 
         let mut copy_futures = FuturesUnordered::new();
         for m in self.mixins.iter() {
@@ -1072,6 +1072,7 @@ impl MixingRestreamer {
 
             Ok(())
         }
+        let out = process.wait_with_output().await?;
 
         while let Some(future) = copy_futures.next().await {
             let _ = future.map_err(|e| {
