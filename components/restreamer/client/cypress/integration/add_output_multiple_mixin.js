@@ -42,9 +42,10 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Set second teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple2';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]').eq(1)
-        .invoke('val', teamspeakToPaste)
-        .trigger('input');
+    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
+      .eq(1)
+      .invoke('val', teamspeakToPaste)
+      .trigger('input');
   });
 
   it('Checks a "with mixin" checkbox', () => {
@@ -53,9 +54,10 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Set third teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple3';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]').eq(2)
-        .invoke('val', teamspeakToPaste)
-        .trigger('input');
+    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
+      .eq(2)
+      .invoke('val', teamspeakToPaste)
+      .trigger('input');
   });
 
   it('Submits', () => {
@@ -65,18 +67,20 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Assert', () => {
     cy.get("span:contains('Teamspeak Multiple Test')").should(
-        'have.text', 'Teamspeak Multiple Test')
+      'have.text',
+      'Teamspeak Multiple Test'
+    );
     cy.get("span:contains('/Multiple1')").should(
-          'have.text',
-          'ts://ts.multiple.com/Multiple1'
-      );
+      'have.text',
+      'ts://ts.multiple.com/Multiple1'
+    );
     cy.get("span:contains('/Multiple2')").should(
-        'have.text',
-        'ts://ts.multiple.com/Multiple2'
+      'have.text',
+      'ts://ts.multiple.com/Multiple2'
     );
     cy.get("span:contains('/Multiple3')").should(
-        'have.text',
-        'ts://ts.multiple.com/Multiple3'
+      'have.text',
+      'ts://ts.multiple.com/Multiple3'
     );
   });
 });

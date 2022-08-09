@@ -314,7 +314,8 @@ impl Output {
                     ts_count += 1;
                     if ts_count > 3 {
                         return Err(D::Error::custom(format!(
-                            "Maximum 3 TeamSpeak Mixin.src allowed in in Output.mixins: {}",
+                            "Maximum 3 TeamSpeak Mixin.src allowed \
+                            in Output.mixins: {}",
                             m.src,
                         )));
                     }
