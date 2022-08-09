@@ -939,7 +939,8 @@ impl MixingRestreamer {
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", mixin.get_fifo_path().to_str().unwrap()])
+                        .arg("-i")
+                        .arg(mixin.get_fifo_path())
                 }
 
                 "http" | "https"
