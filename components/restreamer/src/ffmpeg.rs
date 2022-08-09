@@ -939,7 +939,7 @@ impl MixingRestreamer {
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", mixin.pipe_file_path.to_str().unwrap()])
+                        .args(&["-i", mixin.get_fifo_path().to_str().unwrap()])
                 }
 
                 "http" | "https"
@@ -1047,16 +1047,15 @@ impl MixingRestreamer {
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
         async fn run_copy(
             input: Arc<Mutex<teamspeak::Input>>,
-            pipe_file_path: PathBuf,
+            fifo_path: PathBuf,
         ) -> io::Result<()> {
             let mut src = input.lock().await;
-            log::debug!("Connect to FIFO file: {:?}", &pipe_file_path);
-            let mut file = File::create(&pipe_file_path).await?;
+            log::debug!("Connecting to FIFO: {:?}", &fifo_path);
+            let mut file = File::create(&fifo_path).await?;
 
             let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
-                log::error!("Failed to write into FFmpeg's FIFO: {}", e);
+                log::error!("Failed to write into FIFO: {}", e);
             });
-
             Ok(())
         }
 
@@ -1064,10 +1063,7 @@ impl MixingRestreamer {
 
         for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy(
-                    Arc::clone(i),
-                    m.pipe_file_path.clone(),
-                )));
+                drop(tokio::spawn(run_copy(Arc::clone(i), m.get_fifo_path())));
             }
         }
 
@@ -1111,14 +1107,6 @@ pub struct Mixin {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     stdin: Option<Arc<Mutex<teamspeak::Input>>>,
-
-    /// FIFO where stream captures from the [TeamSpeak] server.
-    ///
-    /// If present, it should be fed into [FFmpeg]'s as file input.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    /// [TeamSpeak]: https://teamspeak.com
-    pipe_file_path: PathBuf,
 }
 
 impl Mixin {
@@ -1130,10 +1118,6 @@ impl Mixin {
     /// Optional `label` may be used to identify this [`Mixin`] in a [TeamSpeak]
     /// channel.
     ///
-    /// # Panics
-    ///
-    /// In case not possible to create FIFO file.
-    ///
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
     #[must_use]
@@ -1142,12 +1126,6 @@ impl Mixin {
         label: Option<&state::Label>,
         prev: Option<&Mixin>,
     ) -> Self {
-        let tmp_dir = std::env::temp_dir();
-        log::debug!("TMP DIR: {:?}", tmp_dir);
-        let pipe_file = tmp_dir.join(format!("ephyr_{}.pipe", state.id));
-        if !pipe_file.exists() {
-            create_fifo(&pipe_file, 0o777).unwrap();
-        }
         let stdin = (state.src.scheme() == "ts")
             .then(|| {
                 prev.and_then(|m| m.stdin.clone()).or_else(|| {
@@ -1183,7 +1161,6 @@ impl Mixin {
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
-            pipe_file_path: pipe_file,
         }
     }
 
@@ -1196,6 +1173,27 @@ impl Mixin {
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
         self.url != actual.url || self.delay != actual.delay
+    }
+
+    /// [FIFO] where stream captures from the [TeamSpeak] server.
+    ///
+    /// If present, it should be fed into [FFmpeg]'s as file input.
+    ///
+    /// # Panics
+    ///
+    /// In case is not possible to create [FIFO] file.
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.ibm.com/docs/en/zos/2.3.0?topic=csf-fifo-special-files
+    pub fn get_fifo_path(&self) -> PathBuf {
+        let fifo_path =
+            std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id));
+
+        if !fifo_path.exists() {
+            create_fifo(&fifo_path, 0o777).unwrap();
+        }
+        fifo_path
     }
 }
 
