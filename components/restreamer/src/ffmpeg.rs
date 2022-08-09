@@ -1045,6 +1045,57 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
+        // FIFO should be exists before start of ffmpeg process
+        self.create_mixins_fifo();
+        // ffmpeg should start reading FIFO before we start write there
+        let process = cmd.spawn()?;
+        self.start_fed_mixins_fifo();
+        // Need to hold process somewhere
+        let out = process.wait_with_output().await?;
+        self.remove_mixins_fifo();
+
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!(
+                "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                out.status,
+                String::from_utf8_lossy(&out.stderr),
+            ),
+        ))
+    }
+
+    /// Creates FIFO files for [`Mixin`]s.
+    ///
+    /// # Panics
+    ///
+    /// In case is not possible to create [FIFO] file.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn create_mixins_fifo(&self) {
+        for m in &self.mixins {
+            if !m.get_fifo_path().exists() {
+                create_fifo(m.get_fifo_path(), 0o777);
+            }
+        }
+    }
+
+    /// Remove FIFO files for [`Mixin`]s.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn remove_mixins_fifo(&self) {
+        for m in &self.mixins {
+            if m.get_fifo_path().exists() {
+                std::fs::remove_file(m.get_fifo_path())
+                    .expect("Failed to remove FIFO");
+            }
+        }
+    }
+
+    /// Copy data from [`Mixin.stdin`] to [FIFO].
+    /// Each data copying is operated in separate thread.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn start_fed_mixins_fifo(&self) {
         async fn run_copy(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
@@ -1059,23 +1110,11 @@ impl MixingRestreamer {
             Ok(())
         }
 
-        let process = cmd.spawn()?;
-
         for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
                 drop(tokio::spawn(run_copy(Arc::clone(i), m.get_fifo_path())));
             }
         }
-
-        let out = process.wait_with_output().await?;
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr),
-            ),
-        ))
     }
 }
 
@@ -1103,9 +1142,10 @@ pub struct Mixin {
 
     /// Actual live audio stream captured from the [TeamSpeak] server.
     ///
-    /// If present, it should be fed into FIFO STDIN.
+    /// If present, it should be fed into [FIFO].
     ///
     /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     stdin: Option<Arc<Mutex<teamspeak::Input>>>,
 }
 
@@ -1175,25 +1215,17 @@ impl Mixin {
         self.url != actual.url || self.delay != actual.delay
     }
 
-    /// [FIFO] where stream captures from the [TeamSpeak] server.
+    /// [FIFO] path where stream captures from the [TeamSpeak] server.
     ///
-    /// If present, it should be fed into [FFmpeg]'s as file input.
-    ///
-    /// # Panics
-    ///
-    /// In case is not possible to create [FIFO] file.
+    /// Should be fed into [FFmpeg]'s as file input.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    /// [FIFO]: https://www.ibm.com/docs/en/zos/2.3.0?topic=csf-fifo-special-files
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    #[inline]
+    #[must_use]
     pub fn get_fifo_path(&self) -> PathBuf {
-        let fifo_path =
-            std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id));
-
-        if !fifo_path.exists() {
-            create_fifo(&fifo_path, 0o777).unwrap();
-        }
-        fifo_path
+        std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id))
     }
 }
 
