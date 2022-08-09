@@ -92,8 +92,8 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 # Stage 'build-srs' prepares SRS distribution for the final stage.
 #
 
-# https://github.com/ossrs/srs/releases/tag/v4.0-b10
-FROM ossrs/srs:v4 AS build-srs
+# https://github.com/ossrs/srs/releases/tag/v4.0-r1
+FROM ossrs/srs:v4.0-r1 AS build-srs
 
 
 
