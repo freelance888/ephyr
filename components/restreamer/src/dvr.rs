@@ -11,8 +11,10 @@ use std::{
 
 use anyhow::anyhow;
 use ephyr_log::log;
+use futures::{future, stream::TryStreamExt};
 use once_cell::sync::OnceCell;
 use tokio::fs;
+use tokio_stream::wrappers::ReadDirStream;
 use url::Url;
 use uuid::Uuid;
 
@@ -79,51 +81,35 @@ impl Storage {
     /// Returns them as relative paths to this [`Storage::root_path`].
     ///
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
-    #[allow(irrefutable_let_patterns)]
     pub async fn list_files(&self, id: state::OutputId) -> Vec<String> {
         let dir = &self.root_path;
 
         let mut output_dir = dir.clone();
         output_dir.push(id.to_string());
-        let mut entries = match fs::read_dir(output_dir).await {
-            Ok(d) => d,
-            Err(e) => {
-                if e.kind() != io::ErrorKind::NotFound {
-                    log::error!("Failed to list {} DVR files: {}", id, e);
-                }
 
-                return vec![];
-            }
-        };
-
-        let mut lists = vec![];
-        while let next_entry = entries.next_entry().await {
-            match next_entry {
-                Ok(Some(entry)) => match entry.file_type().await {
-                    Ok(file_type) => {
-                        if file_type.is_file() {
-                            match entry.file_name().to_str() {
-                                None => continue,
-                                Some(s) => lists.push(s.to_string()),
-                            }
-                        }
-                    }
-                    Err(e) => {
+        if let Ok(read_dir) = fs::read_dir(output_dir).await {
+            return ReadDirStream::new(read_dir)
+                .try_filter_map(|i| async move {
+                    Ok(i.file_type()
+                        .await?
+                        .is_file()
+                        .then(|| i.path())
+                        .and_then(|p| {
+                            Some(
+                                p.strip_prefix(dir).ok()?.display().to_string(),
+                            )
+                        }))
+                })
+                .try_collect()
+                .await
+                .unwrap_or_else(|e| {
+                    if e.kind() != io::ErrorKind::NotFound {
                         log::error!("Failed to list {} DVR files: {}", id, e);
-
-                        return vec![];
                     }
-                },
-                Err(e) => {
-                    log::error!("Failed to list {} DVR files: {}", id, e);
-
-                    return vec![];
-                }
-                _ => {}
-            }
-        }
-
-        lists
+                    vec![]
+                });
+        };
+        vec![]
     }
 
     /// Removes a [DVR] file from this [`Storage`] identified by its relative
@@ -155,61 +141,35 @@ impl Storage {
     /// [`state::Output`]s of the given renewed [`state::Restream`]s.
     ///
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
-    #[allow(irrefutable_let_patterns)]
     pub async fn cleanup(&self, restreams: &[state::Restream]) {
         // TODO: Consider only `file:///` outputs?
-
-        let mut entries = match fs::read_dir(&self.root_path).await {
-            Ok(d) => d,
-            Err(e) => {
-                if e.kind() != io::ErrorKind::NotFound {
-                    log::error!("reading directory: {}", e);
-                }
-
-                return;
-            }
+        if let Ok(read_dir) = fs::read_dir(&self.root_path).await {
+            ReadDirStream::new(read_dir)
+                .try_filter(|i| {
+                    future::ready(
+                        i.file_name()
+                            .to_str()
+                            .and_then(|n| Uuid::parse_str(n).ok())
+                            .map_or(true, |id| {
+                                let id = id.into();
+                                !restreams.iter().any(|r| {
+                                    r.outputs.iter().any(|o| o.id == id)
+                                })
+                            }),
+                    )
+                })
+                .try_for_each_concurrent(4, |i| async move {
+                    if i.file_type().await?.is_dir() {
+                        fs::remove_dir_all(i.path()).await
+                    } else {
+                        fs::remove_file(i.path()).await
+                    }
+                })
+                .await
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to cleanup DVR files: {}", e);
+                });
         };
-        while let next_entry = entries.next_entry().await {
-            match next_entry {
-                Ok(Some(entry)) => {
-                    let can_delete = entry
-                        .file_name()
-                        .to_str()
-                        .and_then(|n| Uuid::parse_str(n).ok())
-                        .map_or(true, |id| {
-                            let id = id.into();
-                            !restreams
-                                .iter()
-                                .any(|r| r.outputs.iter().any(|o| o.id == id))
-                        });
-                    if !can_delete {
-                        continue;
-                    }
-                    match entry.file_type().await {
-                        Ok(file_type) => {
-                            if file_type.is_dir() {
-                                if let Err(e) =
-                                    fs::remove_dir_all(entry.path()).await
-                                {
-                                    log::error!("can't remove dir all: {}", e);
-                                }
-                            } else if let Err(e) =
-                                fs::remove_file(entry.path()).await
-                            {
-                                log::error!("can't remove file: {}", e);
-                            }
-                        }
-                        Err(e) => {
-                            log::error!("can't cast file_type: {}", e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    log::error!("get next entry from directory {}", e);
-                }
-                _ => {}
-            }
-        }
     }
 }
 

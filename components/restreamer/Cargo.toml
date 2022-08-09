@@ -42,6 +42,7 @@ zeromq = "0.3.3"
 tsclientlib = "0.2.0"
 tsproto-packets = "0.1.0"
 interprocess = "1.1.1"
+tokio-stream = { version="0.1", features = ["fs"]}
 [dependencies.derive_more]
     version = "0.99.11"
     features = ["as_ref", "deref", "display", "error", "from"]
