@@ -5,14 +5,13 @@
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
 FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
-# Update
-RUN apt-get update && apt-get install -y curl
+
+
 # Install build dependencies.
 RUN apt-get update \
  && apt-get install -y curl \
  && apt-get install -y build-essential \
- && apt-get install -y automake gcc libtool make \
-                                     openssl-dev \
+ && apt-get install -y automake gcc libtool make libssl-dev
 
 # Install Rust.
 WORKDIR /tmp/rust/
@@ -48,7 +47,6 @@ COPY components/vod-meta-server/Cargo.toml ./components/vod-meta-server/
 COPY Cargo.toml Cargo.lock ./
 
 COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
-
 
 
 RUN mkdir -p common/api/allatra-video/src/ \
