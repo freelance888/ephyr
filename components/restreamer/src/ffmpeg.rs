@@ -1046,13 +1046,13 @@ impl MixingRestreamer {
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
         // FIFO should be exists before start of ffmpeg process
-        self.create_mixins_fifo();
+        self.create_mixins_fifo()?;
         // ffmpeg should start reading FIFO before we start write there
         let process = cmd.spawn()?;
         self.start_fed_mixins_fifo();
         // Need to hold process somewhere
         let out = process.wait_with_output().await?;
-        self.remove_mixins_fifo();
+        self.remove_mixins_fifo()?;
 
         Err(io::Error::new(
             io::ErrorKind::Other,
@@ -1064,31 +1064,28 @@ impl MixingRestreamer {
         ))
     }
 
-    /// Creates FIFO files for [`Mixin`]s.
-    ///
-    /// # Panics
-    ///
-    /// In case is not possible to create [FIFO] file.
+    /// Creates [FIFO] files for [`Mixin`]s.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn create_mixins_fifo(&self) {
+    fn create_mixins_fifo(&self) -> io::Result<()> {
         for m in &self.mixins {
             if !m.get_fifo_path().exists() {
-                create_fifo(m.get_fifo_path(), 0o777);
+                create_fifo(m.get_fifo_path(), 0o777)?;
             }
         }
+        Ok(())
     }
 
-    /// Remove FIFO files for [`Mixin`]s.
+    /// Remove [FIFO] files for [`Mixin`]s.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn remove_mixins_fifo(&self) {
+    fn remove_mixins_fifo(&self) -> io::Result<()> {
         for m in &self.mixins {
             if m.get_fifo_path().exists() {
-                std::fs::remove_file(m.get_fifo_path())
-                    .expect("Failed to remove FIFO");
+                std::fs::remove_file(m.get_fifo_path())?;
             }
         }
+        Ok(())
     }
 
     /// Copy data from [`Mixin.stdin`] to [FIFO].
