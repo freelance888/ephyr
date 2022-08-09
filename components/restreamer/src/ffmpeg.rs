@@ -16,6 +16,7 @@ use std::{
 use derive_more::From;
 use ephyr_log::{log, Drain as _};
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{io, process::Command, sync::Mutex, time};
 use url::Url;
 use uuid::Uuid;
@@ -28,6 +29,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use std::result::Result::Err;
+use tokio::fs::File;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
 ///
@@ -908,10 +910,6 @@ impl MixingRestreamer {
             let _ = cmd.stderr(Stdio::null());
         }
 
-        if self.mixins.iter().any(|m| m.stdin.is_some()) {
-            let _ = cmd.stdin(Stdio::piped());
-        }
-
         let orig_volume = output
             .as_ref()
             .map_or(self.orig_volume.clone(), |o| o.volume.clone());
@@ -941,7 +939,8 @@ impl MixingRestreamer {
                         .args(&["-sample_rate", "48000"])
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
-                        .args(&["-i", "pipe:0"])
+                        .arg("-i")
+                        .arg(mixin.get_fifo_path())
                 }
 
                 "http" | "https"
@@ -1047,30 +1046,82 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
-        if let Some(m) = self.mixins.iter().find_map(|m| m.stdin.as_ref()) {
-            let process = cmd.spawn()?;
+        // FIFO should be exists before start of FFmpeg process
+        self.create_mixins_fifo()?;
+        // FFmpeg should start reading FIFO before writing started
+        let process = cmd.spawn()?;
+        self.start_fed_mixins_fifo();
+        // Need to hold process somewhere
+        let out = process.wait_with_output().await?;
 
-            let ffmpeg_stdin = &mut process.stdin.ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    "FFmpeg's STDIN hasn't been captured",
-                )
-            })?;
+        // Cleanup FIFO files only in case of error
+        // TODO: Move in proper place or remove completely
+        self.remove_mixins_fifo();
 
-            let mut src = m.lock().await;
-            let _ = io::copy(&mut *src, ffmpeg_stdin).await.map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::BrokenPipe,
-                    format!("Failed to write into FFmpeg's STDIN: {}", e),
-                )
-            })?;
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!(
+                "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                out.status,
+                String::from_utf8_lossy(&out.stderr),
+            ),
+        ))
+    }
 
-            Err(io::Error::new(
-                io::ErrorKind::UnexpectedEof,
-                "FFmpeg re-streamer stopped unexpectedly",
-            ))
-        } else {
-            RestreamerKind::run_ffmpeg_no_stdin(cmd).await
+    /// Creates [FIFO] files for [`Mixin`]s.
+    ///
+    /// # Errors
+    ///
+    /// If [FIFI] file failed to create.
+    /// We need it because [FFmpeg] cannot start if no [FIFO] file.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn create_mixins_fifo(&self) -> io::Result<()> {
+        for m in &self.mixins {
+            if !m.get_fifo_path().exists() {
+                create_fifo(m.get_fifo_path(), 0o777)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Remove [FIFO] files for [`Mixin`]s.
+    ///
+    /// We don't really care if file was really deleted so no error.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn remove_mixins_fifo(&self) {
+        for m in &self.mixins {
+            if m.get_fifo_path().exists() {
+                let _ = std::fs::remove_file(m.get_fifo_path())
+                    .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
+            }
+        }
+    }
+
+    /// Copy data from [`Mixin.stdin`] to [FIFO].
+    /// Each data copying is operated in separate thread.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    fn start_fed_mixins_fifo(&self) {
+        async fn run_copy(
+            input: Arc<Mutex<teamspeak::Input>>,
+            fifo_path: PathBuf,
+        ) -> io::Result<()> {
+            let mut src = input.lock().await;
+            log::debug!("Connecting to FIFO: {:?}", &fifo_path);
+            let mut file = File::create(&fifo_path).await?;
+
+            let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
+                log::error!("Failed to write into FIFO: {}", e);
+            });
+            Ok(())
+        }
+
+        for m in &self.mixins {
+            if let Some(i) = m.stdin.as_ref() {
+                drop(tokio::spawn(run_copy(Arc::clone(i), m.get_fifo_path())));
+            }
         }
     }
 }
@@ -1099,10 +1150,10 @@ pub struct Mixin {
 
     /// Actual live audio stream captured from the [TeamSpeak] server.
     ///
-    /// If present, it should be fed into [FFmpeg]'s STDIN.
+    /// If present, it should be fed into [FIFO].
     ///
-    /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     stdin: Option<Arc<Mutex<teamspeak::Input>>>,
 }
 
@@ -1170,6 +1221,19 @@ impl Mixin {
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
         self.url != actual.url || self.delay != actual.delay
+    }
+
+    /// [FIFO] path where stream captures from the [TeamSpeak] server.
+    ///
+    /// Should be fed into [FFmpeg]'s as file input.
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    #[inline]
+    #[must_use]
+    pub fn get_fifo_path(&self) -> PathBuf {
+        std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id))
     }
 }
 

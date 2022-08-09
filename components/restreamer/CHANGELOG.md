@@ -10,8 +10,21 @@ All user visible changes to this project will be documented in this file. This p
 
 [Diff](/../../compare/restreamer-v0.5.0...restreamer-v0.6.0)
 
+
+### Added
+
+- Web UI:
+  - Allow to use multiple Teamspeak mixers per output ([#199]);
+
 ### Miscellaneous
-- Added test for check file recording
+- Server updates:
+  - `ffmpeg` from 4.4 to 5.1;
+  - `SRS` server updated to v4.0-b10.
+
+- Added test for check file recording;
+- Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
+
+[#199]: /../../pull/199
 
 
 ## [0.5.0] · 2022-04-20
