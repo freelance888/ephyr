@@ -391,7 +391,7 @@ impl AudioCapture {
         audio: Arc<Mutex<AudioHandler>>,
     ) -> Result<(), AudioCaptureError> {
         log::debug!(
-            "Connecting to TeamSpeak server: {:?}/{:?}",
+            "Connecting to TeamSpeak server: {}/{:?}",
             cfg.get_address(),
             cfg.get_channel()
         );

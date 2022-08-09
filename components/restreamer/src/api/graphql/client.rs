@@ -418,7 +418,7 @@ impl MutationsRoot {
                     "TOO_MUCH_TEAMSPEAK_MIXIN_URLS",
                 )
                 .status(StatusCode::BAD_REQUEST)
-                .message("Only 3 TeamSpeak URLs are allowed"));
+                .message("Maximum 3 TeamSpeak URLs are allowed"));
             }
         }
 
