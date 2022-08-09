@@ -170,7 +170,15 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "preview_url": "https://www.youtube.com/watch?v=99567P5FiD0",
           "mixins": [
             {
-              "src": "ts://ts.sameteem.com:9987/AFK\/Muted",
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted",
+              "delay": "3s 500ms"
+            },
+            {
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest",
+              "delay": "3s 500ms"
+            },
+            {
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest2",
               "delay": "3s 500ms"
             }
           ],
