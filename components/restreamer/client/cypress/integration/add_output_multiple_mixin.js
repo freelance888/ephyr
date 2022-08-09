@@ -12,7 +12,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
   });
 
   it('Set rtmp://', () => {
-    const urlToPaste = 'rtmp://' + Cypress.env('host') + '/it/backup';
+    const urlToPaste = 'rtmp://' + Cypress.env('host') + '/it/some';
     cy.get('[placeholder="rtmp://..."]')
       .invoke('val', urlToPaste)
       .trigger('input');
