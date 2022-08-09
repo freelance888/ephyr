@@ -32,7 +32,7 @@ RUN curl -sLO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/
 
 # Install Node.js and Yarn.
 RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
- && npm install -g yarn
+ && npm install --location=global yarn
 
 
 # First, build all the dependencies to cache them in a separate Docker layer and
