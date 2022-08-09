@@ -30,7 +30,7 @@ describe('ADD MIXIN OUTPUT', () => {
   });
 
   it('Set teamspeak', () => {
-    const teamspeakToPaste = 'ts://allatra.ruvoice.com:10335/Translation/Music';
+    const teamspeakToPaste = 'ts://ts.single.com/Single';
     cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
       .invoke('val', teamspeakToPaste)
       .trigger('input');
@@ -43,9 +43,9 @@ describe('ADD MIXIN OUTPUT', () => {
 
   it('Assert', () => {
     cy.get("span:contains('Teamspeak')").should('have.text', 'Teamspeak');
-    cy.get("span:contains('/Translation/Music')").should(
+    cy.get("span:contains('/Single')").should(
       'have.text',
-      'ts://allatra.ruvoice.com:10335/Translation/Music'
+      'ts://ts.single.com/Single'
     );
   });
 });
