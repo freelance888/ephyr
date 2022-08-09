@@ -1046,14 +1046,17 @@ impl MixingRestreamer {
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
     async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
-        // FIFO should be exists before start of ffmpeg process
+        // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
-        // ffmpeg should start reading FIFO before we start write there
+        // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
         self.start_fed_mixins_fifo();
         // Need to hold process somewhere
         let out = process.wait_with_output().await?;
-        self.remove_mixins_fifo()?;
+
+        // Cleanup FIFO files only in case of error
+        // TODO: Move in proper place or remove completely
+        self.remove_mixins_fifo();
 
         Err(io::Error::new(
             io::ErrorKind::Other,
@@ -1067,6 +1070,11 @@ impl MixingRestreamer {
 
     /// Creates [FIFO] files for [`Mixin`]s.
     ///
+    /// # Errors
+    ///
+    /// If [FIFI] file failed to create.
+    /// We need it because [FFmpeg] cannot start if no [FIFO] file.
+    ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     fn create_mixins_fifo(&self) -> io::Result<()> {
         for m in &self.mixins {
@@ -1079,14 +1087,16 @@ impl MixingRestreamer {
 
     /// Remove [FIFO] files for [`Mixin`]s.
     ///
+    /// We don't really care if file was really deleted so no error.
+    ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn remove_mixins_fifo(&self) -> io::Result<()> {
+    fn remove_mixins_fifo(&self) {
         for m in &self.mixins {
             if m.get_fifo_path().exists() {
-                std::fs::remove_file(m.get_fifo_path())?;
+                let _ = std::fs::remove_file(m.get_fifo_path())
+                    .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
             }
         }
-        Ok(())
     }
 
     /// Copy data from [`Mixin.stdin`] to [FIFO].
