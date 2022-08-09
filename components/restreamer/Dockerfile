@@ -2,9 +2,17 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:5.1-centos7 AS build-ephyr
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
+FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
+# Update
+RUN apt-get update && apt-get install -y curl
+# Install build dependencies.
+RUN apt-get update \
+ && apt-get install -y curl \
+ && apt-get install -y build-essential \
+ && apt-get install -y automake gcc libtool make \
+                                     openssl-dev \
 
 # Install Rust.
 WORKDIR /tmp/rust/
@@ -26,12 +34,6 @@ RUN curl -sLO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/
 # Install Node.js and Yarn.
 RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
  && npm install -g yarn
-
-
-# Install build dependencies.
-RUN yum --enablerepo=extras install -y epel-release \
- && yum --enablerepo=epel install -y automake gcc libtool make \
-                                     openssl-devel
 
 
 # First, build all the dependencies to cache them in a separate Docker layer and
@@ -93,7 +95,7 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 #
 
 # https://github.com/ossrs/srs/releases/tag/v4.0-b10
-FROM ossrs/srs:v4.0-b10 AS build-srs
+FROM ossrs/srs:v4 AS build-srs
 
 
 
@@ -102,8 +104,8 @@ FROM ossrs/srs:v4.0-b10 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:5.1-centos7 AS runtime
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
+FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 
