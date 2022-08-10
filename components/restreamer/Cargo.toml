@@ -51,17 +51,17 @@ tokio-stream = { version="0.1", features = ["fs"]}
     version = "1.19.2"
     features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
-git="https://github.com/graphql-rust/juniper"
-branch = "master"
-version = "0.16.0-dev"
-features = ["chrono"]
+    git="https://github.com/graphql-rust/juniper"
+    branch = "master"
+    version = "0.16.0-dev"
+    features = ["chrono"]
 [dependencies.juniper_actix]
-git="https://github.com/graphql-rust/juniper"
-features = ["subscriptions"]
-branch = "master"
+    git="https://github.com/graphql-rust/juniper"
+    features = ["subscriptions"]
+    branch = "master"
 [dependencies.juniper_graphql_ws]
-git="https://github.com/graphql-rust/juniper"
-branch = "master"
+    git="https://github.com/graphql-rust/juniper"
+    branch = "master"
 
 [build-dependencies]
 static-files = "0.2.3"
