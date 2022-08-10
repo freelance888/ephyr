@@ -196,7 +196,7 @@ docker-image-tag = $(if $(call eq,$(tag),),$(IMAGE_TAG),$(tag))
 
 docker.image:
 	cd ../../ && \
-	docker build --network=host --force-rm \
+	docker build --network=host --force-rm --platform linux/amd64 \
 		$(if $(call eq,$(no-cache),yes),--no-cache --pull,) \
 		--file=components/restreamer/Dockerfile \
 		-t $(IMAGE_NAME):restreamer$(if \
@@ -232,7 +232,7 @@ docker.up: docker.down
 ifeq ($(rebuild),yes)
 	@make docker.image tag=$(tag) no-cache=$(no-cache)
 endif
-	docker run --rm --name ephyr-restreamer-dev \
+	docker run --rm --name ephyr-restreamer-dev --platform linux/amd64 \
 	           $(if $(call eq,$(background),yes),-d,-it) \
 	           -p 80:80 -p 1935:1935 -p 8000:8000 \
 	           -v '$(PWD)/state.json:/state.json' \
