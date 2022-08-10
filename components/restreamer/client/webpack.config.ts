@@ -16,7 +16,6 @@ const config: webpack.Configuration = {
     'mix/main': './src/AppMix.ts',
     'dashboard/main': './src/AppDashboard.ts',
   },
-
   resolve: {
     alias: {
       svelte: path.resolve('node_modules', 'svelte'),

@@ -962,7 +962,6 @@ impl<'de> Deserialize<'de> for ClientId {
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-
 pub struct Restream {
     /// Unique ID of this `Input`.
     ///
@@ -1134,30 +1133,6 @@ impl<'de> Deserialize<'de> for RestreamKey {
     }
 }
 
-// /// Type of `Restream`'s `key` identifying it, and used to form its endpoints
-// /// URLs.
-// ///
-// /// It should meet `[a-z0-9_-]{1,20}` format.
-// #[graphql_scalar]
-// impl<S> GraphQLScalar for RestreamKey
-// where
-//     S: ScalarValue,
-// {
-//     fn resolve(&self) -> Value {
-//         Value::scalar(self.0.as_str().to_owned())
-//     }
-//
-//     fn from_input_value(v: &InputValue) -> Option<Self> {
-//         v.as_scalar()
-//             .and_then(ScalarValue::as_str)
-//             .and_then(Self::new)
-//     }
-//
-//     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-//         <String as ParseScalarValue<S>>::from_str(value)
-//     }
-// }
-
 impl PartialEq<str> for RestreamKey {
     #[inline]
     fn eq(&self, other: &str) -> bool {
@@ -1169,7 +1144,6 @@ impl PartialEq<str> for RestreamKey {
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-
 pub struct Input {
     /// Unique ID of this `Input`.
     ///
@@ -1360,7 +1334,6 @@ impl Input {
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-
 pub struct InputEndpoint {
     /// Unique ID of this `InputEndpoint`.
     ///
@@ -1612,7 +1585,6 @@ pub struct RemoteInputSrc {
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-
 pub struct FailoverInputSrc {
     /// `Input`s forming this `FailoverInputSrc`.
     ///
@@ -1687,29 +1659,6 @@ impl<'de> Deserialize<'de> for InputKey {
             .ok_or_else(|| D::Error::custom("Not a valid Input.key"))
     }
 }
-
-// /// Type of `Input`'s `key` used to form its endpoint URL.
-// ///
-// /// It should meet `[a-z0-9_-]{1,50}` format.
-// #[graphql_scalar]
-// impl<S> GraphQLScalar for InputKey
-// where
-//     S: ScalarValue,
-// {
-//     fn resolve(&self) -> Value {
-//         Value::scalar(self.0.as_str().to_owned())
-//     }
-//
-//     fn from_input_value(v: &InputValue) -> Option<Self> {
-//         v.as_scalar()
-//             .and_then(ScalarValue::as_str)
-//             .and_then(Self::new)
-//     }
-//
-//     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-//         <String as ParseScalarValue<S>>::from_str(value)
-//     }
-// }
 
 impl PartialEq<str> for InputKey {
     #[inline]
@@ -1786,42 +1735,10 @@ impl<'de> Deserialize<'de> for InputSrcUrl {
     }
 }
 
-// /// Type of a `RemoteInputSrc.url`.
-// ///
-// /// Only the following URLs are allowed at the moment:
-// /// - [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a
-// ///   host);
-// /// - [HLS] URL (starting with `http://` or `https://` scheme, having a host,
-// ///   and with `.m3u8` extension in its path).
-// ///
-// /// [HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
-// /// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
-// #[graphql_scalar]
-// impl<S> GraphQLScalar for InputSrcUrl
-// where
-//     S: ScalarValue,
-// {
-//     fn resolve(&self) -> Value {
-//         Value::scalar(self.0.as_str().to_owned())
-//     }
-//
-//     fn from_input_value(v: &InputValue) -> Option<Self> {
-//         v.as_scalar()
-//             .and_then(ScalarValue::as_str)
-//             .and_then(|s| Url::parse(s).ok())
-//             .and_then(|url| Self::new(url).ok())
-//     }
-//
-//     fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-//         <String as ParseScalarValue<S>>::from_str(value)
-//     }
-// }
-
 /// Downstream destination that a `Restream` re-streams a live stream to.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-
 pub struct Output {
     /// Unique ID of this `Output`.
     ///
@@ -2502,7 +2419,6 @@ impl Delay {
 /// Type of a `Mixin` delay in milliseconds.
 ///
 /// Negative values are not allowed.
-
 #[cfg(test)]
 mod volume_spec {
     use super::{Volume, VolumeLevel};
@@ -2627,7 +2543,6 @@ impl ClientStatistics {
 
 /// Current state of [`ClientStatistics`] request
 #[derive(Clone, Debug, GraphQLObject, PartialEq)]
-
 pub struct ClientStatisticsResponse {
     /// Statistics data
     pub data: Option<ClientStatistics>,

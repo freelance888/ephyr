@@ -51,7 +51,6 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     )
     .await
     .map_err(|e| log::error!("Failed to initialize SRS server: {}", e))?;
-
     State::on_change(
         "cleanup_dvr_files",
         &state.restreams,
