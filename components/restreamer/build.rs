@@ -52,5 +52,7 @@ fn main() -> std::io::Result<()> {
 
     build_root(&out_dir)?;
     build_mix(&out_dir)?;
-    build_dashboard(&out_dir)
+    build_dashboard(&out_dir)?;
+
+    Ok(())
 }
