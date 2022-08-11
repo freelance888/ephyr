@@ -31,7 +31,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Set first teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple1';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
+    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]')
       .invoke('val', teamspeakToPaste)
       .trigger('input');
   });
@@ -42,7 +42,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Set second teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple2';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
+    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]')
       .eq(1)
       .invoke('val', teamspeakToPaste)
       .trigger('input');
@@ -54,7 +54,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
 
   it('Set third teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple3';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"]')
+    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]')
       .eq(2)
       .invoke('val', teamspeakToPaste)
       .trigger('input');
