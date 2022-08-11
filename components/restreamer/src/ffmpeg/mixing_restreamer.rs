@@ -440,41 +440,33 @@ impl Mixin {
 
                     let channel = state.src.path().trim_start_matches('/');
 
-                    let name = state
-                        .src
-                        .query_pairs()
+                    let mut query = state.src.query_pairs();
+                    let name = query
                         .find_map(|(k, v)| {
                             (k == "name").then(|| v.into_owned())
                         })
                         .or_else(|| label.map(|l| format!("🤖 {}", l)))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
 
-                    let identity = query.get("identity").map_or_else(
-                        || {
-                            log::debug!("No identity use random");
-                            Identity::create()
-                        },
-                        |v| {
-                            log::debug!("Create Identity for: {}", v);
-                            Identity::new_from_str(v)
-                        },
-                    );
-
-                    let ts_connection =
-                        teamspeak::Connection::build(host.into_owned())
-                            .channel(channel.to_owned())
-                            .name(name);
-
-                    let ts_connection = match identity {
-                        Ok(ide) => ts_connection.identity(ide),
-                        Err(e) => {
-                            log::error!("Failed creating of Identity: {}", e);
-                            ts_connection
-                        }
-                    };
+                    let identity = query
+                        .find_map(|(k, v)| {
+                            (k == "identity").then(|| {
+                                Identity::new_from_str(&v).unwrap_or_else(|e| {
+                                    log::error!(
+                                        "Failed to create identity: {}",
+                                        &e
+                                    );
+                                    Identity::create()
+                                })
+                            })
+                        })
+                        .unwrap_or_else(Identity::create);
 
                     Some(Arc::new(Mutex::new(teamspeak::Input::new(
-                        ts_connection,
+                        teamspeak::Connection::build(host.into_owned())
+                            .channel(channel.to_owned())
+                            .name(name)
+                            .identity(identity),
                     ))))
                 })
             })
