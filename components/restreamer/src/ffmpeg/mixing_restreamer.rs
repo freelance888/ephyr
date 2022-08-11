@@ -28,6 +28,7 @@ use crate::{
 };
 use std::result::Result::Err;
 use tokio::fs::File;
+use tsclientlib::Identity;
 
 /// Kind of a [FFmpeg] re-streaming process that mixes a live stream from one
 /// URL endpoint with some additional live streams and re-streams the result to
@@ -448,10 +449,32 @@ impl Mixin {
                         .or_else(|| label.map(|l| format!("🤖 {}", l)))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
 
-                    Some(Arc::new(Mutex::new(teamspeak::Input::new(
+                    let identity = query.get("identity").map_or_else(
+                        || {
+                            log::debug!("No identity use random");
+                            Identity::create()
+                        },
+                        |v| {
+                            log::debug!("Create Identity for: {}", v);
+                            Identity::new_from_str(v)
+                        },
+                    );
+
+                    let ts_connection =
                         teamspeak::Connection::build(host.into_owned())
                             .channel(channel.to_owned())
-                            .name(name),
+                            .name(name);
+
+                    let ts_connection = match identity {
+                        Ok(ide) => ts_connection.identity(ide),
+                        Err(e) => {
+                            log::error!("Failed creating of Identity: {}", e);
+                            ts_connection
+                        }
+                    };
+
+                    Some(Arc::new(Mutex::new(teamspeak::Input::new(
+                        ts_connection,
                     ))))
                 })
             })
