@@ -35,6 +35,7 @@ pub struct RestreamersPool {
     /// Application [`State`] dictating which [FFmpeg] processes should run.
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    /// [`State`]: crate::state::State
     state: State,
 }
 

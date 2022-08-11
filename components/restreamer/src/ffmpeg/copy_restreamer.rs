@@ -19,8 +19,10 @@ use crate::dvr;
 /// [FFmpeg]: https://ffmpeg.org
 #[derive(Clone, Debug)]
 pub struct CopyRestreamer {
-    /// ID of an element in a [`State`] this [`CopyRestreamer`] process is
-    /// related to.
+    /// ID of an element in a [`State`] this [`CopyRestreamer`]
+    /// process is related to.
+    ///
+    /// [`State`]: crate::state::State
     pub id: Uuid,
 
     /// [`Url`] to pull a live stream from.

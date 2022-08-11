@@ -78,7 +78,7 @@ pub struct Input {
     /// [TeamSpeak] channel members, for this [`Input`].
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    audio: Arc<Mutex<AudioHandler>>,
+    pub audio: Arc<Mutex<AudioHandler>>,
 
     /// Abort handle and waiter of the spawned [`AudioCapture`], which receives
     /// audio packets from [TeamSpeak] server and feeds them into the
@@ -90,7 +90,7 @@ pub struct Input {
     /// operations.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    conn: Option<(future::AbortHandle, JoinHandle<()>)>,
+    pub conn: Option<(future::AbortHandle, JoinHandle<()>)>,
 
     /// Indicator whether the spawned [`AudioCapture`] is unable to recover from
     /// its last error, and so this [`Input`] should return an error too.
@@ -320,7 +320,7 @@ pub struct AudioCapture {
     /// Established [`Connection`] with [TeamSpeak] server.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    conn: ManuallyDrop<Connection>,
+    pub conn: ManuallyDrop<Connection>,
 
     /// Handler of audio packets received from [TeamSpeak] server.
     ///

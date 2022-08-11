@@ -158,6 +158,8 @@ impl RestreamerKind {
 
     /// Checks whether this [`Restreamer`] must be restarted, as cannot apply
     /// the new `actual` params on itself correctly, without interruptions.
+    ///
+    /// [`Restreamer`]: crate::ffmpeg::Restreamer
     #[inline]
     #[must_use]
     pub fn needs_restart(&mut self, actual: &Self) -> bool {

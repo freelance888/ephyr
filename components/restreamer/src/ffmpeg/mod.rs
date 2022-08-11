@@ -10,8 +10,10 @@ mod restreamers_pool;
 mod transcoding_restreamer;
 
 pub use self::{
-    copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
-    restreamer::Restreamer, restreamer_kind::RestreamerKind,
+    copy_restreamer::CopyRestreamer,
+    mixing_restreamer::{Mixin, MixingRestreamer},
+    restreamer::Restreamer,
+    restreamer_kind::RestreamerKind,
     restreamers_pool::RestreamersPool,
     transcoding_restreamer::TranscodingRestreamer,
 };

@@ -19,6 +19,8 @@ use uuid::Uuid;
 pub struct TranscodingRestreamer {
     /// ID of an element in a [`State`] this [`TranscodingRestreamer`] process
     /// is related to.
+    ///
+    /// [`State`]: crate::state::State
     pub id: Uuid,
 
     /// [`Url`] to pull a live stream from.
