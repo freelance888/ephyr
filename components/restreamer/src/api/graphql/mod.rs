@@ -65,7 +65,7 @@ impl Deref for Context {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.0.as_ref().unwrap()
+        &**self.0.as_ref().unwrap()
     }
 }
 
