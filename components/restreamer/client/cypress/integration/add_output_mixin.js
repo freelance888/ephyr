@@ -31,7 +31,9 @@ describe('ADD MIXIN OUTPUT', () => {
 
   it('Set teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.single.com/Single';
-    cy.get('[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]')
+    cy.get(
+      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]'
+    )
       .invoke('val', teamspeakToPaste)
       .trigger('input');
   });
