@@ -138,7 +138,6 @@
           let vars = {
             restream_id: v.restream_id,
             url: vs[vs.length - 1],
-            mixins: [],
           };
           if (vs.length > 1) {
             vars.label = vs[0];
@@ -151,7 +150,6 @@
           submit = JSON.parse(v.json.trim()).map((x) => ({
             restream_id: v.restream_id,
             url: sanitizeUrl(x.url),
-            mixins: [],
             ...(x.label && { label: sanitizeLabel(x.label) }),
             ...(x.preview_url && { preview_url: sanitizeUrl(x.preview_url) }),
           }));
@@ -165,7 +163,6 @@
       let vars = {
         restream_id: v.restream_id,
         url: sanitizeUrl(v.url),
-        mixins: [],
       };
       const label = sanitizeLabel(v.label);
       if (label !== '') {
@@ -356,7 +353,7 @@
               class="uk-input"
               type="text"
               bind:value={mix_url}
-              placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>"
+              placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"
             />
           {/each}
 
@@ -383,6 +380,8 @@
               <br />
               If <code>name</code> is not specified than the label value will be
               used, if any, or a random generated one.
+              <br />
+              If <code>identity</code> is not specified than the a random generated one.
             </div>
           {/if}
         </fieldset>
