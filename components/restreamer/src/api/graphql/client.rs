@@ -368,9 +368,10 @@ impl MutationsRoot {
         restream_id: RestreamId,
         folder_id: String,
         context: &Context,
-    ) -> Option<bool> {
+    ) -> Result<Option<bool>, graphql::Error> {
         let api_key =
-            context.state().settings.lock_mut().google_api_key.clone()?;
+            context.state().settings.lock_mut().google_api_key.clone()
+                .ok_or(graphql::Error::new("NO_API_KEY").status(StatusCode::UNAUTHORIZED).message("No API key"))?;
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(playlist_files) = result {
@@ -379,14 +380,19 @@ impl MutationsRoot {
                 .restreams
                 .lock_mut()
                 .iter_mut()
-                .find(|r| r.id == restream_id)?
+                .find(|r| r.id == restream_id)
+                .ok_or(
+                    graphql::Error::new("UNKNOWN_RESTREAM")
+                        .message("Could not find restream with provided ID")
+                )?
                 .playlist
                 .apply(playlist_files);
 
-            Some(true)
+            Ok(Some(true))
         } else {
-            log::error!("{}", result.err().unwrap());
-            None
+            let err = result.err().unwrap();
+            log::error!("{}", &err);
+            Err(graphql::Error::new(err))
         }
     }
 
