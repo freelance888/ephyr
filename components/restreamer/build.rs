@@ -35,6 +35,16 @@ fn build_dashboard(out_dir: &str) -> std::io::Result<()> {
     res_dir.build()
 }
 
+fn build_full_stream(out_dir: &str) -> std::io::Result<()> {
+    let dashboard_files = Path::new(&out_dir).join("generated_full_stream.rs");
+    let mut res_dir = resource_dir("./client/public/full-stream");
+    res_dir
+        .with_generated_filename(dashboard_files)
+        .with_module_name("full_stream");
+
+    res_dir.build()
+}
+
 fn main() -> std::io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
 
@@ -52,6 +62,7 @@ fn main() -> std::io::Result<()> {
 
     build_root(&out_dir)?;
     build_mix(&out_dir)?;
+    build_full_stream(&out_dir)?;
     build_dashboard(&out_dir)?;
 
     Ok(())
