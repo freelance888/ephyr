@@ -40,7 +40,7 @@ subscription State {
     }
 }
 
-subscription RestreamSubscription($id: RestreamId!) {
+subscription TranslationRestream($id: RestreamId!) {
     restream(id: $id) {
         restream {
             ...restreamBasic
