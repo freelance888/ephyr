@@ -8,7 +8,7 @@ use crate::{
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
-use futures::stream::BoxStream;
+use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 
@@ -48,9 +48,8 @@ impl MutationsRoot {
     ///
     /// Returns [`graphql::Error`] if there is already [`Client`] in this
     /// [`State`].
-    #[graphql(arguments(client_id(description = "Ulr of remote client")))]
     fn add_client(
-        client_id: ClientId,
+        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().add_client(&client_id) {
@@ -65,9 +64,8 @@ impl MutationsRoot {
     ///
     /// Returns [`None`] if there is no [`Client`] in this
     /// [`State`].
-    #[graphql(arguments(client_id(description = "Ulr of remote client")))]
     fn remove_client(
-        client_id: ClientId,
+        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().remove_client(&client_id) {

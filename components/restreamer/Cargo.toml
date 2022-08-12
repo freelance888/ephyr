@@ -1,37 +1,35 @@
 [package]
 name = "ephyr-restreamer"
-version = "0.5.0"
+version = "0.6.0+dev"
 edition = "2018"
 authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 default-run = "ephyr-restreamer"
 
 [dependencies]
-actix-service = "1.0"
-actix-web = "3.3"
-actix-web-httpauth = "0.5"
-actix-web-static-files = "3.0"
+actix-service = "2.0"
+actix-web = "4.1"
+actix-web-httpauth = "0.7"
+actix-web-static-files = "4.0"
+static-files = "0.2.3"
 anyhow = "1.0"
-argon2 = { version = "0.8", package = "rust-argon2", default-features = false }
-askama = { version = "0.10", default-features = false }
-backoff = { version = "0.3", features = ["tokio"] }
+argon2 = { version = "1.0.0", package = "rust-argon2", default-features = false }
+askama = { version = "0.11", default-features = false }
+backoff = { version = "0.4", features = ["tokio"] }
 byteorder = "1.4"
 chrono = { version = "0.4", features = ["serde"] }
 ephyr-log = { version = "0.1", path = "../../common/log" }
 futures = "0.3"
 futures-signals = "0.3"
-graphql_client = "0.10.0"
+graphql_client = "0.11"
 hex = "0.4"
 humantime = "2.1"
-juniper = "0.15"
-juniper_actix = { version = "0.2", features = ["subscriptions"] }
-juniper_graphql_ws = "0.2"
 once_cell = { version = "1.4", features = ["parking_lot"] }
-public-ip = "0.1"
+public-ip = "0.2"
 rand = "0.8"
 regex = "1.4"
-reqwest = { version = "0.10", features = ["json"], default-features = false }
-send_wrapper = { version = "0.5", default-features = false }
+reqwest = { version = "0.11", features = ["json"], default-features = false }
+send_wrapper = { version = "0.6", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_humantime = { version = "1.0", package = "humantime-serde" }
 serde_json = "1.0"
@@ -40,24 +38,31 @@ structopt = "0.3"
 systemstat = "0.1.8"
 tap = "1.0.1"
 url = { version = "2.1", features = ["serde"] }
-uuid = { version = "0.8", features = ["serde", "v4"] }
+uuid = { version = "1.1.2", features = ["serde", "v4"] }
+zeromq = "0.3.3"
+tsclientlib = "0.2.0"
+tsproto-packets = "0.1.0"
+interprocess = "1.1.1"
+tokio-stream = { version="0.1", features = ["fs"]}
 [dependencies.derive_more]
     version = "0.99.11"
     features = ["as_ref", "deref", "display", "error", "from"]
     default-features = false
 [dependencies.tokio]
-    version = "0.2"
-    features = ["fs", "io-util", "process", "rt-core", "stream", "sync", "time"]
-[dependencies.tsclientlib]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "ee95d775ad6dda552847bf9f484ab3ff1a70f833" # branch = "master"
-[dependencies.tsproto-packets]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "ee95d775ad6dda552847bf9f484ab3ff1a70f833" # branch = "master"
-[dependencies.zeromq]
-    git = "https://github.com/zeromq/zmq.rs"
-    rev = "5bc792a5b8876d7281e9bd933519d49a62b76caf" # tokio = "0.2"
+    version = "1.19.2"
+    features = ["fs", "io-util", "process", "sync", "time"]
+[dependencies.juniper]
+    git="https://github.com/graphql-rust/juniper"
+    branch = "master"
+    version = "0.16.0-dev"
+    features = ["chrono"]
+[dependencies.juniper_actix]
+    git="https://github.com/graphql-rust/juniper"
+    features = ["subscriptions"]
+    branch = "master"
+[dependencies.juniper_graphql_ws]
+    git="https://github.com/graphql-rust/juniper"
+    branch = "master"
 
 [build-dependencies]
-anyhow = "1.0"
-actix-web-static-files = "3.0"
+static-files = "0.2.3"

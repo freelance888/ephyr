@@ -77,9 +77,9 @@ mutation SetRestream(
     $url: InputSrcUrl
     $label: Label
     $id: RestreamId
-    $with_backup: Boolean
+    $with_backup: Boolean!
     $backup_url: InputSrcUrl
-    $with_hls: Boolean
+    $with_hls: Boolean!
     $file_id: String
     $max_files_in_playlist: NumberOfItems
 ) {
@@ -143,7 +143,7 @@ mutation SetOutput(
     $url: OutputDstUrl!
     $label: Label
     $preview_url: Url
-    $mixins: [MixinSrcUrl!]
+    $mixins: [MixinSrcUrl!]!
     $id: OutputId
 ) {
     setOutput(

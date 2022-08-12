@@ -1,6 +1,7 @@
 //! [GraphQL] APIs provided by application.
 //!
 //! [GraphQL]: https://graphql.com
+#![allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
 
 pub mod client;
 pub mod dashboard;
@@ -11,10 +12,7 @@ use std::{borrow::Cow, convert::Infallible, fmt, ops::Deref};
 
 use actix_web::{http, HttpRequest};
 use derive_more::{Display, Error};
-use juniper::{
-    graphql_value, http::GraphQLResponse, FieldError, IntoFieldError,
-    ScalarValue,
-};
+use juniper::{graphql_value, FieldError, IntoFieldError, ScalarValue};
 use send_wrapper::SendWrapper;
 use smart_default::SmartDefault;
 
@@ -67,9 +65,12 @@ impl Deref for Context {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.0.as_ref().unwrap()
+        &**self.0.as_ref().unwrap()
     }
 }
+
+// To make our context usable by Juniper, we have to implement a marker trait.
+impl juniper::Context for Context {}
 
 /// Error returned to the client by GraphQL API.
 #[derive(Clone, Debug, Display, Error, SmartDefault)]
@@ -189,13 +190,6 @@ impl<S: ScalarValue> IntoFieldError<S> for Error {
             );
         }
         FieldError::new(self.message, graphql_value!(extensions))
-    }
-}
-
-impl From<Error> for GraphQLResponse<'_> {
-    #[inline]
-    fn from(err: Error) -> Self {
-        Self::error(err.into_field_error())
     }
 }
 

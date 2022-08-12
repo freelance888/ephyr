@@ -1,5 +1,6 @@
 import path from 'path';
 import webpack from 'webpack';
+import 'webpack-dev-server';
 
 import CopyPlugin from 'copy-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
@@ -28,8 +29,24 @@ const config: webpack.Configuration = {
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
   },
+  devServer: {
+    static: path.join(__dirname, 'public'),
+    compress: true,
+    port: 8080,
+    host: '0.0.0.0',
+  },
   module: {
     rules: [
+      {
+        test: /\.m?js/,
+        type: 'javascript/auto',
+      },
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
+      },
       {
         test: /\.svelte$/,
         use: {

@@ -138,6 +138,7 @@
           let vars = {
             restream_id: v.restream_id,
             url: vs[vs.length - 1],
+            mixins: [],
           };
           if (vs.length > 1) {
             vars.label = vs[0];
@@ -150,6 +151,7 @@
           submit = JSON.parse(v.json.trim()).map((x) => ({
             restream_id: v.restream_id,
             url: sanitizeUrl(x.url),
+            mixins: [],
             ...(x.label && { label: sanitizeLabel(x.label) }),
             ...(x.preview_url && { preview_url: sanitizeUrl(x.preview_url) }),
           }));
@@ -163,6 +165,7 @@
       let vars = {
         restream_id: v.restream_id,
         url: sanitizeUrl(v.url),
+        mixins: [],
       };
       const label = sanitizeLabel(v.label);
       if (label !== '') {

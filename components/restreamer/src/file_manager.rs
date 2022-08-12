@@ -6,7 +6,7 @@ use std::{
 };
 
 use ephyr_log::log;
-use juniper::{graphql_scalar, GraphQLEnum, GraphQLObject};
+use juniper::{GraphQLEnum, GraphQLObject, ScalarValue, GraphQLScalar};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
@@ -249,7 +249,7 @@ impl FileManager {
                     .find(|file| file.file_id == file_id)
                     .map_or_else(
                         || log::error!("Could not set the file state to error"),
-                        |val| val.state = FileState::Error,
+                        |val| val.state = FileState::DownloadError,
                     );
             });
         }));
@@ -439,7 +439,7 @@ pub enum FileState {
     /// as parameter at startup
     Local,
     /// Error was encountered during the download
-    Error,
+    DownloadError,
 }
 
 /// Download progress indication
@@ -454,28 +454,27 @@ pub struct DownloadState {
 }
 
 /// Custom GraphQL type for u64
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar)]
+#[graphql(with = Self)]
 struct NetworkByteSize(u64);
-#[graphql_scalar()]
-impl<S> juniper::GraphQLScalar for NetworkByteSize
-where
-    S: juniper::ScalarValue,
+
+impl NetworkByteSize
 {
-    fn resolve(&self) -> juniper::Value {
+    fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
         juniper::Value::scalar(self.0.to_owned().to_string())
     }
 
-    fn from_input_value(
-        value: &juniper::InputValue,
-    ) -> Option<NetworkByteSize> {
+    fn from_input<S>(
+        value: &juniper::InputValue<S>,
+    ) -> Result<Self, String> where S: ScalarValue {
         value.as_scalar_value().map(|s| {
             NetworkByteSize(s.as_string().unwrap().parse::<u64>().unwrap())
-        })
+        }).ok_or("Cannot parse NetworkByteSize(u64) from provided input".to_string())
     }
 
-    fn from_str(
+    fn parse_token<S>(
         value: juniper::ScalarToken<'_>,
-    ) -> juniper::ParseScalarResult<'_, S> {
+    ) -> juniper::ParseScalarResult<S> where S: ScalarValue{
         <NetworkByteSize as juniper::ParseScalarValue<S>>::from_str(value)
     }
 }
@@ -499,7 +498,6 @@ pub async fn get_video_list_from_gdrive_folder(
 }
 
 pub(crate) mod api_response {
-    use ephyr_log::log;
     use serde::Deserialize;
 
     /// Used to deserialize Google API call for the file details

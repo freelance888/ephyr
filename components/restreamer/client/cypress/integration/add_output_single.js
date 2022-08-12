@@ -1,4 +1,4 @@
-describe('ADD SINGLE OTPUT', () => {
+describe('ADD SINGLE OUTPUT', () => {
   it('Goes to the homepage', () => {
     cy.visit('/');
   });

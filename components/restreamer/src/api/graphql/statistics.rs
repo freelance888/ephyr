@@ -2,7 +2,9 @@
 //!
 //! [GraphQL]: https://graphql.com
 
-use juniper::{graphql_object, EmptyMutation, EmptySubscription, RootNode};
+use juniper::{
+    graphql_object, EmptyMutation, EmptySubscription, FieldResult, RootNode,
+};
 
 use super::Context;
 use crate::state::ClientStatistics;
@@ -31,7 +33,7 @@ pub struct QueriesRoot;
 
 #[graphql_object(name = "Query", context = Context)]
 impl QueriesRoot {
-    fn statistics(context: &Context) -> ClientStatistics {
-        context.state().get_statistics()
+    fn statistics(context: &Context) -> FieldResult<ClientStatistics> {
+        Ok(context.state().get_statistics())
     }
 }
