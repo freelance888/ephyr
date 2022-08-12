@@ -38,12 +38,22 @@
       showError(e.message);
     }
   }
+
+  function hideIdentity(rawUrl) {
+    let url = new URL(rawUrl);
+    if (url.searchParams.get('identity')) {
+      url.searchParams.delete('identity');
+      url.searchParams.set('identity', '*****');
+    }
+
+    return url.toString();
+  }
 </script>
 
 <template>
   <div class="mixin">
     <i class="fas fa-wave-square" title="Mixed audio" />
-    <Url url={value.src} />
+    <Url url={hideIdentity(value.src)} />
     <Volume
       volume={value.volume}
       {restream_id}
