@@ -242,18 +242,30 @@ impl MixingRestreamer {
                 port = mixin.zmq_port,
             ));
         }
-
-        filter_complex.push(format!(
-            "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
-            orig_id = self.id,
-            mixin_ids = self
-                .mixins
-                .iter()
-                .map(|m| m.id.to_string())
-                .collect::<Vec<_>>()
-                .join("]["),
-            count = self.mixins.len() + 1,
-        ));
+        let with_sidechain = true;
+        if with_sidechain {
+            filter_complex.push(
+                format!("[{mixin_id}]asplit=2[sc][mix];[{orig_id}][sc]sidechaincompress=level_in=2:\
+                threshold=0.01:ratio=10:attack=10:release=1500[compr];\
+                [compr][mix]amix[out]",
+                orig_id=self.id,
+                mixin_id=self.mixins.iter().nth(0).unwrap().id.to_string(),
+                )
+            );
+        } else {
+            filter_complex.push(format!(
+                "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
+                orig_id = self.id,
+                mixin_ids = self
+                    .mixins
+                    .iter()
+                    .map(|m| m.id.to_string())
+                    .collect::<Vec<_>>()
+                    .join("]["),
+                count = self.mixins.len() + 1,
+            ));
+        };
+        log::debug!("FILTER COMPLEX: {:?}", &filter_complex.join(";"));
         let _ = cmd
             .args(&["-filter_complex", &filter_complex.join(";")])
             .args(&["-map", "[out]"])
@@ -288,6 +300,7 @@ impl MixingRestreamer {
 
             _ => unimplemented!(),
         };
+        log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
 
