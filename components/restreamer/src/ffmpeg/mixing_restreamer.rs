@@ -12,6 +12,9 @@ use std::{
     process::Stdio,
     sync::Arc,
 };
+use nix::unistd::Pid;
+use nix::sys::signal::{self, Signal};
+use nix::libc::{kill, pid_t};
 
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
@@ -300,27 +303,43 @@ impl MixingRestreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    pub(crate) async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
+    pub(crate) async fn run_ffmpeg(&self, mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
         // FFmpeg should start reading FIFO before writing started
-        let process = cmd.spawn()?;
+        let mut process = cmd.spawn()?;
+
+        let exit_signal = kill_rx.borrow_and_update().clone();
+        if exit_signal != 0 {
+            return Ok(());
+        }
+
+        let process_id = process.id().unwrap() as pid_t;
+
         self.start_fed_mixins_fifo();
-        // Need to hold process somewhere
-        let out = process.wait_with_output().await?;
 
-        // Cleanup FIFO files only in case of error
-        // TODO: Move in proper place or remove completely
-        self.remove_mixins_fifo();
+        tokio::select! {
+            out = process.wait_with_output() => {
+                let out = out?;
+                // Cleanup FIFO files in case of error
+                self.remove_mixins_fifo();
+                Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!(
+                        "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                        out.status,
+                        String::from_utf8_lossy(&out.stderr),
+                    ),
+                ))
+            }
 
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr),
-            ),
-        ))
+            _ = kill_rx.changed() => {
+                signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+                // Cleanup FIFO files after proper kill
+                self.remove_mixins_fifo();
+                Ok(())
+            }
+        }
     }
 
     /// Creates [FIFO] files for [`Mixin`]s.

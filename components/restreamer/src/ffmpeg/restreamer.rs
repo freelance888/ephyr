@@ -10,6 +10,11 @@ use std::{
 use ephyr_log::log;
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use tokio::{process::Command, time};
+use tokio::io::AsyncWriteExt;
+use tokio::signal::unix::SignalKind;
+use nix::libc::{kill, pid_t};
+use nix::unistd::Pid;
+use nix::sys::signal::{self, Signal};
 
 use crate::{
     display_panic,
@@ -26,7 +31,9 @@ pub struct Restreamer {
     /// Abort handle of a spawned [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    _abort: DroppableAbortHandle,
+    // _abort: DroppableAbortHandle,
+
+    kill_tx: tokio::sync::watch::Sender<i32>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -50,13 +57,16 @@ impl Restreamer {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
+        let (mut kill_tx, mut kill_rx) = tokio::sync::watch::channel(0);
 
-        let (spawner, abort_handle) = future::abortable(async move {
+        let spawner = async move {
+            let kill_local = kill_rx.clone();
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
+                let mut kill_rx_for_ffmpeg = kill_rx.clone();
 
-                let _ = AssertUnwindSafe(
+                let result = AssertUnwindSafe(
                     async move {
                         Self::change_status(
                             time_of_fail,
@@ -80,7 +90,7 @@ impl Restreamer {
                         })
                         .await?;
 
-                        let running = kind.run_ffmpeg(cmd);
+                        let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
                         pin_mut!(running);
 
                         let set_online = async move {
@@ -111,7 +121,7 @@ impl Restreamer {
                             Status::Offline,
                         );
                         time_of_fail = Some(Utc::now());
-                    }),
+                    })
                 )
                 .catch_unwind()
                 .await
@@ -122,6 +132,10 @@ impl Restreamer {
                         display_panic(&p),
                     );
                 });
+
+                if kill_local.borrow().clone() != 0 {
+                    break;
+                }
 
                 if let RestreamerKind::File(_) = kind {
                     let _ = state
@@ -135,7 +149,7 @@ impl Restreamer {
 
                 time::sleep(Duration::from_secs(2)).await;
             }
-        });
+        };
 
         // Spawn FFmpeg re-streamer as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
@@ -143,7 +157,8 @@ impl Restreamer {
         })));
 
         Self {
-            _abort: DroppableAbortHandle::new(abort_handle),
+            // _abort: DroppableAbortHandle::new(abort_handle),
+            kill_tx,
             kind,
         }
     }
@@ -174,5 +189,12 @@ impl Restreamer {
                 kind.renew_status(new_status, state);
             }
         }
+    }
+}
+
+impl Drop for Restreamer {
+    fn drop(&mut self) {
+        log::info!("Dropping restreamer");
+        let _ = self.kill_tx.send(1);
     }
 }

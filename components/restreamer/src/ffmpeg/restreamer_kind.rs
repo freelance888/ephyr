@@ -4,11 +4,16 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use std::path::Path;
+use std::process::ExitStatus;
 use derive_more::From;
 use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
+use nix::unistd::Pid;
+use nix::sys::signal::{self, Signal};
+use nix::libc::{kill, pid_t};
 
+use ephyr_log::log;
 use crate::{dvr, ffmpeg::{
     copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
     transcoding_restreamer::TranscodingRestreamer, file_restreamer::FileRestreamer
@@ -271,11 +276,11 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
-    pub(crate) async fn run_ffmpeg(&self, cmd: Command) -> io::Result<()> {
+    pub(crate) async fn run_ffmpeg(&self, cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.run_ffmpeg(cmd).await
+            m.run_ffmpeg(cmd, kill_rx).await
         } else {
-            Self::run_ffmpeg_no_stdin(cmd).await
+            Self::run_ffmpeg_no_stdin(cmd, kill_rx).await
         }
     }
 
@@ -289,19 +294,34 @@ impl RestreamerKind {
     /// an [`io::Error`] occurs and the [FFmpeg] [`Command`] cannot run.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    async fn run_ffmpeg_no_stdin(mut cmd: Command) -> io::Result<()> {
+    async fn run_ffmpeg_no_stdin(mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         let process = cmd.spawn()?;
+        let process_id = process.id().unwrap() as pid_t;
 
-        let out = process.wait_with_output().await?;
+        let exit_signal = kill_rx.borrow_and_update().clone();
+        if exit_signal != 0 {
+            return Ok(());
+        }
 
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr),
-            ),
-        ))
+        tokio::select! {
+            out = process.wait_with_output() => {
+                let out = out?;
+                Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!(
+                        "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                        out.status,
+                        String::from_utf8_lossy(&out.stderr),
+                    ),
+                ))
+            }
+
+            _ = kill_rx.changed() => {
+                log::info!("Killing ffmpeg with SIGTERM");
+                signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+                Ok(())
+            }
+        }
     }
 
     /// Renews [`Status`] of this [FFmpeg] re-streaming process in the `actual`
