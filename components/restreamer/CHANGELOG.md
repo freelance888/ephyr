@@ -15,6 +15,7 @@ All user visible changes to this project will be documented in this file. This p
 
 - Web UI:
   - Allow to use multiple Teamspeak mixers per output ([#199]);
+  - Allow to specify `identity` of Teamspeak mixer ([#6], [#39])
 
 ### Miscellaneous
 - Server updates:
@@ -25,7 +26,10 @@ All user visible changes to this project will be documented in this file. This p
 - Added test for check file recording ([#197]);
 - Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
 
+[#6]: /../../issues/6
+
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
+[#39]: /../../pull/39
 [#197]: /../../pull/197
 [#199]: /../../pull/199
 [#200]: /../../pull/200
