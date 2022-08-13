@@ -4,6 +4,7 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
+use std::collections::HashMap;
 use std::{
     borrow::Cow,
     fmt::Write as _,
@@ -440,24 +441,22 @@ impl Mixin {
 
                     let channel = state.src.path().trim_start_matches('/');
 
-                    let mut query = state.src.query_pairs();
+                    let query: HashMap<String, String> =
+                        state.src.query_pairs().into_owned().collect();
                     let name = query
-                        .find_map(|(k, v)| {
-                            (k == "name").then(|| v.into_owned())
-                        })
+                        .get("name")
+                        .map(|v| v.to_owned())
                         .or_else(|| label.map(|l| format!("🤖 {}", l)))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
-
                     let identity = query
-                        .find_map(|(k, v)| {
-                            (k == "identity").then(|| {
-                                Identity::new_from_str(&v).unwrap_or_else(|e| {
-                                    log::error!(
-                                        "Failed to create identity: {}",
-                                        &e
-                                    );
-                                    Identity::create()
-                                })
+                        .get("identity")
+                        .map(|v| {
+                            Identity::new_from_str(&v).unwrap_or_else(|e| {
+                                log::error!(
+                                    "Failed to create identity `{}`\n\t wiht error: {}",
+                                    &v, &e
+                                );
+                                Identity::create()
                             })
                         })
                         .unwrap_or_else(Identity::create);
