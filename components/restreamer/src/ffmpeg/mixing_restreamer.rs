@@ -4,9 +4,9 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
-use std::collections::HashMap;
 use std::{
     borrow::Cow,
+    collections::HashMap,
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
@@ -445,21 +445,23 @@ impl Mixin {
                         state.src.query_pairs().into_owned().collect();
                     let name = query
                         .get("name")
-                        .map(|v| v.to_owned())
+                        .cloned()
                         .or_else(|| label.map(|l| format!("🤖 {}", l)))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
-                    let identity = query
-                        .get("identity")
-                        .map(|v| {
-                            Identity::new_from_str(&v).unwrap_or_else(|e| {
+                    let identity = query.get("identity").map_or_else(
+                        Identity::create,
+                        |v| {
+                            Identity::new_from_str(v).unwrap_or_else(|e| {
                                 log::error!(
-                                    "Failed to create identity `{}`\n\t wiht error: {}",
-                                    &v, &e
+                                    "Failed to create identity `{}`\
+                                    \n\t with error: {}",
+                                    &v,
+                                    &e
                                 );
                                 Identity::create()
                             })
-                        })
-                        .unwrap_or_else(Identity::create);
+                        },
+                    );
 
                     Some(Arc::new(Mutex::new(teamspeak::Input::new(
                         teamspeak::Connection::build(host.into_owned())

@@ -384,8 +384,9 @@
               If <code>name</code> is not specified than the label value will be
               used, if any, or a random generated one.
               <br />
-              If <code title="Should be escaped or it won't work">identity</code> is not specified than the a random generated
-              one.
+              If
+              <code title="Should be escaped or it won't work">identity</code> is
+              not specified than the a random generated one.
             </div>
           {/if}
         </fieldset>
