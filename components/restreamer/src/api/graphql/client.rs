@@ -311,16 +311,15 @@ impl MutationsRoot {
             .restreams
             .lock_mut()
             .iter_mut()
-            .find(|r| r.id == restream_id)?
-            .tap_mut(|restream| {
-                restream.playlist.queue = playlist.iter()
-                    .filter_map(|order_id| {
-                        restream.playlist.queue.iter().find(|f| f.file_id == *order_id)
-                    })
-                    .map(|v| v.clone())
-                    .collect();
-                ()
-            });
+            .find_map(|restream|
+                (restream.id == restream_id).then(||
+                    restream.playlist.queue = playlist.iter()
+                        .filter_map(|order_id| {
+                            restream.playlist.queue.iter().find(|f| f.file_id == *order_id)
+                        })
+                        .map(|v| v.clone())
+                        .collect()
+                ))?;
         return Some(true);
     }
 
