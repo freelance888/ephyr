@@ -386,7 +386,7 @@
               <br />
               If
               <code title="Should be escaped or it won't work">identity</code> is
-              not specified than the a random generated one.
+              not specified then a random generated one is used.
             </div>
           {/if}
         </fieldset>
