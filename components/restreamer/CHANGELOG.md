@@ -20,8 +20,10 @@ All user visible changes to this project will be documented in this file. This p
 ### Miscellaneous
 - Server updates:
   - `ffmpeg` from 4.4 to 5.1 ([e1faef9]);
-  - `SRS` server updated to v4.0-r1 ([e1faef9], [#200]).
+  - `SRS` server updated to v4.0-r1 ([e1faef9], [#200]);
 
+- Update Tokio to v1+, Actix to v4+ and related libs ([#193]);
+- Split `ffmpeg.rs` to separate modules ([#202]);
 - Dockerfile image moved from CentOS 7 to Ubuntu 20.04 ([#200]);
 - Added test for check file recording ([#197]);
 - Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
@@ -30,9 +32,12 @@ All user visible changes to this project will be documented in this file. This p
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
 [#39]: /../../pull/39
+[#193]: /../../pull/193
 [#197]: /../../pull/197
 [#199]: /../../pull/199
 [#200]: /../../pull/200
+[#202]: /../../pull/202
+
 
 
 ## [0.5.0] · 2022-04-20
