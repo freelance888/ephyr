@@ -5,6 +5,7 @@
 
 use std::path::Path;
 use std::process::ExitStatus;
+use std::os::unix::process::ExitStatusExt;
 use derive_more::From;
 use tokio::{io, process::Command};
 use url::Url;
@@ -267,60 +268,65 @@ impl RestreamerKind {
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
+    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
+    /// was stopped properly or if the entire input file was played to the end.
     ///
     /// # Errors
     ///
-    /// This method doesn't return [`Ok`] as the running [FFmpeg] [`Command`] is
-    /// aborted by dropping and is intended to never stop. If it returns, than
-    /// an [`io::Error`] occurs and the [FFmpeg] [`Command`] cannot run.
+    /// It can return an [`io::Error`] if something unexpected happened and the
+    /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
     pub(crate) async fn run_ffmpeg(&self, cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.run_ffmpeg(cmd, kill_rx).await
+            m.run_ffmpeg_with_mixins(cmd, kill_rx).await
         } else {
-            Self::run_ffmpeg_no_stdin(cmd, kill_rx).await
+            Self::run_standard_ffmpeg(cmd, kill_rx).await
         }
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] without writing to its
     /// STDIN and awaits its completion.
+    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
+    /// was stopped properly or if the entire input file was played to the end.
     ///
     /// # Errors
     ///
-    /// This method doesn't return [`Ok`] as the running [FFmpeg] [`Command`] is
-    /// aborted by dropping and is intended to never stop. If it returns, than
-    /// an [`io::Error`] occurs and the [FFmpeg] [`Command`] cannot run.
+    /// It can return an [`io::Error`] if something unexpected happened and the
+    /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    async fn run_ffmpeg_no_stdin(mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
+    async fn run_standard_ffmpeg(mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         let process = cmd.spawn()?;
-        let process_id = process.id().unwrap() as pid_t;
 
         let exit_signal = kill_rx.borrow_and_update().clone();
         if exit_signal != 0 {
             return Ok(());
         }
 
-        tokio::select! {
-            out = process.wait_with_output() => {
-                let out = out?;
-                Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    format!(
-                        "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                        out.status,
-                        String::from_utf8_lossy(&out.stderr),
-                    ),
-                ))
-            }
+        let process_id = process.id().unwrap() as pid_t;
+        // Task that sends SIGTERM if async stop of ffmpeg was invoked
+        let kill_task = tokio::spawn(async move {
+            let _ = kill_rx.changed().await;
+            log::info!("Killing ffmpeg with SIGTERM");
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+        });
 
-            _ = kill_rx.changed() => {
-                log::info!("Killing ffmpeg with SIGTERM");
-                signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-                Ok(())
-            }
+        let out = process.wait_with_output().await?;
+        kill_task.abort();
+        // if the process exited because of SIGTERM signal (exit code 255) or exited with 0
+        if out.status.code().and_then(|v| (v == 255).then_some(())).is_some() || out.status.success() {
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!(
+                    "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                    out.status,
+                    String::from_utf8_lossy(&out.stderr),
+                ),
+            ))
         }
     }
 

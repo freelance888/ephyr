@@ -28,11 +28,9 @@ use crate::{
 /// [FFmpeg]: https://ffmpeg.org
 #[derive(Debug)]
 pub struct Restreamer {
-    /// Abort handle of a spawned [FFmpeg] process of this [`Restreamer`].
+    /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    // _abort: DroppableAbortHandle,
-
     kill_tx: tokio::sync::watch::Sender<i32>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
@@ -60,7 +58,7 @@ impl Restreamer {
         let (mut kill_tx, mut kill_rx) = tokio::sync::watch::channel(0);
 
         let spawner = async move {
-            let kill_local = kill_rx.clone();
+            let kill_rx_for_loop = kill_rx.clone();
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
@@ -133,7 +131,7 @@ impl Restreamer {
                     );
                 });
 
-                if kill_local.borrow().clone() != 0 {
+                if kill_rx_for_loop.borrow().clone() != 0 {
                     break;
                 }
 
@@ -151,13 +149,12 @@ impl Restreamer {
             }
         };
 
-        // Spawn FFmpeg re-streamer as a child process.
+        // Spawn FFmpeg re-streamer manager as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
             kind_for_abort.renew_status(Status::Offline, &state_for_abort);
         })));
 
         Self {
-            // _abort: DroppableAbortHandle::new(abort_handle),
             kill_tx,
             kind,
         }

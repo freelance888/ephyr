@@ -292,18 +292,24 @@ impl MixingRestreamer {
         Ok(())
     }
 
-    /// Runs the given [FFmpeg] [`Command`] by feeding to its STDIN the captured
-    /// [`Mixin`] (if required), and awaits its completion.
+    /// Runs the given [FFmpeg] [`Command`] by providing input FIFO files and
+    /// feeding [`Mixin`]s into them (if required), and awaits its completion.
+    ///
+    /// The FIFO files are created before starting [`Command`] and separate
+    /// tasks are created for each file to feed the [`Mixin`] data into them.
+    /// After the [`Command`] finishes FIFO files are deleted.
+    ///
+    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
+    /// was stopped properly or if the entire input file was played to the end.
     ///
     /// # Errors
     ///
-    /// This method doesn't return [`Ok`] as the running [FFmpeg] [`Command`] is
-    /// aborted by dropping and is intended to never stop. If it returns, than
-    /// an [`io::Error`] occurs and the [FFmpeg] [`Command`] cannot run.
+    /// It can return an [`io::Error`] if something unexpected happened and the
+    /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    pub(crate) async fn run_ffmpeg(&self, mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
+    pub(crate) async fn run_ffmpeg_with_mixins(&self, mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
         // FFmpeg should start reading FIFO before writing started
@@ -315,30 +321,30 @@ impl MixingRestreamer {
         }
 
         let process_id = process.id().unwrap() as pid_t;
+        // Task that sends SIGTERM if async stop of ffmpeg was invoked
+        let kill_task = tokio::spawn(async move {
+            let _ = kill_rx.changed().await;
+            log::info!("Killing ffmpeg with SIGTERM");
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+        });
 
         self.start_fed_mixins_fifo();
 
-        tokio::select! {
-            out = process.wait_with_output() => {
-                let out = out?;
-                // Cleanup FIFO files in case of error
-                self.remove_mixins_fifo();
-                Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    format!(
-                        "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                        out.status,
-                        String::from_utf8_lossy(&out.stderr),
-                    ),
-                ))
-            }
-
-            _ = kill_rx.changed() => {
-                signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-                // Cleanup FIFO files after proper kill
-                self.remove_mixins_fifo();
-                Ok(())
-            }
+        let out = process.wait_with_output().await?;
+        kill_task.abort();
+        self.remove_mixins_fifo();
+        // if the process exited because of SIGTERM signal (exit code 255) or exited with 0
+        if out.status.code().and_then(|v| (v == 255).then_some(())).is_some() || out.status.success() {
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!(
+                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
+                    out.status,
+                    String::from_utf8_lossy(&out.stderr),
+                ),
+            ))
         }
     }
 
@@ -389,6 +395,7 @@ impl MixingRestreamer {
             let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
                 log::error!("Failed to write into FIFO: {}", e);
             });
+            log::info!("Finishing copy operation on FIFO: {:?}", &fifo_path);
             Ok(())
         }
 
