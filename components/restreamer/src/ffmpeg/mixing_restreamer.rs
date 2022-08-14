@@ -425,6 +425,8 @@ pub struct Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     stdin: Option<Arc<Mutex<teamspeak::Input>>>,
+
+    sidechain: bool,
 }
 
 impl Mixin {
@@ -493,6 +495,7 @@ impl Mixin {
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
+            sidechain: state.sidechain,
         }
     }
 

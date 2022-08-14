@@ -341,6 +341,9 @@ pub struct Mixin {
     /// [`Output`].
     #[serde(default, skip_serializing_if = "state::Delay::is_zero")]
     pub delay: state::Delay,
+
+    #[serde(default)]
+    pub sidechain: bool,
 }
 
 /// Shareable specification of [`state::Volume`].

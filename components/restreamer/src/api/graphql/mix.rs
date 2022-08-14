@@ -60,6 +60,20 @@ impl MutationsRoot {
             .state()
             .tune_delay(restream_id, output_id, mixin_id, delay)
     }
+    fn tune_sidechain(
+        restream_id: RestreamId,
+        output_id: OutputId,
+        mixin_id: MixinId,
+        sidechain: bool,
+        context: &Context,
+    ) -> Option<bool> {
+        context.state().tune_sidechain(
+            restream_id,
+            output_id,
+            mixin_id,
+            sidechain,
+        )
+    }
 }
 
 /// Root of all [GraphQL queries][1] in the [`Schema`].
