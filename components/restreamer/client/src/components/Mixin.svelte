@@ -10,8 +10,11 @@
   export let mutations;
 
   const tuneDelayMutation = mutation(mutations.TuneDelay);
+  const tuneSidechainMutation = mutation(mutations.TuneSidechain);
 
   let delay = 0;
+  let sidechain = false;
+
   $: {
     // Trigger Svelte reactivity watching.
     value.delay = value.delay;
@@ -21,8 +24,17 @@
     update_delay();
   }
 
+  $: {
+    value.sidechain = value.sidechain;
+    update_sidechain();
+  }
+
   function update_delay() {
     delay = value.delay / 1000;
+  }
+
+  function update_sidechain() {
+    sidechain = value.sidechain;
   }
 
   async function tuneDelay() {
@@ -34,6 +46,20 @@
     };
     try {
       await tuneDelayMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function tuneSidechain() {
+    const variables = {
+      restream_id,
+      output_id,
+      mixin_id: value.id,
+      sidechain: sidechain,
+    };
+    try {
+      await tuneSidechainMutation({ variables });
     } catch (e) {
       showError(e.message);
     }
@@ -62,7 +88,7 @@
       max={value.src.startsWith('ts://') ? 1000 : 200}
       mixin_id={value.id}
     />
-    <div class="delay">
+    <div class="options">
       <i class="far fa-clock" title="Delay" />
       <input
         class="uk-input"
@@ -73,19 +99,26 @@
         on:change={tuneDelay}
       />
       <span>s</span>
+      <i class="fae fa-link" title="Sidechain" />
+      <input
+        class="uk-checkbox"
+        type="checkbox"
+        bind:checked={sidechain}
+        on:change={tuneSidechain}
+      />
     </div>
   </div>
 </template>
 
 <style lang="stylus">
-  .fa-wave-square, .fa-clock
+  .fa-wave-square, .fa-clock, .fa-link
     font-size: 10px
     color: #d9d9d9
 
   .mixin
     margin-top: 6px
 
-  .delay
+  .options
     padding-left: 17px
     font-size: 10px
 
@@ -94,6 +127,13 @@
       width: 40px
       padding: 0
       border: none
+      margin-top: -2px
+      text-align: right
+
+    .uk-checkbox
+      height: auto
+      width: 10px
+      padding: 0
       margin-top: -2px
       text-align: right
 </style>
