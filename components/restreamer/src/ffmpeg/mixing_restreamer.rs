@@ -242,14 +242,14 @@ impl MixingRestreamer {
                 port = mixin.zmq_port,
             ));
         }
-        let with_sidechain = true;
-        if with_sidechain {
+
+        if let Some(m) = self.mixins.iter().find(|m| m.sidechain) {
             filter_complex.push(
                 format!("[{mixin_id}]asplit=2[sc][mix];[{orig_id}][sc]sidechaincompress=level_in=2:\
                 threshold=0.01:ratio=10:attack=10:release=1500[compr];\
                 [compr][mix]amix[out]",
-                orig_id=self.id,
-                mixin_id=self.mixins.iter().nth(0).unwrap().id.to_string(),
+                        orig_id=self.id,
+                        mixin_id=m.id.to_string(),
                 )
             );
         } else {
@@ -507,7 +507,9 @@ impl Mixin {
     #[inline]
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
-        self.url != actual.url || self.delay != actual.delay
+        self.url != actual.url
+            || self.delay != actual.delay
+            || self.sidechain != actual.sidechain
     }
 
     /// [FIFO] path where stream captures from the [TeamSpeak] server.
