@@ -18,14 +18,11 @@
   $: {
     // Trigger Svelte reactivity watching.
     value.delay = value.delay;
-    // Move `volume` and `delay` to a separate function to omit triggering this
+    value.sidechain = value.sidechain;
+    // Move `sidechain` and `delay` to a separate function to omit triggering this
     // block when they are changed, as we're only interested in `value` changes
     // here.
     update_delay();
-  }
-
-  $: {
-    value.sidechain = value.sidechain;
     update_sidechain();
   }
 
@@ -99,7 +96,7 @@
         on:change={tuneDelay}
       />
       <span>s</span>
-      <i class="fae fa-link" title="Sidechain" />
+      <i class="fad fa-link" title="Sidechain" />
       <input
         class="uk-checkbox"
         type="checkbox"
@@ -131,7 +128,7 @@
       text-align: right
 
     .uk-checkbox
-      height: auto
+      height: 10px
       width: 10px
       padding: 0
       margin-top: -2px
