@@ -428,7 +428,9 @@ pub struct Mixin {
     /// [`Volume`] rate to mix an audio of this [`Mixin`]'s live stream with.
     pub volume: Volume,
 
-    /// [`Sidechain`] audio of this [`Mixin`]'s with live stream.
+    /// Apply [sidechain] audio filter of this [`Mixin`]'s with live stream.
+    ///
+    /// [sidechain]: https://ffmpeg.org/ffmpeg-filters.html#sidechaincompress
     pub sidechain: bool,
 
     /// [ZeroMQ] port of a spawned [FFmpeg] process listening to a real-time

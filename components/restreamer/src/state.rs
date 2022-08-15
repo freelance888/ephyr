@@ -761,10 +761,10 @@ impl State {
         Some(true)
     }
 
-    /// Tunes a [`Sidechain`] of the specified [`Mixin`] in this [`State`].
+    /// Tunes a the specified [`Mixin.sidechain`] in this [`State`].
     ///
-    /// Returns `true` if a [`Sidechain`] has been changed, or `false` if it has the
-    /// same value already.
+    /// Returns `true` if a [`Mixin.sidechain`] has been changed, or `false`
+    /// if it has the same value already.
     ///
     /// Returns [`None`] if no such [`Restream`]/[`Output`]/[`Mixin`] exists.
     #[must_use]
@@ -2036,7 +2036,7 @@ pub struct Mixin {
     ///
     /// Helps to automatically control audio level of `Mixin`
     /// based on level of `Output`.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_false")]
     pub sidechain: bool,
 }
 
