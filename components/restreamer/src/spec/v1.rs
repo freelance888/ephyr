@@ -303,6 +303,7 @@ impl Output {
         if !mixins.is_empty() {
             let mut unique = HashSet::with_capacity(mixins.len());
             let mut ts_count: u8 = 0;
+            let mut has_sidechain = false;
             for m in &mixins {
                 if let Some(src) = unique.replace(&m.src) {
                     return Err(D::Error::custom(format!(
@@ -319,6 +320,16 @@ impl Output {
                             m.src,
                         )));
                     }
+                }
+                if m.sidechain {
+                    if has_sidechain {
+                        return Err(D::Error::custom(format!(
+                            "Only one Mixin.sidechain is allowed \
+                            in Output.mixins: {}",
+                            m.src
+                        )));
+                    }
+                    has_sidechain = true;
                 }
             }
         }
