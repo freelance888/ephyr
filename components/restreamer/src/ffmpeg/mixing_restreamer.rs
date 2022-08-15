@@ -268,7 +268,7 @@ impl MixingRestreamer {
             if let Some(elem) =
                 mixin_ids.iter_mut().find(|x| **x == sidechain_mixin_id)
             {
-                *elem = "mix".to_string();
+                "mix".clone_into(elem);
             };
 
             // Replace Origin Audio Id with side-chained version

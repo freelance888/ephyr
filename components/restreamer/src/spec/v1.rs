@@ -355,7 +355,7 @@ pub struct Mixin {
 
     /// Set that this [`Mixin`] should be side-chained with an
     /// [`Output`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_false")]
     pub sidechain: bool,
 }
 
