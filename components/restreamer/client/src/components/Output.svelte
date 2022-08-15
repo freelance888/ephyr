@@ -30,6 +30,7 @@
     : undefined;
 
   $: toggleStatusText = value.enabled ? 'Disable' : 'Enable';
+  $: activeSidechainId = value.mixins.find((m) => m.sidechain === true)?.id;
 
   async function toggle() {
     const variables = { restream_id, output_id: value.id };
@@ -187,7 +188,13 @@
           {mutations}
         />
         {#each value.mixins as mixin}
-          <Mixin {restream_id} output_id={value.id} value={mixin} {mutations} />
+          <Mixin
+            {restream_id}
+            output_id={value.id}
+            value={mixin}
+            {mutations}
+            {activeSidechainId}
+          />
         {/each}
       {/if}
     </div>

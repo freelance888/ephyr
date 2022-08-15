@@ -8,17 +8,20 @@
   export let restream_id;
   export let output_id;
   export let mutations;
+  export let activeSidechainId;
 
   const tuneDelayMutation = mutation(mutations.TuneDelay);
   const tuneSidechainMutation = mutation(mutations.TuneSidechain);
 
   let delay = 0;
   let sidechain = false;
+  let isSidechainDisabled = false;
 
   $: {
     // Trigger Svelte reactivity watching.
     value.delay = value.delay;
     value.sidechain = value.sidechain;
+    isSidechainDisabled = !!activeSidechainId && activeSidechainId !== value.id;
     // Move `sidechain` and `delay` to a separate function to omit triggering this
     // block when they are changed, as we're only interested in `value` changes
     // here.
@@ -101,6 +104,7 @@
         class="uk-checkbox"
         type="checkbox"
         bind:checked={sidechain}
+        disabled={isSidechainDisabled}
         on:change={tuneSidechain}
       />
     </div>
