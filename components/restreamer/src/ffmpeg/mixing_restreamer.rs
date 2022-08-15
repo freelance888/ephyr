@@ -428,6 +428,9 @@ pub struct Mixin {
     /// [`Volume`] rate to mix an audio of this [`Mixin`]'s live stream with.
     pub volume: Volume,
 
+    /// [`Sidechain`] audio of this [`Mixin`]'s with live stream.
+    pub sidechain: bool,
+
     /// [ZeroMQ] port of a spawned [FFmpeg] process listening to a real-time
     /// filter updates of this [`Mixin`]'s live stream during mixing process.
     ///
@@ -442,8 +445,6 @@ pub struct Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     stdin: Option<Arc<Mutex<teamspeak::Input>>>,
-
-    sidechain: bool,
 }
 
 impl Mixin {
@@ -509,10 +510,10 @@ impl Mixin {
             id: state.id,
             url: state.src.clone(),
             delay: state.delay,
+            sidechain: state.sidechain,
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
-            sidechain: state.sidechain,
         }
     }
 
