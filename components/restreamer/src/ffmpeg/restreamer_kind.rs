@@ -20,6 +20,7 @@ use crate::{dvr, ffmpeg::{
     transcoding_restreamer::TranscodingRestreamer, file_restreamer::FileRestreamer
 }, file_manager, state::{self, State, Status}};
 use std::result::Result::Err;
+use std::time::Duration;
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -309,7 +310,10 @@ impl RestreamerKind {
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(async move {
             let _ = kill_rx.changed().await;
-            log::info!("Killing ffmpeg with SIGTERM");
+            // It is necessary to send the signal two times and wait after
+            // sending the first one to correctly close all ffmpeg processes
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+            tokio::time::sleep(Duration::from_millis(1)).await;
             signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
         });
 

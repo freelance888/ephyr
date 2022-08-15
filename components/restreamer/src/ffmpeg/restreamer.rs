@@ -191,7 +191,6 @@ impl Restreamer {
 
 impl Drop for Restreamer {
     fn drop(&mut self) {
-        log::info!("Dropping restreamer");
         let _ = self.kill_tx.send(1);
     }
 }

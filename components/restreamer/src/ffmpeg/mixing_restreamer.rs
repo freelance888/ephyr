@@ -30,6 +30,7 @@ use crate::{
     teamspeak,
 };
 use std::result::Result::Err;
+use std::time::Duration;
 use tokio::fs::File;
 
 /// Kind of a [FFmpeg] re-streaming process that mixes a live stream from one
@@ -324,7 +325,10 @@ impl MixingRestreamer {
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(async move {
             let _ = kill_rx.changed().await;
-            log::info!("Killing ffmpeg with SIGTERM");
+            // It is necessary to send the signal two times and wait after
+            // sending the first one to correctly close all ffmpeg processes
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+            tokio::time::sleep(Duration::from_millis(1)).await;
             signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
         });
 
