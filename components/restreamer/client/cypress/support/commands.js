@@ -171,7 +171,8 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "mixins": [
             {
               "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted",
-              "delay": "3s 500ms"
+              "delay": "3s 500ms",
+              "sidechain": true
             },
             {
               "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest",

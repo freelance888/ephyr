@@ -87,6 +87,7 @@
       {mutations}
       max={value.src.startsWith('ts://') ? 1000 : 200}
       mixin_id={value.id}
+      title="Mixed audio"
     />
     <div class="options">
       <i class="far fa-clock" title="Delay" />
@@ -97,6 +98,7 @@
         step="0.1"
         bind:value={delay}
         on:change={tuneDelay}
+        title="Delay"
       />
       <span>s</span>
       <i class="fas fa-link" title="Sidechain" />
@@ -106,6 +108,7 @@
         bind:checked={sidechain}
         disabled={isSidechainDisabled}
         on:change={tuneSidechain}
+        title="Sidechain"
       />
     </div>
   </div>
