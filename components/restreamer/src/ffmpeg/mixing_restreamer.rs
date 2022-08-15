@@ -243,29 +243,46 @@ impl MixingRestreamer {
             ));
         }
 
-        if let Some(m) = self.mixins.iter().find(|m| m.sidechain) {
-            filter_complex.push(
-                format!("[{mixin_id}]asplit=2[sc][mix];[{orig_id}][sc]sidechaincompress=level_in=2:\
-                threshold=0.01:ratio=10:attack=10:release=1500[compr];\
-                [compr][mix]amix[out]",
-                        orig_id=self.id,
-                        mixin_id=m.id.to_string(),
-                )
-            );
-        } else {
+        let mut orig_id = self.id.to_string();
+        let mut mixin_ids = self
+            .mixins
+            .iter()
+            .map(|m| m.id.to_string())
+            .collect::<Vec<_>>();
+
+        // Activate `sidechain` filter if required
+        if let Some(sidechain_mixin) = self.mixins.iter().find(|m| m.sidechain)
+        {
+            let sidechain_mixin_id = sidechain_mixin.id.to_string();
+            // Sidechain is mixing Origin Audio and selected Mixin Audio
             filter_complex.push(format!(
-                "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
-                orig_id = self.id,
-                mixin_ids = self
-                    .mixins
-                    .iter()
-                    .map(|m| m.id.to_string())
-                    .collect::<Vec<_>>()
-                    .join("]["),
-                count = self.mixins.len() + 1,
+                "[{sidechain_mixin_id}]asplit=2[sc][mix];\
+                 [{orig_id}][sc]sidechaincompress=\
+                                    level_in=2\
+                                    :threshold=0.01\
+                                    :ratio=10\
+                                    :attack=10\
+                                    :release=1500[compr]"
             ));
+            // Replace Mixin Id for sidechain with `mix` value
+            if let Some(elem) =
+                mixin_ids.iter_mut().find(|x| *x == sidechain_mixin_id)
+            {
+                *elem = "mix".to_string()
+            }
+
+            // Replace Origin Audio Id with side-chained version
+            orig_id = "compr".to_string();
         };
-        log::debug!("FILTER COMPLEX: {:?}", &filter_complex.join(";"));
+
+        filter_complex.push(format!(
+            "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
+            orig_id = orig_id,
+            mixin_ids = mixin_ids.join("]["),
+            count = self.mixins.len() + 1,
+        ));
+
+        log::debug!("FFmpeg FILTER COMPLEX: {:?}", &filter_complex.join(";"));
         let _ = cmd
             .args(&["-filter_complex", &filter_complex.join(";")])
             .args(&["-map", "[out]"])
