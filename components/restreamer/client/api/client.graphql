@@ -78,6 +78,7 @@ subscription State {
                     muted
                 }
                 delay
+                sidechain
             }
             enabled
             status

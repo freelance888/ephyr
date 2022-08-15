@@ -18,7 +18,7 @@
   $: {
     // Trigger Svelte reactivity watching.
     value.delay = value.delay;
-    sidechain = sidechain;
+    value.sidechain = value.sidechain;
     // Move `sidechain` and `delay` to a separate function to omit triggering this
     // block when they are changed, as we're only interested in `value` changes
     // here.
@@ -31,7 +31,7 @@
   }
 
   function update_sidechain() {
-    sidechain = sidechain;
+    sidechain = value.sidechain;
   }
 
   async function tuneDelay() {

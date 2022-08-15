@@ -16,6 +16,7 @@ subscription Output($restreamId: RestreamId!, $outputId: OutputId!) {
                 muted
             }
             delay
+            sidechain
         }
         enabled
         status
