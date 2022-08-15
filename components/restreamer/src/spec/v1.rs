@@ -342,6 +342,8 @@ pub struct Mixin {
     #[serde(default, skip_serializing_if = "state::Delay::is_zero")]
     pub delay: state::Delay,
 
+    /// Set that this [`Mixin`] should be side-chained with an
+    /// [`Output`].
     #[serde(default)]
     pub sidechain: bool,
 }

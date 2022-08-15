@@ -60,6 +60,8 @@ impl MutationsRoot {
             .state()
             .tune_delay(restream_id, output_id, mixin_id, delay)
     }
+
+    /// Tunes a `Sidechain` of the specified `Mixin` before mix it into its
     fn tune_sidechain(
         restream_id: RestreamId,
         output_id: OutputId,

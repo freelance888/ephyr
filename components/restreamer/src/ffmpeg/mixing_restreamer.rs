@@ -266,10 +266,10 @@ impl MixingRestreamer {
             ));
             // Replace Mixin Id for sidechain with `mix` value
             if let Some(elem) =
-                mixin_ids.iter_mut().find(|x| *x == sidechain_mixin_id)
+                mixin_ids.iter_mut().find(|x| **x == sidechain_mixin_id)
             {
-                *elem = "mix".to_string()
-            }
+                *elem = "mix".to_string();
+            };
 
             // Replace Origin Audio Id with side-chained version
             orig_id = "compr".to_string();

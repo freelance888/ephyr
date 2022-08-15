@@ -665,6 +665,15 @@ impl MutationsRoot {
             .state()
             .tune_delay(restream_id, output_id, mixin_id, delay)
     }
+
+    /// Tunes a `Sidechain` of the specified `Mixin` before mix it into its
+    /// `Output`.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if a `Sidechain` has been changed, `false` if it has
+    /// the same value already, or `null` if the specified `Output`
+    /// or `Mixin` doesn't exist.
     fn tune_sidechain(
         #[graphql(
             description = "ID of the `Restream` to tune the the `Mixin` in."
@@ -673,7 +682,6 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
         output_id: OutputId,
         #[graphql(description = "ID of the tuned `Mixin`.")] mixin_id: MixinId,
-        #[graphql(description = "Boolen option where turn sidechain")]
         sidechain: bool,
         context: &Context,
     ) -> Option<bool> {

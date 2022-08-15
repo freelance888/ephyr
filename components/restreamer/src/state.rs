@@ -760,6 +760,13 @@ impl State {
         mixin.delay = delay;
         Some(true)
     }
+
+    /// Tunes a [`Sidechain`] of the specified [`Mixin`] in this [`State`].
+    ///
+    /// Returns `true` if a [`Sidechain`] has been changed, or `false` if it has the
+    /// same value already.
+    ///
+    /// Returns [`None`] if no such [`Restream`]/[`Output`]/[`Mixin`] exists.
     #[must_use]
     pub fn tune_sidechain(
         &self,
@@ -2025,6 +2032,10 @@ pub struct Mixin {
     #[serde(skip)]
     pub status: Status,
 
+    /// Side-chain audio of `Output` with this `Mixin`.
+    ///
+    /// Helps to automatically control audio level of `Mixin`
+    /// based on level of `Output`.
     #[serde(default)]
     pub sidechain: bool,
 }
