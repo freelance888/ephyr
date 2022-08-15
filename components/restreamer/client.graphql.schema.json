@@ -880,7 +880,7 @@
           },
           {
             "name": "tuneSidechain",
-            "description": null,
+            "description": "Tunes a `Sidechain` of the specified `Mixin` before mix it into its\n`Output`.\n\n### Result\n\nReturns `true` if a `Sidechain` has been changed, `false` if it has\nthe same value already, or `null` if the specified `Output`\nor `Mixin` doesn't exist.",
             "args": [
               {
                 "name": "restreamId",
@@ -926,7 +926,7 @@
               },
               {
                 "name": "sidechain",
-                "description": "Boolen option where turn sidechain",
+                "description": null,
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -2321,7 +2321,7 @@
           },
           {
             "name": "sidechain",
-            "description": null,
+            "description": "Side-chain audio of `Output` with this `Mixin`.\n\nHelps to automatically control audio level of `Mixin`\nbased on level of `Output`.",
             "args": [],
             "type": {
               "kind": "NON_NULL",

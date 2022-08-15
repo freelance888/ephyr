@@ -351,7 +351,7 @@
           },
           {
             "name": "sidechain",
-            "description": null,
+            "description": "Side-chain audio of `Output` with this `Mixin`.\n\nHelps to automatically control audio level of `Mixin`\nbased on level of `Output`.",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -538,7 +538,7 @@
           },
           {
             "name": "tuneSidechain",
-            "description": null,
+            "description": "Tunes a the specified [`Mixin.sidechain`] in this [`State`]",
             "args": [
               {
                 "name": "restreamId",
