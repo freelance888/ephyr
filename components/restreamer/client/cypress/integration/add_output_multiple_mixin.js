@@ -71,6 +71,14 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
     cy.get("button:contains('Add')").should('not.exist');
   });
 
+  it('Only one sidechain checkbox is possible to check through mixins', () => {
+    cy.get("span:contains('Teamspeak Multiple Test')")
+      .parent()
+      .find("input[title='Sidechain']")
+      .first()
+      .click();
+  });
+
   it('Assert', () => {
     cy.get("span:contains('Teamspeak Multiple Test')").should(
       'have.text',
@@ -88,5 +96,9 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
       'have.text',
       'ts://ts.multiple.com/Multiple3'
     );
+    cy.get("span:contains('Teamspeak Multiple Test')")
+      .parent()
+      .find('input[disabled]')
+      .should('have.length', 2);
   });
 });
