@@ -99,7 +99,7 @@
         on:change={tuneDelay}
       />
       <span>s</span>
-      <i class="fad fa-link" title="Sidechain" />
+      <i class="fas fa-link" title="Sidechain" />
       <input
         class="uk-checkbox"
         type="checkbox"
