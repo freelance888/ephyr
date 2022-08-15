@@ -15,7 +15,6 @@ use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
     state::{State, Status},
-    types::DroppableAbortHandle,
 };
 
 /// Handle to a running [FFmpeg] process performing a re-streaming.
@@ -23,10 +22,10 @@ use crate::{
 /// [FFmpeg]: https://ffmpeg.org
 #[derive(Debug)]
 pub struct Restreamer {
-    /// Abort handle of a spawned [FFmpeg] process of this [`Restreamer`].
+    /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    _abort: DroppableAbortHandle,
+    kill_tx: tokio::sync::watch::Sender<i32>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -50,11 +49,14 @@ impl Restreamer {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
+        let (kill_tx, kill_rx) = tokio::sync::watch::channel(0);
 
-        let (spawner, abort_handle) = future::abortable(async move {
+        let spawner = async move {
+            let kill_rx_for_loop = kill_rx.clone();
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
+                let kill_rx_for_ffmpeg = kill_rx.clone();
 
                 let _ = AssertUnwindSafe(
                     async move {
@@ -80,7 +82,7 @@ impl Restreamer {
                         })
                         .await?;
 
-                        let running = kind.run_ffmpeg(cmd);
+                        let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
                         pin_mut!(running);
 
                         let set_online = async move {
@@ -123,19 +125,20 @@ impl Restreamer {
                     );
                 });
 
+                if kill_rx_for_loop.borrow().clone() != 0 {
+                    break;
+                }
+
                 time::sleep(Duration::from_secs(2)).await;
             }
-        });
+        };
 
-        // Spawn FFmpeg re-streamer as a child process.
+        // Spawn FFmpeg re-streamer manager as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
             kind_for_abort.renew_status(Status::Offline, &state_for_abort);
         })));
 
-        Self {
-            _abort: DroppableAbortHandle::new(abort_handle),
-            kind,
-        }
+        Self { kill_tx, kind }
     }
 
     /// Check if the last time of fail was less that 15 sec. ago than [FFmpeg]
@@ -164,5 +167,11 @@ impl Restreamer {
                 kind.renew_status(new_status, state);
             }
         }
+    }
+}
+
+impl Drop for Restreamer {
+    fn drop(&mut self) {
+        let _ = self.kill_tx.send(1);
     }
 }

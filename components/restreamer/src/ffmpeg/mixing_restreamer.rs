@@ -14,6 +14,8 @@ use std::{
     sync::Arc,
 };
 
+use libc::pid_t;
+
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
@@ -27,7 +29,11 @@ use crate::{
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
-use std::result::Result::Err;
+use nix::{
+    sys::{signal, signal::Signal},
+    unistd::Pid,
+};
+use std::{result::Result::Err, time::Duration};
 use tokio::fs::File;
 use tsclientlib::Identity;
 
@@ -291,38 +297,74 @@ impl MixingRestreamer {
         Ok(())
     }
 
-    /// Runs the given [FFmpeg] [`Command`] by feeding to its STDIN the captured
-    /// [`Mixin`] (if required), and awaits its completion.
+    /// Runs the given [FFmpeg] [`Command`] by providing input FIFO files and
+    /// feeding [`Mixin`]s into them (if required), and awaits its completion.
+    ///
+    /// The FIFO files are created before starting [`Command`] and separate
+    /// tasks are created for each file to feed the [`Mixin`] data into them.
+    /// After the [`Command`] finishes FIFO files are deleted.
+    ///
+    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
+    /// was stopped properly or if the entire input file was played to the end.
     ///
     /// # Errors
     ///
-    /// This method doesn't return [`Ok`] as the running [FFmpeg] [`Command`] is
-    /// aborted by dropping and is intended to never stop. If it returns, than
-    /// an [`io::Error`] occurs and the [FFmpeg] [`Command`] cannot run.
+    /// It can return an [`io::Error`] if something unexpected happened and the
+    /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     /// [TeamSpeak]: https://teamspeak.com
-    pub(crate) async fn run_ffmpeg(&self, mut cmd: Command) -> io::Result<()> {
+    pub(crate) async fn run_ffmpeg_with_mixins(
+        &self,
+        mut cmd: Command,
+        mut kill_rx: tokio::sync::watch::Receiver<i32>,
+    ) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
         // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
+
+        let exit_signal = *kill_rx.borrow_and_update();
+        if exit_signal != 0 {
+            return Ok(());
+        }
+
+        let process_id = process.id().unwrap() as pid_t;
+        // Task that sends SIGTERM if async stop of ffmpeg was invoked
+        let kill_task = tokio::spawn(async move {
+            let _ = kill_rx.changed().await;
+            // It is necessary to send the signal two times and wait after
+            // sending the first one to correctly close all ffmpeg processes
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+            tokio::time::sleep(Duration::from_millis(1)).await;
+            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+        });
+
         self.start_fed_mixins_fifo();
-        // Need to hold process somewhere
+        // Wait for process to finish or get killed
         let out = process.wait_with_output().await?;
-
-        // Cleanup FIFO files only in case of error
-        // TODO: Move in proper place or remove completely
+        kill_task.abort();
         self.remove_mixins_fifo();
-
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                out.status,
-                String::from_utf8_lossy(&out.stderr),
-            ),
-        ))
+        // if the process exited because of SIGTERM signal (exit code 255)
+        // or exited with 0
+        if out
+            .status
+            .code()
+            .and_then(|v| (v == 255).then_some(()))
+            .is_some()
+            || out.status.success()
+        {
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!(
+                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
+                    out.status,
+                    String::from_utf8_lossy(&out.stderr),
+                ),
+            ))
+        }
     }
 
     /// Creates [FIFO] files for [`Mixin`]s.
