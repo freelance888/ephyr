@@ -14,6 +14,7 @@ use crate::{
         copy_restreamer::CopyRestreamer,
         mixing_restreamer::MixingRestreamer,
         transcoding_restreamer::TranscodingRestreamer,
+        types::FFmpegStatus,
         util::{
             kill_ffmpeg_process_by_sigterm,
             wraps_ffmpeg_process_output_with_result,
@@ -216,7 +217,7 @@ impl RestreamerKind {
     pub(crate) async fn run_ffmpeg(
         &self,
         cmd: Command,
-        kill_rx: watch::Receiver<i32>,
+        kill_rx: watch::Receiver<FFmpegStatus>,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
             m.run_ffmpeg_with_mixins(cmd, kill_rx).await
@@ -238,12 +239,11 @@ impl RestreamerKind {
     /// [FFmpeg]: https://ffmpeg.org
     async fn run_standard_ffmpeg(
         mut cmd: Command,
-        mut kill_rx: watch::Receiver<i32>,
+        mut kill_rx: watch::Receiver<FFmpegStatus>,
     ) -> io::Result<()> {
         let process = cmd.spawn()?;
 
-        let exit_signal = *kill_rx.borrow_and_update();
-        if exit_signal != 0 {
+        if *kill_rx.borrow_and_update() == FFmpegStatus::Aborted {
             return Ok(());
         }
 

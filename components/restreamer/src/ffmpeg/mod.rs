@@ -8,6 +8,7 @@ mod restreamer;
 mod restreamer_kind;
 mod restreamers_pool;
 mod transcoding_restreamer;
+pub mod types;
 pub mod util;
 
 pub use self::{

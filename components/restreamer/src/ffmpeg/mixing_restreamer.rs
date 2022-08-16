@@ -28,6 +28,7 @@ use uuid::Uuid;
 use crate::{
     display_panic, dvr,
     ffmpeg::{
+        types::FFmpegStatus,
         util::{
             kill_ffmpeg_process_by_sigterm,
             wraps_ffmpeg_process_output_with_result,
@@ -350,15 +351,14 @@ impl MixingRestreamer {
     pub(crate) async fn run_ffmpeg_with_mixins(
         &self,
         mut cmd: Command,
-        mut kill_rx: watch::Receiver<i32>,
+        mut kill_rx: watch::Receiver<FFmpegStatus>,
     ) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
         // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
 
-        let exit_signal = *kill_rx.borrow_and_update();
-        if exit_signal != 0 {
+        if *kill_rx.borrow_and_update() != FFmpegStatus::Running {
             return Ok(());
         }
 

@@ -1,6 +1,7 @@
 //! FFmpeg related shared utils
 //!
 //! [FFmpeg]: https://ffmpeg.org
+use crate::ffmpeg::types::FFmpegStatus;
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -24,7 +25,7 @@ use tokio::{sync::watch, task::JoinHandle};
 #[must_use]
 pub fn kill_ffmpeg_process_by_sigterm(
     process_id: Option<u32>,
-    mut kill_rx: watch::Receiver<i32>,
+    mut kill_rx: watch::Receiver<FFmpegStatus>,
 ) -> JoinHandle<()> {
     let p_id: pid_t = process_id
         .expect("Failed to retrieve Process ID")

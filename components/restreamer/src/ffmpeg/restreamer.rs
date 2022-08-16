@@ -13,7 +13,7 @@ use tokio::{process::Command, time};
 
 use crate::{
     display_panic,
-    ffmpeg::restreamer_kind::RestreamerKind,
+    ffmpeg::{restreamer_kind::RestreamerKind, types::FFmpegStatus},
     state::{State, Status},
 };
 
@@ -25,7 +25,7 @@ pub struct Restreamer {
     /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    kill_tx: tokio::sync::watch::Sender<i32>,
+    kill_tx: tokio::sync::watch::Sender<FFmpegStatus>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -37,7 +37,7 @@ pub struct Restreamer {
 impl Restreamer {
     /// Creates a new [`Restreamer`] spawning the actual [FFmpeg] process in
     /// background. Once this [`Restreamer`] is dropped, its [FFmpeg] process is
-    /// aborted.
+    /// killed with SIGTERM.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
@@ -49,7 +49,8 @@ impl Restreamer {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
-        let (kill_tx, kill_rx) = tokio::sync::watch::channel(0);
+        let (kill_tx, kill_rx) =
+            tokio::sync::watch::channel(FFmpegStatus::Running);
 
         let spawner = async move {
             let kill_rx_for_loop = kill_rx.clone();
@@ -125,7 +126,7 @@ impl Restreamer {
                     );
                 });
 
-                if *kill_rx_for_loop.borrow() != 0 {
+                if *kill_rx_for_loop.borrow() != FFmpegStatus::Running {
                     break;
                 }
 
@@ -172,6 +173,6 @@ impl Restreamer {
 
 impl Drop for Restreamer {
     fn drop(&mut self) {
-        let _ = self.kill_tx.send(1);
+        let _ = self.kill_tx.send(FFmpegStatus::Aborted);
     }
 }
