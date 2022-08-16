@@ -130,11 +130,14 @@
 
     .uk-input
       height: auto
-      width: 40px
+      width: 35px
       padding: 0
       border: none
       margin-top: -2px
       text-align: right
+
+    .fa-link
+      margin-left: 15px
 
     .uk-checkbox
       height: 10px
