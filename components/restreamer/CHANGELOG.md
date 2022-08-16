@@ -15,7 +15,8 @@ All user visible changes to this project will be documented in this file. This p
 
 - Web UI:
   - Allow to use multiple Teamspeak mixers per output ([#199]);
-  - Allow to specify `identity` of Teamspeak mixer ([#6], [#39])
+  - Allow to specify `identity` of Teamspeak mixer ([#6], [#39]);
+  - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]).
 
 ### Miscellaneous
 - Server updates:
@@ -29,6 +30,7 @@ All user visible changes to this project will be documented in this file. This p
 - Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
 
 [#6]: /../../issues/6
+[#70]: /../../issues/70
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
 [#39]: /../../pull/39
@@ -37,6 +39,7 @@ All user visible changes to this project will be documented in this file. This p
 [#199]: /../../pull/199
 [#200]: /../../pull/200
 [#202]: /../../pull/202
+[#203]: /../../pull/203
 
 
 
@@ -302,7 +305,8 @@ All user visible changes to this project will be documented in this file. This p
         - `InputEndpoint` object, `InputEndpointKind` enum and `EndpointId` scalar ([65f8b86e]).
     - Mutations:
         - `enableRestream` and `disableRestream` ([9e1ac1c7]);
-        - `tuneVolume` and `tuneDelay` ([77d25dd7], [#23]);
+        - `
+        - Volume` and `tuneDelay` ([77d25dd7], [#23]);
         - `mix` argument to `addOutput` ([77d25dd7], [#23]);
         - `import` ([9e1ac1c7]);
         - `removeDvrFile` ([46c85d4d], [#26]).
