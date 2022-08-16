@@ -14,10 +14,10 @@ use crate::{
         copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
         transcoding_restreamer::TranscodingRestreamer,
         util::kill_ffmpeg_process_by_sigterm,
+        util::wraps_ffmpeg_process_output_with_result,
     },
     state::{self, State, Status},
 };
-use std::result::Result::Err;
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -247,26 +247,8 @@ impl RestreamerKind {
         let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
         let out = process.wait_with_output().await?;
         kill_task.abort();
-        // if the process exited because of SIGTERM signal (exit code 255)
-        // or exited with 0
-        if out
-            .status
-            .code()
-            .and_then(|v| (v == 255).then_some(()))
-            .is_some()
-            || out.status.success()
-        {
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!(
-                    "FFmpeg re-streamer stopped with exit code: {}\n{}",
-                    out.status,
-                    String::from_utf8_lossy(&out.stderr),
-                ),
-            ))
-        }
+
+        wraps_ffmpeg_process_output_with_result(&out)
     }
 
     /// Renews [`Status`] of this [FFmpeg] re-streaming process in the `actual`

@@ -6,7 +6,8 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::{convert::TryInto, time::Duration};
+use std::process::Output;
+use std::{convert::TryInto, io, time::Duration};
 use tokio::{sync::watch, task::JoinHandle};
 
 /// Kill [FFmpeg] process with SIGTERM signal
@@ -39,4 +40,33 @@ pub fn kill_ffmpeg_process_by_sigterm(
         tokio::time::sleep(Duration::from_millis(1)).await;
         signal::kill(Pid::from_raw(p_id), Signal::SIGTERM).unwrap();
     })
+}
+
+/// Wraps Output of FFmpeg process with Result
+///
+/// # Errors
+///
+/// if the process is not exited because of SIGTERM signal (exit code 255)
+/// or exited with 0
+///
+/// [FFmpeg]: https://ffmpeg.org
+pub fn wraps_ffmpeg_process_output_with_result(out: &Output) -> io::Result<()> {
+    if out
+        .status
+        .code()
+        .and_then(|v| (v == 255).then_some(()))
+        .is_some()
+        || out.status.success()
+    {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!(
+                "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
+                out.status,
+                String::from_utf8_lossy(&out.stderr),
+            ),
+        ))
+    }
 }

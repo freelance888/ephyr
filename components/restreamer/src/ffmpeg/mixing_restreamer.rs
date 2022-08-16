@@ -23,11 +23,13 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::{util::kill_ffmpeg_process_by_sigterm, RestreamerKind},
+    ffmpeg::{
+        util::kill_ffmpeg_process_by_sigterm,
+        util::wraps_ffmpeg_process_output_with_result, RestreamerKind,
+    },
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
-use std::result::Result::Err;
 use tokio::fs::File;
 use tsclientlib::Identity;
 
@@ -359,26 +361,8 @@ impl MixingRestreamer {
         let out = process.wait_with_output().await?;
         kill_task.abort();
         self.remove_mixins_fifo();
-        // if the process exited because of SIGTERM signal (exit code 255)
-        // or exited with 0
-        if out
-            .status
-            .code()
-            .and_then(|v| (v == 255).then_some(()))
-            .is_some()
-            || out.status.success()
-        {
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!(
-                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
-                    out.status,
-                    String::from_utf8_lossy(&out.stderr),
-                ),
-            ))
-        }
+
+        wraps_ffmpeg_process_output_with_result(&out)
     }
 
     /// Creates [FIFO] files for [`Mixin`]s.
