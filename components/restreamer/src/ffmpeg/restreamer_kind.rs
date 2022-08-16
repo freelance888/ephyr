@@ -204,6 +204,7 @@ impl RestreamerKind {
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
+    ///
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
     ///
@@ -226,8 +227,9 @@ impl RestreamerKind {
         }
     }
 
-    /// Properly runs the given [FFmpeg] [`Command`] without writing to its
-    /// STDIN and awaits its completion.
+    /// Properly runs the given [FFmpeg] [`Command`] without writing to
+    /// FIFO and awaits its completion.
+    ///
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
     ///
