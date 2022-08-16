@@ -9,7 +9,7 @@ use std::{
 
 use ephyr_log::log;
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
-use tokio::{process::Command, time};
+use tokio::{process::Command, sync::watch, time};
 
 use crate::{
     display_panic,
@@ -25,7 +25,7 @@ pub struct Restreamer {
     /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    kill_tx: tokio::sync::watch::Sender<FFmpegStatus>,
+    kill_tx: watch::Sender<FFmpegStatus>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -49,8 +49,7 @@ impl Restreamer {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
-        let (kill_tx, kill_rx) =
-            tokio::sync::watch::channel(FFmpegStatus::Running);
+        let (kill_tx, kill_rx) = watch::channel(FFmpegStatus::Running);
 
         let spawner = async move {
             let kill_rx_for_loop = kill_rx.clone();
