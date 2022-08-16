@@ -249,17 +249,46 @@ impl MixingRestreamer {
             ));
         }
 
+        let mut orig_id = self.id.to_string();
+        let mut mixin_ids = self
+            .mixins
+            .iter()
+            .map(|m| m.id.to_string())
+            .collect::<Vec<_>>();
+
+        // Activate `sidechain` filter if required
+        if let Some(sidechain_mixin) = self.mixins.iter().find(|m| m.sidechain)
+        {
+            let sidechain_mixin_id = sidechain_mixin.id.to_string();
+            // Sidechain is mixing Origin Audio and selected Mixin Audio
+            filter_complex.push(format!(
+                "[{sidechain_mixin_id}]asplit=2[sc][mix];\
+                 [{orig_id}][sc]sidechaincompress=\
+                                    level_in=2\
+                                    :threshold=0.01\
+                                    :ratio=10\
+                                    :attack=10\
+                                    :release=1500[compr]"
+            ));
+            // Replace Mixin Id for sidechain with `mix` value
+            if let Some(elem) =
+                mixin_ids.iter_mut().find(|x| **x == sidechain_mixin_id)
+            {
+                "mix".clone_into(elem);
+            };
+
+            // Replace Origin Audio Id with side-chained version
+            orig_id = "compr".to_string();
+        };
+
         filter_complex.push(format!(
             "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
-            orig_id = self.id,
-            mixin_ids = self
-                .mixins
-                .iter()
-                .map(|m| m.id.to_string())
-                .collect::<Vec<_>>()
-                .join("]["),
+            orig_id = orig_id,
+            mixin_ids = mixin_ids.join("]["),
             count = self.mixins.len() + 1,
         ));
+
+        log::debug!("FFmpeg FILTER COMPLEX: {:?}", &filter_complex.join(";"));
         let _ = cmd
             .args(&["-filter_complex", &filter_complex.join(";")])
             .args(&["-map", "[out]"])
@@ -294,6 +323,7 @@ impl MixingRestreamer {
 
             _ => unimplemented!(),
         };
+        log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
 
@@ -440,6 +470,11 @@ pub struct Mixin {
     /// [`Volume`] rate to mix an audio of this [`Mixin`]'s live stream with.
     pub volume: Volume,
 
+    /// Apply [sidechain] audio filter of this [`Mixin`]'s with live stream.
+    ///
+    /// [sidechain]: https://ffmpeg.org/ffmpeg-filters.html#sidechaincompress
+    pub sidechain: bool,
+
     /// [ZeroMQ] port of a spawned [FFmpeg] process listening to a real-time
     /// filter updates of this [`Mixin`]'s live stream during mixing process.
     ///
@@ -519,6 +554,7 @@ impl Mixin {
             id: state.id,
             url: state.src.clone(),
             delay: state.delay,
+            sidechain: state.sidechain,
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
@@ -533,7 +569,9 @@ impl Mixin {
     #[inline]
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
-        self.url != actual.url || self.delay != actual.delay
+        self.url != actual.url
+            || self.delay != actual.delay
+            || self.sidechain != actual.sidechain
     }
 
     /// [FIFO] path where stream captures from the [TeamSpeak] server.

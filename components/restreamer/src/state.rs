@@ -761,6 +761,38 @@ impl State {
         Some(true)
     }
 
+    /// Tunes a the specified [`Mixin.sidechain`] in this [`State`].
+    ///
+    /// Returns `true` if a [`Mixin.sidechain`] has been changed, or `false`
+    /// if it has the same value already.
+    ///
+    /// Returns [`None`] if no such [`Restream`]/[`Output`]/[`Mixin`] exists.
+    #[must_use]
+    pub fn tune_sidechain(
+        &self,
+        input_id: RestreamId,
+        output_id: OutputId,
+        mixin_id: MixinId,
+        sidechain: bool,
+    ) -> Option<bool> {
+        let mut restreams = self.restreams.lock_mut();
+        let mixin = restreams
+            .iter_mut()
+            .find(|r| r.id == input_id)?
+            .outputs
+            .iter_mut()
+            .find(|o| o.id == output_id)?
+            .mixins
+            .iter_mut()
+            .find(|m| m.id == mixin_id)?;
+
+        if mixin.sidechain == sidechain {
+            return Some(false);
+        }
+
+        mixin.sidechain = sidechain;
+        Some(true)
+    }
     /// Gather statistics about [`Input`]s statuses
     #[must_use]
     pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
@@ -1999,6 +2031,13 @@ pub struct Mixin {
     /// stream to be mixed with its `Output`.
     #[serde(skip)]
     pub status: Status,
+
+    /// Side-chain audio of `Output` with this `Mixin`.
+    ///
+    /// Helps to automatically control audio level of `Mixin`
+    /// based on level of `Output`.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub sidechain: bool,
 }
 
 impl Mixin {
@@ -2012,6 +2051,7 @@ impl Mixin {
             volume: Volume::new(&spec.volume),
             delay: spec.delay,
             status: Status::Offline,
+            sidechain: spec.sidechain,
         }
     }
 
@@ -2021,6 +2061,7 @@ impl Mixin {
         self.src = new.src;
         self.volume = Volume::new(&new.volume);
         self.delay = new.delay;
+        self.sidechain = new.sidechain;
     }
 
     /// Exports this [`Mixin`] as a [`spec::v1::Mixin`].
@@ -2031,6 +2072,7 @@ impl Mixin {
             src: self.src.clone(),
             volume: self.volume.export(),
             delay: self.delay,
+            sidechain: self.sidechain,
         }
     }
 }

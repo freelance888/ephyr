@@ -78,6 +78,7 @@ subscription State {
                     muted
                 }
                 delay
+                sidechain
             }
             enabled
             status
@@ -220,6 +221,19 @@ mutation TuneDelay(
         outputId: $output_id
         mixinId: $mixin_id
         delay: $delay
+    )
+}
+mutation TuneSidechain(
+    $restream_id: RestreamId!
+    $output_id: OutputId!
+    $mixin_id: MixinId!
+    $sidechain: Boolean!
+) {
+    tuneSidechain(
+        restreamId: $restream_id
+        outputId: $output_id
+        mixinId: $mixin_id
+        sidechain: $sidechain
     )
 }
 

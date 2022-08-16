@@ -13,6 +13,7 @@
     RemoveOutput,
     TuneDelay,
     TuneVolume,
+    TuneSidechain,
     Info,
   } from '../../api/client.graphql';
 
@@ -48,6 +49,7 @@
     RemoveOutput,
     TuneVolume,
     TuneDelay,
+    TuneSidechain,
   };
 
   $: deleteConfirmation = $info.data
