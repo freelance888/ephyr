@@ -125,7 +125,7 @@ impl Restreamer {
                     );
                 });
 
-                if kill_rx_for_loop.borrow().clone() != 0 {
+                if *kill_rx_for_loop.borrow() != 0 {
                     break;
                 }
 

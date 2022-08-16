@@ -14,26 +14,20 @@ use std::{
     sync::Arc,
 };
 
-use libc::pid_t;
-
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
-use tokio::{io, process::Command, sync::Mutex};
+use tokio::{io, process::Command, sync::watch, sync::Mutex};
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::RestreamerKind,
+    ffmpeg::{util::kill_ffmpeg_process_by_sigterm, RestreamerKind},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
-use nix::{
-    sys::{signal, signal::Signal},
-    unistd::Pid,
-};
-use std::{result::Result::Err, time::Duration};
+use std::result::Result::Err;
 use tokio::fs::File;
 use tsclientlib::Identity;
 
@@ -347,7 +341,7 @@ impl MixingRestreamer {
     pub(crate) async fn run_ffmpeg_with_mixins(
         &self,
         mut cmd: Command,
-        mut kill_rx: tokio::sync::watch::Receiver<i32>,
+        mut kill_rx: watch::Receiver<i32>,
     ) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
@@ -359,17 +353,7 @@ impl MixingRestreamer {
             return Ok(());
         }
 
-        let process_id = process.id().unwrap() as pid_t;
-        // Task that sends SIGTERM if async stop of ffmpeg was invoked
-        let kill_task = tokio::spawn(async move {
-            let _ = kill_rx.changed().await;
-            // It is necessary to send the signal two times and wait after
-            // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-            tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-        });
-
+        let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
         self.start_fed_mixins_fifo();
         // Wait for process to finish or get killed
         let out = process.wait_with_output().await?;

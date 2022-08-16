@@ -4,8 +4,7 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use libc::pid_t;
-use tokio::{io, process::Command};
+use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
@@ -14,14 +13,11 @@ use crate::{
     ffmpeg::{
         copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
         transcoding_restreamer::TranscodingRestreamer,
+        util::kill_ffmpeg_process_by_sigterm,
     },
     state::{self, State, Status},
 };
-use nix::{
-    sys::{signal, signal::Signal},
-    unistd::Pid,
-};
-use std::{result::Result::Err, time::Duration};
+use std::result::Result::Err;
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -217,7 +213,7 @@ impl RestreamerKind {
     pub(crate) async fn run_ffmpeg(
         &self,
         cmd: Command,
-        mut kill_rx: tokio::sync::watch::Receiver<i32>,
+        kill_rx: watch::Receiver<i32>,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
             m.run_ffmpeg_with_mixins(cmd, kill_rx).await
@@ -239,7 +235,7 @@ impl RestreamerKind {
     /// [FFmpeg]: https://ffmpeg.org
     async fn run_standard_ffmpeg(
         mut cmd: Command,
-        mut kill_rx: tokio::sync::watch::Receiver<i32>,
+        mut kill_rx: watch::Receiver<i32>,
     ) -> io::Result<()> {
         let process = cmd.spawn()?;
 
@@ -248,17 +244,7 @@ impl RestreamerKind {
             return Ok(());
         }
 
-        let process_id = process.id().unwrap() as pid_t;
-        // Task that sends SIGTERM if async stop of ffmpeg was invoked
-        let kill_task = tokio::spawn(async move {
-            let _ = kill_rx.changed().await;
-            // It is necessary to send the signal two times and wait after
-            // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-            tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-        });
-
+        let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
         let out = process.wait_with_output().await?;
         kill_task.abort();
         // if the process exited because of SIGTERM signal (exit code 255)
