@@ -17,16 +17,23 @@ use std::{
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
-use tokio::{io, process::Command, sync::watch, sync::Mutex};
+use tokio::{
+    io,
+    process::Command,
+    sync::{watch, Mutex},
+};
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::util::{
-        kill_ffmpeg_process_by_sigterm, wraps_ffmpeg_process_output_with_result,
+    ffmpeg::{
+        util::{
+            kill_ffmpeg_process_by_sigterm,
+            wraps_ffmpeg_process_output_with_result,
+        },
+        RestreamerKind,
     },
-    ffmpeg::RestreamerKind,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };

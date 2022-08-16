@@ -6,8 +6,7 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::process::Output;
-use std::{convert::TryInto, io, time::Duration};
+use std::{convert::TryInto, io, process::Output, time::Duration};
 use tokio::{sync::watch, task::JoinHandle};
 
 /// Kill [FFmpeg] process with SIGTERM signal
