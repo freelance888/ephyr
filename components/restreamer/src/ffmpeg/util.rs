@@ -1,7 +1,7 @@
 //! FFmpeg related shared utils
 //!
 //! [FFmpeg]: https://ffmpeg.org
-use crate::ffmpeg::types::FFmpegStatus;
+use crate::ffmpeg::restreamer::RestreamerStatus;
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -23,9 +23,9 @@ use tokio::{sync::watch, task::JoinHandle};
 /// [FFmpeg]: https://ffmpeg.org
 /// [SIGTERM]: https://en.wikipedia.org/wiki/Signal_(IPC)#SIGTERM
 #[must_use]
-pub fn kill_ffmpeg_process_by_sigterm(
+pub(crate) fn kill_ffmpeg_process_by_sigterm(
     process_id: Option<u32>,
-    mut kill_rx: watch::Receiver<FFmpegStatus>,
+    mut kill_rx: watch::Receiver<RestreamerStatus>,
 ) -> JoinHandle<()> {
     let p_id: pid_t = process_id
         .expect("Failed to retrieve Process ID")
@@ -51,7 +51,9 @@ pub fn kill_ffmpeg_process_by_sigterm(
 ///
 /// [FFmpeg]: https://ffmpeg.org
 /// [SIGTERM]: https://en.wikipedia.org/wiki/Signal_(IPC)#SIGTERM
-pub fn wraps_ffmpeg_process_output_with_result(out: &Output) -> io::Result<()> {
+pub(crate) fn wraps_ffmpeg_process_output_with_result(
+    out: &Output,
+) -> io::Result<()> {
     if out
         .status
         .code()

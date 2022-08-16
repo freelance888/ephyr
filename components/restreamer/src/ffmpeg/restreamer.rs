@@ -13,9 +13,23 @@ use tokio::{process::Command, sync::watch, time};
 
 use crate::{
     display_panic,
-    ffmpeg::{restreamer_kind::RestreamerKind, types::FFmpegStatus},
+    ffmpeg::restreamer_kind::RestreamerKind,
     state::{State, Status},
 };
+
+/// Status of [Restreamer] process
+///
+/// Using for communication through [`tokio::sync::watch`]
+/// between [`Restreamer`] and [`MixingRestreamer`] with [`RestreamerKind`].
+///
+/// [`MixingRestreamer`]: crate::ffmpeg::MixingRestreamer
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub(crate) enum RestreamerStatus {
+    /// [`Restreamer`] process is started and running
+    Started = 0,
+    /// [`Restreamer`] process is finishing
+    Finished = 1,
+}
 
 /// Handle to a running [FFmpeg] process performing a re-streaming.
 ///
@@ -25,7 +39,7 @@ pub struct Restreamer {
     /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    kill_tx: watch::Sender<FFmpegStatus>,
+    kill_tx: watch::Sender<RestreamerStatus>,
 
     /// Kind of a spawned [FFmpeg] process describing the actual job it
     /// performs.
@@ -49,7 +63,7 @@ impl Restreamer {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
-        let (kill_tx, kill_rx) = watch::channel(FFmpegStatus::Running);
+        let (kill_tx, kill_rx) = watch::channel(RestreamerStatus::Started);
 
         let spawner = async move {
             let kill_rx_for_loop = kill_rx.clone();
@@ -125,7 +139,7 @@ impl Restreamer {
                     );
                 });
 
-                if *kill_rx_for_loop.borrow() != FFmpegStatus::Running {
+                if *kill_rx_for_loop.borrow() == RestreamerStatus::Finished {
                     break;
                 }
 
@@ -171,7 +185,8 @@ impl Restreamer {
 }
 
 impl Drop for Restreamer {
+    /// Send signal that [`Restreamer`] process is finished
     fn drop(&mut self) {
-        let _ = self.kill_tx.send(FFmpegStatus::Aborted);
+        let _ = self.kill_tx.send(RestreamerStatus::Finished);
     }
 }
