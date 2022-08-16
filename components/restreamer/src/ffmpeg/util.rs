@@ -46,10 +46,11 @@ pub fn kill_ffmpeg_process_by_sigterm(
 ///
 /// # Errors
 ///
-/// if the process is not exited because of SIGTERM signal (exit code 255)
+/// if the process is not exited because of [SIGTERM] signal (exit code 255)
 /// or exited with 0
 ///
 /// [FFmpeg]: https://ffmpeg.org
+/// [SIGTERM]: https://en.wikipedia.org/wiki/Signal_(IPC)#SIGTERM
 pub fn wraps_ffmpeg_process_output_with_result(out: &Output) -> io::Result<()> {
     if out
         .status
