@@ -23,10 +23,10 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::{
-        util::kill_ffmpeg_process_by_sigterm,
-        util::wraps_ffmpeg_process_output_with_result, RestreamerKind,
+    ffmpeg::util::{
+        kill_ffmpeg_process_by_sigterm, wraps_ffmpeg_process_output_with_result,
     },
+    ffmpeg::RestreamerKind,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };

@@ -10,11 +10,12 @@ use uuid::Uuid;
 
 use crate::{
     dvr,
+    ffmpeg::util::{
+        kill_ffmpeg_process_by_sigterm, wraps_ffmpeg_process_output_with_result,
+    },
     ffmpeg::{
         copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
         transcoding_restreamer::TranscodingRestreamer,
-        util::kill_ffmpeg_process_by_sigterm,
-        util::wraps_ffmpeg_process_output_with_result,
     },
     state::{self, State, Status},
 };
