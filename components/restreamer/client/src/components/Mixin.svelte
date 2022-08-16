@@ -89,8 +89,9 @@
       mixin_id={value.id}
       title="Mixed audio"
     />
-    <div class="options">
+    <div class="mixin-options">
       <i class="far fa-clock" title="Delay" />
+      <span>Delay</span>
       <input
         class="uk-input"
         type="number"
@@ -102,6 +103,7 @@
       />
       <span>s</span>
       <i class="fas fa-link" title="Sidechain" />
+      <span>Sidechain</span>
       <input
         class="uk-checkbox"
         type="checkbox"
@@ -122,7 +124,7 @@
   .mixin
     margin-top: 6px
 
-  .options
+  .mixin-options
     padding-left: 17px
     font-size: 10px
 
