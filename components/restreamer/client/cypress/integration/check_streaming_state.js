@@ -1,4 +1,4 @@
-describe('CHECK STREAMING STATE', () => {
+describe.only('CHECK STREAMING STATE', () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -6,72 +6,54 @@ describe('CHECK STREAMING STATE', () => {
     cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
   });
 
-  it('Click Start All', () => {
+  it('1 Assert Start All', () => {
     cy.allOutputStart();
     cy.wait(5000);
+    cy.checkStartedAllStated();
   });
 
-  const greenColor = 'rgb(50, 210, 150)';
-  const brownColor = 'rgb(122, 81, 40)';
-
-  it('Assert', () => {
-    cy.get(
-      '[data-icon="circle"][title="Serves failover live RTMP stream"]'
-    ).should('have.css', 'color', greenColor);
-
-    cy.get(
-      '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
-    ).should('have.css', 'color', greenColor);
-
-    cy.get(
-      '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
-    ).should('have.css', 'color', greenColor);
-
-    cy.get(
-      '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
-    ).should('have.css', 'color', greenColor);
-
-    cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
-
-    cy.get('[data-testid=RU] [data-icon="arrow-right"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
-
+  it('2 Assert Stop All', () => {
+    cy.allOutputStop();
     cy.wait(5000);
-    cy.get('[data-testid=Teamspeak] [data-icon="circle"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
+    cy.checkStoppedAllStated();
+  });
 
-    cy.get('[data-testid=Twitter] [data-icon="circle"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
+  it('3 Click Start All', () => {
+    cy.allOutputStart();
+    cy.wait(5000);
+    cy.checkStartedAllStated();
+    cy.wait(3000);
+  });
 
-    cy.get('[data-testid="[Manual Start] FB"] [data-icon="circle"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
+  it('4 Unselect sidechain', () => {
+    cy.get('[data-testid=Teamspeak]')
+      .parent()
+      .find("input[title='Sidechain']")
+      .first()
+      .click();
+    cy.wait(4000);
+  });
 
-    cy.get('[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]').should(
-      'have.css',
-      'color',
-      brownColor
-    );
+  it('4 Assert Started', () => {
+    cy.checkStartedAllStated();
+  });
 
-    cy.get('[data-testid="File Record"] [data-icon="circle"]').should(
-      'have.css',
-      'color',
-      greenColor
-    );
+  it('5 Select sidechain', () => {
+    cy.get('[data-testid=Teamspeak]')
+      .parent()
+      .find("input[title='Sidechain']")
+      .first()
+      .click();
+    cy.wait(4000);
+  });
+
+  it('5 Assert Started', () => {
+    cy.checkStartedAllStated();
+  });
+
+  it('6 Assert Stopped', () => {
+    cy.allOutputStop();
+    cy.wait(5000);
+    cy.checkStoppedAllStated();
   });
 });
