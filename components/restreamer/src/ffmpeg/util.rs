@@ -27,7 +27,7 @@ pub(crate) fn kill_ffmpeg_process_by_sigterm(
     process_id: Option<u32>,
     mut kill_rx: watch::Receiver<RestreamerStatus>,
 ) -> JoinHandle<()> {
-    // Retrieve the most recent value
+    // To avoid instant resolve on await for `kill_rx`
     let _ = *kill_rx.borrow_and_update();
 
     let pid: pid_t = process_id
