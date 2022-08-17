@@ -351,16 +351,12 @@ impl MixingRestreamer {
     pub(crate) async fn run_ffmpeg_with_mixins(
         &self,
         mut cmd: Command,
-        mut kill_rx: watch::Receiver<RestreamerStatus>,
+        kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
         // FIFO should be exists before start of FFmpeg process
         self.create_mixins_fifo()?;
         // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
-
-        if *kill_rx.borrow_and_update() == RestreamerStatus::Finished {
-            return Ok(());
-        }
 
         let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
         self.start_fed_mixins_fifo();

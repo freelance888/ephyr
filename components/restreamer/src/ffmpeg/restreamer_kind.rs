@@ -241,13 +241,9 @@ impl RestreamerKind {
     /// [FFmpeg]: https://ffmpeg.org
     async fn run_standard_ffmpeg(
         mut cmd: Command,
-        mut kill_rx: watch::Receiver<RestreamerStatus>,
+        kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
         let process = cmd.spawn()?;
-
-        if *kill_rx.borrow_and_update() == RestreamerStatus::Finished {
-            return Ok(());
-        }
 
         let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
         let out = process.wait_with_output().await?;

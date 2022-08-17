@@ -27,18 +27,24 @@ pub(crate) fn kill_ffmpeg_process_by_sigterm(
     process_id: Option<u32>,
     mut kill_rx: watch::Receiver<RestreamerStatus>,
 ) -> JoinHandle<()> {
-    let p_id: pid_t = process_id
+    // Retrieve the most recent value
+    let _ = *kill_rx.borrow_and_update();
+
+    let pid: pid_t = process_id
         .expect("Failed to retrieve Process ID")
         .try_into()
         .expect("Failed to convert u32 to i32");
+
     // Task that sends SIGTERM if async stop of ffmpeg was invoked
     tokio::spawn(async move {
         let _ = kill_rx.changed().await;
         // It is necessary to send the signal two times and wait after
         // sending the first one to correctly close all ffmpeg processes
-        signal::kill(Pid::from_raw(p_id), Signal::SIGTERM).unwrap();
+        signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+            .expect("Failed to kill process");
         tokio::time::sleep(Duration::from_millis(1)).await;
-        signal::kill(Pid::from_raw(p_id), Signal::SIGTERM).unwrap();
+        signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+            .expect("Failed to kill process");
     })
 }
 
