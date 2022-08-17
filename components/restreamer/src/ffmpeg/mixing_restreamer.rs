@@ -358,11 +358,11 @@ impl MixingRestreamer {
         // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
 
+        self.start_fed_mixins_fifo(&kill_rx);
         let kill_task = kill_ffmpeg_process_with_sigterm_on_received_signal(
             process.id(),
             kill_rx,
         );
-        self.start_fed_mixins_fifo();
         // Wait for process to finish or get killed
         let out = process.wait_with_output().await?;
         kill_task.abort();
@@ -406,24 +406,47 @@ impl MixingRestreamer {
     /// Each data copying is operated in separate thread.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn start_fed_mixins_fifo(&self) {
+    fn start_fed_mixins_fifo(
+        &self,
+        kill_rx: &watch::Receiver<RestreamerStatus>,
+    ) {
         async fn run_copy(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
+            mut kill_rx: watch::Receiver<RestreamerStatus>,
         ) -> io::Result<()> {
             let mut src = input.lock().await;
             log::debug!("Connecting to FIFO: {:?}", &fifo_path);
             let mut file = File::create(&fifo_path).await?;
 
-            let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
-                log::error!("Failed to write into FIFO: {}", e);
-            });
-            Ok(())
+            // To avoid instant resolve on await for `kill_rx`
+            let _ = *kill_rx.borrow_and_update();
+
+            tokio::select! {
+                _ = kill_rx.changed() =>{
+                    Ok(())
+                }
+                result = io::copy(&mut *src, &mut file) => {
+                    let _ =result.map_err(|e| {
+                    log::error!("Failed to write into FIFO: {}", e);
+
+                    });
+                    Err(io::Error::new(
+                            io::ErrorKind::BrokenPipe,
+                            "Failed to write into FIFO")
+                    )
+
+                }
+            }
         }
 
         for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy(Arc::clone(i), m.get_fifo_path())));
+                drop(tokio::spawn(run_copy(
+                    Arc::clone(i),
+                    m.get_fifo_path(),
+                    kill_rx.clone(),
+                )));
             }
         }
     }
