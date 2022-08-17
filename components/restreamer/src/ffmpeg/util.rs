@@ -10,20 +10,16 @@ use nix::{
 use std::{convert::TryInto, io, process::Output, time::Duration};
 use tokio::{sync::watch, task::JoinHandle};
 
-/// Kill [FFmpeg] process with SIGTERM signal
+/// Kill [FFmpeg] process with SIGTERM
+/// on received signal within [`watch::Receiver<RestreamerStatus>`]
 ///
 /// [FFmpeg] not always die after single [SIGTERM] signal
 /// so we send it twice with interval of 1 ms
 ///
-/// # Panics
-///
-/// If not possible to get Process ID and convert it to i32
-/// If OS return an error during on kill call
-///
 /// [FFmpeg]: https://ffmpeg.org
 /// [SIGTERM]: https://en.wikipedia.org/wiki/Signal_(IPC)#SIGTERM
 #[must_use]
-pub(crate) fn kill_ffmpeg_process_by_sigterm(
+pub(crate) fn kill_ffmpeg_process_with_sigterm_on_received_signal(
     process_id: Option<u32>,
     mut kill_rx: watch::Receiver<RestreamerStatus>,
 ) -> JoinHandle<()> {

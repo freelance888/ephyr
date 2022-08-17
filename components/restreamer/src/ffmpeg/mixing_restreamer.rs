@@ -30,7 +30,7 @@ use crate::{
     ffmpeg::{
         restreamer::RestreamerStatus,
         util::{
-            kill_ffmpeg_process_by_sigterm,
+            kill_ffmpeg_process_with_sigterm_on_received_signal,
             wraps_ffmpeg_process_output_with_result,
         },
         RestreamerKind,
@@ -358,7 +358,10 @@ impl MixingRestreamer {
         // FFmpeg should start reading FIFO before writing started
         let process = cmd.spawn()?;
 
-        let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
+        let kill_task = kill_ffmpeg_process_with_sigterm_on_received_signal(
+            process.id(),
+            kill_rx,
+        );
         self.start_fed_mixins_fifo();
         // Wait for process to finish or get killed
         let out = process.wait_with_output().await?;

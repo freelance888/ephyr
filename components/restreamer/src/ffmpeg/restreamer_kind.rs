@@ -16,7 +16,7 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
         util::{
-            kill_ffmpeg_process_by_sigterm,
+            kill_ffmpeg_process_with_sigterm_on_received_signal,
             wraps_ffmpeg_process_output_with_result,
         },
     },
@@ -245,7 +245,10 @@ impl RestreamerKind {
     ) -> io::Result<()> {
         let process = cmd.spawn()?;
 
-        let kill_task = kill_ffmpeg_process_by_sigterm(process.id(), kill_rx);
+        let kill_task = kill_ffmpeg_process_with_sigterm_on_received_signal(
+            process.id(),
+            kill_rx,
+        );
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
