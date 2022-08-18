@@ -105,6 +105,7 @@ ExecStartPre=-/usr/bin/docker rm --volumes \${EPHYR_CONTAINER_NAME}
 ExecStart=/usr/local/bin/run-ephyr-restreamer.sh
 ExecStop=-/usr/bin/docker stop \${EPHYR_CONTAINER_NAME}
 ExecStop=-/usr/bin/docker rm --volumes \${EPHYR_CONTAINER_NAME}
+ExecStopPost==/usr/bin/find /tmp -name "ephyr_*" -delete
 
 Restart=always
 

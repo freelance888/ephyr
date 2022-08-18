@@ -366,7 +366,6 @@ impl MixingRestreamer {
         // Wait for process to finish or get killed
         let out = process.wait_with_output().await?;
         kill_task.abort();
-        self.remove_mixins_fifo();
 
         wraps_ffmpeg_process_output_with_result(&out)
     }
@@ -386,20 +385,6 @@ impl MixingRestreamer {
             }
         }
         Ok(())
-    }
-
-    /// Remove [FIFO] files for [`Mixin`]s.
-    ///
-    /// We don't really care if file was really deleted so no error.
-    ///
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn remove_mixins_fifo(&self) {
-        for m in &self.mixins {
-            if m.get_fifo_path().exists() {
-                let _ = std::fs::remove_file(m.get_fifo_path())
-                    .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
-            }
-        }
     }
 
     /// Copy data from [`Mixin.stdin`] to [FIFO].
