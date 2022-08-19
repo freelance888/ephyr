@@ -318,7 +318,7 @@ impl Output {
 
         if !mixins.is_empty() {
             let mut unique = HashSet::with_capacity(mixins.len());
-            let mut has_ts = false;
+            let mut ts_count: u8 = 0;
             for m in &mixins {
                 if let Some(src) = unique.replace(&m.src) {
                     return Err(D::Error::custom(format!(
@@ -327,13 +327,14 @@ impl Output {
                     )));
                 }
                 if m.src.scheme() == "ts" {
-                    if has_ts {
+                    ts_count += 1;
+                    if ts_count > 3 {
                         return Err(D::Error::custom(format!(
-                            "Second TeamSpeak Mixin.src in Output.mixins: {}",
+                            "Maximum 3 TeamSpeak Mixin.src allowed \
+                            in Output.mixins: {}",
                             m.src,
                         )));
                     }
-                    has_ts = true;
                 }
             }
         }

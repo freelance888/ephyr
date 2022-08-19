@@ -11,9 +11,10 @@ use std::{
 
 use anyhow::anyhow;
 use ephyr_log::log;
-use futures::{future, TryFutureExt as _, TryStreamExt as _};
+use futures::{future, stream::TryStreamExt};
 use once_cell::sync::OnceCell;
 use tokio::fs;
+use tokio_stream::wrappers::ReadDirStream;
 use url::Url;
 use uuid::Uuid;
 
@@ -86,21 +87,29 @@ impl Storage {
         let mut output_dir = dir.clone();
         output_dir.push(id.to_string());
 
-        fs::read_dir(output_dir)
-            .try_flatten_stream()
-            .try_filter_map(|i| async move {
-                Ok(i.file_type().await?.is_file().then(|| i.path()).and_then(
-                    |p| Some(p.strip_prefix(dir).ok()?.display().to_string()),
-                ))
-            })
-            .try_collect()
-            .await
-            .unwrap_or_else(|e| {
-                if e.kind() != io::ErrorKind::NotFound {
-                    log::error!("Failed to list {} DVR files: {}", id, e);
-                }
-                vec![]
-            })
+        if let Ok(read_dir) = fs::read_dir(output_dir).await {
+            return ReadDirStream::new(read_dir)
+                .try_filter_map(|i| async move {
+                    Ok(i.file_type()
+                        .await?
+                        .is_file()
+                        .then(|| i.path())
+                        .and_then(|p| {
+                            Some(
+                                p.strip_prefix(dir).ok()?.display().to_string(),
+                            )
+                        }))
+                })
+                .try_collect()
+                .await
+                .unwrap_or_else(|e| {
+                    if e.kind() != io::ErrorKind::NotFound {
+                        log::error!("Failed to list {} DVR files: {}", id, e);
+                    }
+                    vec![]
+                });
+        };
+        vec![]
     }
 
     /// Removes a [DVR] file from this [`Storage`] identified by its relative
@@ -134,32 +143,33 @@ impl Storage {
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
     pub async fn cleanup(&self, restreams: &[state::Restream]) {
         // TODO: Consider only `file:///` outputs?
-        fs::read_dir(&self.root_path)
-            .try_flatten_stream()
-            .try_filter(|i| {
-                future::ready(
-                    i.file_name()
-                        .to_str()
-                        .and_then(|n| Uuid::parse_str(n).ok())
-                        .map_or(true, |id| {
-                            let id = id.into();
-                            !restreams
-                                .iter()
-                                .any(|r| r.outputs.iter().any(|o| o.id == id))
-                        }),
-                )
-            })
-            .try_for_each_concurrent(4, |i| async move {
-                if i.file_type().await?.is_dir() {
-                    fs::remove_dir_all(i.path()).await
-                } else {
-                    fs::remove_file(i.path()).await
-                }
-            })
-            .await
-            .unwrap_or_else(|e| {
-                log::error!("Failed to cleanup DVR files: {}", e);
-            });
+        if let Ok(read_dir) = fs::read_dir(&self.root_path).await {
+            ReadDirStream::new(read_dir)
+                .try_filter(|i| {
+                    future::ready(
+                        i.file_name()
+                            .to_str()
+                            .and_then(|n| Uuid::parse_str(n).ok())
+                            .map_or(true, |id| {
+                                let id = id.into();
+                                !restreams.iter().any(|r| {
+                                    r.outputs.iter().any(|o| o.id == id)
+                                })
+                            }),
+                    )
+                })
+                .try_for_each_concurrent(4, |i| async move {
+                    if i.file_type().await?.is_dir() {
+                        fs::remove_dir_all(i.path()).await
+                    } else {
+                        fs::remove_file(i.path()).await
+                    }
+                })
+                .await
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to cleanup DVR files: {}", e);
+                });
+        };
     }
 }
 

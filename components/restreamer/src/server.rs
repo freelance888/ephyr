@@ -58,7 +58,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         &state.restreams,
         |restreams| async move {
             // Wait for all the re-streaming processes to release DVR files.
-            time::delay_for(Duration::from_secs(1)).await;
+            time::sleep(Duration::from_secs(1)).await;
             dvr::Storage::global().cleanup(&restreams).await;
         },
     );
@@ -132,6 +132,7 @@ pub mod client {
     const MIX_ROUTE: &str = "/mix";
     const MIX_ROUTE_API: &str = "/api-mix";
     const STATISTICS_ROUTE_API: &str = "/api-statistics";
+    const FULL_STREAM_ROUTE: &str = "/full-stream";
     const INDEX_FILE: &str = "index.html";
 
     pub mod public_dir {
@@ -153,6 +154,13 @@ pub mod client {
         #![doc(hidden)]
 
         include!(concat!(env!("OUT_DIR"), "/generated_dashboard.rs"));
+    }
+
+    pub mod public_full_stream_dir {
+        #![allow(clippy::must_use_candidate, unused_results)]
+        #![doc(hidden)]
+
+        include!(concat!(env!("OUT_DIR"), "/generated_full_stream.rs"));
     }
 
     /// Runs client HTTP server.
@@ -181,6 +189,7 @@ pub mod client {
             let root_dir_files = public_dir::generate();
             let mix_dir_files = public_mix_dir::generate();
             let dashboard_dir_files = public_dashboard_dir::generate();
+            let full_stream_dir_files = public_full_stream_dir::generate();
 
             let mut app = App::new()
                 .app_data(stored_cfg.clone())
@@ -188,10 +197,10 @@ pub mod client {
                 .app_data(
                     basic::Config::default().realm("Any login is allowed"),
                 )
-                .data(api::graphql::client::schema())
-                .data(api::graphql::mix::schema())
-                .data(api::graphql::dashboard::schema())
-                .data(api::graphql::statistics::schema())
+                .app_data(web::Data::new(api::graphql::client::schema()))
+                .app_data(web::Data::new(api::graphql::mix::schema()))
+                .app_data(web::Data::new(api::graphql::dashboard::schema()))
+                .app_data(web::Data::new(api::graphql::statistics::schema()))
                 .wrap(middleware::Logger::default())
                 .wrap_fn(|req, srv| match authorize(req) {
                     Ok(req) => srv.call(req).left_future(),
@@ -215,6 +224,10 @@ pub mod client {
             .service(
                 ResourceFiles::new("/dashboard", dashboard_dir_files)
                     .resolve_not_found_to(INDEX_FILE),
+            )
+            .service(
+                ResourceFiles::new(FULL_STREAM_ROUTE, full_stream_dir_files)
+                    .resolve_not_found_to(INDEX_FILE)
             )
             .service(ResourceFiles::new("/", root_dir_files))
         })
@@ -435,7 +448,9 @@ pub mod client {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 pub mod callback {
-    use actix_web::{error, middleware, post, web, App, Error, HttpServer};
+    use actix_web::{
+        error, middleware, post, web, web::Data, App, Error, HttpServer,
+    };
     use ephyr_log::log;
 
     use crate::{
@@ -457,7 +472,7 @@ pub mod callback {
     pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         Ok(HttpServer::new(move || {
             App::new()
-                .data(state.clone())
+                .app_data(Data::new(state.clone()))
                 .wrap(middleware::Logger::default())
                 .service(on_callback)
         })
@@ -482,7 +497,7 @@ pub mod callback {
     #[post("/")]
     async fn on_callback(
         req: web::Json<callback::Request>,
-        state: web::Data<State>,
+        state: Data<State>,
     ) -> Result<&'static str, Error> {
         match req.action {
             callback::Event::OnConnect => on_connect(&req, &*state),
@@ -793,7 +808,7 @@ pub mod statistics {
                             // Do not change delay time, since it is also used
                             // further to compute network statistics
                             // (bytes sent/received last second)
-                            time::delay_for(Duration::from_secs(1)).await;
+                            time::sleep(Duration::from_secs(1)).await;
                             let cpu = cpu.done().unwrap();
 
                             // in percents
@@ -893,14 +908,5 @@ pub mod statistics {
 ///
 /// See [`public_ip`] crate for details.
 pub async fn detect_public_ip() -> Option<IpAddr> {
-    use public_ip::{dns, http, BoxToResolver, ToResolver as _};
-
-    public_ip::resolve_address(
-        vec![
-            BoxToResolver::new(dns::OPENDNS_RESOLVER),
-            BoxToResolver::new(http::HTTP_IPIFY_ORG_RESOLVER),
-        ]
-        .to_resolver(),
-    )
-    .await
+    public_ip::addr().await
 }

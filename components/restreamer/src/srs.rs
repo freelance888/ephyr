@@ -203,7 +203,7 @@ impl Deref for ClientId {
 impl Borrow<String> for ClientId {
     #[inline]
     fn borrow(&self) -> &String {
-        &*self
+        self
     }
 }
 

@@ -17,7 +17,7 @@ eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
 
 IMAGE_NAME ?= allatra/ephyr
 IMAGE_TAG ?= dev
-
+GH_REPO ?= ALLATRA-IT/ephyr
 
 
 
@@ -150,6 +150,29 @@ docker.tar:
 
 docker.untar:
 	docker load -i $(if $(call eq,$(from-file),),.cache/image.tar,$(from-file))
+
+
+
+
+###########################
+# .Github Actions section #
+###########################
+
+
+# Clear Github Acions usage cache.
+#
+# Need to install github cli first [https://cli.github.com/] and authorize
+#
+# Usage:
+#	make gh.clear
+
+gh.clear:
+	gh api -H "Accept: application/vnd.github+json" \
+		/repos/$(GH_REPO)/actions/caches \
+		| for ID in `jq '.actions_caches[].id'`; \
+		  do echo "Deleting $$ID"; \
+		     gh api --method DELETE /repos/$(GH_REPO)/actions/caches/$$ID | echo; done
+
 
 
 

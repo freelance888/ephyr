@@ -4,6 +4,33 @@ Ephyr re-streamer changelog
 All user visible changes to this project will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
 
+
+## [0.6.0] · Unreleased
+[0.6.0]: /../../tree/restreamer-v0.6.0
+
+[Diff](/../../compare/restreamer-v0.5.0...restreamer-v0.6.0)
+
+
+### Added
+
+- Web UI:
+  - Allow to use multiple Teamspeak mixers per output ([#199]);
+
+### Miscellaneous
+- Server updates:
+  - `ffmpeg` from 4.4 to 5.1 ([e1faef9]);
+  - `SRS` server updated to v4.0-r1 ([e1faef9], [#200]).
+
+- Dockerfile image moved from CentOS 7 to Ubuntu 20.04 ([#200]);
+- Added test for check file recording ([#197]);
+- Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
+
+[e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
+[#197]: /../../pull/197
+[#199]: /../../pull/199
+[#200]: /../../pull/200
+
+
 ## [0.5.0] · 2022-04-20
 [0.5.0]: /../../tree/restreamer-v0.5.0
 

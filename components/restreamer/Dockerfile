@@ -2,9 +2,16 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.4-centos7 AS build-ephyr
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
+FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
+
+
+# Install build dependencies.
+RUN apt-get update \
+ && apt-get install -yq curl \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -yq pkg-config \
+ && apt-get install -yq build-essential automake gcc libtool make libssl-dev
 
 # Install Rust.
 WORKDIR /tmp/rust/
@@ -25,13 +32,7 @@ RUN curl -sLO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/
 
 # Install Node.js and Yarn.
 RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
- && npm install -g yarn
-
-
-# Install build dependencies.
-RUN yum --enablerepo=extras install -y epel-release \
- && yum --enablerepo=epel install -y automake gcc libtool make \
-                                     openssl-devel
+ && npm install --location=global yarn
 
 
 # First, build all the dependencies to cache them in a separate Docker layer and
@@ -46,7 +47,6 @@ COPY components/vod-meta-server/Cargo.toml ./components/vod-meta-server/
 COPY Cargo.toml Cargo.lock ./
 
 COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
-
 
 
 RUN mkdir -p common/api/allatra-video/src/ \
@@ -92,8 +92,8 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 # Stage 'build-srs' prepares SRS distribution for the final stage.
 #
 
-# https://github.com/ossrs/srs-docker/blob/v3/Dockerfile
-FROM ossrs/srs:4 AS build-srs
+# https://github.com/ossrs/srs/releases/tag/v4.0-r1
+FROM ossrs/srs:v4.0-r1 AS build-srs
 
 
 
@@ -102,8 +102,8 @@ FROM ossrs/srs:4 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/4.4/centos7/Dockerfile
-FROM jrottenberg/ffmpeg:4.4-centos7 AS runtime
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
+FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 

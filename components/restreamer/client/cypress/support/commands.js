@@ -121,6 +121,12 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "label": "[Manual Start] YT",
           "preview_url": "https://youtu.be/jKl7txehM78",
           "enabled": true
+        },
+        {
+          "id": "3433de9d-5910-4ff2-a5fc-23bcc677c85b",
+          "dst": "file:///record.flv",
+          "label": "File Record",
+          "enabled": true
         }
       ]
     },
@@ -164,7 +170,15 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "preview_url": "https://www.youtube.com/watch?v=99567P5FiD0",
           "mixins": [
             {
-              "src": "ts://allatra.ruvoice.com:10335/Translation/Music",
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted",
+              "delay": "3s 500ms"
+            },
+            {
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest",
+              "delay": "3s 500ms"
+            },
+            {
+              "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest2",
               "delay": "3s 500ms"
             }
           ],

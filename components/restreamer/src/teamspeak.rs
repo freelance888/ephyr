@@ -78,7 +78,7 @@ pub struct Input {
     /// [TeamSpeak] channel members, for this [`Input`].
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    audio: Arc<Mutex<AudioHandler>>,
+    pub audio: Arc<Mutex<AudioHandler>>,
 
     /// Abort handle and waiter of the spawned [`AudioCapture`], which receives
     /// audio packets from [TeamSpeak] server and feeds them into the
@@ -90,7 +90,7 @@ pub struct Input {
     /// operations.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    conn: Option<(future::AbortHandle, JoinHandle<()>)>,
+    pub conn: Option<(future::AbortHandle, JoinHandle<()>)>,
 
     /// Indicator whether the spawned [`AudioCapture`] is unable to recover from
     /// its last error, and so this [`Input`] should return an error too.
@@ -203,8 +203,8 @@ impl AsyncRead for Input {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+        buf: &mut io::ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         if self.conn.is_none() {
             self.spawn_audio_capturing();
         }
@@ -215,7 +215,7 @@ impl AsyncRead for Input {
         if self.cursor >= self.frame.len() {
             // `time::Interval` stream never returns `None`, so we can omit
             // checking it to be finished.
-            let _ = ready!(Pin::new(&mut self.ticker).poll_next(cx));
+            let _ = ready!(Pin::new(&mut self.ticker).poll_tick(cx));
 
             self.cursor = 0;
             self.frame.fill(0.0);
@@ -234,21 +234,23 @@ impl AsyncRead for Input {
         let src_size = self.frame.len() - cursor;
 
         // `f32` takes 4 bytes in big endian, so we should fit in there.
-        let dst_size = buf.len() / 4;
-        if dst_size == 0 {
+        if buf.remaining() <= 3 {
             return Poll::Ready(Err(InputError::TooSmallBuffer.into()));
         }
 
-        let size = src_size.min(dst_size);
+        let size = src_size.min(buf.remaining() / 4);
+        let unfilled = buf.initialize_unfilled();
         let size_in_bytes = size * 4;
 
         BigEndian::write_f32_into(
             &self.frame[cursor..(cursor + size)],
-            &mut buf[..size_in_bytes],
+            &mut unfilled[0..(size_in_bytes)],
         );
+
+        buf.advance(size_in_bytes);
         self.cursor += size;
 
-        Poll::Ready(Ok(size_in_bytes))
+        Poll::Ready(Ok(()))
     }
 }
 
@@ -318,7 +320,7 @@ pub struct AudioCapture {
     /// Established [`Connection`] with [TeamSpeak] server.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    conn: ManuallyDrop<Connection>,
+    pub conn: ManuallyDrop<Connection>,
 
     /// Handler of audio packets received from [TeamSpeak] server.
     ///
@@ -389,7 +391,11 @@ impl AudioCapture {
         cfg: Config,
         audio: Arc<Mutex<AudioHandler>>,
     ) -> Result<(), AudioCaptureError> {
-        log::debug!("Connecting to TeamSpeak server...");
+        log::debug!(
+            "Connecting to TeamSpeak server: {}/{:?}",
+            cfg.get_address(),
+            cfg.get_channel()
+        );
         let conn = cfg
             .hardware_id(Self::new_hwid())
             .connect()
@@ -524,7 +530,7 @@ impl AudioCaptureError {
         if is_permanent {
             backoff::Error::Permanent(self)
         } else {
-            backoff::Error::Transient(self)
+            backoff::Error::transient(self)
         }
     }
 }

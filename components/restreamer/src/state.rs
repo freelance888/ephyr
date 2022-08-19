@@ -21,8 +21,8 @@ use futures::{
 };
 use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{
-    graphql_scalar, GraphQLEnum, GraphQLObject, GraphQLScalarValue,
-    GraphQLUnion, ParseScalarResult, ParseScalarValue, ScalarValue, Value,
+    GraphQLEnum, GraphQLObject, GraphQLScalar, GraphQLUnion, InputValue,
+    ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -920,8 +920,18 @@ impl Client {
 
 /// ID of a [`Client`].
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(with = Self)]
 pub struct ClientId(Url);
 
 impl ClientId {
@@ -929,6 +939,33 @@ impl ClientId {
     #[must_use]
     pub fn new(url: Url) -> Self {
         Self(url)
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(self.0.as_str().to_owned())
+    }
+
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+    where
+        S: ScalarValue,
+    {
+        let s = v
+            .as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(|s| Url::parse(s).ok())
+            .map(Self::new);
+        match s {
+            None => Err(format!("Expected `String` or `Int`, found: {v}")),
+            Some(e) => Ok(e),
+        }
+    }
+
+    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
+    where
+        S: ScalarValue,
+    {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -939,27 +976,6 @@ impl<'de> Deserialize<'de> for ClientId {
         D: Deserializer<'de>,
     {
         Ok(Self::new(Url::deserialize(deserializer)?))
-    }
-}
-
-#[graphql_scalar]
-impl<S> GraphQLScalar for ClientId
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(|s| Url::parse(s).ok())
-            .map(Self::new)
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -1095,11 +1111,12 @@ impl Restream {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct RestreamId(Uuid);
 
 impl RestreamId {
@@ -1113,8 +1130,18 @@ impl RestreamId {
 
 /// Key of a [`Restream`] identifying it, and used to form its endpoints URLs.
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(transparent)]
 pub struct RestreamKey(String);
 
 impl RestreamKey {
@@ -1141,30 +1168,6 @@ impl<'de> Deserialize<'de> for RestreamKey {
     }
 }
 
-/// Type of `Restream`'s `key` identifying it, and used to form its endpoints
-/// URLs.
-///
-/// It should meet `[a-z0-9_-]{1,20}` format.
-#[graphql_scalar]
-impl<S> GraphQLScalar for RestreamKey
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(Self::new)
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
-    }
-}
-
 impl PartialEq<str> for RestreamKey {
     #[inline]
     fn eq(&self, other: &str) -> bool {
@@ -1181,11 +1184,12 @@ impl PartialEq<str> for RestreamKey {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct PlaylistId(Uuid);
 
 impl PlaylistId {
@@ -1578,11 +1582,12 @@ impl InputEndpointKind {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct EndpointId(Uuid);
 
 impl EndpointId {
@@ -1704,11 +1709,12 @@ pub struct FailoverInputSrc {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct InputId(Uuid);
 
 impl InputId {
@@ -1722,8 +1728,18 @@ impl InputId {
 
 /// Key of an [`Input`] used to form its endpoint URL.
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(transparent)]
 pub struct InputKey(String);
 
 impl InputKey {
@@ -1750,29 +1766,6 @@ impl<'de> Deserialize<'de> for InputKey {
     }
 }
 
-/// Type of `Input`'s `key` used to form its endpoint URL.
-///
-/// It should meet `[a-z0-9_-]{1,50}` format.
-#[graphql_scalar]
-impl<S> GraphQLScalar for InputKey
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(Self::new)
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
-    }
-}
-
 impl PartialEq<str> for InputKey {
     #[inline]
     fn eq(&self, other: &str) -> bool {
@@ -1791,8 +1784,18 @@ impl PartialEq<str> for InputKey {
 /// [HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
 /// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(transparent)]
 pub struct InputSrcUrl(Url);
 
 impl InputSrcUrl {
@@ -1835,37 +1838,6 @@ impl<'de> Deserialize<'de> for InputSrcUrl {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
             D::Error::custom(format!("Not a valid RemoteInputSrc.url: {}", url))
         })
-    }
-}
-
-/// Type of a `RemoteInputSrc.url`.
-///
-/// Only the following URLs are allowed at the moment:
-/// - [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a
-///   host);
-/// - [HLS] URL (starting with `http://` or `https://` scheme, having a host,
-///   and with `.m3u8` extension in its path).
-///
-/// [HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
-/// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
-#[graphql_scalar]
-impl<S> GraphQLScalar for InputSrcUrl
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(|s| Url::parse(s).ok())
-            .and_then(|url| Self::new(url).ok())
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -2007,11 +1979,12 @@ impl Output {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct OutputId(Uuid);
 
 impl OutputId {
@@ -2038,8 +2011,18 @@ impl OutputId {
 /// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 /// [SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(transparent)]
 pub struct OutputDstUrl(Url);
 
 impl OutputDstUrl {
@@ -2103,41 +2086,6 @@ impl<'de> Deserialize<'de> for OutputDstUrl {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
             D::Error::custom(format!("Not a valid Output.src URL: {}", url))
         })
-    }
-}
-
-/// Type of an `Output.dst` URL.
-///
-/// Only the following URLs are allowed at the moment:
-/// - [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a
-///   host);
-/// - [SRT] URL (starting with `srt://` scheme and having a host);
-/// - [Icecast] URL (starting with `icecast://` scheme and having a host);
-/// - [FLV] file URL (starting with `file:///` scheme, without host and
-///   subdirectories, and with `.flv` extension in its path).
-///
-/// [FLV]: https://en.wikipedia.org/wiki/Flash_Video
-/// [Icecast]: https://icecast.org
-/// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
-/// [SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport
-#[graphql_scalar]
-impl<S> GraphQLScalar for OutputDstUrl
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(|s| Url::parse(s).ok())
-            .and_then(|url| Self::new(url).ok())
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -2219,11 +2167,12 @@ impl Mixin {
     Display,
     Eq,
     From,
-    GraphQLScalarValue,
+    GraphQLScalar,
     Into,
     PartialEq,
     Serialize,
 )]
+#[graphql(transparent)]
 pub struct MixinId(Uuid);
 
 impl MixinId {
@@ -2245,8 +2194,18 @@ impl MixinId {
 /// [MP3]: https://en.wikipedia.org/wiki/MP3
 /// [TeamSpeak]: https://teamspeak.com
 #[derive(
-    Clone, Debug, Deref, Display, Eq, Hash, Into, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
 )]
+#[graphql(transparent)]
 pub struct MixinSrcUrl(Url);
 
 impl MixinSrcUrl {
@@ -2291,36 +2250,6 @@ impl<'de> Deserialize<'de> for MixinSrcUrl {
     }
 }
 
-/// Type of a `Mixin.src` URL.
-///
-/// Only the following URLs are allowed at the moment:
-/// - [TeamSpeak] URL (starting with `ts://` scheme and having a host);
-/// - [MP3] HTTP URL (starting with `http://` or `https://` scheme, having a
-///   host and `.mp3` extension in its path).
-///
-/// [MP3]: https://en.wikipedia.org/wiki/MP3
-/// [TeamSpeak]: https://teamspeak.com
-#[graphql_scalar]
-impl<S> GraphQLScalar for MixinSrcUrl
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(|s| Url::parse(s).ok())
-            .and_then(|url| Self::new(url).ok())
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
-    }
-}
-
 /// Specifies kind of password
 #[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq)]
 pub enum PasswordKind {
@@ -2352,7 +2281,19 @@ pub enum Status {
 }
 
 /// Label of a [`Restream`] or an [`Output`].
-#[derive(Clone, Debug, Deref, Display, Eq, Into, PartialEq, Serialize)]
+#[derive(
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Serialize,
+    GraphQLScalar,
+)]
+#[graphql(transparent)]
 pub struct Label(String);
 
 impl Label {
@@ -2379,34 +2320,10 @@ impl<'de> Deserialize<'de> for Label {
     }
 }
 
-/// Type of a `Restream` or an `Output` label.
-///
-/// It should meet `[^,\n\t\r\f\v]{1,70}` format.
-#[graphql_scalar]
-impl<S> GraphQLScalar for Label
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.0.as_str().to_owned())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_str)
-            .and_then(Self::new)
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
-    }
-}
-
 /// Volume rate of an audio track in percents and flag if it is muted.
 #[derive(
     Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
 )]
-// #[serde(try_from="VolumeLevel")]
 pub struct Volume {
     /// Volume rate or level
     pub level: VolumeLevel,
@@ -2497,7 +2414,9 @@ impl TryFrom<VolumeLevel> for Volume {
     PartialOrd,
     Serialize,
     SmartDefault,
+    GraphQLScalar,
 )]
+#[graphql(with = Self)]
 pub struct VolumeLevel(#[default(Volume::ORIGIN.level.0)] u16);
 impl VolumeLevel {
     /// Maximum possible value of a [`VolumeLevel`].
@@ -2521,30 +2440,32 @@ impl VolumeLevel {
             None
         }
     }
-}
 
-/// Type a volume rate of audio track in percents.
-///
-/// It's values are always within range of `0` and `1000` (inclusively).
-///
-/// `0` means disabled audio.
-#[graphql_scalar]
-impl<S> GraphQLScalar for VolumeLevel
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
+    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
 
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+    where
+        S: ScalarValue,
+    {
+        let s = v
+            .as_scalar()
             .and_then(ScalarValue::as_int)
-            .and_then(Self::new)
+            .and_then(Self::new);
+        match s {
+            None => Err(format!("Expected `String` or `Int`, found: {v}")),
+            Some(e) => Ok(e),
+        }
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
+    where
+        S: ScalarValue,
+    {
         <String as ParseScalarValue<S>>::from_str(value)
+            .or_else(|_| <i32 as ParseScalarValue<S>>::from_str(value))
     }
 }
 
@@ -2560,7 +2481,9 @@ where
     PartialEq,
     PartialOrd,
     Serialize,
+    GraphQLScalar,
 )]
+#[graphql(with = Self)]
 pub struct Delay(#[serde(with = "serde_humantime")] Duration);
 
 impl Delay {
@@ -2588,31 +2511,37 @@ impl Delay {
     pub fn is_zero(&self) -> bool {
         self.0 == Duration::default()
     }
+
+    #[allow(clippy::wrong_self_convention)]
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(self.as_millis())
+    }
+
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+    where
+        S: ScalarValue,
+    {
+        let v = v
+            .as_scalar()
+            .and_then(ScalarValue::as_int)
+            .and_then(Self::from_millis);
+        match v {
+            None => Err("test".to_string()),
+            Some(d) => Ok(d),
+        }
+    }
+
+    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
+    where
+        S: ScalarValue,
+    {
+        <String as ParseScalarValue<S>>::from_str(value)
+    }
 }
 
 /// Type of a `Mixin` delay in milliseconds.
 ///
 /// Negative values are not allowed.
-#[graphql_scalar]
-impl<S> GraphQLScalar for Delay
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(self.as_millis())
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<Self> {
-        v.as_scalar()
-            .and_then(ScalarValue::as_int)
-            .and_then(Self::from_millis)
-    }
-
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
-    }
-}
-
 #[cfg(test)]
 mod volume_spec {
     use super::{Volume, VolumeLevel};
@@ -2685,25 +2614,27 @@ mod volume_spec {
 }
 
 /// Represents number of something with GraphQL support.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar)]
+#[graphql(with = Self)]
 pub struct NumberOfItems(u16);
 
-#[graphql_scalar]
-impl<S> GraphQLScalar for NumberOfItems
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
+impl NumberOfItems {
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
 
-    fn from_input_value(v: &InputValue) -> Option<Self> {
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+    where S: ScalarValue
+    {
         v.as_scalar()
             .and_then(ScalarValue::as_int)
             .and_then(|x| Some(NumberOfItems(x as u16)))
+            .ok_or("Could not parse NumberOfItems(U16) from input".to_string())
     }
 
-    fn from_str(value: ScalarToken<'_>) -> ParseScalarResult<'_, S> {
+    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
+    where S: ScalarValue
+    {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }

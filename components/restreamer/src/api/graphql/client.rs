@@ -6,8 +6,8 @@ use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
+use futures::{stream::BoxStream, StreamExt};
 use ephyr_log::log;
-use futures::stream::BoxStream;
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
@@ -61,20 +61,19 @@ impl MutationsRoot {
     ///
     /// Returns `null` if a `Restream` with the given `id` doesn't exist,
     /// otherwise always returns `true`.
-    #[graphql(arguments(
-        spec(description = "JSON spec obtained with `export` query."),
-        replace(
+    fn import(
+        #[graphql(desc = "JSON spec obtained with `export` query.")]
+        spec: String,
+        #[graphql(
             description = "Indicator whether the `spec` should replace \
                            existing definitions.",
-            default = false,
-        ),
-        restream_id(description = "Optional ID of a concrete `Restream` \
-                                   to apply the `spec` to without touching \
-                                   other `Restream`s."),
-    ))]
-    fn import(
-        spec: String,
+            default = false
+        )]
         replace: bool,
+        #[graphql(
+            description = "Optional ID of a concrete `Restream` to apply \
+                           the `spec` to without touching other `Restream`s."
+        )]
         restream_id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -120,14 +119,18 @@ impl MutationsRoot {
     ///
     /// Returns `null` if a `Restream` with the given `id` doesn't exist,
     /// otherwise always returns `true`.
-    #[graphql(arguments(
-        key(description = "Unique key to set the `Restream` with."),
-        label(description = "Optional label to set the `Restream` with."),
-        src(description = "URL to pull a live stream from.\
+    #[allow(clippy::too_many_arguments)]
+    fn set_restream(
+        #[graphql(description = "Unique key to set the `Restream` with.")]
+        key: RestreamKey,
+        #[graphql(description = "Optional label to set the `Restream` with.")]
+        label: Option<Label>,
+        #[graphql(description = "URL to pull a live stream from.\
                            \n\n\
                            If not specified then `Restream` will await for a \
-                           live stream being pushed to its endpoint."),
-        backup_src(
+                           live stream being pushed to its endpoint.")]
+        src: Option<InputSrcUrl>,
+        #[graphql(
             description = "URL to pull a live stream from for a backup \
                            endpoint.\
                            \n\n\
@@ -135,31 +138,33 @@ impl MutationsRoot {
                            live stream being pushed to its backup endpoint.\
                            \n\n\
                            Has no effect if `withBackup` argument is not \
-                           `true`.",
-        ),
-        with_backup(
+                           `true`."
+        )]
+        backup_src: Option<InputSrcUrl>,
+        #[graphql(
+            description = "Google drive file ID for failover file endpoint."
+        )]
+        file_id: Option<String>,
+        #[graphql(
             description = "Indicator whether the `Restream` should have a \
-                           backup endpoint for a live stream.",
-            default = false,
-        ),
-        with_hls(
+                               backup endpoint for a live stream.",
+            default = false
+        )]
+        with_backup: bool,
+        #[graphql(
             description = "Indicator whether the `Restream` should have an \
                            additional endpoint for serving a live stream via \
                            HLS.",
-            default = false,
-        ),
-        id(description = "ID of the `Restream` to be updated rather than \
-                          creating a new one."),
-    ))]
-    fn set_restream(
-        key: RestreamKey,
-        label: Option<Label>,
-        src: Option<InputSrcUrl>,
-        backup_src: Option<InputSrcUrl>,
-        file_id: Option<String>,
-        with_backup: bool,
+            default = false
+        )]
         with_hls: bool,
+        #[graphql(
+            description = "Override for global maximum for files in \
+                           playlist"
+        )]
         max_files_in_playlist: Option<NumberOfItems>,
+        #[graphql(description = "ID of the `Restream` to be updated \
+                                 rather than creating a new one.")]
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -254,10 +259,11 @@ impl MutationsRoot {
     ///
     /// Returns `null` if `Restream` with the given `id` doesn't exist,
     /// otherwise always returns `true`.
-    #[graphql(arguments(id(
-        description = "ID of the `Restream` to be removed."
-    )))]
-    fn remove_restream(id: RestreamId, context: &Context) -> Option<bool> {
+    fn remove_restream(
+        #[graphql(description = "ID of the `Restream` to be removed.")]
+        id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
         context.state().remove_restream(id)?;
         Some(true)
     }
@@ -270,10 +276,11 @@ impl MutationsRoot {
     ///
     /// Returns `true` if a `Restream` with the given `id` has been enabled,
     /// `false` if it has been enabled already, and `null` if it doesn't exist.
-    #[graphql(arguments(id(
-        description = "ID of the `Restream` to be enabled."
-    )))]
-    fn enable_restream(id: RestreamId, context: &Context) -> Option<bool> {
+    fn enable_restream(
+        #[graphql(description = "ID of the `Restream` to be enabled.")]
+        id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
         context.state().enable_restream(id)
     }
 
@@ -286,10 +293,11 @@ impl MutationsRoot {
     ///
     /// Returns `true` if a `Restream` with the given `id` has been disabled,
     /// `false` if it has been disabled already, and `null` if it doesn't exist.
-    #[graphql(arguments(id(
-        description = "ID of the `Restream` to be disabled."
-    )))]
-    fn disable_restream(id: RestreamId, context: &Context) -> Option<bool> {
+    fn disable_restream(
+        #[graphql(description = "ID of the `Restream` to be disabled.")]
+        id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
         context.state().disable_restream(id)
     }
 
@@ -303,16 +311,15 @@ impl MutationsRoot {
             .restreams
             .lock_mut()
             .iter_mut()
-            .find(|r| r.id == restream_id)?
-            .tap_mut(|restream| {
-                restream.playlist.queue = playlist.iter()
-                    .filter_map(|order_id| {
-                        restream.playlist.queue.iter().find(|f| f.file_id == *order_id)
-                    })
-                    .map(|v| v.clone())
-                    .collect();
-                ()
-            });
+            .find_map(|restream|
+                (restream.id == restream_id).then(||
+                    restream.playlist.queue = playlist.iter()
+                        .filter_map(|order_id| {
+                            restream.playlist.queue.iter().find(|f| f.file_id == *order_id)
+                        })
+                        .map(|v| v.clone())
+                        .collect()
+                ))?;
         return Some(true);
     }
 
@@ -360,9 +367,10 @@ impl MutationsRoot {
         restream_id: RestreamId,
         folder_id: String,
         context: &Context,
-    ) -> Option<bool> {
+    ) -> Result<Option<bool>, graphql::Error> {
         let api_key =
-            context.state().settings.lock_mut().google_api_key.clone()?;
+            context.state().settings.lock_mut().google_api_key.clone()
+                .ok_or(graphql::Error::new("NO_API_KEY").status(StatusCode::UNAUTHORIZED).message("No API key"))?;
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(playlist_files) = result {
@@ -371,14 +379,19 @@ impl MutationsRoot {
                 .restreams
                 .lock_mut()
                 .iter_mut()
-                .find(|r| r.id == restream_id)?
+                .find(|r| r.id == restream_id)
+                .ok_or(
+                    graphql::Error::new("UNKNOWN_RESTREAM")
+                        .message("Could not find restream with provided ID")
+                )?
                 .playlist
                 .apply(playlist_files);
 
-            Some(true)
+            Ok(Some(true))
         } else {
-            log::error!("{}", result.err().unwrap());
-            None
+            let err = result.err().unwrap();
+            log::error!("{}", &err);
+            Err(graphql::Error::new(err))
         }
     }
 
@@ -390,13 +403,12 @@ impl MutationsRoot {
     ///
     /// Returns `true` if an `Input` with the given `id` has been enabled,
     /// `false` if it has been enabled already, and `null` if it doesn't exist.
-    #[graphql(arguments(
-        id(description = "ID of the `Input` to be enabled."),
-        restream_id(description = "ID of the `Restream` to enable the \
-                                   `Input` in."),
-    ))]
     fn enable_input(
+        #[graphql(description = "ID of the `Input` to be enabled.")]
         id: InputId,
+        #[graphql(
+            description = "ID of the `Restream` to enable the `Input` in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -412,13 +424,12 @@ impl MutationsRoot {
     ///
     /// Returns `true` if an `Input` with the given `id` has been disabled,
     /// `false` if it has been disabled already, and `null` if it doesn't exist.
-    #[graphql(arguments(
-        id(description = "ID of the `Input` to be disabled."),
-        restream_id(description = "ID of the `Restream` to disable the \
-                                   `Input` in."),
-    ))]
     fn disable_input(
+        #[graphql(description = "ID of the `Input` to be disabled.")]
         id: InputId,
+        #[graphql(
+            description = "ID of the `Restream` to disable the `Input` in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -432,14 +443,10 @@ impl MutationsRoot {
     /// Returns `true` if the label has been set with the given `label`,
     /// `false` if it was not
     /// `null` if the `Input` or `Endpoint` doesn't exist.
-    #[graphql(arguments(
-        id(description = "ID of the `Input` to be changed."),
-        restream_id(description = "ID of the `Restream` to change."),
-        endpoint_id(),
-        label(),
-    ))]
     fn change_endpoint_label(
+        #[graphql(description = "ID of the `Input` to be changed.")]
         id: InputId,
+        #[graphql(description = "ID of the `Restream` to change.")]
         restream_id: RestreamId,
         endpoint_id: EndpointId,
         label: String,
@@ -480,33 +487,32 @@ impl MutationsRoot {
     /// Returns `null` if a `Restream` with the given `restreamId` doesn't
     /// exist, or an `Output` with the given `id` doesn't exist, otherwise
     /// always returns `true`.
-    #[graphql(arguments(
-        restream_id(
-            description = "ID of the `Restream` to add a new `Output` \
-                           to."
-        ),
-        dst(description = "Destination URL to re-stream a live stream onto.\
+    fn set_output(
+        #[graphql(
+            description = "ID of the `Restream` to add a new `Output` to."
+        )]
+        restream_id: RestreamId,
+        #[graphql(
+            description = "Destination URL to re-stream a live stream onto.\
                            \n\n\
                            At the moment only [RTMP] and [Icecast] are \
                            supported.\
                            \n\n\
                            [Icecast]: https://icecast.org\n\
                            [RTMP]: https://en.wikipedia.org/wiki/\
-                                   Real-Time_Messaging_Protocol"),
-        label(description = "Optional label to add a new `Output` with."),
-        mixins(
-            description = "Optional `MixinSrcUrl`s to mix into this `Output`.",
-            default = Vec::new(),
-        ),
-        id(description = "ID of the `Output` to be updated rather than \
-                          creating a new one."),
-    ))]
-    fn set_output(
-        restream_id: RestreamId,
+                                   Real-Time_Messaging_Protocol"
+        )]
         dst: OutputDstUrl,
+        #[graphql(description = "Optional label to add a new `Output` with.")]
         label: Option<Label>,
         preview_url: Option<Url>,
+        #[graphql(
+            description = "Optional `MixinSrcUrl`s to mix into this `Output`.",
+            default = Vec::new(),
+        )]
         mixins: Vec<MixinSrcUrl>,
+        #[graphql(description = "ID of the `Output` to be updated \
+                                 rather than creating a new one.")]
         id: Option<OutputId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
@@ -527,13 +533,13 @@ impl MutationsRoot {
                         )));
                 }
             }
-            if mixins.iter().filter(|u| u.scheme() == "ts").take(2).count() > 1
+            if mixins.iter().filter(|u| u.scheme() == "ts").take(4).count() > 3
             {
                 return Err(graphql::Error::new(
                     "TOO_MUCH_TEAMSPEAK_MIXIN_URLS",
                 )
                 .status(StatusCode::BAD_REQUEST)
-                .message("Only one TeamSpeak URL is allowed"));
+                .message("Maximum 3 TeamSpeak URLs are allowed"));
             }
         }
 
@@ -598,13 +604,12 @@ impl MutationsRoot {
     ///
     /// Returns `null` if the specified `Restream`/`Output` doesn't exist,
     /// otherwise always returns `true`.
-    #[graphql(arguments(
-        id(description = "ID of the `Output` to be removed."),
-        restream_id(description = "ID of the `Restream` to remove the \
-                                   `Output` from."),
-    ))]
     fn remove_output(
+        #[graphql(description = "ID of the `Output` to be removed.")]
         id: OutputId,
+        #[graphql(
+            description = "ID of the `Restream` to remove the `Output` from."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -620,13 +625,12 @@ impl MutationsRoot {
     /// Returns `true` if an `Output` with the given `id` has been enabled,
     /// `false` if it has been enabled already, and `null` if the specified
     /// `Restream`/`Output` doesn't exist.
-    #[graphql(arguments(
-        id(description = "ID of the `Output` to be enabled."),
-        restream_id(description = "ID of the `Restream` to enable the \
-                                   `Output` in."),
-    ))]
     fn enable_output(
+        #[graphql(description = "ID of the `Output` to be enabled.")]
         id: OutputId,
+        #[graphql(
+            description = "ID of the `Restream` to enable the `Output` in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -642,13 +646,12 @@ impl MutationsRoot {
     /// Returns `true` if an `Output` with the given `id` has been disabled,
     /// `false` if it has been disabled already, and `null` if the specified
     /// `Restream`/`Output` doesn't exist.
-    #[graphql(arguments(
-        id(description = "ID of the `Output` to be disabled."),
-        restream_id(description = "ID of the `Restream` to disable the \
-                                   `Output` in."),
-    ))]
     fn disable_output(
+        #[graphql(description = "ID of the `Output` to be disabled.")]
         id: OutputId,
+        #[graphql(
+            description = "ID of the `Restream` to disable the `Output` in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -665,10 +668,10 @@ impl MutationsRoot {
     /// Returns `true` if at least one `Output` has been enabled, `false` if all
     /// `Output`s have been enabled already, and `null` if the specified
     /// `Restream` doesn't exist.
-    #[graphql(arguments(restream_id(
-        description = "ID of the `Restream` to enable all `Output`s in."
-    )))]
     fn enable_all_outputs(
+        #[graphql(
+            description = "ID of the `Restream` to enable all `Output`s in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -685,10 +688,10 @@ impl MutationsRoot {
     /// Returns `true` if at least one `Output` has been disabled, `false` if
     /// all `Output`s have been disabled already, and `null` if the specified
     /// `Restream` doesn't exist.
-    #[graphql(arguments(restream_id(
-        description = "ID of the `Restream` to disable all `Output`s in."
-    )))]
     fn disable_all_outputs(
+        #[graphql(
+            description = "ID of the `Restream` to disable all `Output`s in."
+        )]
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
@@ -704,7 +707,6 @@ impl MutationsRoot {
     ///
     /// Returns `true` if at least one `Output` has been disabled, `false` if
     /// all `Output`s have been disabled already or there are no outputs
-    #[graphql(arguments())]
     fn disable_all_outputs_of_restreams(context: &Context) -> bool {
         context.state().disable_all_outputs_of_restreams()
     }
@@ -718,7 +720,6 @@ impl MutationsRoot {
     ///
     /// Returns `true` if at least one `Output` has been enabled, `false` if all
     /// `Output`s have been enabled already or there are no outputs
-    #[graphql(arguments())]
     fn enables_all_outputs_of_restreams(context: &Context) -> bool {
         context.state().enable_all_outputs_of_restreams()
     }
@@ -730,20 +731,19 @@ impl MutationsRoot {
     /// Returns `true` if a `Volume` rate has been changed, `false` if it has
     /// the same value already, or `null` if the specified `Output` or `Mixin`
     /// doesn't exist.
-    #[graphql(arguments(
-        restream_id(description = "ID of the `Restream` to tune the \
-                                   `Output` in."),
-        output_id(description = "ID of the tuned `Output`."),
-        mixin_id(description = "Optional ID of the tuned `Mixin`.\
+    fn tune_volume(
+        #[graphql(
+            description = "ID of the `Restream` to tune the `Output` in."
+        )]
+        restream_id: RestreamId,
+        #[graphql(description = "ID of the tuned `Output`.")]
+        output_id: OutputId,
+        #[graphql(description = "Optional ID of the tuned `Mixin`.\
                                 \n\n\
                                 If set, then tunes the `Mixin` rather than \
-                                the `Output`."),
-        volume(description = "Volume rate in percents to be set."),
-    ))]
-    fn tune_volume(
-        restream_id: RestreamId,
-        output_id: OutputId,
+                                the `Output`.")]
         mixin_id: Option<MixinId>,
+        #[graphql(description = "Volume rate in percents to be set.")]
         level: VolumeLevel,
         muted: bool,
         context: &Context,
@@ -764,18 +764,17 @@ impl MutationsRoot {
     /// Returns `true` if a `Delay` has been changed, `false` if it has the same
     /// value already, or `null` if the specified `Output` or `Mixin` doesn't
     /// exist.
-    #[graphql(arguments(
-        restream_id(description = "ID of the `Restream` to tune the the \
-                                   `Mixin` in."),
-        output_id(description = "ID of the `Output` of the tuned `Mixin`."),
-        mixin_id(description = "ID of the tuned `Mixin`."),
-        delay(description = "Number of milliseconds to delay the `Mixin` \
-                             before mix it into its `Output`."),
-    ))]
     fn tune_delay(
+        #[graphql(
+            description = "ID of the `Restream` to tune the the `Mixin` in."
+        )]
         restream_id: RestreamId,
+        #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
         output_id: OutputId,
+        #[graphql(description = "ID of the tuned `Mixin`.")]
         mixin_id: MixinId,
+        #[graphql(description = "Number of milliseconds to delay \
+                                 the `Mixin` before mix it into its `Output`.")]
         delay: Delay,
         context: &Context,
     ) -> Option<bool> {
@@ -790,12 +789,14 @@ impl MutationsRoot {
     ///
     /// Returns `true` if the specified recorded file was removed, otherwise
     /// `false` if nothing changes.
-    #[graphql(arguments(path(
-        description = "Relative path of the recorded file to be removed.\
-                       \n\n\
-                       Use the exact value returned by `Query.dvrFiles`."
-    )))]
-    async fn remove_dvr_file(path: String) -> Result<bool, graphql::Error> {
+    async fn remove_dvr_file(
+        #[graphql(
+            description = "Relative path of the recorded file to be removed.\
+                           \n\n \
+                           Use the exact value returned by `Query.dvrFiles`."
+        )]
+        path: String,
+    ) -> Result<bool, graphql::Error> {
         if path.starts_with('/') || path.contains("../") {
             return Err(graphql::Error::new("INVALID_DVR_FILE_PATH")
                 .status(StatusCode::BAD_REQUEST)
@@ -817,16 +818,12 @@ impl MutationsRoot {
     /// if nothing changes.
     ///
     /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
-    #[graphql(arguments(
-        new(
-            description = "New password to be set. In `null` then unsets the \
-                           current password."
-        ),
-        old(description = "Old password for authorization, if it was set \
-                           previously."),
-    ))]
     fn set_password(
+        #[graphql(description = "New password to be set. \
+                                 In `null` then unsets the current password.")]
         new: Option<String>,
+        #[graphql(description = "Old password for authorization, \
+                                 if it was set previously.")]
         old: Option<String>,
         kind: Option<PasswordKind>,
         context: &Context,
@@ -889,22 +886,20 @@ impl MutationsRoot {
     ///
     /// Returns `false` if title does not pass validation for max allowed
     /// characters length. Otherwise returns `true`
-    #[graphql(arguments(
-        title(description = "Title for the server"),
-        delete_confirmation(
-            description = "Whether do we need to confirm deletion of inputs \
-            and outputs"
-        ),
-        enable_confirmation(
-            description = "Whether do we need to confirm enabling/disabling of \
-            inputs or outputs"
-        )
-    ))]
     fn set_settings(
+        #[graphql(description = "Title for the server")]
         title: Option<String>,
+        #[graphql(description = "Whether do we need to confirm deletion \
+                                 of inputs and outputs")]
         delete_confirmation: Option<bool>,
+        #[graphql(
+            description = "Whether do we need to confirm enabling/disabling \
+                           of inputs or outputs"
+        )]
         enable_confirmation: Option<bool>,
+        #[graphql(description = "Google API key for google drive access")]
         google_api_key: Option<String>,
+        #[graphql(description = "Maximum number of files in playlist")]
         max_files_in_playlist: Option<NumberOfItems>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
@@ -979,10 +974,12 @@ impl QueriesRoot {
     /// ```
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[graphql(arguments(id(
-        description = "ID of the `Output` to return recorded files of."
-    )))]
-    async fn dvr_files(id: OutputId) -> Vec<String> {
+    async fn dvr_files(
+        #[graphql(
+            description = "ID of the `Output` to return recorded files of."
+        )]
+        id: OutputId,
+    ) -> Vec<String> {
         dvr::Storage::global().list_files(id).await
     }
 
@@ -991,13 +988,13 @@ impl QueriesRoot {
     ///
     /// If no `ids` specified, then returns all the `Restream`s happening on
     /// this server at the moment.
-    #[graphql(arguments(ids(
-        description = "IDs of `Restream`s to be exported.\
-                       \n\n\
-                       If empty, then all the `Restream`s will be exported."
-        default = Vec::new(),
-    )))]
     fn export(
+        #[graphql(
+            description = "IDs of `Restream`s to be exported. \n\n \
+                           If empty, then all the `Restream`s \
+                           will be exported.",
+            default = Vec::new(),
+        )]
         ids: Vec<RestreamId>,
         context: &Context,
     ) -> Result<Option<String>, graphql::Error> {
