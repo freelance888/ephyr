@@ -324,7 +324,10 @@ impl MixingRestreamer {
         Ok(())
     }
 
-    /// Creates [FIFO] files for [`Mixin`]s.
+    /// Copy data from [`Mixin.stdin`] to [FIFO].
+    ///
+    /// Each data copying is operated in separate thread.
+    /// [FIFO] should be fed before [FFmpeg].
     ///
     /// # Errors
     ///
@@ -332,19 +335,7 @@ impl MixingRestreamer {
     /// We need it because [FFmpeg] cannot start if no [FIFO] file.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    pub(crate) fn create_mixins_fifo(&self) -> io::Result<()> {
-        for m in &self.mixins {
-            if !m.get_fifo_path().exists() {
-                create_fifo(m.get_fifo_path(), 0o777)?;
-            }
-        }
-        Ok(())
-    }
-
-    /// Copy data from [`Mixin.stdin`] to [FIFO].
-    /// Each data copying is operated in separate thread.
-    ///
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    /// [FFmpeg]: https://ffmpeg.org
     pub(crate) fn start_fed_mixins_fifo(
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
@@ -354,21 +345,20 @@ impl MixingRestreamer {
             fifo_path: PathBuf,
             mut kill_rx: watch::Receiver<RestreamerStatus>,
         ) -> io::Result<()> {
-            let mut src = input.lock().await;
-            log::debug!("Connecting to FIFO: {:?}", &fifo_path);
-            let mut file = File::create(&fifo_path).await?;
-
             // To avoid instant resolve on await for `kill_rx`
             let _ = *kill_rx.borrow_and_update();
 
+            // Initialize copying future to fed it into select
+            let mut src = input.lock().await;
+            let mut file = File::create(&fifo_path).await?;
             let copying = io::copy(&mut *src, &mut file);
             pin!(copying);
 
             // Run copying to FIFO and stops if receive signal from `kill_rx`
             loop {
                 tokio::select! {
-                    result = &mut copying => {
-                        let _ = result.map_err(|e|
+                    r = &mut copying => {
+                        let _ = r.map_err(|e|
                             log::error!("Failed to write into FIFO: {}", e)
                         );
                         // Removing FIFO that prevents FFmpeg from freezes
@@ -386,6 +376,11 @@ impl MixingRestreamer {
         }
 
         for m in &self.mixins {
+            // FIFO should be created before open
+            if !m.get_fifo_path().exists() {
+                let _ = create_fifo(m.get_fifo_path(), 0o777)
+                    .map_err(|e| log::error!("Failed to create FIFO: {}", e));
+            }
             if let Some(i) = m.stdin.as_ref() {
                 drop(tokio::spawn(run_copy_and_stop_on_signal(
                     Arc::clone(i),
