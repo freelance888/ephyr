@@ -18,7 +18,7 @@ use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{
-    io,
+    io, pin,
     process::Command,
     sync::{watch, Mutex},
 };
@@ -395,7 +395,7 @@ impl MixingRestreamer {
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
     ) {
-        async fn run_copy(
+        async fn run_copy_and_stop_on_signal(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
             mut kill_rx: watch::Receiver<RestreamerStatus>,
@@ -407,27 +407,33 @@ impl MixingRestreamer {
             // To avoid instant resolve on await for `kill_rx`
             let _ = *kill_rx.borrow_and_update();
 
-            tokio::select! {
-                _ = kill_rx.changed() =>{
-                    Ok(())
-                }
-                result = io::copy(&mut *src, &mut file) => {
-                    let _ =result.map_err(|e| {
-                    log::error!("Failed to write into FIFO: {}", e);
+            let copying = io::copy(&mut *src, &mut file);
+            pin!(copying);
 
-                    });
-                    Err(io::Error::new(
-                            io::ErrorKind::BrokenPipe,
-                            "Failed to write into FIFO")
-                    )
-
+            // Run copying to FIFO and stops if receive signal from `kill_rx`
+            loop {
+                tokio::select! {
+                    result = &mut copying => {
+                        let _ = result.map_err(|e|
+                            log::error!("Failed to write into FIFO: {}", e)
+                        );
+                        // Removing FIFO that prevents FFmpeg from freezes
+                       let _ = std::fs::remove_file(fifo_path).map_err(|e|
+                            log::error!("Failed to remove FIFO: {}", e)
+                        );
+                        break;
+                    }
+                   _ = kill_rx.changed() => {
+                        break;
+                    }
                 }
             }
+            Ok(())
         }
 
         for m in &self.mixins {
             if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy(
+                drop(tokio::spawn(run_copy_and_stop_on_signal(
                     Arc::clone(i),
                     m.get_fifo_path(),
                     kill_rx.clone(),
