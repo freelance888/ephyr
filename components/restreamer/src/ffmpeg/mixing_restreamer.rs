@@ -27,14 +27,7 @@ use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::{
-        restreamer::RestreamerStatus,
-        util::{
-            kill_ffmpeg_process_with_sigterm_on_received_signal,
-            wraps_ffmpeg_process_output_with_result,
-        },
-        RestreamerKind,
-    },
+    ffmpeg::{restreamer::RestreamerStatus, RestreamerKind},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
@@ -331,45 +324,6 @@ impl MixingRestreamer {
         Ok(())
     }
 
-    /// Runs the given [FFmpeg] [`Command`] by providing input FIFO files and
-    /// feeding [`Mixin`]s into them (if required), and awaits its completion.
-    ///
-    /// The FIFO files are created before starting [`Command`] and separate
-    /// tasks are created for each file to feed the [`Mixin`] data into them.
-    /// After the [`Command`] finishes FIFO files are deleted.
-    ///
-    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
-    /// was stopped properly or if the entire input file was played to the end.
-    ///
-    /// # Errors
-    ///
-    /// It can return an [`io::Error`] if something unexpected happened and the
-    /// [FFmpeg] process was stopped.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    /// [TeamSpeak]: https://teamspeak.com
-    pub(crate) async fn run_ffmpeg_with_mixins(
-        &self,
-        mut cmd: Command,
-        kill_rx: watch::Receiver<RestreamerStatus>,
-    ) -> io::Result<()> {
-        // FIFO should be exists before start of FFmpeg process
-        self.create_mixins_fifo()?;
-        // FFmpeg should start reading FIFO before writing started
-        let process = cmd.spawn()?;
-
-        self.start_fed_mixins_fifo(&kill_rx);
-        let kill_task = kill_ffmpeg_process_with_sigterm_on_received_signal(
-            process.id(),
-            kill_rx,
-        );
-        // Wait for process to finish or get killed
-        let out = process.wait_with_output().await?;
-        kill_task.abort();
-
-        wraps_ffmpeg_process_output_with_result(&out)
-    }
-
     /// Creates [FIFO] files for [`Mixin`]s.
     ///
     /// # Errors
@@ -378,7 +332,7 @@ impl MixingRestreamer {
     /// We need it because [FFmpeg] cannot start if no [FIFO] file.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn create_mixins_fifo(&self) -> io::Result<()> {
+    pub(crate) fn create_mixins_fifo(&self) -> io::Result<()> {
         for m in &self.mixins {
             if !m.get_fifo_path().exists() {
                 create_fifo(m.get_fifo_path(), 0o777)?;
@@ -391,7 +345,7 @@ impl MixingRestreamer {
     /// Each data copying is operated in separate thread.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn start_fed_mixins_fifo(
+    pub(crate) fn start_fed_mixins_fifo(
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
     ) {

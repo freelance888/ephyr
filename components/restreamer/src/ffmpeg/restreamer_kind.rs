@@ -4,6 +4,12 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
+use libc::pid_t;
+use nix::{
+    sys::{signal, signal::Signal},
+    unistd::Pid,
+};
+use std::{convert::TryInto, time::Duration};
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -11,14 +17,9 @@ use uuid::Uuid;
 use crate::{
     dvr,
     ffmpeg::{
-        copy_restreamer::CopyRestreamer,
-        mixing_restreamer::MixingRestreamer,
+        copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
-        util::{
-            kill_ffmpeg_process_with_sigterm_on_received_signal,
-            wraps_ffmpeg_process_output_with_result,
-        },
     },
     state::{self, State, Status},
 };
@@ -208,6 +209,10 @@ impl RestreamerKind {
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
     ///
+    /// In case of [`Self::Mixin`] before starting [`Command`]
+    /// the FIFO files are created. For each pair of [`Mixin`] and FIFO the
+    /// new task are created and transfer data from [`Mixin.stdin`] to FIFO.
+    ///
     /// # Errors
     ///
     /// It can return an [`io::Error`] if something unexpected happened and the
@@ -221,10 +226,12 @@ impl RestreamerKind {
         kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.run_ffmpeg_with_mixins(cmd, kill_rx).await
-        } else {
-            Self::run_standard_ffmpeg(cmd, kill_rx).await
+            // TODO: Make proper cleaning of FIFO files after finish
+            m.create_mixins_fifo()?;
+            m.start_fed_mixins_fifo(&kill_rx);
         }
+
+        Self::_run_ffmpeg(cmd, kill_rx).await
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] without writing to
@@ -239,20 +246,54 @@ impl RestreamerKind {
     /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    async fn run_standard_ffmpeg(
+    async fn _run_ffmpeg(
         mut cmd: Command,
-        kill_rx: watch::Receiver<RestreamerStatus>,
+        mut kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
         let process = cmd.spawn()?;
 
-        let kill_task = kill_ffmpeg_process_with_sigterm_on_received_signal(
-            process.id(),
-            kill_rx,
-        );
+        // To avoid instant resolve on await for `kill_rx`
+        let _ = *kill_rx.borrow_and_update();
+
+        let pid: pid_t = process
+            .id()
+            .expect("Failed to retrieve Process ID")
+            .try_into()
+            .expect("Failed to convert u32 to i32");
+
+        // Task that sends SIGTERM if async stop of ffmpeg was invoked
+        let kill_task = tokio::spawn(async move {
+            let _ = kill_rx.changed().await;
+            // It is necessary to send the signal two times and wait after
+            // sending the first one to correctly close all ffmpeg processes
+            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                .expect("Failed to kill process");
+            tokio::time::sleep(Duration::from_millis(1)).await;
+            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                .expect("Failed to kill process");
+        });
+
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
-        wraps_ffmpeg_process_output_with_result(&out)
+        if out
+            .status
+            .code()
+            .and_then(|v| (v == 255).then_some(()))
+            .is_some()
+            || out.status.success()
+        {
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!(
+                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
+                    out.status,
+                    String::from_utf8_lossy(&out.stderr),
+                ),
+            ))
+        }
     }
 
     /// Renews [`Status`] of this [FFmpeg] re-streaming process in the `actual`
