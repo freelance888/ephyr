@@ -363,10 +363,6 @@ impl MixingRestreamer {
                         let _ = r.map_err(|e|
                             log::error!("Failed to write into FIFO: {}", e)
                         );
-                        // Removing FIFO that prevents FFmpeg from freezes
-                       let _ = std::fs::remove_file(fifo_path).map_err(|e|
-                            log::error!("Failed to remove FIFO: {}", e)
-                        );
                         break;
                     }
                    _ = kill_rx.changed() => {
@@ -378,6 +374,10 @@ impl MixingRestreamer {
                     }
                 }
             }
+            // Removing FIFO that prevents FFmpeg from freezes
+            let _ = std::fs::remove_file(fifo_path)
+                .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
+
             Ok(())
         }
 
