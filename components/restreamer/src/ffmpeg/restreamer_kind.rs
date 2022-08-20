@@ -227,7 +227,6 @@ impl RestreamerKind {
         kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            // TODO: Make proper cleaning of FIFO files after finish
             m.start_fed_mixins_fifo(&kill_rx);
         }
 

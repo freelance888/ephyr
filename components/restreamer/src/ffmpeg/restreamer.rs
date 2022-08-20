@@ -56,7 +56,7 @@ pub struct Restreamer {
 impl Restreamer {
     /// Creates a new [`Restreamer`] spawning the actual [FFmpeg] process in
     /// background. Once this [`Restreamer`] is dropped, its [FFmpeg] process is
-    /// killed with SIGTERM.
+    /// killed with SIGTERM or aborted.
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
