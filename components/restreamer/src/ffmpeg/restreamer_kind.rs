@@ -4,6 +4,7 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
+use ephyr_log::log;
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -230,11 +231,10 @@ impl RestreamerKind {
             m.start_fed_mixins_fifo(&kill_rx);
         }
 
-        Self::_run_ffmpeg(cmd, kill_rx).await
+        Self::run_ffmpeg_(cmd, kill_rx).await
     }
 
-    /// Properly runs the given [FFmpeg] [`Command`] without writing to
-    /// FIFO and awaits its completion.
+    /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
     ///
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
@@ -245,7 +245,7 @@ impl RestreamerKind {
     /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    async fn _run_ffmpeg(
+    async fn run_ffmpeg_(
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
@@ -278,7 +278,10 @@ impl RestreamerKind {
         if out
             .status
             .code()
-            .and_then(|v| (v == 255).then_some(()))
+            .and_then(|v| {
+                log::debug!("FFmpeg re-streamer stopped with exit code: {}", v);
+                (v == 255).then_some(())
+            })
             .is_some()
             || out.status.success()
         {
@@ -287,7 +290,7 @@ impl RestreamerKind {
             Err(io::Error::new(
                 io::ErrorKind::Other,
                 format!(
-                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
+                    "FFmpeg re-streamer stopped with exit code: {}\n{}",
                     out.status,
                     String::from_utf8_lossy(&out.stderr),
                 ),
