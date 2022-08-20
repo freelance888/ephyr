@@ -12,16 +12,20 @@ use std::{
     path::{Path, PathBuf},
     process::Stdio,
     sync::Arc,
+    time::Duration,
 };
 
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{
+    fs::File,
     io, pin,
     process::Command,
     sync::{watch, Mutex},
+    time,
 };
+use tsclientlib::Identity;
 use url::Url;
 use uuid::Uuid;
 
@@ -31,8 +35,6 @@ use crate::{
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
-use tokio::fs::File;
-use tsclientlib::Identity;
 
 /// Kind of a [FFmpeg] re-streaming process that mixes a live stream from one
 /// URL endpoint with some additional live streams and re-streams the result to
@@ -368,6 +370,10 @@ impl MixingRestreamer {
                         break;
                     }
                    _ = kill_rx.changed() => {
+                        // Wait to be sure that FFmpeg received SIGTERM first.
+                        // It's required to end FFmpeg process with appropriate
+                        // exit status code.
+                        time::sleep(Duration::from_millis(2200)).await;
                         break;
                     }
                 }

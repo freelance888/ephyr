@@ -275,13 +275,11 @@ impl RestreamerKind {
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
+        log::debug!("FFmpeg exit code: {:?}", out.status.code());
         if out
             .status
             .code()
-            .and_then(|v| {
-                log::debug!("FFmpeg re-streamer stopped with exit code: {}", v);
-                (v == 255).then_some(())
-            })
+            .and_then(|v| (v == 255).then_some(()))
             .is_some()
             || out.status.success()
         {
