@@ -197,11 +197,13 @@ impl Drop for Restreamer {
     /// Send signal that [`Restreamer`] process is finished
     fn drop(&mut self) {
         // Send notification to kill FFMPEG with SIGTERM
+        log::debug!("Send signal to FFmpeg's");
         let _ = self.kill_tx.send(RestreamerStatus::Finished);
 
         // If FFmpeg wasn't killed kill it with SIGKILL
         let abort_for_future = self.abort_if_hanged.clone();
         drop(tokio::spawn(async move {
+            log::debug!("Abort Restreamer in 5 sec if not killed");
             time::sleep(Duration::from_secs(5)).await;
             abort_for_future.abort();
         }));

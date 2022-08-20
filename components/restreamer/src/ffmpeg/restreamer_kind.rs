@@ -10,7 +10,7 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::{convert::TryInto, time::Duration};
+use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -262,6 +262,7 @@ impl RestreamerKind {
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(async move {
             let _ = kill_rx.changed().await;
+            log::debug!("Signal for FFmpeg received");
             // It is necessary to send the signal two times and wait after
             // sending the first one to correctly close all ffmpeg processes
             signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
@@ -274,20 +275,26 @@ impl RestreamerKind {
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
-        log::debug!("FFmpeg exit code: {:?}", out.status.code());
-        if out
-            .status
-            .code()
-            .and_then(|v| (v == 255).then_some(()))
-            .is_some()
-            || out.status.success()
+        let status_code = out.status.code();
+        let signal_code = out.status.signal();
+        if out.status.success()
+            || status_code.and_then(|v| (v == 255).then_some(())).is_some()
+            || signal_code.and_then(|v| (v == 15).then_some(())).is_some()
         {
+            log::debug!(
+                "FFmpeg re-streamer successfully stopped\n\
+                        \t exit code: {:?}\n\
+                        \t signal code: {:?}",
+                status_code,
+                signal_code
+            );
             Ok(())
         } else {
             Err(io::Error::new(
                 io::ErrorKind::Other,
                 format!(
-                    "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                    "FFmpeg re-streamer unsuccessfully stopped \
+                    with exit code: {}\n{}",
                     out.status,
                     String::from_utf8_lossy(&out.stderr),
                 ),
