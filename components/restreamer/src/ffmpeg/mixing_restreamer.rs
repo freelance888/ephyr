@@ -369,7 +369,7 @@ impl MixingRestreamer {
                         // Wait to be sure that FFmpeg received SIGTERM first.
                         // It's required to end FFmpeg process with appropriate
                         // exit status code.
-                        time::sleep(Duration::from_millis(2200)).await;
+                        time::sleep(Duration::from_millis(1200)).await;
                         break;
                     }
                 }
