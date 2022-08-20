@@ -1,4 +1,4 @@
-describe.only('CHECK STREAMING STATE', () => {
+describe('CHECK STREAMING STATE', () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -8,21 +8,20 @@ describe.only('CHECK STREAMING STATE', () => {
 
   it('1 Assert Start All', () => {
     cy.allOutputStart();
-    cy.wait(5000);
+    cy.wait(6000);
     cy.checkStartedAllStated();
   });
 
   it('2 Assert Stop All', () => {
     cy.allOutputStop();
-    cy.wait(5000);
+    cy.wait(6000);
     cy.checkStoppedAllStated();
   });
 
   it('3 Click Start All', () => {
     cy.allOutputStart();
-    cy.wait(5000);
+    cy.wait(6000);
     cy.checkStartedAllStated();
-    cy.wait(3000);
   });
 
   it('4 Unselect sidechain', () => {
@@ -31,7 +30,7 @@ describe.only('CHECK STREAMING STATE', () => {
       .find("input[title='Sidechain']")
       .first()
       .click();
-    cy.wait(4000);
+    cy.wait(6000);
   });
 
   it('4 Assert Started', () => {
@@ -44,7 +43,7 @@ describe.only('CHECK STREAMING STATE', () => {
       .find("input[title='Sidechain']")
       .first()
       .click();
-    cy.wait(4000);
+    cy.wait(6000);
   });
 
   it('5 Assert Started', () => {
@@ -53,7 +52,7 @@ describe.only('CHECK STREAMING STATE', () => {
 
   it('6 Assert Stopped', () => {
     cy.allOutputStop();
-    cy.wait(5000);
+    cy.wait(6000);
     cy.checkStoppedAllStated();
   });
 });
