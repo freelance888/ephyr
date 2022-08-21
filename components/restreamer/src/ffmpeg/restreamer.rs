@@ -44,10 +44,14 @@ pub struct Restreamer {
 
     /// Handle for stopping [FFmpeg] process of this [`Restreamer`].
     ///
+    /// Kill with SIGTERM in normal scenario
+    ///
     /// [FFmpeg]: https://ffmpeg.org
     kill_tx: watch::Sender<RestreamerStatus>,
 
-    /// Handle for SIGKILL hanged [FFmpeg] process of this [`Restreamer`].
+    /// Handle for hanged [FFmpeg] process of this [`Restreamer`].
+    ///
+    /// Kill with SIGKILL if handed
     ///
     /// [FFmpeg]: https://ffmpeg.org
     abort_if_hanged: future::AbortHandle,

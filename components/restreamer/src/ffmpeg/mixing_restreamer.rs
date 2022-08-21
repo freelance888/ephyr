@@ -369,7 +369,7 @@ impl MixingRestreamer {
                     }
                 }
             }
-            // Removing FIFO that prevents FFmpeg from freezes
+            // Clean up FIFO file
             let _ = std::fs::remove_file(fifo_path)
                 .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
 
