@@ -19,9 +19,9 @@ impl Broadcaster {
         Self { state }
     }
 
-    /// Processes all commands in queue
-    pub async fn handle_commands(&mut self) {
-        // pops all existing command from queue
+    /// Processes all commands from queue
+    pub fn handle_commands(&mut self) {
+        // Pops all existing command from queue
         let commands: Vec<DashboardCommand> =
             self.state.dashboard_commands.lock_mut().drain(..).collect();
 
@@ -30,52 +30,58 @@ impl Broadcaster {
 
         for command in commands {
             for client in clients.iter() {
-                self.handle_one_command(&client.id, &command).await
+                self.handle_one_command(&client.id, &command)
             }
         }
     }
 
-    async fn handle_one_command(
+    fn handle_one_command(
         &mut self,
         client_id: &ClientId,
         command: &DashboardCommand,
     ) {
         match command {
             DashboardCommand::PlayFile(c) => {
-                self.try_play_file(client_id, &c.file_id).await
+                self.try_play_file(client_id, &c.file_id)
             }
         }
     }
 
-    async fn try_play_file(&mut self, client_id: &ClientId, file_id: &String) {
-        let _ = AssertUnwindSafe(
-            async move { Self::request_play_file(client_id, &file_id).await }
-                .unwrap_or_else(|e| {
-                    let error_message = format!(
-                        "Error sending play file command for client {}. {}",
-                        client_id, e
-                    );
+    fn try_play_file(&mut self, client_id: &ClientId, file_id: &String) {
+        let client_id1 = client_id.clone();
+        let file_id1 = file_id.clone();
+        let state1 = self.state.clone();
 
-                    log::error!("{}", error_message);
-                    client_stat::save_client_error(
-                        client_id,
-                        error_message,
-                        &self.state,
-                    );
-                }),
-        )
-        .catch_unwind()
-        .await
-        .map_err(|p| {
-            let error_message = format!(
-                "Panicked while broadcast play file command to client: {}",
-                display_panic(&p)
-            );
-            log::error!("{}", error_message);
-        });
+        drop(tokio::spawn(async move {
+            let _ = AssertUnwindSafe(
+                async { Self::request_play_file(&client_id1, &file_id1) }
+                    .unwrap_or_else(|e| {
+                        let error_message = format!(
+                            "Error sending play file command for client {}. {}",
+                            &client_id1, e
+                        );
+
+                        log::error!("{}", error_message);
+                        client_stat::save_client_error(
+                            &client_id1,
+                            error_message,
+                            &state1,
+                        );
+                    }),
+            )
+            .catch_unwind()
+            .await
+            .map_err(|p| {
+                let error_message = format!(
+                    "Panicked while broadcast play file command to client: {}",
+                    display_panic(&p)
+                );
+                log::error!("{}", error_message);
+            });
+        }));
     }
 
-    async fn request_play_file(
+    fn request_play_file(
         client_id: &ClientId,
         file_id: &String,
     ) -> anyhow::Result<()> {
