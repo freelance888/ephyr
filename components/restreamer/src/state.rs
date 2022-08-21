@@ -186,6 +186,10 @@ pub struct State {
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 
+    /// Commands for broadcasting to all [`Client`]s or specific [`Client`]
+    #[serde(skip)]
+    pub dashboard_commands: Mutable<Vec<DashboardCommand>>,
+
     /// List of the files that are used as sources of video
     #[serde(skip)]
     pub files: Mutable<Vec<LocalFileInfo>>,
@@ -893,6 +897,16 @@ impl State {
                 true
             })
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DashboardCommand {
+    PlayFile(PlayFileCommand),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlayFileCommand {
+    pub file_id: String,
 }
 
 /// Client represents server with running `ephyr` app and can return some
@@ -2614,7 +2628,9 @@ mod volume_spec {
 }
 
 /// Represents number of something with GraphQL support.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar,
+)]
 #[graphql(with = Self)]
 pub struct NumberOfItems(u16);
 
@@ -2624,7 +2640,8 @@ impl NumberOfItems {
     }
 
     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-    where S: ScalarValue
+    where
+        S: ScalarValue,
     {
         v.as_scalar()
             .and_then(ScalarValue::as_int)
@@ -2633,7 +2650,8 @@ impl NumberOfItems {
     }
 
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
-    where S: ScalarValue
+    where
+        S: ScalarValue,
     {
         <String as ParseScalarValue<S>>::from_str(value)
     }

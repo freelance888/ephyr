@@ -6,6 +6,7 @@ use ephyr_log::log;
 use futures::future;
 use tokio::{fs, time};
 
+use crate::broadcaster::Broadcaster;
 use crate::{
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg,
@@ -82,9 +83,19 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let mut client_jobs = client_stat::ClientJobsPool::new(state.clone());
     State::on_change("spawn_client_jobs", &state.clients, move |clients| {
-        client_jobs.apply(&clients);
+        client_jobs.start_statistics_loop(&clients);
         future::ready(())
     });
+
+    let mut broadcaster = Broadcaster::new(state.clone());
+    State::on_change(
+        "execute_dashboard_command",
+        &state.dashboard_commands,
+        move |_| {
+            broadcaster.handle_commands();
+            future::ready(())
+        },
+    );
 
     future::try_join3(
         self::client::run(&cfg, state.clone()),
@@ -227,7 +238,7 @@ pub mod client {
             )
             .service(
                 ResourceFiles::new(FULL_STREAM_ROUTE, full_stream_dir_files)
-                    .resolve_not_found_to(INDEX_FILE)
+                    .resolve_not_found_to(INDEX_FILE),
             )
             .service(ResourceFiles::new("/", root_dir_files))
         })

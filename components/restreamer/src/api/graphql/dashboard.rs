@@ -2,15 +2,20 @@
 //!
 //! [GraphQL]: https://graphql.com
 
-use super::Context;
-use crate::{
-    api::graphql,
-    state::{Client, ClientId},
-};
 use actix_web::http::StatusCode;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt;
 use juniper::{graphql_object, graphql_subscription, RootNode};
+
+use crate::client_stat::ClientJobsPool;
+use crate::state::DashboardCommand::PlayFile;
+use crate::state::{DashboardCommand, PlayFileCommand};
+use crate::{
+    api::graphql,
+    state::{Client, ClientId},
+};
+
+use super::Context;
 
 /// Schema of `Dashboard` app.
 pub type Schema =
@@ -72,6 +77,18 @@ impl MutationsRoot {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }
+    }
+
+    /// Broadcast play file command to every [`Client`]
+    ///
+    fn play_file(
+        #[graphql(description = "file identity")] file_id: String,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::PlayFile(PlayFileCommand { file_id }));
+
+        Ok(Some(true))
     }
 }
 

@@ -27,6 +27,7 @@
 )]
 
 pub mod api;
+pub mod broadcaster;
 pub mod cli;
 pub mod client_stat;
 pub mod dvr;
