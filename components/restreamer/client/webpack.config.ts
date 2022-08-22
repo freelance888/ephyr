@@ -6,6 +6,7 @@ import CopyPlugin from 'copy-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MinifyHtmlWebpackPlugin from 'minify-html-webpack-plugin';
 import SveltePreprocess from 'svelte-preprocess';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
@@ -24,7 +25,7 @@ const config: webpack.Configuration = {
     mainFields: ['svelte', 'browser', 'module', 'main'],
   },
   output: {
-    path: __dirname + '/public',
+    path: path.join(__dirname, '/public'),
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
   },
@@ -51,9 +52,12 @@ const config: webpack.Configuration = {
         use: {
           loader: 'svelte-loader',
           options: {
-            preprocess: SveltePreprocess({}),
+            preprocess: SveltePreprocess(),
             emitCss: true,
             hotReload: true,
+            compilerOptions: {
+              dev: !is_prod,
+            },
           },
         },
       },
@@ -65,10 +69,13 @@ const config: webpack.Configuration = {
       {
         test: /\.css$/,
         use: [
-          // 'mini-css-extract-plugin' doesn't support HMR.
-          // Use 'style-loader' instead for development.
-          is_prod ? MiniCssExtractPlugin.loader : 'style-loader',
-          'css-loader',
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: {
+              url: false,
+            },
+          },
         ],
       },
       {
@@ -82,16 +89,31 @@ const config: webpack.Configuration = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: 'static/index.html' },
-        { from: 'static/mix', to: 'mix' },
-        { from: 'static/assets', to: 'mix' },
-        { from: 'static/dashboard', to: 'dashboard' },
-        { from: 'static/assets', to: 'dashboard' },
         { from: 'static/assets' },
+        { from: 'static/assets', to: 'mix' },
+        { from: 'static/assets', to: 'dashboard' },
       ],
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].css',
+      filename: is_prod ? '[name].[contenthash].css' : '[name].css',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr re-streamer',
+      filename: 'index.html',
+      template: 'static/index.html',
+      chunks: ['main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Mixin',
+      filename: 'mix/index.html',
+      template: 'static/index.html',
+      chunks: ['mix/main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Dashboard',
+      filename: 'dashboard/index.html',
+      template: 'static/index.html',
+      chunks: ['dashboard/main'],
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
