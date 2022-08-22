@@ -10,6 +10,8 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
+const pkgVersion =
+  process.env.CARGO_PKG_VERSION || process.env.npm_package_version || '';
 
 const config: webpack.Configuration = {
   entry: {
@@ -116,7 +118,7 @@ const config: webpack.Configuration = {
       chunks: ['dashboard/main'],
     }),
     new webpack.EnvironmentPlugin({
-      VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
+      VERSION: pkgVersion + is_prod ? '' : '+dev',
       WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
     }),
   ],
