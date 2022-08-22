@@ -1,16 +1,10 @@
-use std::{
-    path::{Path},
-    process::Stdio,
-};
+use std::{path::Path, process::Stdio};
 
 use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
 
-use crate::{
-    display_panic, dvr,
-    state::{self},
-};
+use crate::dvr;
 
 /// Kind of a [FFmpeg] re-streaming process that streams a local file to input
 /// endpoint "as is", without performing any live stream modifications.
@@ -20,6 +14,8 @@ use crate::{
 pub struct FileRestreamer {
     /// ID of an element in a [`State`] this [`FileRestreamer`] process is
     /// related to.
+    ///
+    /// [`State`]: crate::state::State
     pub id: Uuid,
 
     // TODO change this to file_ID
@@ -68,12 +64,12 @@ impl FileRestreamer {
 
         let _ = match self.to_url.scheme() {
             "file"
-            if Path::new(self.to_url.path()).extension()
-                == Some("flv".as_ref()) =>
-                {
-                    cmd.args(&["-c", "copy"])
-                        .arg(dvr::new_file_path(&self.to_url).await?)
-                }
+                if Path::new(self.to_url.path()).extension()
+                    == Some("flv".as_ref()) =>
+            {
+                cmd.args(&["-c", "copy"])
+                    .arg(dvr::new_file_path(&self.to_url).await?)
+            }
 
             "icecast" => cmd
                 .args(&["-c:a", "libmp3lame", "-b:a", "64k"])

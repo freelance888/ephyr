@@ -227,7 +227,7 @@ pub mod client {
             )
             .service(
                 ResourceFiles::new(FULL_STREAM_ROUTE, full_stream_dir_files)
-                    .resolve_not_found_to(INDEX_FILE)
+                    .resolve_not_found_to(INDEX_FILE),
             )
             .service(ResourceFiles::new("/", root_dir_files))
         })

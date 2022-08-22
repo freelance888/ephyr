@@ -84,7 +84,7 @@ impl Settings {
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
             google_api_key: self.google_api_key.clone(),
-            max_files_in_playlist: self.max_files_in_playlist.clone(),
+            max_files_in_playlist: self.max_files_in_playlist,
         }
     }
 
@@ -1112,7 +1112,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
-            max_files_in_playlist: self.max_files_in_playlist.clone(),
+            max_files_in_playlist: self.max_files_in_playlist,
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }
@@ -1466,7 +1466,7 @@ pub struct InputEndpoint {
     pub label: Option<Label>,
 
     /// If the endpoint is of type FILE, then this contains
-    /// the file ID that is in the ['State::files']
+    /// the file ID that is in the [`State::files`]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 
@@ -2091,6 +2091,8 @@ impl OutputDstUrl {
         }
     }
 
+    /// Check if [`Restream`] key belong to restream
+    #[must_use]
     pub fn is_address_of_restream(
         &self,
         key: &RestreamKey,
@@ -2105,7 +2107,7 @@ impl OutputDstUrl {
         let segment = self.0.path_segments()?.next()?;
         let path_match = segment == format!("{}", key);
 
-        return Some(match_host && path_match);
+        Some(match_host && path_match)
     }
 }
 
@@ -2656,26 +2658,41 @@ mod volume_spec {
 }
 
 /// Represents number of something with GraphQL support.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar,
+)]
 #[graphql(with = Self)]
 pub struct NumberOfItems(u16);
 
+impl TryFrom<i32> for NumberOfItems {
+    type Error = std::num::TryFromIntError;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        u16::try_from(value).map(Self)
+    }
+}
+
 impl NumberOfItems {
+    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
 
     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-    where S: ScalarValue
+    where
+        S: ScalarValue,
     {
         v.as_scalar()
             .and_then(ScalarValue::as_int)
-            .and_then(|x| Some(NumberOfItems(x as u16)))
-            .ok_or("Could not parse NumberOfItems(U16) from input".to_string())
+            .map(NumberOfItems::try_from)
+            .and_then(Result::ok)
+            .ok_or_else(|| {
+                "Could not parse NumberOfItems(U16) from input".to_string()
+            })
     }
 
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
-    where S: ScalarValue
+    where
+        S: ScalarValue,
     {
         <String as ParseScalarValue<S>>::from_str(value)
     }
