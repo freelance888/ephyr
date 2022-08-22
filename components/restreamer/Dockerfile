@@ -7,12 +7,12 @@ FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
 ARG image_tag_name
 ENV EPHYR_VERSION_EXTRA=$image_tag_name
-
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies.
 RUN apt-get update \
- && apt-get install -yq curl \
- && DEBIAN_FRONTEND=noninteractive apt-get install -yq pkg-config \
+ && apt-get install -yq apt-utils  \
+ && apt-get install -yq curl pkg-config \
  && apt-get install -yq build-essential automake gcc libtool make libssl-dev
 
 # Install Rust.

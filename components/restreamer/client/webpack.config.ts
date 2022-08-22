@@ -10,10 +10,14 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
+
 const pkgVersion =
   process.env.CARGO_PKG_VERSION || process.env.npm_package_version || '';
-const pkgExtra = process.env.EPHYR_VERSION_EXTRA ||  is_prod ? '' : 'dev';
-
+const pkgExtra = process.env.EPHYR_VERSION_EXTRA || is_prod ? '' : 'dev';
+let VERSION = pkgVersion;
+if (['dev', 'edge'].includes(pkgExtra)) {
+  VERSION = `${VERSION}+${pkgExtra}`;
+}
 
 const config: webpack.Configuration = {
   entry: {
@@ -120,7 +124,7 @@ const config: webpack.Configuration = {
       chunks: ['dashboard/main'],
     }),
     new webpack.EnvironmentPlugin({
-      VERSION: `${pkgVersion}+${pkgExtra}`,
+      VERSION: VERSION,
       WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
     }),
   ],
