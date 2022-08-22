@@ -201,6 +201,7 @@ docker.image:
 		--file=components/restreamer/Dockerfile \
 		-t $(IMAGE_NAME):restreamer$(if \
 			$(call eq,$(docker-image-tag),latest),,-$(docker-image-tag)) \
+		--build-arg image_tag_name=$(IMAGE_NAME) \
 		./
 
 

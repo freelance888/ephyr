@@ -5,6 +5,8 @@
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
 FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
+ARG image_tag_name
+ENV EPHYR_VERSION_EXTRA=$image_tag_name
 
 
 # Install build dependencies.

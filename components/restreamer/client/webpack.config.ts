@@ -12,6 +12,8 @@ const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
 const pkgVersion =
   process.env.CARGO_PKG_VERSION || process.env.npm_package_version || '';
+const pkgExtra = process.env.EPHYR_VERSION_EXTRA ||  is_prod ? '' : 'dev';
+
 
 const config: webpack.Configuration = {
   entry: {
@@ -118,7 +120,7 @@ const config: webpack.Configuration = {
       chunks: ['dashboard/main'],
     }),
     new webpack.EnvironmentPlugin({
-      VERSION: pkgVersion + is_prod ? '' : '+dev',
+      VERSION: `${pkgVersion}+${pkgExtra}`,
       WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
     }),
   ],
