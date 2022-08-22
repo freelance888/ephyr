@@ -5,8 +5,6 @@
 # https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
 FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 
-ARG image_tag_name
-ENV EPHYR_VERSION_EXTRA=$image_tag_name
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies.
@@ -85,7 +83,8 @@ RUN rm -rf ./target/release/.fingerprint/ephyr-*
 COPY common/log/ ./common/log/
 COPY components/restreamer/ ./components/restreamer/
 
-RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
+ARG image_tag_name
+RUN EPHYR_VERSION_EXTRA=$image_tag_name cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 
 
 
