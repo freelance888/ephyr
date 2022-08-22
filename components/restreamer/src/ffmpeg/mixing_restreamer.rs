@@ -6,32 +6,33 @@
 
 use std::{
     borrow::Cow,
+    collections::HashMap,
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     process::Stdio,
     sync::Arc,
 };
-use nix::unistd::Pid;
-use nix::sys::signal::{self, Signal};
-use nix::libc::{kill, pid_t};
 
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
-use tokio::{io, process::Command, sync::Mutex};
+use tokio::{
+    fs::File,
+    io, pin,
+    process::Command,
+    sync::{watch, Mutex},
+};
+use tsclientlib::Identity;
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
     display_panic, dvr,
-    ffmpeg::RestreamerKind,
+    ffmpeg::{restreamer::RestreamerStatus, RestreamerKind},
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
-use std::result::Result::Err;
-use std::time::Duration;
-use tokio::fs::File;
 
 /// Kind of a [FFmpeg] re-streaming process that mixes a live stream from one
 /// URL endpoint with some additional live streams and re-streams the result to
@@ -245,17 +246,46 @@ impl MixingRestreamer {
             ));
         }
 
+        let mut orig_id = self.id.to_string();
+        let mut mixin_ids = self
+            .mixins
+            .iter()
+            .map(|m| m.id.to_string())
+            .collect::<Vec<_>>();
+
+        // Activate `sidechain` filter if required
+        if let Some(sidechain_mixin) = self.mixins.iter().find(|m| m.sidechain)
+        {
+            let sidechain_mixin_id = sidechain_mixin.id.to_string();
+            // Sidechain is mixing Origin Audio and selected Mixin Audio
+            filter_complex.push(format!(
+                "[{sidechain_mixin_id}]asplit=2[sc][mix];\
+                 [{orig_id}][sc]sidechaincompress=\
+                                    level_in=2\
+                                    :threshold=0.01\
+                                    :ratio=10\
+                                    :attack=10\
+                                    :release=1500[compr]"
+            ));
+            // Replace Mixin Id for sidechain with `mix` value
+            if let Some(elem) =
+                mixin_ids.iter_mut().find(|x| **x == sidechain_mixin_id)
+            {
+                "mix".clone_into(elem);
+            };
+
+            // Replace Origin Audio Id with side-chained version
+            orig_id = "compr".to_string();
+        };
+
         filter_complex.push(format!(
             "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
-            orig_id = self.id,
-            mixin_ids = self
-                .mixins
-                .iter()
-                .map(|m| m.id.to_string())
-                .collect::<Vec<_>>()
-                .join("]["),
+            orig_id = orig_id,
+            mixin_ids = mixin_ids.join("]["),
             count = self.mixins.len() + 1,
         ));
+
+        log::debug!("FFmpeg FILTER COMPLEX: {:?}", &filter_complex.join(";"));
         let _ = cmd
             .args(&["-filter_complex", &filter_complex.join(";")])
             .args(&["-map", "[out]"])
@@ -290,69 +320,14 @@ impl MixingRestreamer {
 
             _ => unimplemented!(),
         };
+        log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
 
-    /// Runs the given [FFmpeg] [`Command`] by providing input FIFO files and
-    /// feeding [`Mixin`]s into them (if required), and awaits its completion.
+    /// Copy data from [`Mixin.stdin`] to [FIFO].
     ///
-    /// The FIFO files are created before starting [`Command`] and separate
-    /// tasks are created for each file to feed the [`Mixin`] data into them.
-    /// After the [`Command`] finishes FIFO files are deleted.
-    ///
-    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
-    /// was stopped properly or if the entire input file was played to the end.
-    ///
-    /// # Errors
-    ///
-    /// It can return an [`io::Error`] if something unexpected happened and the
-    /// [FFmpeg] process was stopped.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    /// [TeamSpeak]: https://teamspeak.com
-    pub(crate) async fn run_ffmpeg_with_mixins(&self, mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
-        // FIFO should be exists before start of FFmpeg process
-        self.create_mixins_fifo()?;
-        // FFmpeg should start reading FIFO before writing started
-        let mut process = cmd.spawn()?;
-
-        let exit_signal = kill_rx.borrow_and_update().clone();
-        if exit_signal != 0 {
-            return Ok(());
-        }
-
-        let process_id = process.id().unwrap() as pid_t;
-        // Task that sends SIGTERM if async stop of ffmpeg was invoked
-        let kill_task = tokio::spawn(async move {
-            let _ = kill_rx.changed().await;
-            // It is necessary to send the signal two times and wait after
-            // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-            tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
-        });
-
-        self.start_fed_mixins_fifo();
-
-        let out = process.wait_with_output().await?;
-        kill_task.abort();
-        self.remove_mixins_fifo();
-        // if the process exited because of SIGTERM signal (exit code 255) or exited with 0
-        if out.status.code().and_then(|v| (v == 255).then_some(())).is_some() || out.status.success() {
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!(
-                    "FFmpeg mixing re-streamer stopped with exit code: {}\n{}",
-                    out.status,
-                    String::from_utf8_lossy(&out.stderr),
-                ),
-            ))
-        }
-    }
-
-    /// Creates [FIFO] files for [`Mixin`]s.
+    /// Each data copying is operated in separate thread.
+    /// [FIFO] should be fed before [FFmpeg].
     ///
     /// # Errors
     ///
@@ -360,52 +335,59 @@ impl MixingRestreamer {
     /// We need it because [FFmpeg] cannot start if no [FIFO] file.
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn create_mixins_fifo(&self) -> io::Result<()> {
-        for m in &self.mixins {
-            if !m.get_fifo_path().exists() {
-                create_fifo(m.get_fifo_path(), 0o777)?;
-            }
-        }
-        Ok(())
-    }
-
-    /// Remove [FIFO] files for [`Mixin`]s.
-    ///
-    /// We don't really care if file was really deleted so no error.
-    ///
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn remove_mixins_fifo(&self) {
-        for m in &self.mixins {
-            if m.get_fifo_path().exists() {
-                let _ = std::fs::remove_file(m.get_fifo_path())
-                    .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
-            }
-        }
-    }
-
-    /// Copy data from [`Mixin.stdin`] to [FIFO].
-    /// Each data copying is operated in separate thread.
-    ///
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    fn start_fed_mixins_fifo(&self) {
-        async fn run_copy(
+    /// [FFmpeg]: https://ffmpeg.org
+    pub(crate) fn start_fed_mixins_fifo(
+        &self,
+        kill_rx: &watch::Receiver<RestreamerStatus>,
+    ) {
+        async fn run_copy_and_stop_on_signal(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
+            mut kill_rx: watch::Receiver<RestreamerStatus>,
         ) -> io::Result<()> {
-            let mut src = input.lock().await;
-            log::debug!("Connecting to FIFO: {:?}", &fifo_path);
-            let mut file = File::create(&fifo_path).await?;
+            // To avoid instant resolve on await for `kill_rx`
+            let _ = *kill_rx.borrow_and_update();
 
-            let _ = io::copy(&mut *src, &mut file).await.map_err(|e| {
-                log::error!("Failed to write into FIFO: {}", e);
-            });
-            log::info!("Finishing copy operation on FIFO: {:?}", &fifo_path);
+            // Initialize copying future to fed it into select
+            let mut src = input.lock().await;
+            let mut file = File::create(&fifo_path).await?;
+            let copying = io::copy(&mut *src, &mut file);
+            pin!(copying);
+
+            // Run copying to FIFO and stops if receive signal from `kill_rx`
+            loop {
+                tokio::select! {
+                    r = &mut copying => {
+                        let _ = r.map_err(|e|
+                            log::error!("Failed to write into FIFO: {}", e)
+                        );
+                        break;
+                    }
+                   _ = kill_rx.changed() => {
+                        log::debug!("Signal for FIFO received");
+                        break;
+                    }
+                }
+            }
+            // Clean up FIFO file
+            let _ = std::fs::remove_file(fifo_path)
+                .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
+
             Ok(())
         }
 
         for m in &self.mixins {
+            // FIFO should be created before open
+            if !m.get_fifo_path().exists() {
+                let _ = create_fifo(m.get_fifo_path(), 0o777)
+                    .map_err(|e| log::error!("Failed to create FIFO: {}", e));
+            }
             if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy(Arc::clone(i), m.get_fifo_path())));
+                drop(tokio::spawn(run_copy_and_stop_on_signal(
+                    Arc::clone(i),
+                    m.get_fifo_path(),
+                    kill_rx.clone(),
+                )));
             }
         }
     }
@@ -425,6 +407,11 @@ pub struct Mixin {
 
     /// [`Volume`] rate to mix an audio of this [`Mixin`]'s live stream with.
     pub volume: Volume,
+
+    /// Apply [sidechain] audio filter of this [`Mixin`]'s with live stream.
+    ///
+    /// [sidechain]: https://ffmpeg.org/ffmpeg-filters.html#sidechaincompress
+    pub sidechain: bool,
 
     /// [ZeroMQ] port of a spawned [FFmpeg] process listening to a real-time
     /// filter updates of this [`Mixin`]'s live stream during mixing process.
@@ -469,19 +456,33 @@ impl Mixin {
 
                     let channel = state.src.path().trim_start_matches('/');
 
-                    let name = state
-                        .src
-                        .query_pairs()
-                        .find_map(|(k, v)| {
-                            (k == "name").then(|| v.into_owned())
-                        })
+                    let query: HashMap<String, String> =
+                        state.src.query_pairs().into_owned().collect();
+                    let name = query
+                        .get("name")
+                        .cloned()
                         .or_else(|| label.map(|l| format!("🤖 {}", l)))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
+                    let identity = query.get("identity").map_or_else(
+                        Identity::create,
+                        |v| {
+                            Identity::new_from_str(v).unwrap_or_else(|e| {
+                                log::error!(
+                                    "Failed to create identity `{}`\
+                                    \n\t with error: {}",
+                                    &v,
+                                    &e
+                                );
+                                Identity::create()
+                            })
+                        },
+                    );
 
                     Some(Arc::new(Mutex::new(teamspeak::Input::new(
                         teamspeak::Connection::build(host.into_owned())
                             .channel(channel.to_owned())
-                            .name(name),
+                            .name(name)
+                            .identity(identity),
                     ))))
                 })
             })
@@ -491,6 +492,7 @@ impl Mixin {
             id: state.id,
             url: state.src.clone(),
             delay: state.delay,
+            sidechain: state.sidechain,
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
             stdin,
@@ -505,7 +507,9 @@ impl Mixin {
     #[inline]
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
-        self.url != actual.url || self.delay != actual.delay
+        self.url != actual.url
+            || self.delay != actual.delay
+            || self.sidechain != actual.sidechain
     }
 
     /// [FIFO] path where stream captures from the [TeamSpeak] server.

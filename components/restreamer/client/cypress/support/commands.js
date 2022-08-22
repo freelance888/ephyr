@@ -171,7 +171,8 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "mixins": [
             {
               "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted",
-              "delay": "3s 500ms"
+              "delay": "3s 500ms",
+              "sidechain": true
             },
             {
               "src": "ts://ts.sameteem.com:9987/AFK\\\\/Muted?name=MusicTest",
@@ -220,5 +221,131 @@ Cypress.Commands.add('importJsonConf', (host) => {
 Cypress.Commands.add('runTestStream', (rtmp) => {
   cy.exec(
     `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
+  );
+});
+
+const redColor = 'rgb(240, 80, 110)';
+const greenColor = 'rgb(50, 210, 150)';
+const brownColor = 'rgb(122, 81, 40)';
+
+Cypress.Commands.add('checkStartedAllStated', () => {
+  cy.get(
+    '[data-icon="circle"][title="Serves failover live RTMP stream"]'
+  ).should('have.css', 'color', greenColor);
+
+  cy.get(
+    '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
+  ).should('have.css', 'color', greenColor);
+
+  cy.get(
+    '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
+  ).should('have.css', 'color', greenColor);
+
+  cy.get(
+    '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
+  ).should('have.css', 'color', greenColor);
+
+  cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.get('[data-testid=RU] [data-icon="arrow-right"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.wait(5000);
+  cy.get('[data-testid=Teamspeak] [data-icon="circle"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.get('[data-testid=Twitter] [data-icon="circle"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.get('[data-testid="[Manual Start] FB"] [data-icon="circle"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.get('[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    brownColor
+  );
+
+  cy.get('[data-testid="File Record"] [data-icon="circle"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+});
+
+Cypress.Commands.add('checkStoppedAllStated', () => {
+  cy.get(
+    '[data-icon="dot-circle"][title="Serves failover live RTMP stream"]'
+  ).should('have.css', 'color', redColor);
+
+  cy.get(
+    '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
+  ).should('have.css', 'color', redColor);
+
+  cy.get(
+    '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
+  ).should('have.css', 'color', redColor);
+
+  cy.get(
+    '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
+  ).should('have.css', 'color', greenColor);
+
+  cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
+    'have.css',
+    'color',
+    greenColor
+  );
+
+  cy.get('[data-testid=RU] [data-icon="arrow-right"]').should(
+    'have.css',
+    'color',
+    redColor
+  );
+
+  cy.wait(5000);
+  cy.get('[data-testid=Teamspeak] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    redColor
+  );
+
+  cy.get('[data-testid=Twitter] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    redColor
+  );
+
+  cy.get('[data-testid="[Manual Start] FB"] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    redColor
+  );
+
+  cy.get('[data-testid="[Manual Start] YT"] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    redColor
+  );
+
+  cy.get('[data-testid="File Record"] [data-icon="dot-circle"]').should(
+    'have.css',
+    'color',
+    redColor
   );
 });

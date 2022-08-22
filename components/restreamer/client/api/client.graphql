@@ -213,6 +213,19 @@ mutation TuneDelay(
         delay: $delay
     )
 }
+mutation TuneSidechain(
+    $restream_id: RestreamId!
+    $output_id: OutputId!
+    $mixin_id: MixinId!
+    $sidechain: Boolean!
+) {
+    tuneSidechain(
+        restreamId: $restream_id
+        outputId: $output_id
+        mixinId: $mixin_id
+        sidechain: $sidechain
+    )
+}
 
 mutation RemoveDvrFile($path: String!) {
     removeDvrFile(path: $path)
@@ -317,6 +330,7 @@ fragment restreamOutputs on Restream {
                 muted
             }
             delay
+            sidechain
         }
         enabled
         status

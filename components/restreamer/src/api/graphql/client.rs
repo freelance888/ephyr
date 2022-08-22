@@ -564,6 +564,7 @@ impl MutationsRoot {
                 .map(|src| {
                     let delay;
                     let volume;
+                    let sidechain;
                     if let Some(orig_mixin) =
                         existing_output.as_ref().and_then(|val| {
                             val.mixins.iter().find(|val| val.src == src)
@@ -571,14 +572,21 @@ impl MutationsRoot {
                     {
                         volume = orig_mixin.volume.export();
                         delay = orig_mixin.delay;
+                        sidechain = orig_mixin.sidechain;
                     } else {
                         volume = Volume::ORIGIN.export();
                         delay = (src.scheme() == "ts")
                             .then(|| Delay::from_millis(3500))
                             .flatten()
                             .unwrap_or_default();
+                        sidechain = false;
                     }
-                    spec::v1::Mixin { src, volume, delay }
+                    spec::v1::Mixin {
+                        src,
+                        volume,
+                        delay,
+                        sidechain,
+                    }
                 })
                 .collect(),
             enabled: false,
@@ -781,6 +789,33 @@ impl MutationsRoot {
         context
             .state()
             .tune_delay(restream_id, output_id, mixin_id, delay)
+    }
+
+    /// Tunes a `Sidechain` of the specified `Mixin` before mix it into its
+    /// `Output`.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if a `Sidechain` has been changed, `false` if it has
+    /// the same value already, or `null` if the specified `Output`
+    /// or `Mixin` doesn't exist.
+    fn tune_sidechain(
+        #[graphql(
+            description = "ID of the `Restream` to tune the the `Mixin` in."
+        )]
+        restream_id: RestreamId,
+        #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
+        output_id: OutputId,
+        #[graphql(description = "ID of the tuned `Mixin`.")] mixin_id: MixinId,
+        sidechain: bool,
+        context: &Context,
+    ) -> Option<bool> {
+        context.state().tune_sidechain(
+            restream_id,
+            output_id,
+            mixin_id,
+            sidechain,
+        )
     }
 
     /// Removes the specified recorded file.
