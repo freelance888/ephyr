@@ -54,7 +54,7 @@
         </section>
       {:else}
         <section class="uk-section uk-section-muted single-output">
-          <Output {restream_id} value={output} {mutations} isReadOnly='true' />
+          <Output {restream_id} value={output} {mutations} isReadOnly="true" />
         </section>
         {#if isYoutubeVideo(output.previewUrl)}
           <section class="uk-section uk-section-muted video-player">

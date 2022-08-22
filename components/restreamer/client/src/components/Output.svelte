@@ -65,7 +65,6 @@
       value.mixins.map((m) => m.src)
     );
   }
-
 </script>
 
 <template>
