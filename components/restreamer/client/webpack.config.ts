@@ -6,6 +6,7 @@ import CopyPlugin from 'copy-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import MinifyHtmlWebpackPlugin from 'minify-html-webpack-plugin';
 import SveltePreprocess from 'svelte-preprocess';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
@@ -15,7 +16,7 @@ const config: webpack.Configuration = {
     main: './src/AppRestreamer.ts',
     'mix/main': './src/AppMix.ts',
     'dashboard/main': './src/AppDashboard.ts',
-    'full-stream/main': './src/AppFullStream.ts',
+    'full-stream/main': { import: './src/AppFullStream.ts', dependOn: 'main' },
   },
   resolve: {
     alias: {
@@ -28,6 +29,12 @@ const config: webpack.Configuration = {
     path: path.join(__dirname, '/public'),
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
+  },
+  optimization: {
+    runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+    },
   },
   devServer: {
     static: path.join(__dirname, 'public'),
@@ -89,18 +96,38 @@ const config: webpack.Configuration = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        { from: 'static/index.html' },
-        { from: 'static/mix', to: 'mix' },
-        { from: 'static/assets', to: 'mix' },
-        { from: 'static/dashboard', to: 'dashboard' },
-        { from: 'static/assets', to: 'dashboard' },
-        { from: 'static/full-stream', to: 'full-stream' },
-        { from: 'static/assets', to: 'full-stream' },
         { from: 'static/assets' },
+        { from: 'static/assets', to: 'mix' },
+        { from: 'static/assets', to: 'dashboard' },
+        { from: 'static/assets', to: 'full-stream' },
       ],
     }),
     new MiniCssExtractPlugin({
       filename: is_prod ? '[name].[contenthash].css' : '[name].css',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr re-streamer',
+      filename: 'index.html',
+      template: 'static/index.html',
+      chunks: ['main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Mixin',
+      filename: 'mix/index.html',
+      template: 'static/index.html',
+      chunks: ['mix/main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Dashboard',
+      filename: 'dashboard/index.html',
+      template: 'static/index.html',
+      chunks: ['dashboard/main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Full Stream',
+      filename: 'full-stream/index.html',
+      template: 'static/index.html',
+      chunks: ['full-stream/main'],
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
