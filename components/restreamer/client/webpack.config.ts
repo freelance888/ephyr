@@ -13,11 +13,18 @@ const mode = is_prod ? 'production' : 'development';
 
 const pkgVersion =
   process.env.CARGO_PKG_VERSION || process.env.npm_package_version || '';
-const pkgExtra = process.env.EPHYR_VERSION_EXTRA || is_prod ? '' : 'dev';
+const pkgExtra = process.env.EPHYR_VERSION_EXTRA || '';
 let VERSION = pkgVersion;
 if (['dev', 'edge'].includes(pkgExtra)) {
   VERSION = `${VERSION}+${pkgExtra}`;
+} else if (!is_prod){
+  VERSION = `${VERSION}+dev`;
 }
+
+console.log(`mode ${mode}`);
+console.log(`pkgVersion ${pkgVersion}`);
+console.log(`pkgExtra ${pkgExtra}`);
+console.log(`VERSION ${VERSION}`);
 
 const config: webpack.Configuration = {
   entry: {
