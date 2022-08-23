@@ -67,7 +67,7 @@
 
   const getCorrespondingParentOutputWithMixId = (restream, allReStreams) => {
     const hasCorrespondingEndpoint = (url) => {
-      return !!restream.input.src.inputs.find((e) => url.endsWith(e.key));
+        return !!restream.input.src?.inputs?.find((e) => url.endsWith(e.key));
     };
 
     const outputs = allReStreams
