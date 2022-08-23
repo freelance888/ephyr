@@ -16,7 +16,7 @@ const config: webpack.Configuration = {
     main: './src/AppRestreamer.ts',
     'mix/main': './src/AppMix.ts',
     'dashboard/main': './src/AppDashboard.ts',
-    'full-stream/main': { import: './src/AppFullStream.ts', dependOn: 'main' },
+    'full-stream/main': './src/AppFullStream.ts',
   },
   resolve: {
     alias: {
@@ -104,6 +104,7 @@ const config: webpack.Configuration = {
     }),
     new MiniCssExtractPlugin({
       filename: is_prod ? '[name].[contenthash].css' : '[name].css',
+      ignoreOrder: true,
     }),
     new HtmlWebpackPlugin({
       title: 'Ephyr re-streamer',
