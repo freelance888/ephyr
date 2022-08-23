@@ -107,13 +107,14 @@
 <template>
   <div class="playlist">
     <div class="google-drive-dir uk-flex">
-      <label class="uk-flex-none"> Add files from Google Drive </label>
-      <input
-        bind:value={googleDriveFolderId}
-        class="google-drive-link uk-input uk-form-small uk-flex-1"
-        type="text"
-        placeholder="Add link to Google Drive folder"
-      />
+      <label class="uk-flex-none">
+        <input
+          bind:value={googleDriveFolderId}
+          class="google-drive-link uk-input uk-form-small uk-flex-1"
+          type="text"
+          placeholder="Add link to Google Drive folder"
+        /> Add files from Google Drive
+      </label>
       <button
         disabled={!googleDriveFolderId.trim()}
         class="uk-button uk-button-primary uk-button-small uk-flex-none"
