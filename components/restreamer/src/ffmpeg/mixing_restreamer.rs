@@ -262,9 +262,10 @@ impl MixingRestreamer {
                 "[{sidechain_mixin_id}]asplit=2[sc][mix];\
                  [{orig_id}][sc]sidechaincompress=\
                                     level_in=2\
-                                    :threshold=0.01\
+                                    :threshold=0.05\
                                     :ratio=10\
                                     :attack=10\
+                                    :knee=4\
                                     :release=1500[compr]"
             ));
             // Replace Mixin Id for sidechain with `mix` value
