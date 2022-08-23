@@ -29,6 +29,12 @@ const config: webpack.Configuration = {
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
   },
+  optimization: {
+    runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+    },
+  },
   devServer: {
     static: path.join(__dirname, 'public'),
     compress: true,
