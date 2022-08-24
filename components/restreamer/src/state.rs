@@ -2090,6 +2090,7 @@ impl Mixin {
     Into,
     PartialEq,
     Serialize,
+    Hash,
 )]
 #[graphql(transparent)]
 pub struct MixinId(Uuid);

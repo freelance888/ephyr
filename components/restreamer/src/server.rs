@@ -7,6 +7,7 @@ use futures::future;
 use tokio::{fs, time};
 
 use crate::{
+    audio_redirect::audio_processing_pool,
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg, srs, teamspeak, State,
 };
@@ -60,10 +61,13 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             dvr::Storage::global().cleanup(&restreams).await;
         },
     );
+    let mut redirects =
+        audio_processing_pool::AudioProcessingPool::new(state.clone());
 
     let mut restreamers =
         ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
+        redirects.apply(&restreams);
         restreamers.apply(&restreams);
         future::ready(())
     });

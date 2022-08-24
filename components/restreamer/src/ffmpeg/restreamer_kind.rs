@@ -223,28 +223,6 @@ impl RestreamerKind {
     #[inline]
     pub(crate) async fn run_ffmpeg(
         &self,
-        cmd: Command,
-        kill_rx: watch::Receiver<RestreamerStatus>,
-    ) -> io::Result<()> {
-        if let Self::Mixing(m) = self {
-            m.start_fed_mixins_fifo(&kill_rx);
-        }
-
-        Self::run_ffmpeg_(cmd, kill_rx).await
-    }
-
-    /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
-    ///
-    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
-    /// was stopped properly or if the entire input file was played to the end.
-    ///
-    /// # Errors
-    ///
-    /// It can return an [`io::Error`] if something unexpected happened and the
-    /// [FFmpeg] process was stopped.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    async fn run_ffmpeg_(
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {

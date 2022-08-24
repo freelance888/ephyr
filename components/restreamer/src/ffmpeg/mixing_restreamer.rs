@@ -5,32 +5,22 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use std::{
-    borrow::Cow,
-    collections::HashMap,
-    fmt::Write as _,
-    panic::AssertUnwindSafe,
-    path::{Path, PathBuf},
-    process::Stdio,
-    sync::Arc,
+    borrow::Cow, collections::HashMap, fmt::Write as _,
+    panic::AssertUnwindSafe, path::Path, process::Stdio, sync::Arc,
 };
 
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
-use interprocess::os::unix::fifo_file::create_fifo;
-use tokio::{
-    fs::File,
-    io, pin,
-    process::Command,
-    sync::{watch, Mutex},
-};
+use tokio::{io, process::Command, sync::Mutex};
 use tsclientlib::Identity;
 use url::Url;
 use uuid::Uuid;
 use zeromq::ZmqMessage;
 
 use crate::{
+    audio_redirect::get_fifo_path,
     display_panic, dvr,
-    ffmpeg::{restreamer::RestreamerStatus, RestreamerKind},
+    ffmpeg::RestreamerKind,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
     teamspeak,
 };
@@ -205,7 +195,7 @@ impl MixingRestreamer {
                         .args(&["-channels", "2"])
                         .args(&["-use_wallclock_as_timestamps", "true"])
                         .arg("-i")
-                        .arg(mixin.get_fifo_path())
+                        .arg(get_fifo_path(mixin.id))
                 }
 
                 "http" | "https"
@@ -330,74 +320,6 @@ impl MixingRestreamer {
         log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
-
-    /// Copy data from [`Mixin.stdin`] to [FIFO].
-    ///
-    /// Each data copying is operated in separate thread.
-    /// [FIFO] should be fed before [FFmpeg].
-    ///
-    /// # Errors
-    ///
-    /// If [FIFI] file failed to create.
-    /// We need it because [FFmpeg] cannot start if no [FIFO] file.
-    ///
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    /// [FFmpeg]: https://ffmpeg.org
-    pub(crate) fn start_fed_mixins_fifo(
-        &self,
-        kill_rx: &watch::Receiver<RestreamerStatus>,
-    ) {
-        async fn run_copy_and_stop_on_signal(
-            input: Arc<Mutex<teamspeak::Input>>,
-            fifo_path: PathBuf,
-            mut kill_rx: watch::Receiver<RestreamerStatus>,
-        ) -> io::Result<()> {
-            // To avoid instant resolve on await for `kill_rx`
-            let _ = *kill_rx.borrow_and_update();
-
-            // Initialize copying future to fed it into select
-            let mut src = input.lock().await;
-            let mut file = File::create(&fifo_path).await?;
-            let copying = io::copy(&mut *src, &mut file);
-            pin!(copying);
-
-            // Run copying to FIFO and stops if receive signal from `kill_rx`
-            loop {
-                tokio::select! {
-                    r = &mut copying => {
-                        let _ = r.map_err(|e|
-                            log::error!("Failed to write into FIFO: {}", e)
-                        );
-                        break;
-                    }
-                   _ = kill_rx.changed() => {
-                        log::debug!("Signal for FIFO received");
-                        break;
-                    }
-                }
-            }
-            // Clean up FIFO file
-            let _ = std::fs::remove_file(fifo_path)
-                .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
-
-            Ok(())
-        }
-
-        for m in &self.mixins {
-            // FIFO should be created before open
-            if !m.get_fifo_path().exists() {
-                let _ = create_fifo(m.get_fifo_path(), 0o777)
-                    .map_err(|e| log::error!("Failed to create FIFO: {}", e));
-            }
-            if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy_and_stop_on_signal(
-                    Arc::clone(i),
-                    m.get_fifo_path(),
-                    kill_rx.clone(),
-                )));
-            }
-        }
-    }
 }
 
 /// Additional live stream for mixing in a [`MixingRestreamer`].
@@ -515,19 +437,6 @@ impl Mixin {
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
         self.url != actual.url || self.sidechain != actual.sidechain
-    }
-
-    /// [FIFO] path where stream captures from the [TeamSpeak] server.
-    ///
-    /// Should be fed into [FFmpeg]'s as file input.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    /// [TeamSpeak]: https://teamspeak.com
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    #[inline]
-    #[must_use]
-    pub fn get_fifo_path(&self) -> PathBuf {
-        std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id))
     }
 }
 

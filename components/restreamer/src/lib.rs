@@ -27,6 +27,7 @@
 )]
 
 pub mod api;
+pub mod audio_redirect;
 pub mod cli;
 pub mod client_stat;
 pub mod dvr;
