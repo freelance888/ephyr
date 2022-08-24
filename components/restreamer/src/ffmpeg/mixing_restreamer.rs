@@ -26,6 +26,7 @@ use tokio::{
 use tsclientlib::Identity;
 use url::Url;
 use uuid::Uuid;
+use zeromq::ZmqMessage;
 
 use crate::{
     display_panic, dvr,
@@ -553,6 +554,20 @@ fn new_unique_zmq_port() -> u16 {
 /// [FFmpeg]: https://ffmpeg.org
 /// [ZeroMQ]: https://zeromq.org
 fn tune_volume(track: Uuid, port: u16, volume: Volume) {
+    tune_with_zmq(
+        port,
+        format!("volume@{} volume {}", track, volume.display_as_fraction())
+            .into(),
+    );
+}
+
+/// Send [`ZmqMessage`] to specified localhost and specified port
+///
+/// Used for apply [FFmpeg] filter in real-time via [ZeroMQ] protocol.
+///
+/// [FFmpeg]: https://ffmpeg.org
+/// [ZeroMQ]: https://zeromq.org
+fn tune_with_zmq(port: u16, command: ZmqMessage) {
     use zeromq::{Socket as _, SocketRecv as _, SocketSend as _};
 
     drop(tokio::spawn(
@@ -567,23 +582,13 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
                     e,
                 );
             })?;
-            socket
-                .send(
-                    format!(
-                        "volume@{} volume {}",
-                        track,
-                        volume.display_as_fraction(),
-                    )
-                    .into(),
-                )
-                .await
-                .map_err(|e| {
-                    log::error!(
-                        "Failed to send ZeroMQ message to {} : {}",
-                        addr,
-                        e,
-                    );
-                })?;
+            socket.send(command).await.map_err(|e| {
+                log::error!(
+                    "Failed to send ZeroMQ message to {} : {}",
+                    addr,
+                    e,
+                );
+            })?;
 
             let resp = socket.recv().await.map_err(|e| {
                 log::error!(
