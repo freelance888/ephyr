@@ -1,13 +1,12 @@
 <script lang="js">
-  import orderBy from 'lodash/orderBy';
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
   import {
     GetPlaylistFromGdrive,
-    SetPlaylist,
     PlayFileFromPlaylist,
-    StopPlayingFileFromPlaylist,
+    SetPlaylist,
+    StopPlayingFileFromPlaylist
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
@@ -35,14 +34,6 @@
     : [];
   $: hasPlaylistLoaded = queue && queue.length > 0;
   let googleDriveFolderId = '';
-  let isSortAsc = true;
-
-  async function orderPlaylist(isSortAsc) {
-    const fileIds = orderBy(queue, ['name'], [isSortAsc ? 'asc' : 'desc']).map(
-      (x) => x.id
-    );
-    await updatePlaylist(fileIds);
-  }
 
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
@@ -125,27 +116,6 @@
         >
       </button>
     </div>
-    <div class="uk-margin uk-grid-small uk-child-width-auto uk-grid">
-      <span>Sort:</span>
-      <label on:change={async () => await orderPlaylist(true)}
-        ><input
-          class="uk-radio"
-          checked="checked"
-          type="radio"
-          name="sortRadio"
-          disabled={!hasPlaylistLoaded}
-        />&nbsp;A-Z</label
-      >
-      <label on:change={async () => await orderPlaylist(false)}
-        ><input
-          class="uk-radio"
-          type="radio"
-          name="sortRadio"
-          disabled={!hasPlaylistLoaded}
-        />&nbsp;Z-A</label
-      >
-    </div>
-
     <div
       class="playlist-items"
       use:dndzone={{
