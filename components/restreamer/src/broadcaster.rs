@@ -4,7 +4,19 @@ use crate::state::{ClientId, ClientStatisticsResponse, DashboardCommand};
 use crate::{client_stat, display_panic, State};
 use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
+use graphql_client::{GraphQLQuery, Response};
+use reqwest;
 use std::panic::AssertUnwindSafe;
+
+/// GraphQL mutation for sending play file command
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "client.graphql.schema.json",
+    query_path = "src/api/graphql/queries/play_file.graphql",
+    response_derives = "Debug"
+)]
+#[derive(Debug)]
+pub struct BroadcastPlayFile;
 
 #[derive(Debug, Default)]
 pub struct Broadcaster {

@@ -604,6 +604,33 @@
             "deprecationReason": null
           },
           {
+            "name": "broadcastPlayFile",
+            "description": "Starts playing file if it's found in playlist of any of `[Restream]`",
+            "args": [
+              {
+                "name": "fileId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "playFileFromPlaylist",
             "description": "Starts playing the provided file from playlist",
             "args": [
