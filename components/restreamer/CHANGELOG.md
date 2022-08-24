@@ -14,15 +14,19 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 
 - Web UI:
-  - Allow to use multiple Teamspeak mixers per output ([#199]);
-  - Allow to specify `identity` of Teamspeak mixer ([#6], [#39]);
+  - Allow to set multiple Teamspeak mixers per output ([#199]);
+  - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
   - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]).
 
-- Smooth Delay change in Restreamer Mixin ([#23], [#212]).
+- GraphQL API:
+  - Types:
+    - Add `sidechain` scalar to `Mixin` ([#203]);
+
+- Smooth `Delay` change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
 - 'Gray screen' appears during switching from 'main' to 'backup' endpoint ([#164], [#204]);
-- Fast delay adjust makes blaming icon constantly ([#116]).
+- Fast `Delay` adjust makes blaming icon constantly ([#116]).
 
 ### Miscellaneous
 - Server updates:
