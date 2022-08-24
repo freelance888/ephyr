@@ -3,24 +3,31 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
-use std::path::Path;
-use std::process::ExitStatus;
-use std::os::unix::process::ExitStatusExt;
 use derive_more::From;
-use tokio::{io, process::Command};
+use ephyr_log::log;
+use libc::pid_t;
+use nix::{
+    sys::{signal, signal::Signal},
+    unistd::Pid,
+};
+use std::{
+    convert::TryInto, os::unix::process::ExitStatusExt, path::Path,
+    time::Duration,
+};
+use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
-use nix::unistd::Pid;
-use nix::sys::signal::{self, Signal};
-use nix::libc::{kill, pid_t};
 
-use ephyr_log::log;
-use crate::{dvr, ffmpeg::{
-    copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
-    transcoding_restreamer::TranscodingRestreamer, file_restreamer::FileRestreamer
-}, file_manager, state::{self, State, Status}};
-use std::result::Result::Err;
-use std::time::Duration;
+use crate::{
+    dvr,
+    ffmpeg::{
+        copy_restreamer::CopyRestreamer, file_restreamer::FileRestreamer,
+        mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
+        transcoding_restreamer::TranscodingRestreamer,
+    },
+    file_manager::{FileState, LocalFileInfo},
+    state::{self, State, Status},
+};
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -75,7 +82,7 @@ impl RestreamerKind {
         endpoint: &state::InputEndpoint,
         key: &state::RestreamKey,
         is_playing_playlist: bool,
-        files: &[file_manager::LocalFileInfo],
+        files: &[LocalFileInfo],
         file_root: &Path,
     ) -> Option<Self> {
         if !input.enabled {
@@ -100,9 +107,9 @@ impl RestreamerKind {
                                     && e.is_file()
                                     && e.file_id.is_some()
                                     && files.iter().any(|f| {
-                                    e.file_id.as_ref() == Some(&f.file_id)
-                                        && f.state == file_manager::FileState::Local
-                                })
+                                        e.file_id.as_ref() == Some(&f.file_id)
+                                            && (f.state == FileState::Local)
+                                    })
                                 {
                                     url::Url::from_file_path(
                                         file_root.join(
@@ -111,7 +118,7 @@ impl RestreamerKind {
                                                 .unwrap_or(&"".to_string()),
                                         ),
                                     )
-                                        .ok()
+                                    .ok()
                                 } else {
                                     None
                                 }
@@ -157,27 +164,44 @@ impl RestreamerKind {
     /// created for the given [`state::Playlist`].
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    #[must_use]
     pub fn from_playlist(
         playlist: &state::Playlist,
         restream_key: &state::RestreamKey,
         input_key: &state::InputKey,
         file_root: &Path,
-    ) -> Self {
-        let file_id =
-            &playlist.currently_playing_file.as_ref().unwrap().file_id;
-        let from_url = Url::from_file_path(file_root.join(file_id)).unwrap();
-        Self::File(
-            FileRestreamer {
+    ) -> Option<Self> {
+        let from_url =
+            playlist.currently_playing_file.as_ref().and_then(|file| {
+                if let Ok(from_url) = Url::from_file_path(
+                    file_root.join(&file.file_id),
+                )
+                .map_err(|_| {
+                    log::error!(
+                        "Failed to parse `from_url` from file_id {}",
+                        &file.file_id
+                    );
+                }) {
+                    Some(from_url)
+                } else {
+                    None
+                }
+            });
+
+        let to_url = Url::parse(&format!(
+            "rtmp://127.0.0.1:1935/{}/{}",
+            restream_key, input_key,
+        ))
+        .map_err(|e| log::error!("Failed to parse `to_url`: {}", e));
+
+        match (from_url, to_url) {
+            (Some(from_url), Ok(to_url)) => Some(Self::File(FileRestreamer {
                 id: playlist.id.into(),
                 from_url,
-                to_url: Url::parse(&format!(
-                    "rtmp://127.0.0.1:1935/{}/{}",
-                    restream_key, input_key,
-                ))
-                    .unwrap(),
-            }
-                .into(),
-        )
+                to_url,
+            })),
+            _ => None,
+        }
     }
 
     /// Creates a new [FFmpeg] process re-streaming a live stream from a
@@ -272,6 +296,13 @@ impl RestreamerKind {
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
     ///
+    /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
+    /// was stopped properly or if the entire input file was played to the end.
+    ///
+    /// In case of [`Self::Mixin`] before starting [`Command`]
+    /// the FIFO files are created. For each pair of [`Mixin`] and FIFO the
+    /// new task are created and transfer data from [`Mixin.stdin`] to FIFO.
+    ///
     /// # Errors
     ///
     /// It can return an [`io::Error`] if something unexpected happened and the
@@ -279,16 +310,20 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
-    pub(crate) async fn run_ffmpeg(&self, cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
+    pub(crate) async fn run_ffmpeg(
+        &self,
+        cmd: Command,
+        kill_rx: watch::Receiver<RestreamerStatus>,
+    ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.run_ffmpeg_with_mixins(cmd, kill_rx).await
-        } else {
-            Self::run_standard_ffmpeg(cmd, kill_rx).await
+            m.start_fed_mixins_fifo(&kill_rx);
         }
+
+        Self::run_ffmpeg_(cmd, kill_rx).await
     }
 
-    /// Properly runs the given [FFmpeg] [`Command`] without writing to its
-    /// STDIN and awaits its completion.
+    /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
+    ///
     /// Returns [`Ok`] if the [`kill_rx`] was sent and the ffmpeg process
     /// was stopped properly or if the entire input file was played to the end.
     ///
@@ -298,35 +333,59 @@ impl RestreamerKind {
     /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    async fn run_standard_ffmpeg(mut cmd: Command, mut kill_rx: tokio::sync::watch::Receiver<i32>) -> io::Result<()> {
+    async fn run_ffmpeg_(
+        mut cmd: Command,
+        mut kill_rx: watch::Receiver<RestreamerStatus>,
+    ) -> io::Result<()> {
         let process = cmd.spawn()?;
 
-        let exit_signal = kill_rx.borrow_and_update().clone();
-        if exit_signal != 0 {
-            return Ok(());
-        }
+        // To avoid instant resolve on await for `kill_rx`
+        let _ = *kill_rx.borrow_and_update();
 
-        let process_id = process.id().unwrap() as pid_t;
+        let pid: pid_t = process
+            .id()
+            .expect("Failed to retrieve Process ID")
+            .try_into()
+            .expect("Failed to convert u32 to i32");
+
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(async move {
             let _ = kill_rx.changed().await;
+            log::debug!("Signal for FFmpeg received");
             // It is necessary to send the signal two times and wait after
             // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                .expect("Failed to kill process");
             tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(process_id), Signal::SIGTERM).unwrap();
+            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                .expect("Failed to kill process");
         });
 
         let out = process.wait_with_output().await?;
         kill_task.abort();
-        // if the process exited because of SIGTERM signal (exit code 255) or exited with 0
-        if out.status.code().and_then(|v| (v == 255).then_some(())).is_some() || out.status.success() {
+
+        let status_code = out.status.code();
+        let signal_code = out.status.signal();
+        // if the process exited because of SIGTERM signal (exit code 255)
+        // or exited with 0
+        if out.status.success()
+            || status_code.and_then(|v| (v == 255).then_some(())).is_some()
+            || signal_code.and_then(|v| (v == 15).then_some(())).is_some()
+        {
+            log::debug!(
+                "FFmpeg re-streamer successfully stopped\n\
+                        \t exit code: {:?}\n\
+                        \t signal code: {:?}",
+                status_code,
+                signal_code
+            );
             Ok(())
         } else {
             Err(io::Error::new(
                 io::ErrorKind::Other,
                 format!(
-                    "FFmpeg re-streamer stopped with exit code: {}\n{}",
+                    "FFmpeg re-streamer unsuccessfully stopped \
+                    with exit code: {}\n{}",
                     out.status,
                     String::from_utf8_lossy(&out.stderr),
                 ),

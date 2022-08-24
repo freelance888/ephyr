@@ -84,7 +84,7 @@ impl Settings {
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
             google_api_key: self.google_api_key.clone(),
-            max_files_in_playlist: self.max_files_in_playlist.clone(),
+            max_files_in_playlist: self.max_files_in_playlist,
         }
     }
 
@@ -786,6 +786,38 @@ impl State {
         Some(true)
     }
 
+    /// Tunes a the specified [`Mixin.sidechain`] in this [`State`].
+    ///
+    /// Returns `true` if a [`Mixin.sidechain`] has been changed, or `false`
+    /// if it has the same value already.
+    ///
+    /// Returns [`None`] if no such [`Restream`]/[`Output`]/[`Mixin`] exists.
+    #[must_use]
+    pub fn tune_sidechain(
+        &self,
+        input_id: RestreamId,
+        output_id: OutputId,
+        mixin_id: MixinId,
+        sidechain: bool,
+    ) -> Option<bool> {
+        let mut restreams = self.restreams.lock_mut();
+        let mixin = restreams
+            .iter_mut()
+            .find(|r| r.id == input_id)?
+            .outputs
+            .iter_mut()
+            .find(|o| o.id == output_id)?
+            .mixins
+            .iter_mut()
+            .find(|m| m.id == mixin_id)?;
+
+        if mixin.sidechain == sidechain {
+            return Some(false);
+        }
+
+        mixin.sidechain = sidechain;
+        Some(true)
+    }
     /// Gather statistics about [`Input`]s statuses
     #[must_use]
     pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {
@@ -1094,7 +1126,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
-            max_files_in_playlist: self.max_files_in_playlist.clone(),
+            max_files_in_playlist: self.max_files_in_playlist,
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }
@@ -1448,7 +1480,7 @@ pub struct InputEndpoint {
     pub label: Option<Label>,
 
     /// If the endpoint is of type FILE, then this contains
-    /// the file ID that is in the ['State::files']
+    /// the file ID that is in the [`State::files`]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 
@@ -2073,6 +2105,8 @@ impl OutputDstUrl {
         }
     }
 
+    /// Check if [`Restream`] key belong to restream
+    #[must_use]
     pub fn is_address_of_restream(
         &self,
         key: &RestreamKey,
@@ -2087,7 +2121,7 @@ impl OutputDstUrl {
         let segment = self.0.path_segments()?.next()?;
         let path_match = segment == format!("{}", key);
 
-        return Some(match_host && path_match);
+        Some(match_host && path_match)
     }
 }
 
@@ -2136,6 +2170,13 @@ pub struct Mixin {
     /// stream to be mixed with its `Output`.
     #[serde(skip)]
     pub status: Status,
+
+    /// Side-chain audio of `Output` with this `Mixin`.
+    ///
+    /// Helps to automatically control audio level of `Mixin`
+    /// based on level of `Output`.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub sidechain: bool,
 }
 
 impl Mixin {
@@ -2149,6 +2190,7 @@ impl Mixin {
             volume: Volume::new(&spec.volume),
             delay: spec.delay,
             status: Status::Offline,
+            sidechain: spec.sidechain,
         }
     }
 
@@ -2158,6 +2200,7 @@ impl Mixin {
         self.src = new.src;
         self.volume = Volume::new(&new.volume);
         self.delay = new.delay;
+        self.sidechain = new.sidechain;
     }
 
     /// Exports this [`Mixin`] as a [`spec::v1::Mixin`].
@@ -2168,6 +2211,7 @@ impl Mixin {
             src: self.src.clone(),
             volume: self.volume.export(),
             delay: self.delay,
+            sidechain: self.sidechain,
         }
     }
 }
@@ -2634,7 +2678,15 @@ mod volume_spec {
 #[graphql(with = Self)]
 pub struct NumberOfItems(u16);
 
+impl TryFrom<i32> for NumberOfItems {
+    type Error = std::num::TryFromIntError;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        u16::try_from(value).map(Self)
+    }
+}
+
 impl NumberOfItems {
+    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(i32::from(self.0))
     }
@@ -2645,8 +2697,11 @@ impl NumberOfItems {
     {
         v.as_scalar()
             .and_then(ScalarValue::as_int)
-            .and_then(|x| Some(NumberOfItems(x as u16)))
-            .ok_or("Could not parse NumberOfItems(U16) from input".to_string())
+            .map(NumberOfItems::try_from)
+            .and_then(Result::ok)
+            .ok_or_else(|| {
+                "Could not parse NumberOfItems(U16) from input".to_string()
+            })
     }
 
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>

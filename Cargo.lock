@@ -1725,6 +1725,7 @@ dependencies = [
  "juniper",
  "juniper_actix",
  "juniper_graphql_ws",
+ "libc",
  "nix",
  "once_cell",
  "public-ip",
@@ -2681,9 +2682,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.128"
+version = "0.2.131"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95f2a930906a03d4ee59113b31586c057c94f4d40c9fe90f21597a8b6822bfd8"
+checksum = "04c3b4822ccebfa39c02fc03d1534441b22ead323fa0f48bb7ddd8e6ba076a40"
 
 [[package]]
 name = "linked-hash-map"

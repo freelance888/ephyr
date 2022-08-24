@@ -104,7 +104,7 @@
               class="fas fa-dot-circle"
               title="Serves {isFailover
                 ? 'failover '
-                : ''} live {endpoint.kind} stream"
+                : ''}live {endpoint.kind} stream"
             /></span
           >
         {:else}
@@ -113,7 +113,7 @@
               class="far fa-dot-circle"
               title="Serves {isFailover
                 ? 'failover '
-                : ''} live {endpoint.kind} stream"
+                : ''}live {endpoint.kind} stream"
             /></span
           >
         {/if}

@@ -13,6 +13,7 @@
     RemoveOutput,
     TuneDelay,
     TuneVolume,
+    TuneSidechain,
     Info,
   } from '../../api/client.graphql';
 
@@ -51,6 +52,7 @@
     RemoveOutput,
     TuneVolume,
     TuneDelay,
+    TuneSidechain,
   };
 
   $: deleteConfirmation = $info.data
@@ -159,7 +161,6 @@
       );
     }
   }
-
 </script>
 
 <template>
@@ -203,21 +204,22 @@
       <span class="section-label">{value.label}</span>
     {/if}
 
-    <div class='uk-float-right uk-flex uk-flex-column uk-flex-bottom'>
+    <div class="uk-float-right uk-flex uk-flex-column uk-flex-bottom">
       <a
         href={getFullStreamUrl(value.id, parentOutputId)}
         hidden={isFullView || !parentOutputId}
         target="_blank"
-        class='uk-text-uppercase uk-text-small'
+        class="uk-text-uppercase uk-text-small"
         title="Open Full Stream Page"
       >
         Full view
       </a>
-      <div class='uk-flex'>
-        <span class='item-icon uk-icon uk-margin-right'
-              hidden={!hasVideos || isFullView}
-              uk-icon="icon: youtube; ratio: 1.5"
-        ></span>
+      <div class="uk-flex">
+        <span
+          class="item-icon uk-icon uk-margin-right"
+          hidden={!hasVideos || isFullView}
+          uk-icon="icon: youtube; ratio: 1.5"
+        />
         <span class="total">
           {#each statusesList as status (status)}
             <StatusFilter

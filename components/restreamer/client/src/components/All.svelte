@@ -4,7 +4,10 @@
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
   import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
-  import { DisableAllOutputsOfRestreams, EnableAllOutputsOfRestreams } from '../../api/client.graphql';
+  import {
+    DisableAllOutputsOfRestreams,
+    EnableAllOutputsOfRestreams,
+  } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
   import { getAggregatedStreamsData } from '../utils/allHelpers.util';
@@ -50,28 +53,36 @@
   }
 
   $: parentOutputIdMap = new Map(
-        $state.data.allRestreams
-        .map(x => {
-          const outputId = getCorrespondingParentOutputWithMixId(x, $state.data.allRestreams);
-          return outputId ? { restreamId: x.id, outputId } : undefined;
-        })
-        .filter(Boolean)
-        .map(x => [x.restreamId, x.outputId])
+    $state.data.allRestreams
+      .map((x) => {
+        const outputId = getCorrespondingParentOutputWithMixId(
+          x,
+          $state.data.allRestreams
+        );
+        return outputId ? { restreamId: x.id, outputId } : undefined;
+      })
+      .filter(Boolean)
+      .map((x) => [x.restreamId, x.outputId])
   );
 
   const getCorrespondingParentOutputWithMixId = (restream, allReStreams) => {
     const hasCorrespondingEndpoint = (url) => {
-      return !!restream.input.src.inputs.find(e => url.endsWith(e.key))
-    }
+      return !!restream.input.src?.inputs?.find((e) => url.endsWith(e.key));
+    };
 
     const outputs = allReStreams
-      .filter(x => x.id !== restream.id)
-      .flatMap(x => x.outputs)
-      .filter(x => hasCorrespondingEndpoint(x.dst) && Array.isArray(x.mixins) && x.mixins.length > 0)
-      .map(x => x.id);
+      .filter((x) => x.id !== restream.id)
+      .flatMap((x) => x.outputs)
+      .filter(
+        (x) =>
+          hasCorrespondingEndpoint(x.dst) &&
+          Array.isArray(x.mixins) &&
+          x.mixins.length > 0
+      )
+      .map((x) => x.id);
 
     return outputs ? outputs[0] : undefined;
-  }
+  };
 
   const storeSearchTextInQueryParams = () => {
     if (searchText) {

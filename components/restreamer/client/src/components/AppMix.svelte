@@ -3,10 +3,15 @@
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Output from './Output.svelte';
-  import { Output as Mix, TuneVolume, TuneDelay } from '../../api/mix.graphql';
+  import {
+    Output as Mix,
+    TuneVolume,
+    TuneDelay,
+    TuneSidechain,
+  } from '../../api/mix.graphql';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
 
-  const mutations = { TuneVolume, TuneDelay };
+  const mutations = { TuneVolume, TuneDelay, TuneSidechain };
 
   const gqlClient = createGraphQlClient(
     '/api-mix',
@@ -49,7 +54,7 @@
         </section>
       {:else}
         <section class="uk-section uk-section-muted single-output">
-          <Output {restream_id} value={output} {mutations} isReadOnly='true' />
+          <Output {restream_id} value={output} {mutations} isReadOnly="true" />
         </section>
         {#if isYoutubeVideo(output.previewUrl)}
           <section class="uk-section uk-section-muted video-player">

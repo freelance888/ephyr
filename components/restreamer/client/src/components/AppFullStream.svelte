@@ -1,4 +1,4 @@
-<script lang='js'>
+<script lang="js">
   import { createGraphQlClient, isYoutubeVideo } from '../utils/util';
 
   import {
@@ -10,7 +10,7 @@
     ServerInfo,
     TuneDelay,
     TuneVolume,
-    RestreamWithParent,
+    TranslationRestream,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -40,7 +40,10 @@
   const translationRestreamId = urlParams.get('tran_restream_id');
 
   let isOnline = false;
-  const restreamWithParent = subscribe(RestreamWithParent, { variables: { 'id': translationRestreamId.toString() }, errorPolicy: 'all' });
+  const restream = subscribe(TranslationRestream, {
+    variables: { id: translationRestreamId.toString() },
+    errorPolicy: 'all',
+  });
   const info = subscribe(Info, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
   const files = subscribe(Files, { errorPolicy: 'all' });
@@ -49,24 +52,28 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info && $info.error;
-  $: isLoading = !isOnline || $restreamWithParent.loading;
-  $: canRenderMainComponent = isOnline && $restreamWithParent.data && $info.data;
-  $: stateError = $restreamWithParent && $restreamWithParent.error;
+  $: isLoading = !isOnline || $restream.loading;
+  $: canRenderMainComponent = isOnline && $restream.data && $info.data;
+  $: stateError = $restream && $restream.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
-  $: restream = canRenderMainComponent && $restreamWithParent.data.restream;
+  $: restreamData = canRenderMainComponent && $restream.data.restream;
 
-  $: translationRestream = canRenderMainComponent && restream.restream;
-  $: parentRestream = canRenderMainComponent && restream.parent;
-  $: parentRestreamOutput = parentRestream && parentRestream.restream.outputs.find(o => o.id === parentRestream.outputId);
+  $: translationRestream = canRenderMainComponent && restreamData.restream;
+  $: parentRestream = canRenderMainComponent && restreamData.parent;
+  $: parentRestreamOutput =
+    parentRestream &&
+    parentRestream.restream.outputs.find(
+      (o) => o.id === parentRestream.outputId
+    );
 
-  $: translationYoutubeUrl = canRenderMainComponent
-    && translationRestream
-    && translationRestream.outputs
-          .filter(x => isYoutubeVideo(x.previewUrl))
-          .map(x => x.previewUrl)[0]
+  $: translationYoutubeUrl =
+    canRenderMainComponent &&
+    translationRestream &&
+    translationRestream.outputs
+      .filter((x) => isYoutubeVideo(x.previewUrl))
+      .map((x) => x.previewUrl)[0];
 
   $: playlist = translationRestream && translationRestream.playlist;
-
 </script>
 
 <template>
@@ -76,41 +83,43 @@
     error={stateError || infoError}
     serverInfo={sInfo}
   >
-    <div slot='main'>
+    <div slot="main">
       <RestreamModal public_host={$info.data.info.publicHost} />
-      <OutputModal/>
-      <div class='section-title'>{translationRestream.key}</div>
+      <OutputModal />
+      <div class="section-title">{translationRestream.key}</div>
       <Restream
         public_host={$info.data.info.publicHost}
         value={translationRestream}
         {files}
-        isFullView='true'
+        isFullView="true"
         globalOutputsFilters={[]}
       />
       {#if parentRestreamOutput && parentRestreamOutput.mixins.length > 0}
-        <div class='section-title'>Sound mixer</div>
-        <section class='uk-section uk-section-muted single-output'>
-          <Output restream_id={parentRestream.id}
-                  value={parentRestreamOutput}
-                  isReadOnly='true'
-                  mutations={outputMutations} />
+        <div class="section-title">Sound mixer</div>
+        <section class="uk-section uk-section-muted single-output">
+          <Output
+            restream_id={parentRestream.id}
+            value={parentRestreamOutput}
+            isReadOnly="true"
+            mutations={outputMutations}
+          />
         </section>
       {/if}
-      <div class='section-title'>Playlist</div>
-      <section class='uk-section uk-section-muted uk-padding-remove'>
-        <Playlist restreamId={translationRestreamId} {playlist}/>
+      <div class="section-title">Playlist</div>
+      <section class="uk-section uk-section-muted uk-padding-remove">
+        <Playlist restreamId={translationRestreamId} {playlist} />
       </section>
       {#if translationYoutubeUrl}
-        <div class='section-title'>Watch translation</div>
+        <div class="section-title">Watch translation</div>
         <section class="uk-section uk-section-muted video-player">
           <YoutubePlayer preview_url={translationYoutubeUrl} />
         </section>
       {/if}
     </div>
-
   </Shell>
 </template>
-<style lang='stylus'>
+
+<style lang="stylus">
   .section-title
     margin-top: 8px
     margin-bottom: 4px

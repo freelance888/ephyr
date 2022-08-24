@@ -92,7 +92,7 @@ mutation SetRestream(
         backupSrc: $backup_url
         fileId: $file_id
         withHls: $with_hls
-        id: $id,
+        id: $id
         maxFilesInPlaylist: $max_files_in_playlist
     )
 }
@@ -214,6 +214,19 @@ mutation TuneDelay(
         delay: $delay
     )
 }
+mutation TuneSidechain(
+    $restream_id: RestreamId!
+    $output_id: OutputId!
+    $mixin_id: MixinId!
+    $sidechain: Boolean!
+) {
+    tuneSidechain(
+        restreamId: $restream_id
+        outputId: $output_id
+        mixinId: $mixin_id
+        sidechain: $sidechain
+    )
+}
 
 mutation RemoveDvrFile($path: String!) {
     removeDvrFile(path: $path)
@@ -227,8 +240,8 @@ mutation SetSettings(
     $title: String
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
-    $googleApiKey: String,
-    $maxFilesInPlaylist: NumberOfItems,
+    $googleApiKey: String
+    $maxFilesInPlaylist: NumberOfItems
 ) {
     setSettings(
         title: $title
@@ -318,6 +331,7 @@ fragment restreamOutputs on Restream {
                 muted
             }
             delay
+            sidechain
         }
         enabled
         status

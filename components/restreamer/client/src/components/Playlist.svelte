@@ -1,16 +1,21 @@
-<script lang='js'>
+<script lang="js">
   import orderBy from 'lodash/orderBy';
   import Confirm from './common/Confirm.svelte';
   import { dndzone } from 'svelte-dnd-action';
 
-  import { GetPlaylistFromGdrive, SetPlaylist, PlayFileFromPlaylist, StopPlayingFileFromPlaylist } from '../../api/client.graphql';
+  import {
+    GetPlaylistFromGdrive,
+    SetPlaylist,
+    PlayFileFromPlaylist,
+    StopPlayingFileFromPlaylist,
+  } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
-  const playFileFromPlaylist = mutation(PlayFileFromPlaylist)
-  const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist)
+  const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
+  const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist);
 
   let dragDisabled = true;
   const flipDurationMs = 200;
@@ -19,37 +24,38 @@
   export let playlist;
 
   $: queue = playlist
-    ? playlist.queue.map(x => (
-      {
+    ? playlist.queue.map((x) => ({
         id: x.fileId,
         name: x.name,
         isPlaying: playlist.currentlyPlayingFile
           ? playlist.currentlyPlayingFile.fileId === x.fileId
           : false,
-        wasPlayed: x.wasPlayed
+        wasPlayed: x.wasPlayed,
       }))
     : [];
-  $: hasPlaylistLoaded = queue && queue.length > 0
+  $: hasPlaylistLoaded = queue && queue.length > 0;
   let googleDriveFolderId = '';
   let isSortAsc = true;
 
   async function orderPlaylist(isSortAsc) {
-      const fileIds = orderBy(queue, ['name'], [isSortAsc ? 'asc' : 'desc']).map(x => x.id);
-      await updatePlaylist(fileIds);
+    const fileIds = orderBy(queue, ['name'], [isSortAsc ? 'asc' : 'desc']).map(
+      (x) => x.id
+    );
+    await updatePlaylist(fileIds);
   }
 
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
-      try {
-         await getPlaylistFromDrive({ variables });
-        googleDriveFolderId = '';
-      } catch (e) {
-        showError(e.message);
-      }
+    try {
+      await getPlaylistFromDrive({ variables });
+      googleDriveFolderId = '';
+    } catch (e) {
+      showError(e.message);
+    }
   }
 
   async function deleteFile(id) {
-    const fileIds = queue.filter((value) => value.id !== id).map(x => x.id)
+    const fileIds = queue.filter((value) => value.id !== id).map((x) => x.id);
     await updatePlaylist(fileIds);
   }
 
@@ -64,17 +70,19 @@
 
   async function startStopPlaying(file_id) {
     try {
-      if (playlist.currentlyPlayingFile && playlist.currentlyPlayingFile.fileId === file_id) {
-        const variables = { restreamId }
+      if (
+        playlist.currentlyPlayingFile &&
+        playlist.currentlyPlayingFile.fileId === file_id
+      ) {
+        const variables = { restreamId };
         await stopPlayingFileFromPlaylist({ variables });
       } else {
-        const variables = { restreamId, file_id }
+        const variables = { restreamId, file_id };
         await playFileFromPlaylist({ variables });
       }
     } catch (e) {
       showError(e.message);
     }
-
   }
 
   function handleSort(e) {
@@ -85,7 +93,7 @@
   async function onDrop(e) {
     handleSort(e);
 
-    const fileIds = queue.map(x => x.id);
+    const fileIds = queue.map((x) => x.id);
     await updatePlaylist(fileIds);
   }
 
@@ -94,79 +102,119 @@
     e.preventDefault();
     dragDisabled = false;
   }
-
 </script>
 
 <template>
-  <div class='playlist'>
-    <div class='google-drive-dir uk-flex'>
-      <label class='uk-flex-none'>
-        Add files from Google Drive
+  <div class="playlist">
+    <div class="google-drive-dir uk-flex">
+      <label class="uk-flex-none">
+        <input
+          bind:value={googleDriveFolderId}
+          class="google-drive-link uk-input uk-form-small uk-flex-1"
+          type="text"
+          placeholder="Add link to Google Drive folder"
+        /> Add files from Google Drive
       </label>
-      <input
-        bind:value={googleDriveFolderId}
-        class='google-drive-link uk-input uk-form-small uk-flex-1'
-        type='text'
-        placeholder='Add link to Google Drive folder'
-      />
       <button
         disabled={!googleDriveFolderId.trim()}
-        class='uk-button uk-button-primary uk-button-small uk-flex-none'
+        class="uk-button uk-button-primary uk-button-small uk-flex-none"
         on:click={() => loadPlaylist(googleDriveFolderId)}
       >
-        <i class='uk-icon' uk-icon='cloud-download' />&nbsp;<span>Load files</span>
+        <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
+          >Load files</span
+        >
       </button>
     </div>
     <div class="uk-margin uk-grid-small uk-child-width-auto uk-grid">
       <span>Sort:</span>
-      <label on:change={async () => await orderPlaylist(true)}><input class="uk-radio" checked='checked' type="radio" name="sortRadio" disabled={!hasPlaylistLoaded} >&nbsp;A-Z</label>
-      <label on:change={async () => await orderPlaylist(false)}><input class="uk-radio" type="radio" name="sortRadio" disabled={!hasPlaylistLoaded}>&nbsp;Z-A</label>
+      <label on:change={async () => await orderPlaylist(true)}
+        ><input
+          class="uk-radio"
+          checked="checked"
+          type="radio"
+          name="sortRadio"
+          disabled={!hasPlaylistLoaded}
+        />&nbsp;A-Z</label
+      >
+      <label on:change={async () => await orderPlaylist(false)}
+        ><input
+          class="uk-radio"
+          type="radio"
+          name="sortRadio"
+          disabled={!hasPlaylistLoaded}
+        />&nbsp;Z-A</label
+      >
     </div>
 
-    <div class='playlist-items' use:dndzone={{items: queue, dropTargetClasses: ["drop-target"], dragDisabled, flipDurationMs, }} on:consider={handleSort} on:finalize={onDrop} >
-        {#each queue as item(item.id)}
-          <div class='item uk-card uk-card-default'>
-            <span class='item-drag-zone uk-icon' uk-icon='table' tabindex=0 on:mousedown={startDrag} ></span>
+    <div
+      class="playlist-items"
+      use:dndzone={{
+        items: queue,
+        dropTargetClasses: ['drop-target'],
+        dragDisabled,
+        flipDurationMs,
+      }}
+      on:consider={handleSort}
+      on:finalize={onDrop}
+    >
+      {#each queue as item (item.id)}
+        <div class="item uk-card uk-card-default">
+          <span
+            class="item-drag-zone uk-icon"
+            uk-icon="table"
+            tabindex="0"
+            on:mousedown={startDrag}
+          />
 
-            <Confirm let:confirm>
-              <span slot="title">{item.isPlaying ? 'Stop' : 'Start'} playing file</span>
-              <span slot="description"></span>
-              <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
-                <div class="item-name uk-height-1-1 uk-width-1-1"
-                     class:is-playing={item.isPlaying}
-                     class:is-finished={item.wasPlayed}
-                     on:click={() => confirm(() => startStopPlaying(item.id))}
-                >
-                  <span class='item-icon uk-icon'
-                        uk-icon={item.isPlaying ? "icon: future; ratio: 2.5" : "icon: youtube; ratio: 2.5"}
-                  ></span>
-                  <span>{item.name}</span>
-                </div>
-            </Confirm>
-            <Confirm let:confirm>
-              <span slot="title">Delete file from playlist</span>
-              <span slot="description">This action will stop playing and delete file from playlist</span>
-              <span slot="confirm">Delete</span>
-                <button
-                  type='button'
-                  class='uk-close'
-                  uk-close
-                  on:click={() => confirm(() => deleteFile(item.id))}
-                />
-            </Confirm>
-          </div>
-        {:else}
-          <div class='uk-section uk-section-xsmall uk-text-center uk-padding-remove'>
-            <div class='no-files uk-text-middle uk-card uk-card-default'>
-              No files in playlist
+          <Confirm let:confirm>
+            <span slot="title"
+              >{item.isPlaying ? 'Stop' : 'Start'} playing file</span
+            >
+            <span slot="description" />
+            <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
+            <div
+              class="item-name uk-height-1-1 uk-width-1-1"
+              class:is-playing={item.isPlaying}
+              class:is-finished={item.wasPlayed}
+              on:click={() => confirm(() => startStopPlaying(item.id))}
+            >
+              <span
+                class="item-icon uk-icon"
+                uk-icon={item.isPlaying
+                  ? 'icon: future; ratio: 2.5'
+                  : 'icon: youtube; ratio: 2.5'}
+              />
+              <span>{item.name}</span>
             </div>
+          </Confirm>
+          <Confirm let:confirm>
+            <span slot="title">Delete file from playlist</span>
+            <span slot="description"
+              >This action will stop playing and delete file from playlist</span
+            >
+            <span slot="confirm">Delete</span>
+            <button
+              type="button"
+              class="uk-close"
+              uk-close
+              on:click={() => confirm(() => deleteFile(item.id))}
+            />
+          </Confirm>
+        </div>
+      {:else}
+        <div
+          class="uk-section uk-section-xsmall uk-text-center uk-padding-remove"
+        >
+          <div class="no-files uk-text-middle uk-card uk-card-default">
+            No files in playlist
           </div>
-        {/each}
+        </div>
+      {/each}
     </div>
   </div>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
   :global(.drop-target) {
     outline: none !important;
   }

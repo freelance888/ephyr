@@ -6,7 +6,7 @@ use std::{
 };
 
 use ephyr_log::log;
-use juniper::{GraphQLEnum, GraphQLObject, ScalarValue, GraphQLScalar};
+use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
@@ -426,7 +426,8 @@ impl From<api_response::ExtendedFileInfoResponse> for PlaylistFileInfo {
     }
 }
 
-/// State in which the file represented by [`FileInfo`] can be in
+/// State in which the file represented by [`LocalFileInfo`]
+/// and [`PlaylistFileInfo`] can be in
 #[derive(
     Debug, Clone, Copy, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq,
 )]
@@ -454,32 +455,48 @@ pub struct DownloadState {
 }
 
 /// Custom GraphQL type for u64
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar,
+)]
 #[graphql(with = Self)]
 struct NetworkByteSize(u64);
 
-impl NetworkByteSize
-{
+impl NetworkByteSize {
+    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
         juniper::Value::scalar(self.0.to_owned().to_string())
     }
 
-    fn from_input<S>(
-        value: &juniper::InputValue<S>,
-    ) -> Result<Self, String> where S: ScalarValue {
-        value.as_scalar_value().map(|s| {
-            NetworkByteSize(s.as_string().unwrap().parse::<u64>().unwrap())
-        }).ok_or("Cannot parse NetworkByteSize(u64) from provided input".to_string())
+    fn from_input<S>(value: &juniper::InputValue<S>) -> Result<Self, String>
+    where
+        S: ScalarValue,
+    {
+        value
+            .as_scalar_value()
+            .map(|s| {
+                NetworkByteSize(s.as_string().unwrap().parse::<u64>().unwrap())
+            })
+            .ok_or_else(|| {
+                "Cannot parse NetworkByteSize(u64) from provided input"
+                    .to_string()
+            })
     }
 
     fn parse_token<S>(
         value: juniper::ScalarToken<'_>,
-    ) -> juniper::ParseScalarResult<S> where S: ScalarValue{
+    ) -> juniper::ParseScalarResult<S>
+    where
+        S: ScalarValue,
+    {
         <NetworkByteSize as juniper::ParseScalarValue<S>>::from_str(value)
     }
 }
 
 /// Retrieves list of video files from a Google drive folder
+///
+/// # Errors
+///
+/// Any error from Google Drive API
 pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
@@ -493,7 +510,7 @@ pub async fn get_video_list_from_gdrive_folder(
     Ok(response
         .files
         .drain(..)
-        .map(|f| PlaylistFileInfo::from(f))
+        .map(PlaylistFileInfo::from)
         .collect())
 }
 
@@ -516,6 +533,7 @@ pub(crate) mod api_response {
     }
 
     impl ExtendedFileInfoResponse {
+        #[allow(dead_code)]
         pub(crate) fn is_dir(&self) -> bool {
             self.mime_type == "application/vnd.google-apps.folder"
         }
@@ -556,7 +574,7 @@ pub(crate) mod api_response {
         }
 
         pub(crate) fn filter_only_video_files(&mut self) {
-            self.files.retain(|file_info| file_info.is_video());
+            self.files.retain(ExtendedFileInfoResponse::is_video);
         }
     }
 }

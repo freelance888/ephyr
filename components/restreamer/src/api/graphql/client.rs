@@ -12,7 +12,6 @@ use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
 use rand::Rng as _;
-use tap::Tap;
 
 use crate::{
     api::graphql,
@@ -159,7 +158,7 @@ impl MutationsRoot {
         )]
         with_hls: bool,
         #[graphql(description = "Override for global maximum for files in \
-                           playlist")]
+                                 playlist")]
         max_files_in_playlist: Option<NumberOfItems>,
         #[graphql(description = "ID of the `Restream` to be updated \
                                  rather than creating a new one.")]
@@ -316,12 +315,12 @@ impl MutationsRoot {
                                 .iter()
                                 .find(|f| f.file_id == *order_id)
                         })
-                        .map(|v| v.clone())
-                        .collect()
+                        .cloned()
+                        .collect();
                 })
             },
         )?;
-        return Some(true);
+        Some(true)
     }
 
     fn stop_playing_file_from_playlist(
@@ -340,33 +339,6 @@ impl MutationsRoot {
             })?;
 
         Some(true)
-    }
-
-    /// Starts playing file if it's found in playlist of any of `[Restream]`
-    ///
-    /// Returns `true` if file was found in any of existing `[Restream]`s
-    /// and `false` if no such file were found  
-    fn broadcast_play_file(
-        #[graphql(description = "file identity")] file_id: String,
-        context: &Context,
-    ) -> Option<bool> {
-        let mut has_found = false;
-        context
-            .state()
-            .restreams
-            .lock_mut()
-            .iter_mut()
-            .for_each(|r| {
-                let found =
-                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
-
-                if found.is_some() {
-                    r.playlist.currently_playing_file = found.cloned();
-                    has_found = true;
-                }
-            });
-
-        Some(has_found)
     }
 
     /// Starts playing the provided file from playlist
@@ -394,6 +366,33 @@ impl MutationsRoot {
         Some(true)
     }
 
+    /// Starts playing file if it's found in playlist of any `[Restream]`
+    ///
+    /// Returns `true` if file was found in any of existing `[Restream]`s
+    /// and `false` if no such file were found  
+    fn broadcast_play_file(
+        #[graphql(description = "file identity")] file_id: String,
+        context: &Context,
+    ) -> Option<bool> {
+        let mut has_found = false;
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .for_each(|r| {
+                let found =
+                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
+
+                if found.is_some() {
+                    r.playlist.currently_playing_file = found.cloned();
+                    has_found = true;
+                }
+            });
+
+        Some(has_found)
+    }
+
     /// Sends request to Google API and appends found files to the provided
     /// restream's playlist.
     async fn get_playlist_from_gdrive(
@@ -407,11 +406,11 @@ impl MutationsRoot {
             .lock_mut()
             .google_api_key
             .clone()
-            .ok_or(
+            .ok_or_else(|| {
                 graphql::Error::new("NO_API_KEY")
                     .status(StatusCode::UNAUTHORIZED)
-                    .message("No API key"),
-            )?;
+                    .message("No API key")
+            })?;
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(playlist_files) = result {
@@ -421,10 +420,10 @@ impl MutationsRoot {
                 .lock_mut()
                 .iter_mut()
                 .find(|r| r.id == restream_id)
-                .ok_or(
+                .ok_or_else(|| {
                     graphql::Error::new("UNKNOWN_RESTREAM")
-                        .message("Could not find restream with provided ID"),
-                )?
+                        .message("Could not find restream with provided ID")
+                })?
                 .playlist
                 .apply(playlist_files);
 
@@ -605,6 +604,7 @@ impl MutationsRoot {
                 .map(|src| {
                     let delay;
                     let volume;
+                    let sidechain;
                     if let Some(orig_mixin) =
                         existing_output.as_ref().and_then(|val| {
                             val.mixins.iter().find(|val| val.src == src)
@@ -612,14 +612,21 @@ impl MutationsRoot {
                     {
                         volume = orig_mixin.volume.export();
                         delay = orig_mixin.delay;
+                        sidechain = orig_mixin.sidechain;
                     } else {
                         volume = Volume::ORIGIN.export();
                         delay = (src.scheme() == "ts")
                             .then(|| Delay::from_millis(3500))
                             .flatten()
                             .unwrap_or_default();
+                        sidechain = false;
                     }
-                    spec::v1::Mixin { src, volume, delay }
+                    spec::v1::Mixin {
+                        src,
+                        volume,
+                        delay,
+                        sidechain,
+                    }
                 })
                 .collect(),
             enabled: false,
@@ -821,6 +828,33 @@ impl MutationsRoot {
         context
             .state()
             .tune_delay(restream_id, output_id, mixin_id, delay)
+    }
+
+    /// Tunes a `Sidechain` of the specified `Mixin` before mix it into its
+    /// `Output`.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if a `Sidechain` has been changed, `false` if it has
+    /// the same value already, or `null` if the specified `Output`
+    /// or `Mixin` doesn't exist.
+    fn tune_sidechain(
+        #[graphql(
+            description = "ID of the `Restream` to tune the the `Mixin` in."
+        )]
+        restream_id: RestreamId,
+        #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
+        output_id: OutputId,
+        #[graphql(description = "ID of the tuned `Mixin`.")] mixin_id: MixinId,
+        sidechain: bool,
+        context: &Context,
+    ) -> Option<bool> {
+        context.state().tune_sidechain(
+            restream_id,
+            output_id,
+            mixin_id,
+            sidechain,
+        )
     }
 
     /// Removes the specified recorded file.
@@ -1139,35 +1173,28 @@ impl SubscriptionsRoot {
             .signal_cloned()
             .filter_map(move |vec| {
                 let restream = vec.iter().find(|r| r.id == id);
-                let parent = restream
-                    .map(|restream| {
-                        vec.iter().find_map(|r| {
-                            r.outputs
-                                .iter()
-                                .find(|o| {
-                                    o.dst
-                                        .is_address_of_restream(
-                                            &restream.key,
-                                            &public_host,
-                                        )
-                                        .unwrap_or(false)
-                                })
-                                .map(|out| RestreamParent {
-                                    restream: r.clone(),
-                                    output_id: out.id,
-                                })
-                        })
+                let parent = restream.and_then(|restream| {
+                    vec.iter().find_map(|r| {
+                        r.outputs
+                            .iter()
+                            .find(|o| {
+                                o.dst
+                                    .is_address_of_restream(
+                                        &restream.key,
+                                        &public_host,
+                                    )
+                                    .unwrap_or(false)
+                            })
+                            .map(|out| RestreamParent {
+                                restream: r.clone(),
+                                output_id: out.id,
+                            })
                     })
-                    .flatten();
-
-                if restream.is_some() {
-                    Some(RestreamWithParent {
-                        restream: restream.unwrap().clone(),
-                        parent,
-                    })
-                } else {
-                    None
-                }
+                });
+                restream.map(|r| RestreamWithParent {
+                    restream: r.clone(),
+                    parent,
+                })
             })
             .dedupe_cloned()
             .to_stream()

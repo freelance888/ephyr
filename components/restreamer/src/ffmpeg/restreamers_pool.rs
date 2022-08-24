@@ -68,7 +68,7 @@ impl RestreamersPool {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
         for r in restreams {
-            self.apply_playlist(&r, &mut new_pool);
+            self.apply_playlist(r, &mut new_pool);
             self.apply_input(
                 &r.key,
                 &r.input,
@@ -78,7 +78,7 @@ impl RestreamersPool {
 
             if !r.input.enabled
                 || (!r.input.is_ready_to_serve()
-                && r.playlist.currently_playing_file.is_none())
+                    && r.playlist.currently_playing_file.is_none())
             {
                 continue;
             }
@@ -108,14 +108,15 @@ impl RestreamersPool {
     ) {
         if restream.playlist.currently_playing_file.is_some() {
             let id = restream.playlist.id.into();
-            let new_kind = RestreamerKind::from_playlist(
+            // TODO: should it be made in another way?
+            if let Some(new_kind) = RestreamerKind::from_playlist(
                 &restream.playlist,
                 &restream.key,
                 &restream.input.key,
                 &self.files_root,
-            );
-
-            self.apply_new_kind(id, new_kind, new_pool);
+            ) {
+                self.apply_new_kind(id, new_kind, new_pool);
+            };
         }
     }
 
@@ -178,7 +179,8 @@ impl RestreamersPool {
             self.pool.get(&id).map(|p| &p.kind),
         )?;
 
-        self.apply_new_kind(id, new_kind, new_pool)
+        self.apply_new_kind(id, new_kind, new_pool);
+        Some(())
     }
 
     /// Tries to remove process with provided `id` from current process pool
@@ -190,7 +192,7 @@ impl RestreamersPool {
         id: Uuid,
         new_kind: RestreamerKind,
         new_pool: &mut HashMap<Uuid, Restreamer>,
-    ) -> Option<()> {
+    ) {
         let process = self
             .pool
             .remove(&id)
@@ -205,6 +207,5 @@ impl RestreamersPool {
 
         let old_process = new_pool.insert(id, process);
         drop(old_process);
-        Some(())
     }
 }
