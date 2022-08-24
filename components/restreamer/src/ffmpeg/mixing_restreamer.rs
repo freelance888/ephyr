@@ -5,14 +5,13 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use std::{
-    borrow::Cow, collections::HashMap, fmt::Write as _,
-    panic::AssertUnwindSafe, path::Path, process::Stdio, sync::Arc,
+    borrow::Cow, fmt::Write as _, panic::AssertUnwindSafe, path::Path,
+    process::Stdio,
 };
 
 use ephyr_log::{log, Drain as _};
 use futures::{FutureExt as _, TryFutureExt as _};
-use tokio::{io, process::Command, sync::Mutex};
-use tsclientlib::Identity;
+use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
 use zeromq::ZmqMessage;
@@ -22,7 +21,6 @@ use crate::{
     display_panic, dvr,
     ffmpeg::RestreamerKind,
     state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
-    teamspeak,
 };
 
 /// Kind of a [FFmpeg] re-streaming process that mixes a live stream from one
@@ -68,7 +66,7 @@ impl MixingRestreamer {
         from_url: &Url,
         mut prev: Option<&RestreamerKind>,
     ) -> Self {
-        let prev = prev.as_mut().and_then(|kind| {
+        let _prev = prev.as_mut().and_then(|kind| {
             if let RestreamerKind::Mixing(r) = kind {
                 Some(&r.mixins)
             } else {

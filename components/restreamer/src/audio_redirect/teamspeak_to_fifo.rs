@@ -15,6 +15,7 @@ use tsclientlib::Identity;
 pub struct TeamspeakToFIFO {
     abort_handle: future::AbortHandle,
     pub(crate) mixin_id: MixinId,
+    pub(crate) input: TeamspeakInput,
 }
 
 impl Drop for TeamspeakToFIFO {
@@ -27,51 +28,18 @@ impl Drop for TeamspeakToFIFO {
     }
 }
 impl TeamspeakToFIFO {
-    pub(crate) fn run(
-        state: &state::Mixin,
-        label: Option<&state::Label>,
-    ) -> Option<Self> {
-        let mixin_id = state.id;
-        let mut host = Cow::Borrowed(state.src.host_str()?);
-        if let Some(port) = state.src.port() {
-            host = Cow::Owned(format!("{}:{}", host, port));
-        }
-        let channel = state.src.path().trim_start_matches('/');
-
-        let query: HashMap<String, String> =
-            state.src.query_pairs().into_owned().collect();
-
-        let name = query
-            .get("name")
-            .cloned()
-            .or_else(|| label.map(|l| format!("🤖 {}", l)))
-            .unwrap_or_else(|| format!("🤖 {}", state.id));
-
-        let identity =
-            query.get("identity").map_or_else(Identity::create, |v| {
-                Identity::new_from_str(v).unwrap_or_else(|e| {
-                    log::error!(
-                        "Failed to create identity `{}`\
-                                    \n\t with error: {}",
-                        &v,
-                        &e
-                    );
-                    Identity::create()
-                })
-            });
-        let input = Arc::new(Mutex::new(teamspeak::Input::new(
-            teamspeak::Connection::build(host.into_owned())
-                .channel(channel.to_owned())
-                .name(name)
-                .identity(identity),
-        )));
-        let (spawner, abort_handle) =
-            future::abortable(TeamspeakToFIFO::copy_data(input, mixin_id));
+    pub(crate) fn run(input: TeamspeakInput) -> Self {
+        let mixin_id = input.mixin_id;
+        let cloned_ts_input = Arc::clone(&input.input);
+        let (spawner, abort_handle) = future::abortable(
+            TeamspeakToFIFO::copy_data(cloned_ts_input, mixin_id),
+        );
         drop(tokio::spawn(spawner));
-        Some(Self {
+        Self {
             abort_handle,
             mixin_id,
-        })
+            input,
+        }
     }
 
     /// Copy data from [`TeamspeakToFIFO::input`] to [FIFO].
@@ -106,5 +74,66 @@ impl TeamspeakToFIFO {
             .map_err(|e| log::error!("Failed to write into FIFO: {}", e));
 
         Ok(())
+    }
+}
+
+/// Additional live stream for mixing in a [`TeamspeakToFIFO`].
+#[derive(Clone, Debug)]
+pub struct TeamspeakInput {
+    /// ID of a [`state::Mixin`] represented by this [`TeamspeakInput`].
+    pub mixin_id: MixinId,
+
+    /// Actual live audio stream captured from the [TeamSpeak] server.
+    ///
+    /// [TeamSpeak]: https://teamspeak.com
+    input: Arc<Mutex<teamspeak::Input>>,
+}
+
+impl TeamspeakInput {
+    /// Creates a new [`TeamspeakInput`]
+    pub fn new(
+        state: &state::Mixin,
+        label: Option<&state::Label>,
+        prev: Option<&TeamspeakInput>,
+    ) -> Option<Self> {
+        let mixin_id = state.id;
+        let input = if let Some(p) = prev {
+            Arc::clone(&p.input)
+        } else {
+            let mut host = Cow::Borrowed(state.src.host_str()?);
+            if let Some(port) = state.src.port() {
+                host = Cow::Owned(format!("{}:{}", host, port));
+            }
+            let channel = state.src.path().trim_start_matches('/');
+
+            let query: HashMap<String, String> =
+                state.src.query_pairs().into_owned().collect();
+
+            let name = query
+                .get("name")
+                .cloned()
+                .or_else(|| label.map(|l| format!("🤖 {}", l)))
+                .unwrap_or_else(|| format!("🤖 {}", state.id));
+
+            let identity =
+                query.get("identity").map_or_else(Identity::create, |v| {
+                    Identity::new_from_str(v).unwrap_or_else(|e| {
+                        log::error!(
+                            "Failed to create identity `{}`\
+                                    \n\t with error: {}",
+                            &v,
+                            &e
+                        );
+                        Identity::create()
+                    })
+                });
+            Arc::new(Mutex::new(teamspeak::Input::new(
+                teamspeak::Connection::build(host.into_owned())
+                    .channel(channel.to_owned())
+                    .name(name)
+                    .identity(identity),
+            )))
+        };
+        Some(Self { mixin_id, input })
     }
 }

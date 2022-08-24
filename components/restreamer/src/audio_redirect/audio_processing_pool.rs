@@ -1,5 +1,6 @@
 //! Pool of [`TeamspeakToFIFO`] processes performing redirection
 //! of a audio traffic.
+use crate::audio_redirect::teamspeak_to_fifo::TeamspeakInput;
 use crate::{
     audio_redirect::teamspeak_to_fifo::TeamspeakToFIFO, state, state::MixinId,
     State,
@@ -66,14 +67,21 @@ impl AudioProcessingPool {
             return None;
         }
 
-        let processes = output
+        let inputs = output
             .mixins
             .iter()
             .filter_map(|m| (m.src.scheme() == "ts").then(|| m))
-            .map(|m| TeamspeakToFIFO::run(m, output.label.as_ref()))
+            .map(|m| {
+                TeamspeakInput::new(
+                    m,
+                    output.label.as_ref(),
+                    self.pool.get(&m.id).map(|m| &m.input),
+                )
+            })
             .filter_map(|ts| ts.is_some().then_some(ts.unwrap()));
 
-        for process in processes {
+        for input in inputs {
+            let process = TeamspeakToFIFO::run(input);
             let old_process = new_pool.insert(process.mixin_id, process);
             drop(old_process);
         }
