@@ -605,11 +605,11 @@
           },
           {
             "name": "broadcastPlayFile",
-            "description": "Starts playing file if it's found in playlist of any of `[Restream]`",
+            "description": "Starts playing file if it's found in playlist of any of `[Restream]`\n\nReturns `true` if file was found in any of existing `[Restream]`s\nand `false` if no such file were found",
             "args": [
               {
                 "name": "fileId",
-                "description": null,
+                "description": "file identity",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,

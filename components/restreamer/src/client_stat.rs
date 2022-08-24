@@ -159,7 +159,11 @@ impl ClientJob {
                             );
 
                             log::error!("{}", error_message);
-                            save_client_error(client_id, error_message, state1);
+                            save_client_error(
+                                client_id,
+                                vec![error_message],
+                                state1,
+                            );
                         }),
                     )
                     .catch_unwind()
@@ -219,7 +223,7 @@ impl ClientJob {
 
 pub fn save_client_error(
     client_id: &ClientId,
-    error_message: String,
+    error_messages: Vec<String>,
     state: &State,
 ) {
     let mut clients = state.clients.lock_mut();
@@ -230,7 +234,7 @@ pub fn save_client_error(
 
     client.statistics = Some(ClientStatisticsResponse {
         data: None,
-        errors: Some(vec![error_message]),
+        errors: Some(error_messages),
     });
 }
 
