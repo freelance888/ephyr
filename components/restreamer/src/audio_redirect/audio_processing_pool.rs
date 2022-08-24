@@ -1,8 +1,12 @@
 //! Pool of [`TeamspeakToFIFO`] processes performing redirection
 //! of a audio traffic.
-use crate::audio_redirect::teamspeak_to_fifo::TeamspeakInput;
 use crate::{
-    audio_redirect::teamspeak_to_fifo::TeamspeakToFIFO, state, state::MixinId,
+    audio_redirect::{
+        teamspeak,
+        teamspeak_to_fifo::{TeamspeakInput, TeamspeakToFIFO},
+    },
+    state,
+    state::MixinId,
     State,
 };
 use std::collections::HashMap;
@@ -86,5 +90,12 @@ impl AudioProcessingPool {
             drop(old_process);
         }
         Some(())
+    }
+}
+
+impl Drop for AudioProcessingPool {
+    fn drop(&mut self) {
+        // Wait for all the async `Drop`s to proceed well.
+        drop(tokio::spawn(teamspeak::finish_all_disconnects()));
     }
 }

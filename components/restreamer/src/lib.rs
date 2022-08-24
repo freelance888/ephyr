@@ -37,7 +37,6 @@ pub mod server;
 pub mod spec;
 pub mod srs;
 pub mod state;
-pub mod teamspeak;
 pub mod types;
 
 use std::{any::Any, mem};

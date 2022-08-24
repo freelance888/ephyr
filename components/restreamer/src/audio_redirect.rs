@@ -4,6 +4,7 @@ use crate::state::MixinId;
 use std::path::PathBuf;
 
 pub mod audio_processing_pool;
+pub mod teamspeak;
 pub mod teamspeak_to_fifo;
 
 /// [FIFO] path where stream captures from the [TeamSpeak] server.

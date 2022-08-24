@@ -2,7 +2,11 @@
 //!
 //! [TeamSpeak]: https://teamspeak.com
 //! [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-use crate::{audio_redirect::get_fifo_path, state, state::MixinId, teamspeak};
+use crate::{
+    audio_redirect::{get_fifo_path, teamspeak},
+    state,
+    state::MixinId,
+};
 use ephyr_log::log;
 use futures::future;
 use interprocess::os::unix::fifo_file::create_fifo;

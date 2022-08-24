@@ -9,7 +9,7 @@ use tokio::{fs, time};
 use crate::{
     audio_redirect::audio_processing_pool,
     cli::{Failure, Opts},
-    client_stat, dvr, ffmpeg, srs, teamspeak, State,
+    client_stat, dvr, ffmpeg, srs, State,
 };
 
 /// Initializes and runs all application's HTTP servers.
@@ -86,8 +86,6 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     .await?;
 
     drop(srs);
-    // Wait for all the async `Drop`s to proceed well.
-    teamspeak::finish_all_disconnects().await;
 
     Ok(())
 }
