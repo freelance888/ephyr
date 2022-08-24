@@ -95,6 +95,7 @@ pub struct TeamspeakInput {
 
 impl TeamspeakInput {
     /// Creates a new [`TeamspeakInput`]
+    #[must_use]
     pub fn new(
         state: &state::Mixin,
         label: Option<&state::Label>,

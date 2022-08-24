@@ -7,13 +7,12 @@ use crate::{
     },
     state,
     state::MixinId,
-    State,
 };
 use std::collections::HashMap;
 
 /// Pool of [`TeamspeakToFIFO`] processes performing redirection
 /// of a audio traffic.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AudioProcessingPool {
     /// Pool of currently running [`TeamspeakToFIFO`] re-streaming
     /// processes identified by an ID of the correspondent element
@@ -21,25 +20,9 @@ pub struct AudioProcessingPool {
     ///
     /// [`State`]: crate::state::State
     pool: HashMap<MixinId, TeamspeakToFIFO>,
-
-    /// Application [`State`] dictating which [`TeamspeakToFIFO`]
-    /// processes should run.
-    ///
-    /// [`State`]: crate::state::State
-    state: State,
 }
 
 impl AudioProcessingPool {
-    /// Creates a new [`AudioProcessingPool`] out of the given parameters.
-    #[inline]
-    #[must_use]
-    pub fn new(state: State) -> Self {
-        Self {
-            pool: HashMap::new(),
-            state,
-        }
-    }
-
     /// Adjusts this [`AudioProcessingPool`] to run audio processing
     /// according to the given renewed [`state::Restream`]s.
     pub fn apply(&mut self, restreams: &[state::Restream]) {

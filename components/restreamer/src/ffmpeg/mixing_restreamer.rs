@@ -79,7 +79,7 @@ impl MixingRestreamer {
             to_url: RestreamerKind::dst_url(output),
             orig_volume: output.volume.clone(),
             orig_zmq_port: new_unique_zmq_port(),
-            mixins: output.mixins.iter().map(|m| Mixin::new(m)).collect(),
+            mixins: output.mixins.iter().map(Mixin::new).collect(),
         }
     }
 

@@ -61,8 +61,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             dvr::Storage::global().cleanup(&restreams).await;
         },
     );
-    let mut redirects =
-        audio_processing_pool::AudioProcessingPool::new(state.clone());
+    let mut redirects = audio_processing_pool::AudioProcessingPool::default();
 
     let mut restreamers =
         ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
