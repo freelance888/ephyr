@@ -81,17 +81,7 @@ impl MixingRestreamer {
             to_url: RestreamerKind::dst_url(output),
             orig_volume: output.volume.clone(),
             orig_zmq_port: new_unique_zmq_port(),
-            mixins: output
-                .mixins
-                .iter()
-                .map(|m| {
-                    Mixin::new(
-                        m,
-                        output.label.as_ref(),
-                        prev.and_then(|p| p.iter().find(|p| p.id == m.id)),
-                    )
-                })
-                .collect(),
+            mixins: output.mixins.iter().map(|m| Mixin::new(m)).collect(),
         }
     }
 
@@ -348,14 +338,6 @@ pub struct Mixin {
     /// [FFmpeg]: https://ffmpeg.org
     /// [ZeroMQ]: https://zeromq.org
     pub zmq_port: u16,
-
-    /// Actual live audio stream captured from the [TeamSpeak] server.
-    ///
-    /// If present, it should be fed into [FIFO].
-    ///
-    /// [TeamSpeak]: https://teamspeak.com
-    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
-    stdin: Option<Arc<Mutex<teamspeak::Input>>>,
 }
 
 impl Mixin {
@@ -370,53 +352,7 @@ impl Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
     #[must_use]
-    pub fn new(
-        state: &state::Mixin,
-        label: Option<&state::Label>,
-        prev: Option<&Mixin>,
-    ) -> Self {
-        let stdin = (state.src.scheme() == "ts")
-            .then(|| {
-                prev.and_then(|m| m.stdin.clone()).or_else(|| {
-                    let mut host = Cow::Borrowed(state.src.host_str()?);
-                    if let Some(port) = state.src.port() {
-                        host = Cow::Owned(format!("{}:{}", host, port));
-                    }
-
-                    let channel = state.src.path().trim_start_matches('/');
-
-                    let query: HashMap<String, String> =
-                        state.src.query_pairs().into_owned().collect();
-                    let name = query
-                        .get("name")
-                        .cloned()
-                        .or_else(|| label.map(|l| format!("🤖 {}", l)))
-                        .unwrap_or_else(|| format!("🤖 {}", state.id));
-                    let identity = query.get("identity").map_or_else(
-                        Identity::create,
-                        |v| {
-                            Identity::new_from_str(v).unwrap_or_else(|e| {
-                                log::error!(
-                                    "Failed to create identity `{}`\
-                                    \n\t with error: {}",
-                                    &v,
-                                    &e
-                                );
-                                Identity::create()
-                            })
-                        },
-                    );
-
-                    Some(Arc::new(Mutex::new(teamspeak::Input::new(
-                        teamspeak::Connection::build(host.into_owned())
-                            .channel(channel.to_owned())
-                            .name(name)
-                            .identity(identity),
-                    ))))
-                })
-            })
-            .flatten();
-
+    pub fn new(state: &state::Mixin) -> Self {
         Self {
             id: state.id,
             url: state.src.clone(),
@@ -424,7 +360,6 @@ impl Mixin {
             sidechain: state.sidechain,
             volume: state.volume.clone(),
             zmq_port: new_unique_zmq_port(),
-            stdin,
         }
     }
 
