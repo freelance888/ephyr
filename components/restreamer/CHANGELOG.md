@@ -18,10 +18,11 @@ All user visible changes to this project will be documented in this file. This p
   - Allow to specify `identity` of Teamspeak mixer ([#6], [#39]);
   - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]).
 
+- Smooth Delay change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
-- 'Gray screen' appears during switching from 'main' to 'backup' endpoint ([#164], [#204]).
-
+- 'Gray screen' appears during switching from 'main' to 'backup' endpoint ([#164], [#204]);
+- Fast delay adjust makes blaming icon constantly ([#116]).
 
 ### Miscellaneous
 - Server updates:
@@ -37,7 +38,9 @@ All user visible changes to this project will be documented in this file. This p
 
 
 [#6]: /../../issues/6
+[#23]: /../../issues/23
 [#70]: /../../issues/70
+[#116]: /../../issues/116
 [#164]: /../../issues/164
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
@@ -49,6 +52,7 @@ All user visible changes to this project will be documented in this file. This p
 [#202]: /../../pull/202
 [#203]: /../../pull/203
 [#204]: /../../pull/204
+[#212]: /../../pull/212
 
 
 

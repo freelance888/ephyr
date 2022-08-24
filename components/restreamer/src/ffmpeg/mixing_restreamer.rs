@@ -133,6 +133,10 @@ impl MixingRestreamer {
                 curr.volume = actual.volume.clone();
                 tune_volume(curr.id.into(), curr.zmq_port, curr.volume.clone());
             }
+            if curr.delay != actual.delay {
+                curr.delay = actual.delay;
+                tune_delay(curr.id.into(), curr.zmq_port, curr.delay);
+            }
         }
 
         false
@@ -218,8 +222,9 @@ impl MixingRestreamer {
             if !mixin.delay.is_zero() {
                 let _ = write!(
                     extra_filters,
-                    "adelay=delays={}:all=1,",
-                    mixin.delay.as_millis()
+                    "adelay@{mixin_id}=delays={delay}:all=1,",
+                    mixin_id = mixin.id,
+                    delay = mixin.delay.as_millis()
                 );
             }
 
@@ -509,9 +514,7 @@ impl Mixin {
     #[inline]
     #[must_use]
     pub fn needs_restart(&self, actual: &Self) -> bool {
-        self.url != actual.url
-            || self.delay != actual.delay
-            || self.sidechain != actual.sidechain
+        self.url != actual.url || self.sidechain != actual.sidechain
     }
 
     /// [FIFO] path where stream captures from the [TeamSpeak] server.
@@ -558,6 +561,18 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
         port,
         format!("volume@{} volume {}", track, volume.display_as_fraction())
             .into(),
+    );
+}
+
+/// Tunes [`Delay`] of the specified [FFmpeg] `track` by updating the `delay`
+/// [FFmpeg] filter in real-time via [ZeroMQ] protocol.
+///
+/// [FFmpeg]: https://ffmpeg.org
+/// [ZeroMQ]: https://zeromq.org
+fn tune_delay(track: Uuid, port: u16, delay: Delay) {
+    tune_with_zmq(
+        port,
+        format!("adelay@{} delays all:{}", track, delay.as_millis()).into(),
     );
 }
 
