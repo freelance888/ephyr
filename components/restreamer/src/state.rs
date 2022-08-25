@@ -1,30 +1,28 @@
 //! Application state.
 #![allow(clippy::module_name_repetitions)]
 
-mod client;
 mod client_statistics;
 mod input;
 mod label;
-mod mixin;
 mod output;
 mod restream;
-mod server_info;
 mod settings;
 
 pub use self::{
-    client::{Client, ClientId},
     client_statistics::{
-        ClientStatistics, ClientStatisticsResponse, StatusStatistics,
+        Client, ClientId, ClientStatistics, ClientStatisticsResponse,
+        ServerInfo, StatusStatistics,
     },
     input::{
         EndpointId, FailoverInputSrc, Input, InputEndpoint, InputEndpointKind,
         InputId, InputKey, InputSrc, InputSrcUrl, RemoteInputSrc,
     },
     label::Label,
-    mixin::{Delay, Mixin, MixinId, MixinSrcUrl, Volume, VolumeLevel},
-    output::{Output, OutputDstUrl, OutputId},
+    output::{
+        Delay, Mixin, MixinId, MixinSrcUrl, Output, OutputDstUrl, OutputId,
+        Volume, VolumeLevel,
+    },
     restream::{Restream, RestreamId, RestreamKey},
-    server_info::ServerInfo,
     settings::Settings,
 };
 

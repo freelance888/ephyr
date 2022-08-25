@@ -1,3 +1,11 @@
+mod mixin;
+mod volume;
+
+pub use self::{
+    mixin::{Delay, Mixin, MixinId, MixinSrcUrl},
+    volume::{Volume, VolumeLevel},
+};
+
 use std::{mem, path::Path};
 
 use derive_more::{Deref, Display, From, Into};
@@ -9,7 +17,7 @@ use uuid::Uuid;
 use crate::{
     serde::is_false,
     spec,
-    state::{Label, Mixin, Status, Volume},
+    state::{Label, Status},
 };
 
 /// Downstream destination that a `Restream` re-streams a live stream to.
