@@ -1,9 +1,8 @@
 //! Application state.
 
-mod delay;
-mod volume;
+mod mixin;
 
-pub use self::{delay::Delay, volume::Volume, volume::VolumeLevel};
+pub use self::{mixin::Delay, mixin::Volume, mixin::VolumeLevel};
 
 use std::{
     borrow::Cow, collections::HashSet, future::Future, mem,
