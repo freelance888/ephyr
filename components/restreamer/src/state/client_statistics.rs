@@ -1,3 +1,8 @@
+//! Information about status of all [`Input`]s and [`Output`]s and
+//! server health info (CPU usage, memory usage, etc.)
+//!
+//! [`Input`]: crate::state::Input
+//! [`Output`]: crate::state::Output
 use crate::state::Status;
 use chrono::{DateTime, Utc};
 
@@ -11,9 +16,15 @@ use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
 
 /// Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]
+///
+/// [`Input`]: crate::state::Input
+/// [`Output`]: crate::state::Output
 #[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
 pub struct StatusStatistics {
     /// Status of [`Input`]s or [`Output`]
+    ///
+    /// [`Input`]: crate::state::Input
+    /// [`Output`]: crate::state::Output
     pub status: Status,
 
     /// Count of items having [`Status`]
@@ -23,6 +34,9 @@ pub struct StatusStatistics {
 
 /// Information about status of all [`Input`]s and [`Output`]s and
 /// server health info (CPU usage, memory usage, etc.)
+///
+/// [`Input`]: crate::state::Input
+/// [`Output`]: crate::state::Output
 #[derive(Clone, Debug, GraphQLObject, PartialEq)]
 pub struct ClientStatistics {
     /// Client title
@@ -44,6 +58,9 @@ pub struct ClientStatistics {
 impl ClientStatistics {
     /// Creates a new [`ClientStatistics`] object with snapshot of
     /// current client's statistics regarding [`Input`]s and [`Output`]s
+    ///
+    /// [`Input`]: crate::state::Input
+    /// [`Output`]: crate::state::Output
     #[must_use]
     pub fn new(
         client_title: String,

@@ -186,6 +186,9 @@ impl Input {
 
     /// Indicates whether this [`Input`] is ready to serve a live stream for
     /// [`Output`]s.
+    ///
+    /// [`Input`]: crate::state::Input
+    /// [`Output`]: crate::state::Output
     #[must_use]
     pub fn is_ready_to_serve(&self) -> bool {
         let mut is_online = self

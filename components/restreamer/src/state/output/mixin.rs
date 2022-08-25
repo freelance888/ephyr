@@ -188,6 +188,9 @@ impl<'de> Deserialize<'de> for MixinSrcUrl {
 }
 
 /// Delay of a [`Mixin`] being mixed with an [`Output`].
+///
+/// [`Mixin`]: crate::state::Mixin
+/// [`Output`]: crate::state::Output
 #[derive(
     Clone,
     Copy,

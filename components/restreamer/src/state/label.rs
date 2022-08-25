@@ -6,6 +6,9 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
 
 /// Label of a [`Restream`] or an [`Output`].
+///
+/// [`Restream`]: crate::state::Restream
+/// [`Output`]: crate::state::Output
 #[derive(
     Clone,
     Debug,
