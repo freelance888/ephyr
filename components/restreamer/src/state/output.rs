@@ -6,8 +6,11 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
 use uuid::Uuid;
 
-use crate::state::{Label, Mixin, Status, Volume};
-use crate::{serde::is_false, spec};
+use crate::{
+    serde::is_false,
+    spec,
+    state::{Label, Mixin, Status, Volume},
+};
 
 /// Downstream destination that a `Restream` re-streams a live stream to.
 #[derive(
