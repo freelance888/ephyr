@@ -1,3 +1,4 @@
+//! Server's settings.
 use crate::spec;
 use serde::{Deserialize, Serialize};
 

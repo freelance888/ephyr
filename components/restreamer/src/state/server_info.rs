@@ -1,3 +1,4 @@
+//! Server's info
 use juniper::GraphQLObject;
 use serde::{Deserialize, Serialize};
 

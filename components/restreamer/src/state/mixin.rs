@@ -1,3 +1,5 @@
+//! Additional source for an `Output` to be mixed with before re-streaming to
+//! the destination.
 #![allow(clippy::module_name_repetitions)]
 
 mod delay;
@@ -9,9 +11,9 @@ pub use self::{
     mixin_src_url::MixinSrcUrl,
     volume::{Volume, VolumeLevel},
 };
-use derive_more::{Display, From, Into};
 
 use crate::{serde::is_false, spec, state::Status};
+use derive_more::{Display, From, Into};
 use juniper::{GraphQLObject, GraphQLScalar};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
