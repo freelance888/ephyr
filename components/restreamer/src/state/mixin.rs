@@ -1,7 +1,5 @@
 //! Additional source for an `Output` to be mixed with before re-streaming to
 //! the destination.
-#![allow(clippy::module_name_repetitions)]
-
 mod delay;
 mod mixin_src_url;
 mod volume;
