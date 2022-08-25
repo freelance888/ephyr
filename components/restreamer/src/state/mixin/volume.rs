@@ -105,7 +105,6 @@ impl TryFrom<VolumeLevel> for Volume {
     GraphQLScalar,
 )]
 #[graphql(with = Self)]
-#[allow(clippy::module_name_repetitions)]
 pub struct VolumeLevel(#[default(Volume::ORIGIN.level.0)] u16);
 impl VolumeLevel {
     /// Maximum possible value of a [`VolumeLevel`].
