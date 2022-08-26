@@ -1,13 +1,23 @@
 //! Broadcaster for dashboard commands
 
 use crate::client_stat::save_client_error;
-use crate::state::{ClientId, ClientStatisticsResponse, DashboardCommand};
+use crate::state::{ClientId, ClientStatisticsResponse};
 use crate::{client_stat, display_panic, State};
 use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 use std::panic::AssertUnwindSafe;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DashboardCommand {
+    PlayFile(PlayFileCommand),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlayFileCommand {
+    pub file_id: String,
+}
 
 /// GraphQL mutation for sending play file command
 #[derive(GraphQLQuery)]

@@ -7,9 +7,8 @@ use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt;
 use juniper::{graphql_object, graphql_subscription, RootNode};
 
+use crate::broadcaster::{DashboardCommand, PlayFileCommand};
 use crate::client_stat::ClientJobsPool;
-use crate::state::DashboardCommand::PlayFile;
-use crate::state::{DashboardCommand, PlayFileCommand};
 use crate::{
     api::graphql,
     state::{Client, ClientId},

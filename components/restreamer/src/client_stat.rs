@@ -9,8 +9,8 @@ use std::{collections::HashMap, panic::AssertUnwindSafe, time::Duration};
 use crate::{
     display_panic,
     state::{
-        Client, ClientId, ClientStatistics, ClientStatisticsResponse,
-        DashboardCommand, Status, StatusStatistics,
+        Client, ClientId, ClientStatistics, ClientStatisticsResponse, Status,
+        StatusStatistics,
     },
     types::DroppableAbortHandle,
     State,

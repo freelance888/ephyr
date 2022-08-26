@@ -42,6 +42,7 @@ use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
+use crate::broadcaster::DashboardCommand;
 use crate::{
     display_panic,
     file_manager::{LocalFileInfo, PlaylistFileInfo},
@@ -66,6 +67,10 @@ pub struct State {
 
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
+
+    /// Commands for broadcasting to all [`Client`]s or specific [`Client`]
+    #[serde(skip)]
+    pub dashboard_commands: Mutable<Vec<DashboardCommand>>,
 
     /// List of the files that are used as sources of video
     #[serde(skip)]
