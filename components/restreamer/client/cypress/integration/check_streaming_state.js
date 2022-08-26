@@ -46,6 +46,15 @@ describe('CHECK STREAMING STATE', () => {
     cy.wait(6000);
   });
 
+  it('5 Select Delay should not restart', () => {
+    cy.get('[data-testid=Teamspeak]')
+      .parent()
+      .find("input[title='Delay']")
+      .first()
+      .type('5.5')
+      .trigger('change');
+  });
+
   it('5 Assert Started', () => {
     cy.checkStartedAllStated();
   });
