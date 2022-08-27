@@ -224,7 +224,6 @@ impl ClientJob {
 ///
 /// # Panics
 /// if [`Client`] is not found
-///
 pub fn save_client_error(
     client_id: &ClientId,
     error_messages: Vec<String>,
@@ -246,7 +245,6 @@ pub fn save_client_error(
 ///
 /// # Panics
 /// if [`Client`] is not found
-///
 pub fn save_client_statistics(
     client_id: &ClientId,
     response: Response<<StatisticsQuery as GraphQLQuery>::ResponseData>,
