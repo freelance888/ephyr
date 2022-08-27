@@ -28,6 +28,21 @@ vhost __defaultVhost__ {
     on_play         http://127.0.0.1:{{ callback_port }}/;
     on_stop         http://127.0.0.1:{{ callback_port }}/;
   }
+
+  # Minimise RTMP latency in favor performance
+  # https://ossrs.io/lts/en-us/docs/v4/doc/low-latency#low-latency-config
+  tcp_nodelay     on;
+  min_latency     on;
+
+  play {
+      gop_cache       off;
+      queue_length    10;
+      mw_latency      100;
+  }
+
+  publish {
+      mr off;
+  }
 }
 
 vhost hls {
