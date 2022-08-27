@@ -369,7 +369,7 @@ impl MutationsRoot {
     /// Starts playing file if it's found in playlist of any `[Restream]`
     ///
     /// Returns `true` if file was found in any of existing `[Restream]`s
-    /// and `false` if no such file were found  
+    /// and `false` if no such file was found
     fn broadcast_play_file(
         #[graphql(description = "file identity")] file_id: String,
         context: &Context,

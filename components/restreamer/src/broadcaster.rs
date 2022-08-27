@@ -1,21 +1,25 @@
 //! Broadcaster for dashboard commands
 
-use crate::client_stat::save_client_error;
-use crate::state::{ClientId, ClientStatisticsResponse};
-use crate::{client_stat, display_panic, State};
+use crate::{
+    client_stat::save_client_error, display_panic, state::ClientId, State,
+};
 use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 use std::panic::AssertUnwindSafe;
 
-#[derive(Clone, Debug, PartialEq)]
+/// Set of dashboard commands that can be broadcast to [`Client`]s
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DashboardCommand {
+    /// Command for start playing file
     PlayFile(PlayFileCommand),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+/// Broadcast command for playing file on any [`Restream`] of any [`Client`]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayFileCommand {
+    /// File identity
     pub file_id: String,
 }
 
@@ -29,6 +33,7 @@ pub struct PlayFileCommand {
 #[derive(Debug)]
 pub(crate) struct BroadcastPlayFile;
 
+/// Broadcast [`DashboardCommand`] to [`Client`]s
 #[derive(Debug, Default)]
 pub struct Broadcaster {
     state: State,
@@ -49,11 +54,11 @@ impl Broadcaster {
             self.state.dashboard_commands.lock_mut().drain(..).collect();
 
         let state = self.state.clone();
-        let mut clients = state.clients.lock_mut();
+        let clients = state.clients.lock_mut();
 
         for command in commands {
             for client in clients.iter() {
-                self.handle_one_command(&client.id, &command)
+                self.handle_one_command(&client.id, &command);
             }
         }
     }
@@ -65,14 +70,14 @@ impl Broadcaster {
     ) {
         match command {
             DashboardCommand::PlayFile(c) => {
-                self.try_play_file(client_id, &c.file_id)
+                self.try_play_file(client_id, &c.file_id);
             }
         }
     }
 
-    fn try_play_file(&mut self, client_id: &ClientId, file_id: &String) {
+    fn try_play_file(&mut self, client_id: &ClientId, file_id: &str) {
         let client_id1 = client_id.clone();
-        let file_id1 = file_id.clone();
+        let file_id1 = file_id.to_string();
         let state1 = self.state.clone();
 
         drop(tokio::spawn(async move {
@@ -88,7 +93,7 @@ impl Broadcaster {
                     );
 
                     log::error!("{}", error_message);
-                    client_stat::save_client_error(
+                    save_client_error(
                         &client_id1,
                         vec![error_message],
                         &state1,
@@ -109,14 +114,14 @@ impl Broadcaster {
 
     async fn request_play_file(
         client_id: &ClientId,
-        file_id: &String,
+        file_id: &str,
         state: &State,
     ) -> anyhow::Result<()> {
         type Vars = <BroadcastPlayFile as GraphQLQuery>::Variables;
         type ResponseData = <BroadcastPlayFile as GraphQLQuery>::ResponseData;
 
         let request_body = BroadcastPlayFile::build_query(Vars {
-            file_id: file_id.clone(),
+            file_id: file_id.to_string(),
         });
         let request = reqwest::Client::builder().build().unwrap();
 
@@ -134,8 +139,8 @@ impl Broadcaster {
             response
         );
 
-        /// TODO: Consider better error handling with ability to constant displaying error
-        /// on dashboard
+        // TODO: Consider better error handling with ability to constant
+        //  displaying error on dashboard
         if response.errors.is_some() {
             let response_errors: Vec<String> = response
                 .errors

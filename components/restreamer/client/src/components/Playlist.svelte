@@ -6,7 +6,7 @@
     GetPlaylistFromGdrive,
     PlayFileFromPlaylist,
     SetPlaylist,
-    StopPlayingFileFromPlaylist
+    StopPlayingFileFromPlaylist,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
@@ -32,7 +32,6 @@
         wasPlayed: x.wasPlayed,
       }))
     : [];
-  $: hasPlaylistLoaded = queue && queue.length > 0;
   let googleDriveFolderId = '';
 
   async function loadPlaylist(folderId) {

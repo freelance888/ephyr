@@ -27,7 +27,6 @@ use crate::client_stat::statistics_query::{
 
 use crate::state::ServerInfo;
 use chrono::{DateTime, Utc};
-use ephyr_log::slog::log;
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
@@ -216,11 +215,16 @@ impl ClientJob {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        save_client_stat(client_id, response, state);
+        save_client_statistics(client_id, response, state);
         Ok(())
     }
 }
 
+/// Saves error in [`State`] for specific [`Client`]
+///
+/// # Panics
+/// if [`Client`] is not found
+///
 pub fn save_client_error(
     client_id: &ClientId,
     error_messages: Vec<String>,
@@ -238,7 +242,12 @@ pub fn save_client_error(
     });
 }
 
-pub fn save_client_stat(
+/// Saves [`Client`] statistics result in [`State`]
+///
+/// # Panics
+/// if [`Client`] is not found
+///
+pub fn save_client_statistics(
     client_id: &ClientId,
     response: Response<<StatisticsQuery as GraphQLQuery>::ResponseData>,
     state: &State,

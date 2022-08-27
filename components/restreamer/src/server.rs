@@ -6,8 +6,8 @@ use ephyr_log::log;
 use futures::future;
 use tokio::{fs, time};
 
-use crate::broadcaster::Broadcaster;
 use crate::{
+    broadcaster::Broadcaster,
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg,
     file_manager::FileManager,
