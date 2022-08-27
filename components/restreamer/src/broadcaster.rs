@@ -9,14 +9,14 @@ use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 use std::panic::AssertUnwindSafe;
 
-/// Set of dashboard commands that can be broadcast to [`Client`]s
+/// Set of dashboard commands that can be broadcast to clients
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DashboardCommand {
     /// Command for start playing file
     PlayFile(PlayFileCommand),
 }
 
-/// Broadcast command for playing file on any [`Restream`] of any [`Client`]
+/// Broadcast command for playing file on any restream of any client
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayFileCommand {
     /// File identity
@@ -33,7 +33,7 @@ pub struct PlayFileCommand {
 #[derive(Debug)]
 pub(crate) struct BroadcastPlayFile;
 
-/// Broadcast [`DashboardCommand`] to [`Client`]s
+/// Broadcast [`DashboardCommand`] to clients
 #[derive(Debug, Default)]
 pub struct Broadcaster {
     state: State,
