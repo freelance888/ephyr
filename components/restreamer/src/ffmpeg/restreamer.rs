@@ -3,20 +3,22 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use chrono::{DateTime, Utc};
+use std::sync::Once;
 use std::{
     panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
 };
 
-use ephyr_log::log;
-use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
-use tokio::{process::Command, sync::watch, time};
-
 use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
+    gst,
+    gst::Pipeline,
     state::{State, Status},
 };
-
+use ephyr_log::log;
+use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use tokio::{process::Command, sync::watch, time};
+static GST_INIT: Once = Once::new();
 /// Status of [Restreamer] process
 ///
 /// Using for communication through [`tokio::sync::watch`]
@@ -69,6 +71,8 @@ impl Restreamer {
         kind: RestreamerKind,
         state: State,
     ) -> Self {
+        GST_INIT.call_once(|| gst::init().unwrap());
+
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
@@ -79,6 +83,7 @@ impl Restreamer {
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
+                let mut pipeline = Pipeline::new(Some("copy-pipeline"));
                 let kill_rx_for_ffmpeg = kill_rx.clone();
 
                 let _ = AssertUnwindSafe(
@@ -89,7 +94,7 @@ impl Restreamer {
                             state,
                             Status::Initializing,
                         );
-
+                        kind.setup_pipeline(&mut pipeline);
                         kind.setup_ffmpeg(
                             cmd.kill_on_drop(true)
                                 .stdin(Stdio::null())
@@ -105,8 +110,12 @@ impl Restreamer {
                         })
                         .await?;
 
+                        // pin_mut!(running_pipeline);
+
                         let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
                         pin_mut!(running);
+                        let running_pipeline =
+                            kind.run_pipeline(pipeline.clone());
 
                         let set_online = async move {
                             // If ffmpeg process does not fail within 10 sec

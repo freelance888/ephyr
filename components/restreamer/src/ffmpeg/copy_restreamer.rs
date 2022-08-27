@@ -10,7 +10,7 @@ use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
 
-use crate::dvr;
+use crate::{dvr, gst, gst::prelude::*, gst::Pipeline};
 
 /// Kind of a [FFmpeg] re-streaming process that re-streams a live stream from
 /// one URL endpoint to another one "as is", without performing any live stream
@@ -33,6 +33,14 @@ pub struct CopyRestreamer {
 }
 
 impl CopyRestreamer {
+    pub fn new(id: Uuid, from_url: Url, to_url: Url) -> Self {
+        Self {
+            id,
+            from_url,
+            to_url,
+        }
+    }
+
     /// Checks whether this [`CopyRestreamer`] process must be restarted, as
     /// cannot apply the new `actual` params on itself correctly, without
     /// interruptions.
@@ -94,6 +102,45 @@ impl CopyRestreamer {
 
             _ => unimplemented!(),
         };
+
+        Ok(())
+    }
+
+    pub(crate) fn setup_pipeline(
+        &self,
+        pipeline: &mut Pipeline,
+    ) -> io::Result<()> {
+        let source = match self.from_url.scheme() {
+            "rtmp" | "rtmps" => {
+                let rtmpsrc =
+                    gst::ElementFactory::make("rtmpsrc", Some("copy-src"))
+                        .expect("Could not create rtmpsrc");
+                rtmpsrc.set_property_from_str("live", "1");
+                rtmpsrc
+                    .set_property_from_str("location", self.from_url.as_str());
+                rtmpsrc
+            }
+            _ => unimplemented!(),
+        };
+        let sink = match self.to_url.scheme() {
+            "rtmp" | "rtmps" => {
+                let rtmpsink =
+                    gst::ElementFactory::make("rtmpsink", Some("copy-out"))
+                        .expect("Could not create rtmpsink");
+                rtmpsink
+                    .set_property_from_str("location", self.to_url.as_str());
+                rtmpsink.set_property_from_str("live", "1");
+                rtmpsink
+            }
+            _ => unimplemented!(),
+        };
+
+        let gst_elements = &[&source, &sink];
+
+        pipeline.add_many(gst_elements).unwrap();
+
+        gst::Element::link_many(gst_elements)
+            .expect("Elements could not be linked");
         Ok(())
     }
 }

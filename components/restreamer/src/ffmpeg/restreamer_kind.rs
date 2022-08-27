@@ -22,6 +22,8 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
+    gestreamer::{prelude::*, Pipeline},
+    gstreamer,
     state::{self, State, Status},
 };
 
@@ -92,11 +94,11 @@ impl RestreamerKind {
                         })?
                     }
                 };
-                CopyRestreamer {
-                    id: endpoint.id.into(),
+                CopyRestreamer::new(
+                    endpoint.id.into(),
                     from_url,
-                    to_url: endpoint.kind.rtmp_url(key, &input.key),
-                }
+                    endpoint.kind.rtmp_url(key, &input.key),
+                )
                 .into()
             }
 
@@ -140,11 +142,11 @@ impl RestreamerKind {
         }
 
         Some(if output.mixins.is_empty() {
-            CopyRestreamer {
-                id: output.id.into(),
-                from_url: from_url.clone(),
-                to_url: Self::dst_url(output),
-            }
+            CopyRestreamer::new(
+                output.id.into(),
+                from_url.clone(),
+                Self::dst_url(output),
+            )
             .into()
         } else {
             MixingRestreamer::new(output, from_url, prev).into()
@@ -198,9 +200,22 @@ impl RestreamerKind {
         state: &State,
     ) -> io::Result<()> {
         match self {
-            Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
+            // Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),
             Self::Mixing(m) => m.setup_ffmpeg(cmd, state).await?,
+            _ => {}
+        };
+        Ok(())
+    }
+
+    #[inline]
+    pub(crate) async fn setup_pipeline(
+        &self,
+        pipeline: &mut Pipeline,
+    ) -> io::Result<()> {
+        match self {
+            Self::Copy(c) => c.setup_pipeline(pipeline)?,
+            _ => todo!(),
         };
         Ok(())
     }
@@ -350,5 +365,44 @@ impl RestreamerKind {
                 }
             }
         }
+    }
+
+    pub(crate) async fn run_pipeline(&self, pipeline: Pipeline) {
+        // start playing pipeline
+        pipeline
+            .set_state(gst::State::Playing)
+            .expect("Could not change state from NULL to Playing state");
+
+        // handle EOS or error
+        let bus = pipeline.bus().unwrap();
+
+        for msg in bus.iter_timed(gst::ClockTime::NONE) {
+            use gst::MessageView;
+
+            match msg.view() {
+                MessageView::Error(err) => {
+                    println!(
+                        "Error received from element {:?} {}",
+                        err.src().map(|s| s.path_string()),
+                        err.error()
+                    );
+                    break;
+                }
+                MessageView::StateChanged(state) => {
+                    if state.src().map(|s| s == pipeline).unwrap_or(false) {
+                        println!(
+                            "Pipeline state changed from {:?} to {:?}!",
+                            state.old(),
+                            state.current()
+                        );
+                    }
+                }
+                MessageView::Eos(_) => break,
+                _ => (),
+            }
+        }
+        pipeline
+            .set_state(gst::State::Null)
+            .expect("Unable to set the pipeline to the `Null` state");
     }
 }
