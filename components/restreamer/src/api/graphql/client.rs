@@ -431,7 +431,9 @@ impl MutationsRoot {
         } else {
             let err = result.err().unwrap();
             log::error!("{}", &err);
-            Err(graphql::Error::new(err))
+            Err(graphql::Error::new("GDRIVE_API_ERROR")
+                .status(StatusCode::BAD_REQUEST)
+                .message(&err))
         }
     }
 
