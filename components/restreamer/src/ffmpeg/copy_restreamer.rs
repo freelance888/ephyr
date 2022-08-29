@@ -6,11 +6,13 @@
 
 use std::path::Path;
 
+use gst::{prelude::*, Pipeline};
+use gstreamer as gst;
 use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
 
-use crate::{dvr, gst, gst::prelude::*, gst::Pipeline};
+use crate::dvr;
 
 /// Kind of a [FFmpeg] re-streaming process that re-streams a live stream from
 /// one URL endpoint to another one "as is", without performing any live stream
@@ -112,25 +114,21 @@ impl CopyRestreamer {
     ) -> io::Result<()> {
         let source = match self.from_url.scheme() {
             "rtmp" | "rtmps" => {
-                let rtmpsrc =
-                    gst::ElementFactory::make("rtmpsrc", Some("copy-src"))
-                        .expect("Could not create rtmpsrc");
-                rtmpsrc.set_property_from_str("live", "1");
-                rtmpsrc
-                    .set_property_from_str("location", self.from_url.as_str());
-                rtmpsrc
+                let src =
+                    gst::ElementFactory::make("rtmp2src", Some("copy-src"))
+                        .expect("Could not create rtmp2src");
+                src.set_property_from_str("location", self.from_url.as_str());
+                src
             }
             _ => unimplemented!(),
         };
         let sink = match self.to_url.scheme() {
             "rtmp" | "rtmps" => {
-                let rtmpsink =
-                    gst::ElementFactory::make("rtmpsink", Some("copy-out"))
-                        .expect("Could not create rtmpsink");
-                rtmpsink
-                    .set_property_from_str("location", self.to_url.as_str());
-                rtmpsink.set_property_from_str("live", "1");
-                rtmpsink
+                let sink =
+                    gst::ElementFactory::make("rtmp2sink", Some("copy-out"))
+                        .expect("Could not create rtmp2sink");
+                sink.set_property_from_str("location", self.to_url.as_str());
+                sink
             }
             _ => unimplemented!(),
         };
@@ -141,6 +139,10 @@ impl CopyRestreamer {
 
         gst::Element::link_many(gst_elements)
             .expect("Elements could not be linked");
+
+        source.connect_pad_added(move |src, src_pad| {
+            println!("Received new pad {:?} from {:?}", src_pad, src);
+        });
         Ok(())
     }
 }

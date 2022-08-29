@@ -2,21 +2,20 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
+use crate::{
+    display_panic,
+    ffmpeg::restreamer_kind::RestreamerKind,
+    state::{State, Status},
+};
 use chrono::{DateTime, Utc};
+use ephyr_log::log;
+use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use gst::Pipeline;
+use gstreamer as gst;
 use std::sync::Once;
 use std::{
     panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
 };
-
-use crate::{
-    display_panic,
-    ffmpeg::restreamer_kind::RestreamerKind,
-    gst,
-    gst::Pipeline,
-    state::{State, Status},
-};
-use ephyr_log::log;
-use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use tokio::{process::Command, sync::watch, time};
 static GST_INIT: Once = Once::new();
 /// Status of [Restreamer] process
@@ -110,12 +109,11 @@ impl Restreamer {
                         })
                         .await?;
 
-                        // pin_mut!(running_pipeline);
-
-                        let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
+                        let running = kind.run_pipeline(pipeline.clone());
                         pin_mut!(running);
-                        let running_pipeline =
-                            kind.run_pipeline(pipeline.clone());
+                        // let running_pipeline =
+                        //     kind.run_pipeline(pipeline.clone());
+                        // pin_mut!(running_pipeline);
 
                         let set_online = async move {
                             // If ffmpeg process does not fail within 10 sec

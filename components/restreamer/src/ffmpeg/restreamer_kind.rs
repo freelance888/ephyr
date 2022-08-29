@@ -5,6 +5,9 @@
 
 use derive_more::From;
 use ephyr_log::log;
+use futures::StreamExt;
+use gst::{prelude::*, Pipeline};
+use gstreamer as gst;
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -22,8 +25,6 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    gestreamer::{prelude::*, Pipeline},
-    gstreamer,
     state::{self, State, Status},
 };
 
@@ -366,8 +367,42 @@ impl RestreamerKind {
             }
         }
     }
+    // pub(crate) async fn run(
+    //     &self,
+    //     mut cmd: Command,
+    //     mut kill_rx: watch::Receiver<RestreamerStatus>,
+    //     pipeline: Pipeline,
+    // ) -> io::Result<()> {
+    //     match self {
+    //         Self::Copy(c) => self.run_pipeline(pipeline).await,
+    //         // Self::Transcoding(c) => self.run_ffmpeg(cmd, kill_rx),
+    //         // Self::Mixing(m) => self.run_ffmpeg(cmd, kill_rx),
+    //         _ => {}
+    //     }
+    // }
+    async fn run_bus(&self, bus: gst::Bus, pipeline: Pipeline) {
+        let mut bus_msg = bus.stream();
 
-    pub(crate) async fn run_pipeline(&self, pipeline: Pipeline) {
+        while let Some(msg) = bus_msg.next().await {
+            use gst::MessageView;
+
+            match msg.view() {
+                MessageView::Error(err) => {
+                    pipeline.set_state(gst::State::Null).unwrap();
+                    break;
+                }
+                MessageView::Eos(_) => {
+                    pipeline.set_state(gst::State::Null).unwrap();
+                    panic!("error");
+                }
+                _ => (),
+            }
+        }
+    }
+    pub(crate) async fn run_pipeline(
+        &self,
+        pipeline: Pipeline,
+    ) -> io::Result<()> {
         // start playing pipeline
         pipeline
             .set_state(gst::State::Playing)
@@ -375,34 +410,11 @@ impl RestreamerKind {
 
         // handle EOS or error
         let bus = pipeline.bus().unwrap();
-
-        for msg in bus.iter_timed(gst::ClockTime::NONE) {
-            use gst::MessageView;
-
-            match msg.view() {
-                MessageView::Error(err) => {
-                    println!(
-                        "Error received from element {:?} {}",
-                        err.src().map(|s| s.path_string()),
-                        err.error()
-                    );
-                    break;
-                }
-                MessageView::StateChanged(state) => {
-                    if state.src().map(|s| s == pipeline).unwrap_or(false) {
-                        println!(
-                            "Pipeline state changed from {:?} to {:?}!",
-                            state.old(),
-                            state.current()
-                        );
-                    }
-                }
-                MessageView::Eos(_) => break,
-                _ => (),
-            }
-        }
-        pipeline
-            .set_state(gst::State::Null)
-            .expect("Unable to set the pipeline to the `Null` state");
+        self.run_bus(bus, pipeline.clone()).await;
+        // End playing pipeline
+        // pipeline
+        //     .set_state(gst::State::Null)
+        //     .expect("Unable to set the pipeline to the `Null` state");
+        Ok(())
     }
 }
