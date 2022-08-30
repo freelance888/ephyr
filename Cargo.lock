@@ -2164,7 +2164,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gstd_client"
+name = "gst_client"
 version = "0.1.0"
 dependencies = [
  "derive_more",
