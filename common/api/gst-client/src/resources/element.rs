@@ -1,17 +1,15 @@
 //! Define [`PipelineElement`] which encapsulate methods
-//! of [Elements Pipeline API]
+//! of [Elements Pipeline API][1]
 //!
-//! The actual element is [GStreamer] [GstElement] by itself
+//! The actual element is [GStreamer] [GstElement][2] by itself
 //!
 //! [GStreamer]: https://gstreamer.freedesktop.org/
-//! [Elements Pipeline API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Elements
-//! [GstElement]: https://gstreamer.freedesktop.org/documentation/additional/design/gstelement.html?gi-language=rust
-use crate::resources::Pipeline;
-use crate::{gstd_types, Error, GstClient};
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Elements
+//! [2]: https://gstreamer.freedesktop.org/documentation/additional/design/gstelement.html
+use crate::{gstd_types, resources::Pipeline, Error, GstClient};
 
 /// Performs requests to
 /// `pipelines/{name}/elements/{element}` endpoints
-///
 #[derive(Debug, Clone)]
 pub struct PipelineElement {
     name: String,
@@ -36,10 +34,7 @@ impl PipelineElement {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn property(
-        &self,
-        property: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn property(&self, property: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .get(&format!(
@@ -81,10 +76,7 @@ impl PipelineElement {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn signal_connect(
-        &self,
-        signal: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn signal_connect(&self, signal: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .get(&format!(
@@ -104,10 +96,7 @@ impl PipelineElement {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn signal_disconnect(
-        &self,
-        signal: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn signal_disconnect(&self, signal: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .get(&format!(

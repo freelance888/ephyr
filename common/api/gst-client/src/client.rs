@@ -62,10 +62,7 @@ impl GstClient {
             .map_err(Error::RequestFailed)
     }
 
-    pub(crate) async fn process_resp(
-        &self,
-        resp: Response,
-    ) -> Result<gstd_types::Response, Error> {
+    pub(crate) async fn process_resp(&self, resp: Response) -> Result<gstd_types::Response, Error> {
         if !resp.status().is_success() {
             return Err(Error::BadStatus(resp.status()));
         }

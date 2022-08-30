@@ -24,17 +24,7 @@ pub struct Response {
 /// Response Codes for [`Response`] of [GStD]
 ///
 /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
-#[derive(
-    Serialize_repr,
-    Deserialize_repr,
-    PartialEq,
-    Eq,
-    Debug,
-    Clone,
-    Copy,
-    Error,
-    Display,
-)]
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Eq, Debug, Clone, Copy, Error, Display)]
 #[repr(u8)]
 pub enum ResponseCode {
     ///Everything went OK

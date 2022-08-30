@@ -1,6 +1,8 @@
 //! Rust client for [GStreamer Daemon][1] API.
 //!
-//! On official [GStD API documentation][2] page covered all use cases of the client.
+//! On official [GStD API documentation][2] page covered all use cases
+//! of the client.
+//!
 //! This client is defining API a little bit differently then official
 //! but it quite intuitive.
 //!

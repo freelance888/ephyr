@@ -1,13 +1,12 @@
 //! Define [`PipelineBus`] which encapsulate methods
-//! of [Bus API]
+//! of [Bus API][1]
 //!
-//! The actual bus is [GStreamer] [GstBus]
+//! The actual bus is [GStreamer] [GstBus][2]
 //!
 //! [GStreamer]: https://gstreamer.freedesktop.org/
-//! [Bus API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Bus
-//! [GstBus]: https://gstreamer.freedesktop.org/documentation/additional/design/gstbus.html?gi-language=rust
-use crate::resources::Pipeline;
-use crate::{gstd_types, Error, GstClient};
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Bus
+//! [2]: https://gstreamer.freedesktop.org/documentation/additional/design/gstbus.html
+use crate::{gstd_types, resources::Pipeline, Error, GstClient};
 
 /// Performs requests to `pipelines/{name}/bus` endpoints
 #[derive(Debug, Clone)]
@@ -44,10 +43,7 @@ impl PipelineBus {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn set_timeout(
-        &self,
-        time_ns: i32,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn set_timeout(&self, time_ns: i32) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .put(&format!(
@@ -64,10 +60,7 @@ impl PipelineBus {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn set_filter(
-        &self,
-        filter: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn set_filter(&self, filter: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .put(&format!(

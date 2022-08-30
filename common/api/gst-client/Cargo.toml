@@ -7,6 +7,7 @@ edition = "2021"
 readme = "README.md"
 license-file = "LICENSE.md"
 repository = "https://github.com/ALLATRA-IT/ephyr/tree/master/common/api/gst-client"
+documentation = "https://docs.rs/git-client"
 keywords = ["gstreamer", "gstd", "API", "client"]
 categories = ["web-programming::http-client"]
 

@@ -1,14 +1,16 @@
 //! Define [`Pipeline`] which encapsulate methods
-//! of [Pipeline API]
+//! of [Pipeline API][1]
 //!
-//! The actual pipeline is [GStreamer] [GstPipeline]
+//! The actual pipeline is [GStreamer] [GstPipeline][2]
 //!
 //! [GStreamer]: https://gstreamer.freedesktop.org/
-//! [Pipeline API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Pipelines
-//! [GstPipeline]: https://gstreamer.freedesktop.org/documentation/additional/design/gstpipeline.html?gi-language=rust
-use crate::resources::bus::PipelineBus;
-use crate::resources::element::PipelineElement;
-use crate::{gstd_types, Error, GstClient};
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Pipelines
+//! [2]: https://gstreamer.freedesktop.org/documentation/additional/design/gstpipeline.html
+use crate::{
+    gstd_types,
+    resources::{bus::PipelineBus, element::PipelineElement},
+    Error, GstClient,
+};
 
 /// Performs requests to `pipelines/` endpoint
 #[derive(Debug, Clone)]
@@ -38,10 +40,7 @@ impl Pipeline {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn create(
-        &self,
-        description: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn create(&self, description: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .post(&format!(
@@ -134,9 +133,7 @@ impl Pipeline {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn create_event_flush_start(
-        &self,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn create_event_flush_start(&self) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .post(&format!("pipelines/{}/event?name=flush_start", self.name))
@@ -150,9 +147,7 @@ impl Pipeline {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn create_event_flush_stop(
-        &self,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn create_event_flush_stop(&self) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .post(&format!("pipelines/{}/event?name=flush_stop", self.name))
@@ -209,10 +204,7 @@ impl Pipeline {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn set_verbose(
-        &self,
-        value: bool,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn set_verbose(&self, value: bool) -> Result<gstd_types::Response, Error> {
         let val = if value { "true" } else { "false" };
         let resp = self
             .client

@@ -1,11 +1,11 @@
 //! Define [`struct@Debug`] which encapsulate methods
-//! of [Debug API] for [GStreamer]
+//! of [Debug API][1] for [GStreamer][2]
 //!
 //! Details about [GStreamer Debugging]
 //!
 //! [GStreamer]: https://gstreamer.freedesktop.org/
-//! [Debug API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Debug
-//! [GStreamer Debugging]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Debugging
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Debug
+//! [2]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Debugging
 use crate::{gstd_types, Error, GstClient};
 
 /// Performs requests to `debug/` endpoint
@@ -51,10 +51,7 @@ impl Debug {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn reset(
-        &self,
-        value: bool,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn reset(&self, value: bool) -> Result<gstd_types::Response, Error> {
         let val = if value { "true" } else { "false" };
         let resp = self.client.put(&format!("debug/reset?name={val}")).await?;
         self.client.process_resp(resp).await
@@ -66,10 +63,7 @@ impl Debug {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn threshold(
-        &self,
-        value: &str,
-    ) -> Result<gstd_types::Response, Error> {
+    pub async fn threshold(&self, value: &str) -> Result<gstd_types::Response, Error> {
         let resp = self
             .client
             .put(&format!("debug/threshold?name={value}"))
