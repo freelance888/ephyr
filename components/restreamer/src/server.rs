@@ -1,6 +1,5 @@
 //! HTTP servers.
 
-pub mod callback;
 pub mod client;
 pub mod srs_callback;
 pub mod statistics;
