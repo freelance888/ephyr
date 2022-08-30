@@ -57,6 +57,28 @@ pub struct Opts {
     )]
     pub callback_http_port: u16,
 
+    /// IP address for the server to listen RTMP callback HTTP requests on.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_GST_HTTP_IP",
+        default_value = "127.0.0.1",
+        help = "IP to connect to GStD server",
+        long_help = "IP address for the server to control GStD server through\
+                    HTTP requests on"
+    )]
+    pub gst_http_ip: IpAddr,
+
+    /// Port for the server to listen RTMP callback HTTP requests on.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_GST_HTTP_PORT",
+        default_value = "5000",
+        help = "Port to connect to GStD server",
+        long_help = "Port address for the server to control GStD server through\
+                    HTTP requests on"
+    )]
+    pub gst_http_port: u16,
+
     /// Path to a file to persist the server's state in.
     #[structopt(
         short,
