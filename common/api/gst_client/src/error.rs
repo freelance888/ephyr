@@ -1,4 +1,5 @@
 //! Defining library errors.
+use crate::gstd_types::ResponseCode;
 use derive_more::{Display, Error};
 
 /// Possible errors of performing [`GstClient`] requests.
@@ -34,4 +35,10 @@ pub enum Error {
     /// [`GstClient`]: crate::GstClient
     #[display(fmt = "Failed to parse URL: {}", _0)]
     IncorrectApiUrl(url::ParseError),
+
+    /// Failed to process request on [GStD] side.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    #[display(fmt = "Failed to process request: {}", _0)]
+    GstdError(ResponseCode),
 }

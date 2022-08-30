@@ -2,6 +2,8 @@
 //!
 //! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_HTTP_API
 #![allow(unreachable_pub)]
+
+use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -23,7 +25,15 @@ pub struct Response {
 ///
 /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
 #[derive(
-    Serialize_repr, Deserialize_repr, PartialEq, Eq, Debug, Clone, Copy,
+    Serialize_repr,
+    Deserialize_repr,
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Copy,
+    Error,
+    Display,
 )]
 #[repr(u8)]
 pub enum ResponseCode {

@@ -70,9 +70,15 @@ impl GstClient {
             return Err(Error::BadStatus(resp.status()));
         }
 
-        resp.json::<gstd_types::Response>()
+        let res = resp
+            .json::<gstd_types::Response>()
             .await
-            .map_err(Error::BadBody)
+            .map_err(Error::BadBody)?;
+
+        if res.code != gstd_types::ResponseCode::Success {
+            return Err(Error::GstdError(res.code));
+        }
+        Ok(res)
     }
 
     /// Performs `GET /pipelines` API request, returning the
