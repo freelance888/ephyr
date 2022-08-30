@@ -1,4 +1,4 @@
-/// Client HTTP server responding to client requests.
+//! Client HTTP server responding to client requests.
 use std::time::Duration;
 
 use actix_service::Service as _;

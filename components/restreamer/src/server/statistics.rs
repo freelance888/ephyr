@@ -1,4 +1,4 @@
-/// Module which collects server statistics and updates them every second
+//! Module which collects server statistics and updates them every second
 use std::time::Duration;
 use systemstat::{Platform, System};
 use tokio::time;
