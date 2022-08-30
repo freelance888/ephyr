@@ -1,7 +1,7 @@
 //! HTTP servers.
 
-pub mod callback;
 pub mod client;
+pub mod srs_callback;
 pub mod statistics;
 
 use std::{net::IpAddr, time::Duration};
@@ -81,7 +81,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     future::try_join3(
         self::client::run(&cfg, state.clone()),
         self::statistics::run(state.clone()),
-        self::callback::run(&cfg, state),
+        self::srs_callback::run(&cfg, state),
     )
     .await?;
 
