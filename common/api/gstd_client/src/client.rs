@@ -2,10 +2,199 @@ use crate::{api, Error};
 use reqwest::{Client, Response};
 use url::Url;
 
+/// Performs requests to `pipelines/{name}/bus` endpoints
+#[derive(Debug, Clone)]
+pub struct GstBus {
+    gst_client: GstClient,
+    gst_pipeline: GstPipeline,
+}
+
+impl GstBus {
+    /// Performs `GET pipelines/{name}/bus/message`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn read(&self) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .get(&format!("pipelines/{}/bus/message", self.gst_pipeline.name))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+    /// Performs `PUT pipelines/{name}?timeout={time_ns}`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn set_timeout(
+        &self,
+        time_ns: i32,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .put(&format!(
+                "pipelines/{}/bus/timeout?name={time_ns}",
+                self.gst_pipeline.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+    /// Performs `PUT pipelines/{name}?types={filter}`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn set_filter(
+        &self,
+        filter: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .put(&format!(
+                "pipelines/{}/bus/types?name={filter}",
+                self.gst_pipeline.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+}
+
+/// Performs requests to `pipelines/{name}/elements/
+/// {element}` endpoints
+#[derive(Debug, Clone)]
+pub struct GstElement {
+    name: String,
+    gst_client: GstClient,
+    gst_pipeline: GstPipeline,
+}
+
+impl GstElement {
+    /// Performs `GET pipelines/{name}/elements/
+    /// {element}/properties/{property}`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn property(
+        &self,
+        property: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .get(&format!(
+                "pipelines/{}/elements/{}/properties/{property}",
+                self.gst_pipeline.name, self.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+    /// Performs `PUT pipelines/{name}/elements/
+    /// {element}/properties/{property}?name={value}`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn set_property(
+        &self,
+        property: &str,
+        value: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .put(&format!(
+                "pipelines/{}/elements/\
+            {}/properties/{property}?name={value}",
+                self.gst_pipeline.name, self.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+
+    /// Performs `GET pipelines/{name}/
+    /// elements/{element}/signals/{signal}/callback`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn signal_connect(
+        &self,
+        signal: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .get(&format!(
+                "pipelines/{}/\
+            elements/{}/signals/{signal}/callback",
+                self.gst_pipeline.name, self.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+
+    /// Performs `GET pipelines/{name}/
+    /// elements/{element}/signals/{signal}/disconnect`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn signal_disconnect(
+        &self,
+        signal: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .get(&format!(
+                "pipelines/{}/\
+            elements/{}/signals/{signal}/disconnect",
+                self.gst_pipeline.name, self.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+    /// Performs `PUT pipelines/{name}/
+    /// elements/{element}/signals/{signal}/timeout?name={timeout}`
+    /// API request, returning the parsed [`api::Response`]
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn set_signal_timeout(
+        &self,
+        signal: &str,
+        timeout: &str,
+    ) -> Result<api::Response, Error> {
+        let resp = self
+            .gst_client
+            .put(&format!(
+                "pipelines/{}/\
+            elements/{}/signals/{signal}/timeout?name={timeout}",
+                self.gst_pipeline.name, self.name
+            ))
+            .await?;
+        self.gst_client.process_resp(resp).await
+    }
+}
+/// Performs requests to `pipelines/` endpoint
 #[derive(Debug, Clone)]
 pub struct GstPipeline {
-    pub name: String,
-    pub gst_client: GstClient,
+    name: String,
+    gst_client: GstClient,
 }
 
 impl GstPipeline {
@@ -53,89 +242,21 @@ impl GstPipeline {
         self.gst_client.process_resp(resp).await
     }
 
-    /// Performs `GET pipelines/{name}/elements/
-    /// {element}/properties/{property}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn element_property(
-        &self,
-        element: &str,
-        property: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/elements/{element}/properties/{property}",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `GET pipelines/{name}/bus/message`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn bus_read(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!("pipelines/{}/bus/message", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `GET pipelines/{name}/
-    /// elements/{element}/signals/{signal}/callback`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn signal_connect(
-        &self,
-        element: &str,
-        signal: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/\
-            elements/{element}/signals/{signal}/callback",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
+    pub fn element(&self, name: &str) -> GstElement {
+        GstElement {
+            name: name.to_owned(),
+            gst_pipeline: self.clone(),
+            gst_client: self.gst_client.clone(),
+        }
     }
 
-    /// Performs `GET pipelines/{name}/
-    /// elements/{element}/signals/{signal}/disconnect`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn signal_disconnect(
-        &self,
-        element: &str,
-        signal: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/\
-            elements/{element}/signals/{signal}/disconnect",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
+    pub fn bus(&self) -> GstBus {
+        GstBus {
+            gst_pipeline: self.clone(),
+            gst_client: self.gst_client.clone(),
+        }
     }
+
     /// Performs `POST pipelines?name={name}&description={description}`
     /// API request, returning the parsed [`api::Response`]
     ///
@@ -143,7 +264,7 @@ impl GstPipeline {
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn pipeline(
+    pub async fn create(
         &self,
         description: &str,
     ) -> Result<api::Response, Error> {
@@ -244,30 +365,7 @@ impl GstPipeline {
             .await?;
         self.gst_client.process_resp(resp).await
     }
-    /// Performs `PUT pipelines/{name}/elements/
-    /// {element}/properties/{property}?name={value}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_element(
-        &self,
-        element: &str,
-        property: &str,
-        value: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/elements/\
-            {element}/properties/{property}?name={value}",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
+
     /// Performs `PUT pipelines/{name}/verbose?name={value}`
     /// API request, returning the parsed [`api::Response`]
     ///
@@ -287,67 +385,6 @@ impl GstPipeline {
         self.gst_client.process_resp(resp).await
     }
 
-    /// Performs `PUT pipelines/{name}?timeout={time_ns}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_bus_timeout(
-        &self,
-        time_ns: i32,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/bus/timeout?name={time_ns}",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}?types={filter}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_bus_filter(
-        &self,
-        filter: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("pipelines/{}/bus/types?name={filter}", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/
-    /// elements/{element}/signals/{signal}/timeout?name={timeout}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_signal_timeout(
-        &self,
-        element: &str,
-        signal: &str,
-        timeout: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/\
-            elements/{element}/signals/{signal}/timeout?name={timeout}",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
     /// Performs `DELETE pipelines/{name}/`
     /// API request, returning the parsed [`api::Response`]
     ///
@@ -363,7 +400,7 @@ impl GstPipeline {
         self.gst_client.process_resp(resp).await
     }
 }
-
+/// Performs requests to `debug/` endpoint
 #[derive(Debug, Clone)]
 pub struct GstDebug {
     pub gst_client: GstClient,
@@ -536,13 +573,18 @@ impl GstClient {
         let resp = self.get("pipelines").await?;
         self.process_resp(resp).await
     }
-
+    /// Operate with [GStreamer Daemon][1] pipelines.
+    ///
+    /// [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
     pub fn pipeline(&self, name: &str) -> GstPipeline {
         GstPipeline {
             name: name.to_owned(),
             gst_client: self.clone(),
         }
     }
+    /// Manage [GStreamer Daemon][1] Debug mode.
+    ///
+    /// [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
     pub fn debug(&self) -> GstDebug {
         GstDebug {
             gst_client: self.clone(),
@@ -594,7 +636,8 @@ mod spec {
         if let Ok(client) = GstClient::build(&BASE_URL) {
             let res = client
                 .pipeline("test-pipeline")
-                .element_property("rtmp2src", "location")
+                .element("rtmp2src")
+                .property("location")
                 .await;
             println!("{:?}", res);
             assert!(res.is_ok());
@@ -603,7 +646,7 @@ mod spec {
     #[tokio::test]
     async fn retrieve_pipeline_bus_read() {
         if let Ok(client) = GstClient::build(&BASE_URL) {
-            let res = client.pipeline("test-pipeline").bus_read().await;
+            let res = client.pipeline("test-pipeline").bus().read().await;
             println!("{:?}", res);
             assert!(res.is_ok());
         };
