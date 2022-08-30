@@ -21,8 +21,9 @@
     unused_results
 )]
 
-pub mod api;
-mod client;
+pub mod client;
 mod error;
+pub mod gstd_types;
+pub mod resources;
 
 pub use crate::{client::GstClient, error::Error};

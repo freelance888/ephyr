@@ -1,501 +1,12 @@
-use crate::{api, Error};
+//! Defines [`GstClient`] for communication with
+//! [GStreamer Daemon][1] API.
+//!
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+use crate::{gstd_types, resources, Error};
 use reqwest::{Client, Response};
 use url::Url;
 
-/// Performs requests to `pipelines/{name}/bus` endpoints
-#[derive(Debug, Clone)]
-pub struct GstBus {
-    gst_client: GstClient,
-    gst_pipeline: GstPipeline,
-}
-
-impl GstBus {
-    /// Performs `GET pipelines/{name}/bus/message`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn read(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!("pipelines/{}/bus/message", self.gst_pipeline.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}?timeout={time_ns}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_timeout(
-        &self,
-        time_ns: i32,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/bus/timeout?name={time_ns}",
-                self.gst_pipeline.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}?types={filter}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_filter(
-        &self,
-        filter: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/bus/types?name={filter}",
-                self.gst_pipeline.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-}
-
-/// Performs requests to `pipelines/{name}/elements/
-/// {element}` endpoints
-#[derive(Debug, Clone)]
-pub struct GstElement {
-    name: String,
-    gst_client: GstClient,
-    gst_pipeline: GstPipeline,
-}
-
-impl GstElement {
-    /// Performs `GET pipelines/{name}/elements/
-    /// {element}/properties/{property}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn property(
-        &self,
-        property: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/elements/{}/properties/{property}",
-                self.gst_pipeline.name, self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/elements/
-    /// {element}/properties/{property}?name={value}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_property(
-        &self,
-        property: &str,
-        value: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/elements/\
-            {}/properties/{property}?name={value}",
-                self.gst_pipeline.name, self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `GET pipelines/{name}/
-    /// elements/{element}/signals/{signal}/callback`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn signal_connect(
-        &self,
-        signal: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/\
-            elements/{}/signals/{signal}/callback",
-                self.gst_pipeline.name, self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `GET pipelines/{name}/
-    /// elements/{element}/signals/{signal}/disconnect`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn signal_disconnect(
-        &self,
-        signal: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!(
-                "pipelines/{}/\
-            elements/{}/signals/{signal}/disconnect",
-                self.gst_pipeline.name, self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/
-    /// elements/{element}/signals/{signal}/timeout?name={timeout}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_signal_timeout(
-        &self,
-        signal: &str,
-        timeout: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!(
-                "pipelines/{}/\
-            elements/{}/signals/{signal}/timeout?name={timeout}",
-                self.gst_pipeline.name, self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-}
-/// Performs requests to `pipelines/` endpoint
-#[derive(Debug, Clone)]
-pub struct GstPipeline {
-    name: String,
-    gst_client: GstClient,
-}
-
-impl GstPipeline {
-    /// Performs `GET /pipelines/{name}/graph` API request, returning the
-    /// parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn graph(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!("pipelines/{}/graph", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `GET /pipelines/{name}/elements`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn elements(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!("pipelines/{}/elements", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `GET /pipelines/{name}/properties`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn properties(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .get(&format!("pipelines/{}/properties", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    pub fn element(&self, name: &str) -> GstElement {
-        GstElement {
-            name: name.to_owned(),
-            gst_pipeline: self.clone(),
-            gst_client: self.gst_client.clone(),
-        }
-    }
-
-    pub fn bus(&self) -> GstBus {
-        GstBus {
-            gst_pipeline: self.clone(),
-            gst_client: self.gst_client.clone(),
-        }
-    }
-
-    /// Performs `POST pipelines?name={name}&description={description}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn create(
-        &self,
-        description: &str,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .post(&format!(
-                "pipelines?name={}&description={description}",
-                self.name
-            ))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `POST pipelines/{name}/event?name=eos`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn event_eos(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .post(&format!("pipelines/{}/event?name=eos", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `POST pipelines/{name}/event?name=flush_start`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn create_event_flush_start(
-        &self,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .post(&format!("pipelines/{}/event?name=flush_start", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `POST pipelines/{name}/event?name=flush_stop`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn create_event_flush_stop(
-        &self,
-    ) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .post(&format!("pipelines/{}/event?name=flush_stop", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/state?name=playing`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn play(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("pipelines/{}/state?name=playing", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/state?name=paused`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn pause(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("pipelines/{}/state?name=paused", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT pipelines/{name}/state?name=stop`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn stop(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("pipelines/{}/state?name=stop", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `PUT pipelines/{name}/verbose?name={value}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn set_verbose(
-        &self,
-        value: bool,
-    ) -> Result<api::Response, Error> {
-        let val = if value { "true" } else { "false" };
-        let resp = self
-            .gst_client
-            .put(&format!("pipelines/{}/verbose?name={val}", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `DELETE pipelines/{name}/`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn delete(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .delete(&format!("pipelines/{}", self.name))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-}
-/// Performs requests to `debug/` endpoint
-#[derive(Debug, Clone)]
-pub struct GstDebug {
-    pub gst_client: GstClient,
-}
-
-impl GstDebug {
-    /// Performs `PUT debug/enable?name=enable`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn enable(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("debug/enable?name=true"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `PUT debug/enable?name=false`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn disable(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("debug/enable?name=false"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-
-    /// Performs `PUT debug/reset?name={value}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn reset(&self, value: bool) -> Result<api::Response, Error> {
-        let val = if value { "true" } else { "false" };
-        let resp = self
-            .gst_client
-            .put(&format!("debug/reset?name={val}"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT debug/threshold?name={value}`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn threshold(&self, value: &str) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("debug/threshold?name={value}"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT debug/color?name=true`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn enable_color(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("debug/color?name=true"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-    /// Performs `PUT debug/color?name=false`
-    /// API request, returning the parsed [`api::Response`]
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn disable_color(&self) -> Result<api::Response, Error> {
-        let resp = self
-            .gst_client
-            .put(&format!("debug/color?name=false"))
-            .await?;
-        self.gst_client.process_resp(resp).await
-    }
-}
-/// [`GstdClient`] for [GStreamer Daemon][1] API.
+/// [`GstClient`] for [GStreamer Daemon][1] API.
 ///
 /// [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
 #[derive(Debug, Clone)]
@@ -505,7 +16,7 @@ pub struct GstClient {
 }
 
 impl GstClient {
-    /// Build [`GstdClient`] for future call to [GStreamer Daemon][1] API.
+    /// Build [`GstClient`] for future call to [GStreamer Daemon][1] API.
     ///
     /// # Errors
     ///
@@ -519,7 +30,7 @@ impl GstClient {
         })
     }
 
-    async fn get(&self, url: &str) -> Result<Response, Error> {
+    pub(crate) async fn get(&self, url: &str) -> Result<Response, Error> {
         self.http_client
             .get(self.base_url.join(url).map_err(Error::IncorrectApiUrl)?)
             .send()
@@ -527,7 +38,7 @@ impl GstClient {
             .map_err(Error::RequestFailed)
     }
 
-    async fn post(&self, url: &str) -> Result<Response, Error> {
+    pub(crate) async fn post(&self, url: &str) -> Result<Response, Error> {
         self.http_client
             .post(self.base_url.join(url).map_err(Error::IncorrectApiUrl)?)
             .send()
@@ -535,7 +46,7 @@ impl GstClient {
             .map_err(Error::RequestFailed)
     }
 
-    async fn put(&self, url: &str) -> Result<Response, Error> {
+    pub(crate) async fn put(&self, url: &str) -> Result<Response, Error> {
         self.http_client
             .put(self.base_url.join(url).map_err(Error::IncorrectApiUrl)?)
             .send()
@@ -543,7 +54,7 @@ impl GstClient {
             .map_err(Error::RequestFailed)
     }
 
-    async fn delete(&self, url: &str) -> Result<Response, Error> {
+    pub(crate) async fn delete(&self, url: &str) -> Result<Response, Error> {
         self.http_client
             .put(self.base_url.join(url).map_err(Error::IncorrectApiUrl)?)
             .send()
@@ -551,47 +62,56 @@ impl GstClient {
             .map_err(Error::RequestFailed)
     }
 
-    async fn process_resp(
+    pub(crate) async fn process_resp(
         &self,
         resp: Response,
-    ) -> Result<api::Response, Error> {
+    ) -> Result<gstd_types::Response, Error> {
         if !resp.status().is_success() {
             return Err(Error::BadStatus(resp.status()));
         }
 
-        Ok(resp.json::<api::Response>().await.map_err(Error::BadBody)?)
+        resp.json::<gstd_types::Response>()
+            .await
+            .map_err(Error::BadBody)
     }
 
     /// Performs `GET /pipelines` API request, returning the
-    /// parsed [`api::Response`]
+    /// parsed [`gstd_types::Response`]
     ///
     /// # Errors
     ///
     /// If API request cannot be performed, or fails.
     /// See [`Error`] for details.
-    pub async fn pipelines(&self) -> Result<api::Response, Error> {
+    pub async fn pipelines(&self) -> Result<gstd_types::Response, Error> {
         let resp = self.get("pipelines").await?;
         self.process_resp(resp).await
     }
     /// Operate with [GStreamer Daemon][1] pipelines.
     ///
+    /// # Arguments
+    ///
+    /// * `name` - name of the pipeline
+    ///
     /// [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
-    pub fn pipeline(&self, name: &str) -> GstPipeline {
-        GstPipeline {
-            name: name.to_owned(),
-            gst_client: self.clone(),
-        }
+    pub fn pipeline(&self, name: &str) -> resources::Pipeline {
+        resources::Pipeline::new(name, self)
     }
     /// Manage [GStreamer Daemon][1] Debug mode.
     ///
     /// [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
-    pub fn debug(&self) -> GstDebug {
-        GstDebug {
-            gst_client: self.clone(),
-        }
+    pub fn debug(&self) -> resources::Debug {
+        resources::Debug::new(self)
     }
 }
 
+impl Default for GstClient {
+    fn default() -> Self {
+        Self {
+            http_client: Client::new(),
+            base_url: Url::parse("http://127.0.0.1:5000").unwrap(),
+        }
+    }
+}
 #[cfg(test)]
 mod spec {
     use super::*;

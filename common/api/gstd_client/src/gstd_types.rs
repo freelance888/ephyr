@@ -1,7 +1,6 @@
 //! [GStreamer Daemon HTTP][1] API structures.
 //!
-//! [1]: https://developer.ridgerun.com/wiki/
-//! index.php/GStreamer_Daemon_-_HTTP_API
+//! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_HTTP_API
 #![allow(unreachable_pub)]
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -23,7 +22,9 @@ pub struct Response {
 /// Response Codes for [`Response`] of [GStD]
 ///
 /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
-#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Clone, Copy)]
+#[derive(
+    Serialize_repr, Deserialize_repr, PartialEq, Eq, Debug, Clone, Copy,
+)]
 #[repr(u8)]
 pub enum ResponseCode {
     ///Everything went OK
@@ -115,7 +116,7 @@ pub enum PropertyValue {
 }
 
 /// Possible result in [`Response::response`] after
-/// `GET /pipelines/{pipeline_name}/bus/message` API request
+/// `GET /pipelines/{name}/bus/message` API request
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Bus {
     pub r#type: String,
