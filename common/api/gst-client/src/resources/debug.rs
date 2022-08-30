@@ -1,3 +1,11 @@
+//! Define [`struct@Debug`] which encapsulate methods
+//! of [Debug API] for [GStreamer]
+//!
+//! Details about [GStreamer Debugging]
+//!
+//! [GStreamer]: https://gstreamer.freedesktop.org/
+//! [Debug API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Debug
+//! [GStreamer Debugging]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Debugging
 use crate::{gstd_types, Error, GstClient};
 
 /// Performs requests to `debug/` endpoint

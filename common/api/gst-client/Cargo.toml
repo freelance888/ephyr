@@ -1,8 +1,14 @@
 [package]
-name = "gst_client"
+name = "gst-client"
 version = "0.1.0"
+description = "Provides bindings for the main functionalities of the GStreamer Daemon"
 authors = ["ALLATRA IT <it@allatra.org>"]
 edition = "2021"
+readme = "README.md"
+license-file = "LICENSE.md"
+repository = "https://github.com/ALLATRA-IT/ephyr/tree/master/common/api/gst-client"
+keywords = ["gstreamer", "gstd", "API", "client"]
+categories = ["web-programming::http-client"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,3 +1,11 @@
+//! Define [`Pipeline`] which encapsulate methods
+//! of [Pipeline API]
+//!
+//! The actual pipeline is [GStreamer] [GstPipeline]
+//!
+//! [GStreamer]: https://gstreamer.freedesktop.org/
+//! [Pipeline API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Pipelines
+//! [GstPipeline]: https://gstreamer.freedesktop.org/documentation/additional/design/gstpipeline.html?gi-language=rust
 use crate::resources::bus::PipelineBus;
 use crate::resources::element::PipelineElement;
 use crate::{gstd_types, Error, GstClient};
@@ -17,6 +25,33 @@ impl Pipeline {
             client: client.clone(),
         }
     }
+    /// Creates a new pipeline .
+    ///
+    /// Performs `POST pipelines?name={name}&description={description}`
+    /// API request, returning the parsed [`gstd_types::Response`]
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - pipeline with gst-launch syntax
+    ///
+    /// # Errors
+    ///
+    /// If API request cannot be performed, or fails.
+    /// See [`Error`] for details.
+    pub async fn create(
+        &self,
+        description: &str,
+    ) -> Result<gstd_types::Response, Error> {
+        let resp = self
+            .client
+            .post(&format!(
+                "pipelines?name={}&description={description}",
+                self.name
+            ))
+            .await?;
+        self.client.process_resp(resp).await
+    }
+
     /// Performs `GET /pipelines/{name}/graph` API request, returning the
     /// parsed [`gstd_types::Response`]
     ///
@@ -78,30 +113,6 @@ impl Pipeline {
         PipelineBus::new(self)
     }
 
-    /// Performs `POST pipelines?name={name}&description={description}`
-    /// API request, returning the parsed [`gstd_types::Response`]
-    ///
-    /// # Arguments
-    ///
-    /// * `description` - pipeline with gst-launch syntax
-    ///
-    /// # Errors
-    ///
-    /// If API request cannot be performed, or fails.
-    /// See [`Error`] for details.
-    pub async fn create(
-        &self,
-        description: &str,
-    ) -> Result<gstd_types::Response, Error> {
-        let resp = self
-            .client
-            .post(&format!(
-                "pipelines?name={}&description={description}",
-                self.name
-            ))
-            .await?;
-        self.client.process_resp(resp).await
-    }
     /// Performs `POST pipelines/{name}/event?name=eos`
     /// API request, returning the parsed [`gstd_types::Response`]
     ///

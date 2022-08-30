@@ -1,3 +1,11 @@
+//! Define [`PipelineBus`] which encapsulate methods
+//! of [Bus API]
+//!
+//! The actual bus is [GStreamer] [GstBus]
+//!
+//! [GStreamer]: https://gstreamer.freedesktop.org/
+//! [Bus API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Bus
+//! [GstBus]: https://gstreamer.freedesktop.org/documentation/additional/design/gstbus.html?gi-language=rust
 use crate::resources::Pipeline;
 use crate::{gstd_types, Error, GstClient};
 

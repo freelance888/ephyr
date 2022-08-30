@@ -1,8 +1,9 @@
 //! Define [`PipelineElement`] which encapsulate methods
 //! of [Elements Pipeline API]
 //!
-//! The actual element is GStreamer [GstElement] by itself
+//! The actual element is [GStreamer] [GstElement] by itself
 //!
+//! [GStreamer]: https://gstreamer.freedesktop.org/
 //! [Elements Pipeline API]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_C_API#Elements
 //! [GstElement]: https://gstreamer.freedesktop.org/documentation/additional/design/gstelement.html?gi-language=rust
 use crate::resources::Pipeline;

@@ -1,7 +1,7 @@
 //! [GStreamer Daemon HTTP][1] API structures.
 //!
 //! [1]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon_-_HTTP_API
-#![allow(unreachable_pub)]
+#![allow(unreachable_pub, missing_docs)]
 
 use derive_more::{Display, Error};
 use serde::{Deserialize, Serialize};
