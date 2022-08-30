@@ -25,4 +25,4 @@ pub mod api;
 mod client;
 mod error;
 
-pub use crate::{client::GstdClient, error::Error};
+pub use crate::{client::GstClient, error::Error};
