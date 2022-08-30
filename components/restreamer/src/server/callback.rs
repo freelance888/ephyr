@@ -1,6 +1,6 @@
-/// Callback HTTP server responding to [SRS] HTTP callbacks.
-///
-/// [SRS]: https://github.com/ossrs/srs
+//! Callback HTTP server responding to [SRS] HTTP callbacks.
+//!
+//! [SRS]: https://github.com/ossrs/srs
 use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
