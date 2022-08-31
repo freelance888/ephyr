@@ -1,5 +1,6 @@
 //! Broadcaster for dashboard commands
 
+use crate::slog::FnValue;
 use crate::{
     client_stat::save_client_error, display_panic, state::ClientId, State,
 };
@@ -7,6 +8,7 @@ use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
+use std::future::Future;
 use std::panic::AssertUnwindSafe;
 
 /// Set of dashboard commands that can be broadcast to clients
@@ -14,6 +16,7 @@ use std::panic::AssertUnwindSafe;
 pub enum DashboardCommand {
     /// Command for start playing file
     PlayFile(PlayFileCommand),
+    // StopPlaying(StopPlayingCommand),
 }
 
 /// Broadcast command for playing file on any restream of any client
@@ -22,6 +25,13 @@ pub struct PlayFileCommand {
     /// File identity
     pub file_id: String,
 }
+
+/// Broadcast command for playing file on any restream of any client
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub struct StopPlayingCommand {
+//     /// File identity
+//     pub file_id: String,
+// }
 
 /// GraphQL mutation for sending play file command
 #[derive(GraphQLQuery)]
@@ -58,64 +68,72 @@ impl Broadcaster {
 
         for command in commands {
             for client in clients.iter() {
-                self.handle_one_command(&client.id, &command);
+                self.handle_one_command(client.id.clone(), command.clone());
             }
         }
     }
 
     fn handle_one_command(
         &mut self,
-        client_id: &ClientId,
-        command: &DashboardCommand,
+        client_id: ClientId,
+        command: DashboardCommand,
     ) {
         match command {
             DashboardCommand::PlayFile(c) => {
-                self.try_play_file(client_id, &c.file_id);
+                let client_id1 = client_id.clone();
+                let state1 = self.state.clone();
+
+                Self::try_to_run_command(
+                    client_id1.clone(),
+                    state1.clone(),
+                    async move {
+                        Self::request_play_file(
+                            client_id1,
+                            c.file_id.as_str(),
+                            state1,
+                        )
+                        .await
+                    },
+                )
             }
         }
     }
 
-    fn try_play_file(&mut self, client_id: &ClientId, file_id: &str) {
-        let client_id1 = client_id.clone();
-        let file_id1 = file_id.to_string();
-        let state1 = self.state.clone();
-
+    fn try_to_run_command<FutureCommand>(
+        client_id: ClientId,
+        state: State,
+        command: FutureCommand,
+    ) where
+        FutureCommand: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
         drop(tokio::spawn(async move {
-            let _ = AssertUnwindSafe(
-                async {
-                    Self::request_play_file(&client_id1, &file_id1, &state1)
-                        .await
-                }
-                .unwrap_or_else(|e| {
-                    let error_message = format!(
-                        "Error sending play file command for client {}. {}",
-                        &client_id1, e
-                    );
-
-                    log::error!("{}", error_message);
-                    save_client_error(
-                        &client_id1,
-                        vec![error_message],
-                        &state1,
-                    );
-                }),
-            )
+            let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
+                let error_message = format!(
+                    "Error sending command for client {}. {}",
+                    client_id.clone(),
+                    e
+                );
+                log::error!("{}", error_message);
+                Self::save_command_error(client_id, vec![error_message], state)
+            }))
             .catch_unwind()
             .await
             .map_err(|p| {
-                let error_message = format!(
-                    "Panicked while broadcast play file command to client: {}",
-                    display_panic(&p)
+                log::error!(
+                    "{}",
+                    format!(
+                        "Panicked while broadcast command to client: {}",
+                        display_panic(&p)
+                    )
                 );
-                log::error!("{}", error_message);
             });
         }));
     }
 
     async fn request_play_file(
-        client_id: &ClientId,
+        client_id: ClientId,
         file_id: &str,
-        state: &State,
+        state: State,
     ) -> anyhow::Result<()> {
         type Vars = <BroadcastPlayFile as GraphQLQuery>::Variables;
         type ResponseData = <BroadcastPlayFile as GraphQLQuery>::ResponseData;
@@ -149,9 +167,29 @@ impl Broadcaster {
                 .map(|e| e.message)
                 .collect();
 
-            save_client_error(client_id, response_errors, state);
+            Self::save_command_error(client_id, response_errors, state);
         }
 
         Ok(())
+    }
+
+    /// Saves error in [`State`] for specific [`Client`]
+    ///
+    fn save_command_error(
+        client_id: ClientId,
+        error_messages: Vec<String>,
+        state: State,
+    ) {
+        let mut clients = state.clients.lock_mut();
+        let client = match clients.iter_mut().find(|r| r.id == client_id) {
+            Some(c) => {
+                // Save error to separate state
+                // client.statistics = Some(ClientStatisticsResponse {
+                //     data: None,
+                //     errors: Some(error_messages),
+                // });
+            }
+            None => return,
+        };
     }
 }
