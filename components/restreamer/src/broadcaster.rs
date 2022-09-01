@@ -16,7 +16,7 @@ use std::panic::AssertUnwindSafe;
 pub enum DashboardCommand {
     /// Command for start playing file
     PlayFile(PlayFileCommand),
-    // StopPlaying(StopPlayingCommand),
+    StopPlaying(StopPlayingCommand),
 }
 
 /// Broadcast command for playing file on any restream of any client
@@ -26,12 +26,12 @@ pub struct PlayFileCommand {
     pub file_id: String,
 }
 
-/// Broadcast command for playing file on any restream of any client
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// pub struct StopPlayingCommand {
-//     /// File identity
-//     pub file_id: String,
-// }
+/// Broadcast command for stop playing file on any restream of any client
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StopPlayingCommand {
+    /// File identity
+    pub file_id: String,
+}
 
 /// GraphQL mutation for sending play file command
 #[derive(GraphQLQuery)]
@@ -42,6 +42,16 @@ pub struct PlayFileCommand {
 )]
 #[derive(Debug)]
 pub(crate) struct BroadcastPlayFile;
+
+/// GraphQL mutation for sending stop playing file command
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "client.graphql.schema.json",
+    query_path = "src/api/graphql/queries/stop_playing_file.graphql",
+    response_derives = "Debug"
+)]
+#[derive(Debug)]
+pub(crate) struct StopPlayingFile;
 
 /// Broadcast [`DashboardCommand`] to clients
 #[derive(Debug, Default)]
@@ -80,17 +90,33 @@ impl Broadcaster {
     ) {
         match command {
             DashboardCommand::PlayFile(c) => {
-                let client_id1 = client_id.clone();
-                let state1 = self.state.clone();
-
+                let client_id = client_id.clone();
+                let state = self.state.clone();
                 Self::try_to_run_command(
-                    client_id1.clone(),
-                    state1.clone(),
+                    client_id.clone(),
+                    state.clone(),
                     async move {
                         Self::request_play_file(
-                            client_id1,
+                            client_id,
                             c.file_id.as_str(),
-                            state1,
+                            state,
+                        )
+                        .await
+                    },
+                )
+            }
+            DashboardCommand::StopPlaying(c) => {
+                let client_id = client_id.clone();
+                let state = self.state.clone();
+
+                Self::try_to_run_command(
+                    client_id.clone(),
+                    state.clone(),
+                    async move {
+                        Self::request_stop_playing_file(
+                            client_id,
+                            c.file_id.as_str(),
+                            state,
                         )
                         .await
                     },
@@ -99,13 +125,13 @@ impl Broadcaster {
         }
     }
 
-    fn try_to_run_command<FutureCommand>(
+    fn try_to_run_command<
+        FutureCommand: Future<Output = anyhow::Result<()>> + Send + 'static,
+    >(
         client_id: ClientId,
         state: State,
         command: FutureCommand,
-    ) where
-        FutureCommand: Future<Output = anyhow::Result<()>> + Send + 'static,
-    {
+    ) {
         drop(tokio::spawn(async move {
             let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
                 let error_message = format!(
@@ -141,6 +167,7 @@ impl Broadcaster {
         let request_body = BroadcastPlayFile::build_query(Vars {
             file_id: file_id.to_string(),
         });
+
         let request = reqwest::Client::builder().build().unwrap();
 
         let url = format!("{}api", client_id);
@@ -157,11 +184,49 @@ impl Broadcaster {
             response
         );
 
+        Self::handle_errors(client_id, state, response.errors)
+    }
+
+    async fn request_stop_playing_file(
+        client_id: ClientId,
+        file_id: &str,
+        state: State,
+    ) -> anyhow::Result<()> {
+        type Vars = <StopPlayingFile as GraphQLQuery>::Variables;
+        type ResponseData = <StopPlayingFile as GraphQLQuery>::ResponseData;
+
+        let request_body = StopPlayingFile::build_query(Vars {
+            file_id: file_id.to_string(),
+        });
+
+        let request = reqwest::Client::builder().build().unwrap();
+
+        let url = format!("{}api", client_id);
+        let res = request
+            .post(url.as_str())
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let response: Response<ResponseData> = res.json().await?;
+        log::info!(
+            "Sending stop playing file to client: {}. Response: {:#?}",
+            client_id,
+            response
+        );
+
+        Self::handle_errors(client_id, state, response.errors)
+    }
+
+    fn handle_errors(
+        client_id: ClientId,
+        state: State,
+        errors: Option<Vec<graphql_client::Error>>,
+    ) -> anyhow::Result<()> {
         // TODO: Consider better error handling with ability to constant
         //  displaying error on dashboard
-        if response.errors.is_some() {
-            let response_errors: Vec<String> = response
-                .errors
+        if errors.is_some() {
+            let response_errors: Vec<String> = errors
                 .unwrap_or_default()
                 .into_iter()
                 .map(|e| e.message)

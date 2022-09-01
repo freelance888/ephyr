@@ -393,6 +393,33 @@ impl MutationsRoot {
         Some(has_found)
     }
 
+    /// Stops playing file if it's found in playlist of any `[Restream]`
+    ///
+    /// Returns `true` if file was found in any of existing `[Restream]`s
+    /// and `false` if no such file was found
+    fn broadcast_stop_playing_file(
+        #[graphql(description = "file identity")] file_id: String,
+        context: &Context,
+    ) -> Option<bool> {
+        let mut has_found = false;
+        context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .for_each(|r| {
+                let found =
+                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
+
+                if found.is_some() {
+                    r.playlist.currently_playing_file = None;
+                    has_found = true;
+                }
+            });
+
+        Some(has_found)
+    }
+
     /// Sends request to Google API and appends found files to the provided
     /// restream's playlist.
     async fn get_playlist_from_gdrive(

@@ -1,0 +1,3 @@
+mutation StopPlayingFile($fileId: String!) {
+    broadcastStopPlayingFile(fileId: $fileId)
+}
