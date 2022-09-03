@@ -11,6 +11,7 @@ use juniper::{
     GraphQLObject, GraphQLScalar, InputValue, ParseScalarResult,
     ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
+use regex::Regex;
 
 use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
@@ -154,6 +155,9 @@ pub struct Client {
     /// Unique id of client. Url of the host.
     pub id: ClientId,
 
+    /// Whether the client url is protected by base auth
+    pub is_protected: bool,
+
     /// Statistics for this [`Client`].
     #[serde(skip)]
     pub statistics: Option<ClientStatisticsResponse>,
@@ -165,6 +169,7 @@ impl Client {
     pub fn new(client_id: &ClientId) -> Self {
         Self {
             id: client_id.clone(),
+            is_protected: client_id.has_base_auth(),
             statistics: None,
         }
     }
@@ -191,6 +196,12 @@ impl ClientId {
     #[must_use]
     pub fn new(url: Url) -> Self {
         Self(url)
+    }
+
+    /// Checks whether client id url is base auth ulr
+    pub fn has_base_auth(&self) -> bool {
+        let re = Regex::new("^(?<protocol>.+?\\)(?<username>.+?):(?<password>.+?)@(?<address>.+)$").unwrap();
+        re.is_match(self.0.as_str())
     }
 
     #[allow(clippy::wrong_self_convention)]

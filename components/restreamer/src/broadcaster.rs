@@ -74,13 +74,18 @@ impl Broadcaster {
             self.state.dashboard_commands.lock_mut().drain(..).collect();
 
         let state = self.state.clone();
-        let clients = state.clients.lock_mut();
 
-        for command in commands {
-            for client in clients.iter() {
-                self.handle_one_command(client.id.clone(), command.clone());
-            }
-        }
+        // We send command only clients protected by password, i.e having base auth url
+        state
+            .clients
+            .lock_mut()
+            .iter()
+            .filter(|client| client.is_protected)
+            .for_each(|client| {
+                commands.iter().for_each(|command| {
+                    self.handle_one_command(client.id.clone(), command.clone());
+                })
+            });
     }
 
     fn handle_one_command(
