@@ -4,7 +4,7 @@
 //! [`Input`]: crate::state::Input
 //! [`Output`]: crate::state::Output
 use crate::state::Status;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 use derive_more::{Deref, Display, Into};
 use juniper::{
@@ -44,7 +44,7 @@ pub struct ClientStatistics {
     pub client_title: String,
 
     /// Time when statistics was taken
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: String,
 
     /// Count of inputs grouped by status
     pub inputs: Vec<StatusStatistics>,
@@ -71,7 +71,7 @@ impl ClientStatistics {
     ) -> Self {
         Self {
             client_title,
-            timestamp: Utc::now(),
+            timestamp: Utc::now().format("%d.%m.%Y %H:%M").to_string(),
             inputs,
             outputs,
             server_info,
@@ -156,6 +156,7 @@ pub struct Client {
     pub id: ClientId,
 
     /// Whether the client url is protected by base auth
+    #[serde(default)]
     pub is_protected: bool,
 
     /// Statistics for this [`Client`].

@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang="ts">
   import { createGraphQlClient } from '../utils/util';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -23,11 +23,11 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: canRenderToolbar = isOnline && $dashboard.data;
-  $: error = $dashboard && $dashboard.error;
+  $: error = $dashboard?.error;
   $: isLoading = !isOnline || $dashboard.loading;
   $: canRenderMainComponent = isOnline && $dashboard.data;
-  $: clients = $dashboard.data && $dashboard.data.statistics;
-  $: clientsWithStatistics = clients ? clients.filter((x) => x.statistics) : [];
+  $: clients = $dashboard.data?.statistics;
+  $: clientsWithStatistics = clients?.filter((x) => x.statistics) ?? [];
   $: inputFilters = [];
   $: outputFilters = [];
 
@@ -64,23 +64,8 @@
       status
     );
 
-  const getInputs = (client) => {
-    const inputs =
-      client.statistics &&
-      client.statistics.data &&
-      client.statistics.data.inputs;
-
-    return inputs ? inputs : [];
-  };
-
-  const getOutputs = (client) => {
-    const outputs =
-      client.statistics &&
-      client.statistics.data &&
-      client.statistics.data.outputs;
-
-    return outputs ? outputs : [];
-  };
+  const getInputs = (client) => client.statistics?.data?.inputs ?? [];
+  const getOutputs = (client) => client.statistics?.data?.outputs ?? [];
 
   const getTotalCountByClient = (items, status) => {
     if (!items) {

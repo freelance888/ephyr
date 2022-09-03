@@ -1,6 +1,7 @@
 subscription Statistics {
     statistics {
         id
+        isProtected
         statistics {
             data {
                 clientTitle

@@ -1,9 +1,6 @@
 //! Broadcaster for dashboard commands
 
-use crate::slog::FnValue;
-use crate::{
-    client_stat::save_client_error, display_panic, state::ClientId, State,
-};
+use crate::{display_panic, state::ClientId, State};
 use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};

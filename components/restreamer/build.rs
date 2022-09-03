@@ -48,9 +48,14 @@ fn build_full_stream(out_dir: &str) -> std::io::Result<()> {
 fn main() -> std::io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
 
-    NpmBuild::new("./client")
+    let package_json_dir = "./client";
+    if !cfg!(debug_assertions) {
+        NpmBuild::new(package_json_dir)
+            .executable("yarn")
+            .install()?;
+    }
+    NpmBuild::new(package_json_dir)
         .executable("yarn")
-        .install()?
         .run(if cfg!(debug_assertions) {
             "build:dev"
         } else {

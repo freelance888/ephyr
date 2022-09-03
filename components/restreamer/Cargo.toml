@@ -17,7 +17,7 @@ argon2 = { version = "1.0.0", package = "rust-argon2", default-features = false 
 askama = { version = "0.11", default-features = false }
 backoff = { version = "0.4", features = ["tokio"] }
 byteorder = "1.4"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.22", features = ["serde"] }
 ephyr-log = { version = "0.1", path = "../../common/log" }
 futures = "0.3"
 futures-signals = "0.3"

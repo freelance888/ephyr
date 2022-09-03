@@ -15,7 +15,6 @@ use crate::{
     types::DroppableAbortHandle,
     State,
 };
-
 use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
@@ -68,8 +67,6 @@ impl ClientJobsPool {
         self.pool = new_pool;
     }
 }
-
-type DateTimeUtc = DateTime<Utc>;
 
 /// GraphQL query for getting client statistics
 #[derive(GraphQLQuery)]
