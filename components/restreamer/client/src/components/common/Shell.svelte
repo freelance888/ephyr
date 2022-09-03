@@ -162,7 +162,7 @@
   .section-label
     font-size: smaller
     position: absolute
-    top: -12px
+    top: -16px
     left: 0
     padding: 2px 10px
     border-top-left-radius: 4px
