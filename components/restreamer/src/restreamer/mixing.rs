@@ -1,0 +1,651 @@
+//! Kind of a [GStD] re-streaming process that mixes a live stream from one
+//! URL endpoint with some additional live streams and re-streams the result to
+//! another endpoint.
+//!
+//! [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    fmt::Write as _,
+    panic::AssertUnwindSafe,
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+};
+
+use ephyr_log::{log, Drain as _};
+use futures::{FutureExt as _, TryFutureExt as _};
+use gst_client;
+use interprocess::os::unix::fifo_file::create_fifo;
+use tokio::{
+    fs::File,
+    io, pin,
+    process::Command,
+    sync::{watch, Mutex},
+};
+use tsclientlib::Identity;
+use url::Url;
+use uuid::Uuid;
+use zeromq::ZmqMessage;
+
+use crate::{
+    display_panic, dvr,
+    restreamer::RestreamerKind,
+    state::{self, Delay, MixinId, MixinSrcUrl, State, Volume},
+    teamspeak,
+};
+/// Status of [Restreamer] process
+///
+/// Using for communication through [`tokio::sync::watch`]
+/// between [`Restreamer`] and [`MixingRestreamer`] with [`RestreamerKind`].
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum RestreamerStatus {
+    /// [`Restreamer`] process is started and running
+    Started = 0,
+    /// [`Restreamer`] process is finishing
+    Finished = 1,
+}
+
+/// Kind of a [GStD] re-streaming process that mixes a live stream from one
+/// URL endpoint with some additional live streams and re-streams the result to
+/// another endpoint.
+///
+/// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+#[derive(Clone, Debug)]
+pub struct MixingRestreamer {
+    /// ID of an element in a [`State`] this [`MixingRestreamer`] process is
+    /// related to.
+    pub id: Uuid,
+
+    /// [`Url`] to pull a live stream from.
+    pub from_url: Url,
+
+    /// [`Url`] to publish the mixed live stream onto.
+    pub to_url: Url,
+
+    /// [`Volume`] rate to mix an audio of the original pulled live stream with.
+    pub orig_volume: Volume,
+
+    /// [ZeroMQ] port of a spawned [GStD] process listening to a real-time
+    /// filter updates of the original pulled live stream during mixing process.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    /// [ZeroMQ]: https://zeromq.org
+    pub orig_zmq_port: u16,
+
+    /// Additional live streams to be mixed with the original one before being
+    /// re-streamed to the [`MixingRestreamer::to_url`].
+    pub mixins: Vec<Mixin>,
+}
+
+impl MixingRestreamer {
+    /// Creates a new [`MixingRestreamer`] out of the given [`state::Output`].
+    ///
+    /// `prev` value may be specified to consume already initialized resources,
+    /// which are unwanted to be re-created.
+    #[must_use]
+    pub fn new(
+        output: &state::Output,
+        from_url: &Url,
+        mut prev: Option<&RestreamerKind>,
+    ) -> Self {
+        let prev = prev.as_mut().and_then(|kind| {
+            if let RestreamerKind::Mixing(r) = kind {
+                Some(&r.mixins)
+            } else {
+                None
+            }
+        });
+        Self {
+            id: output.id.into(),
+            from_url: from_url.clone(),
+            to_url: RestreamerKind::dst_url(output),
+            orig_volume: output.volume.clone(),
+            orig_zmq_port: new_unique_zmq_port(),
+            mixins: output
+                .mixins
+                .iter()
+                .map(|m| {
+                    Mixin::new(
+                        m,
+                        output.label.as_ref(),
+                        prev.and_then(|p| p.iter().find(|p| p.id == m.id)),
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    /// Checks whether this [`MixingRestreamer`] process must be restarted, as
+    /// cannot apply the new `actual` params on itself correctly, without
+    /// interruptions.
+    #[inline]
+    #[must_use]
+    pub fn needs_restart(&mut self, actual: &Self) -> bool {
+        if self.from_url != actual.from_url
+            || self.to_url != actual.to_url
+            || self.mixins.len() != actual.mixins.len()
+        {
+            return true;
+        }
+
+        for (curr, actual) in self.mixins.iter().zip(actual.mixins.iter()) {
+            if curr.needs_restart(actual) {
+                return true;
+            }
+        }
+
+        if self.orig_volume != actual.orig_volume {
+            self.orig_volume = actual.orig_volume.clone();
+            tune_volume(self.id, self.orig_zmq_port, self.orig_volume.clone());
+        }
+        for (curr, actual) in self.mixins.iter_mut().zip(actual.mixins.iter()) {
+            if curr.volume != actual.volume {
+                curr.volume = actual.volume.clone();
+                tune_volume(curr.id.into(), curr.zmq_port, curr.volume.clone());
+            }
+            if curr.delay != actual.delay {
+                curr.delay = actual.delay;
+                tune_delay(curr.id.into(), curr.zmq_port, curr.delay);
+            }
+        }
+
+        false
+    }
+
+    /// Properly setups the given [GStD] [`Command`] for this
+    /// [`MixingRestreamer`] before running it.
+    ///
+    /// The specified [`State`] is used to retrieve up-to-date [`Volume`]s, as
+    /// their changes don't trigger re-creation of the whole [GStD]
+    /// re-streaming process.
+    ///
+    /// # Errors
+    ///
+    /// If the given [GStD] [`Command`] fails to be setup.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    #[allow(clippy::too_many_lines)]
+    pub(crate) fn setup_pipeline(
+        &self,
+        client: gst_client::GstClient,
+        state: &State,
+    ) -> String {
+        // let my_id = self.id.into();
+
+        // // We need up-to-date values of `Volume` here, right from the `State`,
+        // // as they won't be updated in a closured `self` value.
+        // let output =
+        //     state.restreams.lock_ref().iter().find_map(|r| {
+        //         r.outputs.iter().find(|o| o.id == my_id).cloned()
+        //     });
+        //
+        // if ephyr_log::logger().is_debug_enabled() {
+        //     let _ = cmd.stderr(Stdio::inherit()).args(&["-loglevel", "debug"]);
+        // } else {
+        //     let _ = cmd.stderr(Stdio::null());
+        // }
+        //
+        // let orig_volume = output
+        //     .as_ref()
+        //     .map_or(self.orig_volume.clone(), |o| o.volume.clone());
+        //
+        // // WARNING: The filters order matters here!
+        // let mut filter_complex = Vec::with_capacity(self.mixins.len() + 1);
+        // filter_complex.push(format!(
+        //     "[0:a]\
+        //        volume@{orig_id}={volume},\
+        //        aresample=48000,\
+        //        azmq=bind_address=tcp\\\\\\://127.0.0.1\\\\\\:{port}\
+        //      [{orig_id}]",
+        //     orig_id = self.id,
+        //     volume = orig_volume.display_as_fraction(),
+        //     port = self.orig_zmq_port,
+        // ));
+        // let _ = cmd.args(&["-i", self.from_url.as_str()]);
+        //
+        // for (n, mixin) in self.mixins.iter().enumerate() {
+        //     let mut extra_filters = String::new();
+        //
+        //     let _ = match mixin.url.scheme() {
+        //         "ts" => {
+        //             extra_filters.push_str("aresample=async=1,");
+        //             cmd.args(&["-thread_queue_size", "512"])
+        //                 .args(&["-f", "f32be"])
+        //                 .args(&["-sample_rate", "48000"])
+        //                 .args(&["-channels", "2"])
+        //                 .args(&["-use_wallclock_as_timestamps", "true"])
+        //                 .arg("-i")
+        //                 .arg(mixin.get_fifo_path())
+        //         }
+        //
+        //         "http" | "https"
+        //             if Path::new(mixin.url.path()).extension()
+        //                 == Some("mp3".as_ref()) =>
+        //         {
+        //             extra_filters.push_str("aresample=48000,");
+        //             cmd.args(&["-i", mixin.url.as_str()])
+        //         }
+        //
+        //         _ => unimplemented!(),
+        //     };
+        //
+        //     if !mixin.delay.is_zero() {
+        //         let _ = write!(
+        //             extra_filters,
+        //             "adelay@{mixin_id}=delays={delay}:all=1,",
+        //             mixin_id = mixin.id,
+        //             delay = mixin.delay.as_millis()
+        //         );
+        //     }
+        //
+        //     let volume = output
+        //         .as_ref()
+        //         .and_then(|o| {
+        //             o.mixins.iter().find_map(|m| {
+        //                 (m.id == mixin.id).then(|| m.volume.clone())
+        //             })
+        //         })
+        //         .unwrap_or_else(|| mixin.volume.clone());
+        //
+        //     // WARNING: The filters order matters here!
+        //     filter_complex.push(format!(
+        //         "[{num}:a]\
+        //            volume@{mixin_id}={volume},\
+        //            {extra_filters}\
+        //            azmq=bind_address=tcp\\\\\\://127.0.0.1\\\\\\:{port}\
+        //          [{mixin_id}]",
+        //         num = n + 1,
+        //         mixin_id = mixin.id,
+        //         volume = volume.display_as_fraction(),
+        //         extra_filters = extra_filters,
+        //         port = mixin.zmq_port,
+        //     ));
+        // }
+        //
+        // let mut orig_id = self.id.to_string();
+        // let mut mixin_ids = self
+        //     .mixins
+        //     .iter()
+        //     .map(|m| m.id.to_string())
+        //     .collect::<Vec<_>>();
+        //
+        // // Activate `sidechain` filter if required
+        // if let Some(sidechain_mixin) = self.mixins.iter().find(|m| m.sidechain)
+        // {
+        //     let sidechain_mixin_id = sidechain_mixin.id.to_string();
+        //     // Sidechain is mixing Origin Audio and selected Mixin Audio
+        //     filter_complex.push(format!(
+        //         "[{sidechain_mixin_id}]asplit=2[sc][mix];\
+        //          [{orig_id}][sc]sidechaincompress=\
+        //                             level_in=2\
+        //                             :threshold=0.05\
+        //                             :ratio=10\
+        //                             :attack=10\
+        //                             :knee=4\
+        //                             :release=1500[compr]"
+        //     ));
+        //     // Replace Mixin Id for sidechain with `mix` value
+        //     if let Some(elem) =
+        //         mixin_ids.iter_mut().find(|x| **x == sidechain_mixin_id)
+        //     {
+        //         "mix".clone_into(elem);
+        //     };
+        //
+        //     // Replace Origin Audio Id with side-chained version
+        //     orig_id = "compr".to_string();
+        // };
+        //
+        // filter_complex.push(format!(
+        //     "[{orig_id}][{mixin_ids}]amix=inputs={count}:duration=longest[out]",
+        //     orig_id = orig_id,
+        //     mixin_ids = mixin_ids.join("]["),
+        //     count = self.mixins.len() + 1,
+        // ));
+        //
+        // log::debug!("GStD FILTER COMPLEX: {:?}", &filter_complex.join(";"));
+        // let _ = cmd
+        //     .args(&["-filter_complex", &filter_complex.join(";")])
+        //     .args(&["-map", "[out]"])
+        //     .args(&["-max_muxing_queue_size", "50000000"]);
+        //
+        // let _ = match self.to_url.scheme() {
+        //     "file"
+        //         if Path::new(self.to_url.path()).extension()
+        //             == Some("flv".as_ref()) =>
+        //     {
+        //         cmd.args(&["-map", "0:v"])
+        //             .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+        //             .arg(dvr::new_file_path(&self.to_url).await?)
+        //     }
+        //
+        //     "icecast" => cmd
+        //         .args(&["-c:a", "libmp3lame", "-b:a", "64k"])
+        //         .args(&["-f", "mp3", "-content_type", "audio/mpeg"])
+        //         .arg(self.to_url.as_str()),
+        //
+        //     "rtmp" | "rtmps" => cmd
+        //         .args(&["-map", "0:v"])
+        //         .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+        //         .args(&["-f", "flv"])
+        //         .arg(self.to_url.as_str()),
+        //
+        //     "srt" => cmd
+        //         .args(&["-map", "0:v"])
+        //         .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+        //         .args(&["-strict", "-2", "-y", "-f", "mpegts"])
+        //         .arg(self.to_url.as_str()),
+        //
+        //     _ => unimplemented!(),
+        // };
+        // log::debug!("GStD CMD: {:?}", &cmd);
+        // Ok(())
+        todo!()
+    }
+
+    /// Copy data from [`Mixin.stdin`] to [FIFO].
+    ///
+    /// Each data copying is operated in separate thread.
+    /// [FIFO] should be fed before [GStD].
+    ///
+    /// # Errors
+    ///
+    /// If [FIFI] file failed to create.
+    /// We need it because [GStD] cannot start if no [FIFO] file.
+    ///
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    pub(crate) fn start_fed_mixins_fifo(
+        &self,
+        kill_rx: &watch::Receiver<RestreamerStatus>,
+    ) {
+        async fn run_copy_and_stop_on_signal(
+            input: Arc<Mutex<teamspeak::Input>>,
+            fifo_path: PathBuf,
+            mut kill_rx: watch::Receiver<RestreamerStatus>,
+        ) -> io::Result<()> {
+            // To avoid instant resolve on await for `kill_rx`
+            let _ = *kill_rx.borrow_and_update();
+
+            // Initialize copying future to fed it into select
+            let mut src = input.lock().await;
+            let mut file = File::create(&fifo_path).await?;
+            let copying = io::copy(&mut *src, &mut file);
+            pin!(copying);
+
+            // Run copying to FIFO and stops if receive signal from `kill_rx`
+            loop {
+                tokio::select! {
+                    r = &mut copying => {
+                        let _ = r.map_err(|e|
+                            log::error!("Failed to write into FIFO: {}", e)
+                        );
+                        break;
+                    }
+                   _ = kill_rx.changed() => {
+                        log::debug!("Signal for FIFO received");
+                        break;
+                    }
+                }
+            }
+            // Clean up FIFO file
+            let _ = std::fs::remove_file(fifo_path)
+                .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
+
+            Ok(())
+        }
+
+        for m in &self.mixins {
+            // FIFO should be created before open
+            if !m.get_fifo_path().exists() {
+                let _ = create_fifo(m.get_fifo_path(), 0o777)
+                    .map_err(|e| log::error!("Failed to create FIFO: {}", e));
+            }
+            if let Some(i) = m.stdin.as_ref() {
+                drop(tokio::spawn(run_copy_and_stop_on_signal(
+                    Arc::clone(i),
+                    m.get_fifo_path(),
+                    kill_rx.clone(),
+                )));
+            }
+        }
+    }
+}
+
+/// Additional live stream for mixing in a [`MixingRestreamer`].
+#[derive(Clone, Debug)]
+pub struct Mixin {
+    /// ID of a [`state::Mixin`] represented by this [`Mixin`].
+    pub id: MixinId,
+
+    /// [`Url`] to pull an additional live stream from for mixing.
+    pub url: MixinSrcUrl,
+
+    /// [`Delay`] to mix this [`Mixin`]'s live stream with.
+    pub delay: Delay,
+
+    /// [`Volume`] rate to mix an audio of this [`Mixin`]'s live stream with.
+    pub volume: Volume,
+
+    /// Apply [sidechain] audio filter of this [`Mixin`]'s with live stream.
+    ///
+    /// [sidechain]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon/GStD-filters.html#sidechaincompress
+    pub sidechain: bool,
+
+    /// [ZeroMQ] port of a spawned [GStD] process listening to a real-time
+    /// filter updates of this [`Mixin`]'s live stream during mixing process.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    /// [ZeroMQ]: https://zeromq.org
+    pub zmq_port: u16,
+
+    /// Actual live audio stream captured from the [TeamSpeak] server.
+    ///
+    /// If present, it should be fed into [FIFO].
+    ///
+    /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    stdin: Option<Arc<Mutex<teamspeak::Input>>>,
+}
+
+impl Mixin {
+    /// Creates a new [`Mixin`] out of the given [`state::Mixin`].
+    ///
+    /// `prev` value may be specified to consume already initialized resources,
+    /// which are unwanted to be re-created.
+    ///
+    /// Optional `label` may be used to identify this [`Mixin`] in a [TeamSpeak]
+    /// channel.
+    ///
+    /// [TeamSpeak]: https://teamspeak.com
+    #[allow(clippy::non_ascii_literal)]
+    #[must_use]
+    pub fn new(
+        state: &state::Mixin,
+        label: Option<&state::Label>,
+        prev: Option<&Mixin>,
+    ) -> Self {
+        let stdin = (state.src.scheme() == "ts")
+            .then(|| {
+                prev.and_then(|m| m.stdin.clone()).or_else(|| {
+                    let mut host = Cow::Borrowed(state.src.host_str()?);
+                    if let Some(port) = state.src.port() {
+                        host = Cow::Owned(format!("{}:{}", host, port));
+                    }
+
+                    let channel = state.src.path().trim_start_matches('/');
+
+                    let query: HashMap<String, String> =
+                        state.src.query_pairs().into_owned().collect();
+                    let name = query
+                        .get("name")
+                        .cloned()
+                        .or_else(|| label.map(|l| format!("🤖 {}", l)))
+                        .unwrap_or_else(|| format!("🤖 {}", state.id));
+                    let identity = query.get("identity").map_or_else(
+                        Identity::create,
+                        |v| {
+                            Identity::new_from_str(v).unwrap_or_else(|e| {
+                                log::error!(
+                                    "Failed to create identity `{}`\
+                                    \n\t with error: {}",
+                                    &v,
+                                    &e
+                                );
+                                Identity::create()
+                            })
+                        },
+                    );
+
+                    Some(Arc::new(Mutex::new(teamspeak::Input::new(
+                        teamspeak::Connection::build(host.into_owned())
+                            .channel(channel.to_owned())
+                            .name(name)
+                            .identity(identity),
+                    ))))
+                })
+            })
+            .flatten();
+
+        Self {
+            id: state.id,
+            url: state.src.clone(),
+            delay: state.delay,
+            sidechain: state.sidechain,
+            volume: state.volume.clone(),
+            zmq_port: new_unique_zmq_port(),
+            stdin,
+        }
+    }
+
+    /// Checks whether this [`Mixin`]'s [GStD] process must be restarted, as
+    /// cannot apply the new `actual` params on itself correctly, without
+    /// interruptions.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    #[inline]
+    #[must_use]
+    pub fn needs_restart(&self, actual: &Self) -> bool {
+        self.url != actual.url || self.sidechain != actual.sidechain
+    }
+
+    /// [FIFO] path where stream captures from the [TeamSpeak] server.
+    ///
+    /// Should be fed into [GStD]'s as file input.
+    ///
+    /// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+    /// [TeamSpeak]: https://teamspeak.com
+    /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
+    #[inline]
+    #[must_use]
+    pub fn get_fifo_path(&self) -> PathBuf {
+        std::env::temp_dir().join(format!("ephyr_mixin_{}.pipe", self.id))
+    }
+}
+
+/// Generates a new port for a [ZeroMQ] listener, which is highly unlikely to be
+/// used already.
+///
+/// [ZeroMQ]: https://zeromq.org
+#[must_use]
+fn new_unique_zmq_port() -> u16 {
+    use std::{
+        convert,
+        sync::atomic::{AtomicU16, Ordering},
+    };
+
+    static LATEST_PORT: AtomicU16 = AtomicU16::new(20000);
+
+    LATEST_PORT
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |p| {
+            Some(p.checked_add(1).unwrap_or(20000))
+        })
+        .unwrap_or_else(convert::identity)
+}
+
+/// Tunes [`Volume`] of the specified [GStD] `track` by updating the `volume`
+/// [GStD] filter in real-time via [ZeroMQ] protocol.
+///
+/// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+/// [ZeroMQ]: https://zeromq.org
+fn tune_volume(track: Uuid, port: u16, volume: Volume) {
+    tune_with_zmq(
+        port,
+        format!("volume@{} volume {}", track, volume.display_as_fraction())
+            .into(),
+    );
+}
+
+/// Tunes [`Delay`] of the specified [GStD] `track` by updating the `delay`
+/// [GStD] filter in real-time via [ZeroMQ] protocol.
+///
+/// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+/// [ZeroMQ]: https://zeromq.org
+fn tune_delay(track: Uuid, port: u16, delay: Delay) {
+    tune_with_zmq(
+        port,
+        format!("adelay@{} delays all:{}", track, delay.as_millis()).into(),
+    );
+}
+
+/// Send [`ZmqMessage`] to specified localhost and specified port
+///
+/// Used for apply [GStD] filter in real-time via [ZeroMQ] protocol.
+///
+/// [GStD]: https://developer.ridgerun.com/wiki/index.php/GStreamer_Daemon
+/// [ZeroMQ]: https://zeromq.org
+fn tune_with_zmq(port: u16, command: ZmqMessage) {
+    use zeromq::{Socket as _, SocketRecv as _, SocketSend as _};
+
+    drop(tokio::spawn(
+        AssertUnwindSafe(async move {
+            let addr = format!("tcp://127.0.0.1:{}", port);
+
+            let mut socket = zeromq::ReqSocket::new();
+            socket.connect(&addr).await.map_err(|e| {
+                log::error!(
+                    "Failed to establish ZeroMQ connection with {} : {}",
+                    addr,
+                    e,
+                );
+            })?;
+            socket.send(command).await.map_err(|e| {
+                log::error!(
+                    "Failed to send ZeroMQ message to {} : {}",
+                    addr,
+                    e,
+                );
+            })?;
+
+            let resp = socket.recv().await.map_err(|e| {
+                log::error!(
+                    "Failed to receive ZeroMQ response from {} : {}",
+                    addr,
+                    e,
+                );
+            })?;
+
+            let data = resp.into_vec().pop().unwrap();
+            if data.as_ref() != "0 Success".as_bytes() {
+                log::error!(
+                    "Received invalid ZeroMQ response from {} : {}",
+                    addr,
+                    std::str::from_utf8(&data).map_or_else(
+                        |_| Cow::Owned(format!("{:?}", &data)),
+                        Cow::Borrowed,
+                    ),
+                );
+            }
+
+            <Result<_, ()>>::Ok(())
+        })
+        .catch_unwind()
+        .map_err(|p| {
+            log::crit!(
+                "Panicked while sending ZeroMQ message: {}",
+                display_panic(&p),
+            );
+        }),
+    ));
+}

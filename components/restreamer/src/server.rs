@@ -8,11 +8,13 @@ use std::{net::IpAddr, time::Duration};
 
 use ephyr_log::log;
 use futures::future;
+use gst_client::GstClient;
 use tokio::{fs, time};
+use url::Url;
 
 use crate::{
     cli::{Failure, Opts},
-    client_stat, dvr, ffmpeg, srs, teamspeak, State,
+    client_stat, dvr, ffmpeg, restreamer, srs, teamspeak, State,
 };
 
 /// Initializes and runs all application's HTTP servers.
@@ -36,10 +38,17 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         );
     }
 
-    let ffmpeg_path =
-        fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {}", e);
-        })?;
+    // let ffmpeg_path =
+    //     fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
+    //         log::error!("Failed to resolve FFmpeg binary path: {}", e);
+    //     })?;
+
+    // Use Url only for validation as issues with thread safety
+    let gstd_uri = Url::parse(&format!(
+        "http://{}:{}",
+        cfg.gstd_http_ip, cfg.gstd_http_port
+    ))
+    .map_err(|e| log::error!("Failed to parse GStD URL: {}", e))?;
 
     let state = State::try_new(&cfg.state_path)
         .await
@@ -65,10 +74,19 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     );
 
-    let mut restreamers =
-        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+    // let mut ffmpeg_restreamers =
+    //     ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+    // State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
+    //     ffmpeg_restreamers.apply(&restreams);
+    //     future::ready(())
+    // });
+
+    let client = GstClient::from(gstd_uri);
+    // TODO: add ping to GStD
+    let mut gstd_restreamers =
+        restreamer::RestreamersPool::new(client, state.clone());
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
-        restreamers.apply(&restreams);
+        gstd_restreamers.apply(&restreams);
         future::ready(())
     });
 

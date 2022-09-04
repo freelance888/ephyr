@@ -31,6 +31,7 @@ pub mod cli;
 pub mod client_stat;
 pub mod dvr;
 pub mod ffmpeg;
+mod restreamer;
 pub mod serde;
 pub mod server;
 pub mod spec;

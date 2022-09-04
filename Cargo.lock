@@ -1702,7 +1702,7 @@ dependencies = [
 
 [[package]]
 name = "ephyr-restreamer"
-version = "0.6.0"
+version = "0.7.0+dev"
 dependencies = [
  "actix-service 2.0.2",
  "actix-web 4.1.0",
@@ -2166,9 +2166,8 @@ dependencies = [
 
 [[package]]
 name = "gst-client"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da7cdf4d6f34f2a502cfcb2c25791f294aeda1532801e1bf0bca740a85e4c0c5"
+version = "0.1.2"
+source = "git+https://github.com/ALLATRA-IT/gst-client?branch=master#8af80fece4f6ad65646b09cb01e676f107edd2e2"
 dependencies = [
  "derive_more",
  "mime",
