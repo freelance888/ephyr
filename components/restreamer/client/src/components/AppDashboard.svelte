@@ -23,7 +23,7 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: canRenderToolbar = isOnline && $dashboard.data;
-  $: error = $dashboard?.error;
+  $: error = $dashboard.error;
   $: isLoading = !isOnline || $dashboard.loading;
   $: canRenderMainComponent = isOnline && $dashboard.data;
   $: clients = $dashboard.data?.statistics;

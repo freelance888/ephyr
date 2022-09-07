@@ -15,8 +15,10 @@ use crate::{
     state::{InputEndpointKind, InputSrc, Restream, State, Status},
 };
 use chrono::Utc;
-use reqwest::Response;
+use reqwest::{Response, StatusCode};
 use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
+
+const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
 
 /// Manages file downloads and files in the provided [`State`]
 #[derive(Debug, Default)]
@@ -121,8 +123,8 @@ impl FileManager {
         let filename = reqwest::get(
             format!(
                 "https://www.googleapis.com/drive/v3/files/{}?fields=name&\
-                 key={}",
-                file_id, api_key
+                 key={}&{}",
+                file_id, api_key, GDRIVE_PUBLIC_PARAMS
             )
             .as_str(),
         )
@@ -196,14 +198,21 @@ impl FileManager {
                     .get(
                         format!(
                             "https://www.googleapis.com/drive/v3/files/{}?\
-                             alt=media&key={}",
-                            file_id, api_key
+                             alt=media&key={}&{}",
+                            file_id, api_key, GDRIVE_PUBLIC_PARAMS
                         )
                         .as_str(),
                     )
                     .send()
                     .await
                 {
+                    if response.status() != StatusCode::OK {
+                        return Err(format!(
+                            "Can't download file. Http response status: {}",
+                            response.status()
+                        ));
+                    }
+
                     let total = response.content_length();
                     // Create FileInfo Download state and set the state
                     // to Downloading
@@ -515,6 +524,7 @@ pub async fn get_video_list_from_gdrive_folder(
 }
 
 pub(crate) mod api_response {
+    use crate::file_manager::GDRIVE_PUBLIC_PARAMS;
     use serde::Deserialize;
 
     /// Used to deserialize Google API call for the file details
@@ -560,8 +570,8 @@ pub(crate) mod api_response {
                 format!(
                     "https://www.googleapis.com/drive/v3/files?\
                      key={}&q='{}'%20in%20parents&\
-                     fields=files/id,files/name,files/mimeType",
-                    api_key, dir_id
+                     fields=files/id,files/name,files/mimeType&{}",
+                    api_key, dir_id, GDRIVE_PUBLIC_PARAMS
                 )
                 .as_str(),
             )

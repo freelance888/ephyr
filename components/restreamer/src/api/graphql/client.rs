@@ -440,7 +440,8 @@ impl MutationsRoot {
             })?;
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
-        if let Ok(playlist_files) = result {
+        if let Ok(mut playlist_files) = result {
+            playlist_files.sort_by_key(|x| x.name.clone());
             context
                 .state()
                 .restreams
