@@ -10,6 +10,7 @@
   import cloneDeep from 'lodash/cloneDeep';
   import { ExportAllRestreams } from '../../api/client.graphql';
   import { showError } from '../utils/util';
+  import RestreamModalNew from '../modals/RestreamModalNew.svelte';
 
   export let info;
   export let state;
@@ -40,6 +41,7 @@
 
   let openPasswordModal = false;
   let openSettingsModal = false;
+  let openRestreamModal = false;
 </script>
 
 <template>
@@ -81,10 +83,13 @@
     <button
       data-testid="add-input:open-modal-btn"
       class="uk-button uk-button-primary"
-      on:click={() => restreamModal.openAdd()}
+      on:click={() => openRestreamModal = true}
     >
       <i class="fas fa-plus" />&nbsp;<span>Input</span>
     </button>
+    {#if openRestreamModal}
+      <RestreamModalNew public_host={$info.data.info.publicHost} bind:visible={openRestreamModal}/>
+    {/if}
 
     {#if isOnline && $state.data}
       <ExportModal />
@@ -97,8 +102,6 @@
         <i class="fas fa-share-square" />
       </a>
     {/if}
-
-    <RestreamModal public_host={$info.data.info.publicHost} />
   </div>
 </template>
 

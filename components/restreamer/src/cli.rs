@@ -62,7 +62,7 @@ pub struct Opts {
         short,
         long,
         env = "EPHYR_RESTREAMER_STATE_PATH",
-        default_value = "state.json",
+        default_value = "/state.json",
         help = "Path to a file to persist state in",
         long_help = "Path to a file to persist the server's state in"
     )]

@@ -73,6 +73,10 @@ export function sanitizeUrl(url: string): string {
   return url.replace(/[\s]+/g, '');
 }
 
+export function areObjectsEqual(obj1: object, obj2: object): boolean {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
+}
+
 export function isMixPage(): boolean {
   const pathname = window.location.pathname;
   const p = window.location.hash.split('/');

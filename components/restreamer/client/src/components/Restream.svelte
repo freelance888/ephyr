@@ -29,6 +29,8 @@
   import StatusFilter from './common/StatusFilter.svelte';
   import { getReStreamOutputsCount } from '../utils/restreamHelpers.util';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
+  import { RestreamModel } from '../models/restream.model';
+  import RestreamModalNew from '../modals/RestreamModalNew.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -70,6 +72,8 @@
     ? globalOutputsFilters
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
+
+  let openRestreamModal = false;
 
   function openEditRestreamModal() {
     const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
@@ -238,10 +242,13 @@
     <a
       class="edit-input"
       href="/"
-      on:click|preventDefault={openEditRestreamModal}
+      on:click|preventDefault={() => openRestreamModal = true}
     >
       <i class="far fa-edit" title="Edit input" />
     </a>
+    {#if openRestreamModal}
+      <RestreamModalNew public_host={$info.data.info.publicHost} bind:visible={openRestreamModal} model={new RestreamModel(value)}/>
+    {/if}
     <Input
       {public_host}
       restream_id={value.id}
