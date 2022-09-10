@@ -45,6 +45,7 @@ impl FileManager {
                                 name: None,
                                 state: FileState::Local,
                                 download_state: None,
+                                error: None,
                             });
                             list.push(filename);
                         };
@@ -258,7 +259,10 @@ impl FileManager {
                     .find(|file| file.file_id == file_id)
                     .map_or_else(
                         || log::error!("Could not set the file state to error"),
-                        |val| val.state = FileState::DownloadError,
+                        |val| {
+                            val.state = FileState::DownloadError;
+                            val.error = Some(err);
+                        },
                     );
             });
         }));
@@ -394,6 +398,9 @@ pub struct LocalFileInfo {
     /// State of the file
     pub state: FileState,
 
+    /// Download error message
+    pub error: Option<String>,
+
     /// If the file is downloading the state of the download
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub download_state: Option<DownloadState>,
@@ -406,6 +413,7 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
             name: Some(file_response.name),
             state: FileState::Pending,
             download_state: None,
+            error: None,
         }
     }
 }
