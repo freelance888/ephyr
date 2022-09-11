@@ -2,12 +2,11 @@
   import { onDestroy, onMount } from 'svelte';
   import { mutation } from 'svelte-apollo';
   import { SetRestream } from '../../api/client.graphql';
-  import { areObjectsEqual, showError } from '../utils/util';
+  import { showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
-  import { get } from 'svelte/store';
-  import cloneDeep from 'lodash/cloneDeep';
+    import cloneDeep from 'lodash/cloneDeep';
 
   const setRestreamMutation = mutation(SetRestream);
 
@@ -15,53 +14,50 @@
   export let public_host = 'localhost';
 
   export let model: RestreamModel = new RestreamModel();
-  let prevModel: RestreamModel = cloneDeep(model);
+  let previous: RestreamModel = cloneDeep(model);
 
   let modelStore = writable(model);
 
   let submitable = false;
   onDestroy(
-    modelStore.subscribe((v) => {
-      submitable = !areObjectsEqual(get(modelStore), prevModel);
+    modelStore.subscribe((current) => {
+      submitable = current.key !== '';
+          let changed = !current.id;
+          if (!!current.id) {
+            changed |=
+              current.key !== previous.key ||
+              current.label !== previous.label ||
+              current.isPull !== previous.isPull ||
+              current.withBackup !== previous.withBackup;
+          }
+
+          if (current.isPull) {
+            submitable &= previous.pullUrl !== '';
+            if (!!current.id) {
+              changed |= current.pullUrl !== previous.pullUrl;
+            }
+          }
+
+          if (current.withBackup) {
+            if (!!current.id) {
+              changed |= current.backupIsPull !== previous.backupIsPull;
+            }
+            if (current.backupIsPull) {
+              submitable &= current.backupPullUrl !== '';
+              if (!!current.id) {
+                changed |= current.backupPullUrl !== previous.backupPullUrl;
+              }
+            }
+          }
+
+          if (!!current.id) {
+            changed |= current.withHls !== previous.withHls;
+          }
+          submitable &= changed;
     })
   );
 
-  // onDestroy(
-  //   value.subscribe((v) => {
-  //     submitable = v.key !== '';
-  //     let changed = !v.edit_id;
-  //     if (!!v.edit_id) {
-  //       changed |=
-  //         v.key !== v.prev_key ||
-  //         v.label !== v.prev_label ||
-  //         v.is_pull !== v.prev_is_pull ||
-  //         v.with_backup !== v.prev_with_backup;
-  //     }
-  //     if (v.is_pull) {
-  //       submitable &= v.pull_url !== '';
-  //       if (!!v.edit_id) {
-  //         changed |= v.pull_url !== v.prev_pull_url;
-  //       }
-  //     }
-  //     if (v.with_backup) {
-  //       if (!!v.edit_id) {
-  //         changed |= v.backup_is_pull !== v.prev_backup_is_pull;
-  //       }
-  //       if (v.backup_is_pull) {
-  //         submitable &= v.backup_pull_url !== '';
-  //         if (!!v.edit_id) {
-  //           changed |= v.backup_pull_url !== v.prev_backup_pull_url;
-  //         }
-  //       }
-  //     }
-  //     if (!!v.edit_id) {
-  //       changed |= v.with_hls !== v.prev_with_hls;
-  //     }
-  //     submitable &= changed;
-  //   })
-  // );
-
-  async function submit() {
+   async function submit() {
     if (!submitable) return;
 
     let variables = {
