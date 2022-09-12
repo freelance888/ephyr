@@ -1,5 +1,5 @@
 <script lang='ts'>
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { mutation } from 'svelte-apollo';
   import { SetRestream } from '../../api/client.graphql';
   import { showError } from '../utils/util';
@@ -21,53 +21,51 @@
   let submitable = false;
   onDestroy(
     modelStore.subscribe((current) => {
+
       submitable = current.key !== '';
-          let changed = !current.id;
+      let changed = !current.id;
+
+      if (!!current.id) {
+        changed |=
+          current.key !== previous.key ||
+          current.label !== previous.label ||
+          current.isPull !== previous.isPull ||
+          current.withBackup !== previous.withBackup;
+      }
+
+      if (current.isPull) {
+        submitable &= current.pullUrl !== '';
+        if (!!current.id) {
+          changed |= current.pullUrl !== previous.pullUrl;
+        }
+      }
+
+      if (current.withBackup) {
+        if (!!current.id) {
+          changed |= current.backupIsPull !== previous.backupIsPull;
+        }
+        if (current.backupIsPull) {
+          submitable &= current.backupPullUrl !== '';
           if (!!current.id) {
-            changed |=
-              current.key !== previous.key ||
-              current.label !== previous.label ||
-              current.isPull !== previous.isPull ||
-              current.withBackup !== previous.withBackup;
+            changed |= current.backupPullUrl !== previous.backupPullUrl;
           }
+        }
+      }
 
-          if (current.isPull) {
-            submitable &= previous.pullUrl !== '';
-            if (!!current.id) {
-              changed |= current.pullUrl !== previous.pullUrl;
-            }
-          }
-
-          if (current.withBackup) {
-            if (!!current.id) {
-              changed |= current.backupIsPull !== previous.backupIsPull;
-            }
-            if (current.backupIsPull) {
-              submitable &= current.backupPullUrl !== '';
-              if (!!current.id) {
-                changed |= current.backupPullUrl !== previous.backupPullUrl;
-              }
-            }
-          }
-
-          if (!!current.id) {
-            changed |= current.withHls !== previous.withHls;
-          }
-          submitable &= changed;
+      if (!!current.id) {
+        changed |= current.withHls !== previous.withHls;
+      }
+      submitable &= changed;
     })
   );
 
    async function submit() {
     if (!submitable) return;
 
-    let variables = {
-      id: null as string | null,
+    let variables: unknown = {
       key: model.key,
       with_hls: model.withHls,
       with_backup: false,
-      label: '',
-      url: '',
-      backup_url: ''
     };
 
     if (model.label !== '') {
@@ -168,6 +166,26 @@
             />
           {/if}
         </div>
+        <div class='hls'>
+          <label
+          ><input
+            class='uk-checkbox'
+            type='checkbox'
+            bind:checked={$modelStore.withHls}
+          /> with HLS endpoint</label
+          >
+        </div>
+
+        <div class="uk-section uk-section-xsmall">
+          <button class="uk-button uk-button-primary uk-button-small">Add backup</button>
+          <ul class="uk-list uk-list-divider uk-margin-left">
+            <li>List item 1</li>
+            <li>List item 2</li>
+            <li>List item 3</li>
+          </ul>
+        </div>
+
+
         <div class='backup'>
           <label
           ><input
@@ -194,15 +212,7 @@
             {/if}
           {/if}
         </div>
-        <div class='hls'>
-          <label
-          ><input
-            class='uk-checkbox'
-            type='checkbox'
-            bind:checked={$modelStore.withHls}
-          /> with HLS endpoint</label
-          >
-        </div>
+
       </fieldset>
 
       <button
