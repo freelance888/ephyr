@@ -382,18 +382,26 @@ impl RestreamerKind {
     // }
     async fn run_bus(&self, bus: gst::Bus, pipeline: Pipeline) {
         let mut bus_msg = bus.stream();
+        let mut i = 0;
 
         while let Some(msg) = bus_msg.next().await {
             use gst::MessageView;
+            log::info!("Pipeline message received {:?}", msg);
 
             match msg.view() {
                 MessageView::Error(err) => {
                     pipeline.set_state(gst::State::Null).unwrap();
-                    break;
+                    log::info!("Stopping pipeline with panic");
+                    panic!("error");
                 }
                 MessageView::Eos(_) => {
                     pipeline.set_state(gst::State::Null).unwrap();
-                    panic!("error");
+                    log::info!("Stopping pipeline");
+                    break;
+                }
+                MessageView::StreamStart(_) => {
+                    gst::debug_bin_to_dot_file(&pipeline, gst::DebugGraphDetails::ALL, format!("pipline_{}_out_{}", pipeline.name(), i));
+                    i += 1;
                 }
                 _ => (),
             }
@@ -403,14 +411,18 @@ impl RestreamerKind {
         &self,
         pipeline: Pipeline,
     ) -> io::Result<()> {
+        gst::debug_bin_to_dot_file(&pipeline, gst::DebugGraphDetails::ALL, "pipline_out");
         // start playing pipeline
+        log::info!("Starting pipeline");
         pipeline
             .set_state(gst::State::Playing)
             .expect("Could not change state from NULL to Playing state");
 
         // handle EOS or error
         let bus = pipeline.bus().unwrap();
+        log::info!("Running bus for the pipeline");
         self.run_bus(bus, pipeline.clone()).await;
+        log::info!("Pipeline bus stopped, shutting down pipeline");
         // End playing pipeline
         // pipeline
         //     .set_state(gst::State::Null)

@@ -82,7 +82,7 @@ impl Restreamer {
             loop {
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
-                let mut pipeline = Pipeline::new(Some("copy-pipeline"));
+                let mut pipeline = Pipeline::new(None);
                 let kill_rx_for_ffmpeg = kill_rx.clone();
 
                 let _ = AssertUnwindSafe(
@@ -93,7 +93,9 @@ impl Restreamer {
                             state,
                             Status::Initializing,
                         );
-                        kind.setup_pipeline(&mut pipeline);
+                        kind.setup_pipeline(&mut pipeline).map_err(|e| {
+                            log::error!("Failed to setup pipeline");
+                        }).await?;
                         kind.setup_ffmpeg(
                             cmd.kill_on_drop(true)
                                 .stdin(Stdio::null())
@@ -109,7 +111,11 @@ impl Restreamer {
                         })
                         .await?;
 
-                        let running = kind.run_pipeline(pipeline.clone());
+                        let running = if let RestreamerKind::Copy(restr) = kind {
+                            future::Either::Left(kind.run_pipeline(pipeline.clone()))
+                        } else {
+                            future::Either::Right(kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg))
+                        };
                         pin_mut!(running);
                         // let running_pipeline =
                         //     kind.run_pipeline(pipeline.clone());

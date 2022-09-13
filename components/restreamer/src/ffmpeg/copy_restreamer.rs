@@ -8,9 +8,11 @@ use std::path::Path;
 
 use gst::{prelude::*, Pipeline};
 use gstreamer as gst;
+use gstreamer::glib::Value;
 use tokio::{io, process::Command};
 use url::Url;
 use uuid::Uuid;
+use ephyr_log::log;
 
 use crate::dvr;
 
@@ -118,6 +120,7 @@ impl CopyRestreamer {
                     gst::ElementFactory::make("rtmp2src", Some("copy-src"))
                         .expect("Could not create rtmp2src");
                 src.set_property_from_str("location", self.from_url.as_str());
+                src.set_property("idle-timeout", 1u32);
                 src
             }
             _ => unimplemented!(),
@@ -128,6 +131,7 @@ impl CopyRestreamer {
                     gst::ElementFactory::make("rtmp2sink", Some("copy-out"))
                         .expect("Could not create rtmp2sink");
                 sink.set_property_from_str("location", self.to_url.as_str());
+                sink.set_property("async-connect", false);
                 sink
             }
             _ => unimplemented!(),
@@ -135,13 +139,15 @@ impl CopyRestreamer {
 
         let gst_elements = &[&source, &sink];
 
+        log::info!("Adding elements to Copy pipeline");
+
         pipeline.add_many(gst_elements).unwrap();
 
         gst::Element::link_many(gst_elements)
             .expect("Elements could not be linked");
 
         source.connect_pad_added(move |src, src_pad| {
-            println!("Received new pad {:?} from {:?}", src_pad, src);
+            log::info!("Received new pad {:?} from {:?}", src_pad, src);
         });
         Ok(())
     }
