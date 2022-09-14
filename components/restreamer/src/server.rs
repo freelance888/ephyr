@@ -10,6 +10,7 @@ use crate::{
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg, srs, teamspeak, State,
 };
+use crate::gstreamer::Gstreamer;
 
 /// Initializes and runs all application's HTTP servers.
 ///
@@ -61,8 +62,11 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     );
 
+    gstreamer::init();
+
     let mut restreamers =
-        ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+        // ffmpeg::RestreamersPool::new(ffmpeg_path, state.clone());
+        Gstreamer::new(state.clone());
     State::on_change("spawn_restreamers", &state.restreams, move |restreams| {
         restreamers.apply(&restreams);
         future::ready(())

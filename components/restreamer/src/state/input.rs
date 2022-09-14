@@ -13,9 +13,11 @@ use juniper::{GraphQLObject, GraphQLScalar};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
+use url::Url;
 use uuid::Uuid;
 
 use crate::{serde::is_false, spec, state::Status};
+use crate::state::RestreamKey;
 
 /// Upstream source that a `Restream` receives a live stream from.
 #[derive(
@@ -207,6 +209,27 @@ impl Input {
         }
 
         is_online
+    }
+
+    pub fn get_ready_url(&self, restream_key: &RestreamKey) -> Option<Url> {
+        let mut online_url = self
+            .endpoints
+            .iter()
+            .find(|e| e.is_rtmp() && e.status == Status::Online)
+            .map(|e| e.kind.rtmp_url(restream_key, &self.key));
+
+        if online_url.is_none() {
+            if let Some(InputSrc::Failover(s)) = &self.src {
+                online_url = s.inputs.iter().find_map(|i| {
+                    i.endpoints
+                        .iter()
+                        .find(|e| e.is_rtmp() && e.status == Status::Online)
+                        .map(|e| e.kind.rtmp_url(restream_key, &i.key))
+                });
+            }
+        }
+
+        online_url
     }
 }
 
