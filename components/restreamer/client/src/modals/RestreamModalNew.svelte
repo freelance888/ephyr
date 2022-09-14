@@ -4,9 +4,10 @@
   import { SetRestream } from '../../api/client.graphql';
   import { showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
-  import { RestreamModel } from '../models/restream.model';
+  import { BackupModel, RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
-    import cloneDeep from 'lodash/cloneDeep';
+  import cloneDeep from 'lodash/cloneDeep';
+  import RestreamBackup from './RestreamBackup.svelte';
 
   const setRestreamMutation = mutation(SetRestream);
 
@@ -59,7 +60,7 @@
     })
   );
 
-   async function submit() {
+   async function submit(): Promise<void> {
     if (!submitable) return;
 
     let variables: unknown = {
@@ -95,9 +96,25 @@
     }
   }
 
-  function close() {
+  const close = () => {
     visible = false;
   }
+
+  const removeBackup = (index: number) => {
+    $modelStore.backups = [
+      ...$modelStore.backups.slice(0, index),
+      ...$modelStore.backups.slice(index + 1, $modelStore.backups.length)
+    ];
+  };
+
+  const addBackup = () => {
+    const index = $modelStore.backups.length + 1;
+    $modelStore.backups = [
+      ...$modelStore.backups,
+      { key: '', isPull: false, pullUrl: '' },
+    ];
+  }
+
 </script>
 
 <template>
@@ -177,14 +194,16 @@
         </div>
 
         <div class="uk-section uk-section-xsmall">
-          <button class="uk-button uk-button-primary uk-button-small">Add backup</button>
-          <ul class="uk-list uk-list-divider uk-margin-left">
-            <li>List item 1</li>
-            <li>List item 2</li>
-            <li>List item 3</li>
+          <button class="uk-button uk-button-primary uk-button-small" on:click={() => addBackup()}>Add backup</button>
+          <ul class="uk-list uk-margin-left">
+            {#each $modelStore.backups as item, index}
+              <RestreamBackup
+                key={item.key}
+                removeFn={()=>removeBackup(index)}
+              />
+            {/each}
           </ul>
         </div>
-
 
         <div class='backup'>
           <label
