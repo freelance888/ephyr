@@ -5,9 +5,9 @@
 
 use std::collections::HashSet;
 
-use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
-
 use crate::{serde::is_false, state};
+use juniper::GraphQLInputObject;
+use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
 
 /// Shareable (exportable and importable) specification of a [`State`].
@@ -387,4 +387,17 @@ impl Default for Volume {
     fn default() -> Self {
         state::Volume::default().export()
     }
+}
+
+/// Backup input
+#[derive(
+    Clone, Debug, Deserialize, Eq, PartialEq, Serialize, GraphQLInputObject,
+)]
+pub struct BackupInput {
+    /// Key
+    pub key: state::InputKey,
+
+    /// URL to pull a live stream from for a backup endpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub src: Option<state::InputSrcUrl>,
 }

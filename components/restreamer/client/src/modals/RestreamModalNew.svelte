@@ -108,17 +108,16 @@
   };
 
   const addBackup = () => {
-    const index = $modelStore.backups.length + 1;
+    const index = $modelStore.getMaxBackupIndex() + 1;
     $modelStore.backups = [
       ...$modelStore.backups,
-      { key: '', isPull: false, pullUrl: '' },
+      { key: `backup${index}`, isPull: false, pullUrl: '' },
     ];
   }
 
 </script>
 
 <template>
-  <div>NEW MODAL</div>
   <div
     class='uk-modal uk-open'
     use:saveOrCloseByKeys={{ save: submit, close: close }}
@@ -198,7 +197,9 @@
           <ul class="uk-list uk-margin-left">
             {#each $modelStore.backups as item, index}
               <RestreamBackup
+                url={item.pullUrl}
                 key={item.key}
+                isPull={item.isPull}
                 removeFn={()=>removeBackup(index)}
               />
             {/each}

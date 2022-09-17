@@ -19,10 +19,6 @@ export class RestreamModel {
 
   backups: BackupModel[] = [];
 
-  sanitizeLabel(): void {
-    this.label = sanitizeLabel(this.label);
-  }
-
   constructor(value?: any) {
     if (!value) return;
 
@@ -62,5 +58,14 @@ export class RestreamModel {
       { key: 'Backup1', isPull: false, pullUrl: '' },
       { key: 'Backup2', isPull: false, pullUrl: '' }
     ];
+  }
+
+  sanitizeLabel(): void {
+    this.label = sanitizeLabel(this.label);
+  }
+
+  getMaxBackupIndex(): number {
+    return this.backups.map(x => Number(x.key.replace('backup', '')))
+      .reduce((max, current) => current > max ? current : max, 0);
   }
 }

@@ -24,6 +24,7 @@ use crate::{
 };
 
 use super::Context;
+use crate::spec::v1::BackupInput;
 use crate::state::{EndpointId, ServerInfo, VolumeLevel};
 use url::Url;
 
@@ -125,23 +126,9 @@ impl MutationsRoot {
                            If not specified then `Restream` will await for a \
                            live stream being pushed to its endpoint.")]
         src: Option<InputSrcUrl>,
-        #[graphql(
-            description = "URL to pull a live stream from for a backup \
-                           endpoint.\
-                           \n\n\
-                           If not specified then `Restream` will await for a \
-                           live stream being pushed to its backup endpoint.\
-                           \n\n\
-                           Has no effect if `withBackup` argument is not \
-                           `true`."
-        )]
-        backup_src: Option<InputSrcUrl>,
-        #[graphql(
-            description = "Indicator whether the `Restream` should have a \
-                               backup endpoint for a live stream.",
-            default = false
-        )]
-        with_backup: bool,
+        #[graphql(description = "List of backup Inputs")] backup_inputs: Option<
+            Vec<BackupInput>,
+        >,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
                            additional endpoint for serving a live stream via \
@@ -154,9 +141,9 @@ impl MutationsRoot {
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        let input_src = if with_backup {
-            Some(spec::v1::InputSrc::FailoverInputs(vec![
-                spec::v1::Input {
+        let input_src = if let Some(backups) = backup_inputs {
+            Some(spec::v1::InputSrc::FailoverInputs(
+                vec![spec::v1::Input {
                     id: None,
                     key: InputKey::new("main").unwrap(),
                     endpoints: vec![spec::v1::InputEndpoint {
@@ -165,18 +152,20 @@ impl MutationsRoot {
                     }],
                     src: src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
-                },
-                spec::v1::Input {
+                }]
+                .into_iter()
+                .chain(backups.into_iter().map(|b| spec::v1::Input {
                     id: None,
-                    key: InputKey::new("backup").unwrap(),
+                    key: b.key,
                     endpoints: vec![spec::v1::InputEndpoint {
                         kind: InputEndpointKind::Rtmp,
                         label: None,
                     }],
-                    src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
+                    src: b.src.map(spec::v1::InputSrc::RemoteUrl),
                     enabled: true,
-                },
-            ]))
+                }))
+                .collect(),
+            ))
         } else {
             src.map(spec::v1::InputSrc::RemoteUrl)
         };

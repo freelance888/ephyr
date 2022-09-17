@@ -25,7 +25,7 @@
       {
         "kind": "SCALAR",
         "name": "Delay",
-        "description": "Delay of a [`Mixin`] being mixed with an [`Output`].",
+        "description": "Delay of a [`Mixin`] being mixed with an [`Output`].\n\n[`Mixin`]: crate::state::Mixin\n[`Output`]: crate::state::Output",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -36,7 +36,7 @@
       {
         "kind": "SCALAR",
         "name": "Label",
-        "description": "Label of a [`Restream`] or an [`Output`].",
+        "description": "Label of a [`Restream`] or an [`Output`].\n\n[`Restream`]: crate::state::Restream\n[`Output`]: crate::state::Output",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -140,28 +140,22 @@
                 "defaultValue": null
               },
               {
-                "name": "backupSrc",
-                "description": "URL to pull a live stream from for a backup endpoint.\n\nIf not specified then `Restream` will await for a live stream being pushed to its backup endpoint.\n\nHas no effect if `withBackup` argument is not `true`.",
+                "name": "backupInputs",
+                "description": "List of backup Inputs",
                 "type": {
-                  "kind": "SCALAR",
-                  "name": "InputSrcUrl",
-                  "ofType": null
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "withBackup",
-                "description": "Indicator whether the `Restream` should have a backup endpoint for a live stream.",
-                "type": {
-                  "kind": "NON_NULL",
+                  "kind": "LIST",
                   "name": null,
                   "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Boolean",
-                    "ofType": null
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "BackupInput",
+                      "ofType": null
+                    }
                   }
                 },
-                "defaultValue": "false"
+                "defaultValue": null
               },
               {
                 "name": "withHls",
@@ -2867,6 +2861,42 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "BackupInput",
+        "description": "Backup input",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "key",
+            "description": "Key",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "InputKey",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "src",
+            "description": "URL to pull a live stream from for a backup endpoint.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "InputSrcUrl",
+              "ofType": null
+            },
+            "defaultValue": null
+          }
+        ],
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
