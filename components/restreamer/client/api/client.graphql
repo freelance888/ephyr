@@ -107,7 +107,7 @@ mutation SetRestream(
     $url: InputSrcUrl
     $label: Label
     $id: RestreamId
-    $backup_inputs: [BackupInput!],
+    $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
 ) {
     setRestream(

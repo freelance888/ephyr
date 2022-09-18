@@ -1,5 +1,5 @@
 <script lang="js">
-  import { exportModal, restreamModal } from '../stores';
+  import { exportModal } from '../stores';
 
   import RestreamModal from '../modals/RestreamModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
@@ -10,7 +10,6 @@
   import cloneDeep from 'lodash/cloneDeep';
   import { ExportAllRestreams } from '../../api/client.graphql';
   import { showError } from '../utils/util';
-
 
   export let info;
   export let state;
@@ -83,12 +82,15 @@
     <button
       data-testid="add-input:open-modal-btn"
       class="uk-button uk-button-primary"
-      on:click={() => openRestreamModal = true}
+      on:click={() => (openRestreamModal = true)}
     >
       <i class="fas fa-plus" />&nbsp;<span>Input</span>
     </button>
     {#if openRestreamModal}
-      <RestreamModal public_host={$info.data.info.publicHost} bind:visible={openRestreamModal}/>
+      <RestreamModal
+        public_host={$info.data.info.publicHost}
+        bind:visible={openRestreamModal}
+      />
     {/if}
 
     {#if isOnline && $state.data}
@@ -111,6 +113,7 @@
     font-size: 26px
     color: var(--primary-text-color)
     outline: none
+
     &:hover
       text-decoration: none
       color: #444
@@ -128,6 +131,7 @@
     transition: opacity .3s ease
     color: var(--primary-text-color)
     outline: none
+
     &:hover
       text-decoration: none
       color: #444

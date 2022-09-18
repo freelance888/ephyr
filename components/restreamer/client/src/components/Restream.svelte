@@ -75,39 +75,6 @@
 
   let openRestreamModal = false;
 
-  function openEditRestreamModal() {
-    const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
-
-    let pull_url = null;
-    let backup = null;
-
-    if (!!value.input.src && value.input.src.__typename === 'RemoteInputSrc') {
-      pull_url = value.input.src.url;
-    }
-
-    if (
-      !!value.input.src &&
-      value.input.src.__typename === 'FailoverInputSrc'
-    ) {
-      backup = true;
-      if (!!value.input.src.inputs[0].src) {
-        pull_url = value.input.src.inputs[0].src.url;
-      }
-      if (!!value.input.src.inputs[1].src) {
-        backup = value.input.src.inputs[1].src.url;
-      }
-    }
-
-    restreamModal.openEdit(
-      value.id,
-      value.key,
-      value.label,
-      pull_url,
-      backup,
-      with_hls
-    );
-  }
-
   async function removeRestream() {
     try {
       await removeRestreamMutation({ variables: { id: value.id } });
@@ -242,12 +209,16 @@
     <a
       class="edit-input"
       href="/"
-      on:click|preventDefault={() => openRestreamModal = true}
+      on:click|preventDefault={() => (openRestreamModal = true)}
     >
       <i class="far fa-edit" title="Edit input" />
     </a>
     {#if openRestreamModal}
-      <RestreamModal public_host={$info.data.info.publicHost} bind:visible={openRestreamModal} model={new RestreamModel(value)}/>
+      <RestreamModal
+        public_host={$info.data.info.publicHost}
+        bind:visible={openRestreamModal}
+        model={new RestreamModel(value)}
+      />
     {/if}
     <Input
       {public_host}

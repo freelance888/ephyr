@@ -2,7 +2,7 @@ import { sanitizeLabel, sanitizeUrl } from '../utils/util';
 
 export class BackupModel {
   isPull: boolean = false;
-  key: string = ''
+  key: string = '';
   pullUrl: string | null = null;
 }
 
@@ -21,7 +21,9 @@ export class RestreamModel {
   constructor(value?: any) {
     if (!value) return;
 
-    const withHls: boolean = value.input.endpoints.some((e) => e.kind === 'HLS');
+    const withHls: boolean = value.input.endpoints.some(
+      (e) => e.kind === 'HLS'
+    );
     let pullUrl: string | null = null;
 
     if (!!value.input.src && value.input.src.__typename === 'RemoteInputSrc') {
@@ -36,13 +38,11 @@ export class RestreamModel {
         pullUrl = value.input.src.inputs[0].src.url;
       }
 
-      this.backups = value.input.src.inputs?.slice(1)
-        .map(x => ({
-            key: x.key,
-            pullUrl: x.src?.url,
-            isPull: !!x.src?.url
-          })
-        );
+      this.backups = value.input.src.inputs?.slice(1).map((x) => ({
+        key: x.key,
+        pullUrl: x.src?.url,
+        isPull: !!x.src?.url,
+      }));
     }
 
     this.id = value.id;
@@ -59,15 +59,20 @@ export class RestreamModel {
 
   removeBackup(index: number): void {
     this.backups.splice(index, 1);
-  };
+  }
 
   addBackup(): void {
     const index = this.getMaxBackupIndex() + 1;
-    this.backups.push({ key: `${this.backupPrefix}${index}`, isPull: false, pullUrl: null });
+    this.backups.push({
+      key: `${this.backupPrefix}${index}`,
+      isPull: false,
+      pullUrl: null,
+    });
   }
 
   getMaxBackupIndex(): number {
-    return this.backups.map(x => Number(x.key.replace(`${this.backupPrefix}`, '')))
-      .reduce((max, current) => current > max ? current : max, 0);
+    return this.backups
+      .map((x) => Number(x.key.replace(`${this.backupPrefix}`, '')))
+      .reduce((max, current) => (current > max ? current : max), 0);
   }
 }

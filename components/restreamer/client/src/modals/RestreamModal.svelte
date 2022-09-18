@@ -1,7 +1,7 @@
-<script lang='ts'>
+<script lang="ts">
   import { onDestroy } from 'svelte';
   import { mutation } from 'svelte-apollo';
-  import { SetRestream } from '../../api/client.graphql';
+  import SetRestream from '../../api/client.graphql';
   import { showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
@@ -22,7 +22,6 @@
   let submitable = false;
   onDestroy(
     modelStore.subscribe((current) => {
-
       submitable = current.key !== '';
       let changed = !current.id;
 
@@ -30,7 +29,7 @@
         changed |=
           current.key !== previous.key ||
           current.label !== previous.label ||
-          current.isPull !== previous.isPull
+          current.isPull !== previous.isPull;
       }
 
       if (current.isPull) {
@@ -63,7 +62,7 @@
     })
   );
 
-   async function submit(): Promise<void> {
+  async function submit(): Promise<void> {
     if (!submitable) return;
 
     let variables: unknown = {
@@ -80,9 +79,9 @@
     }
 
     if (model.backups.length) {
-      variables.backup_inputs = model.backups.map(x => ({
+      variables.backup_inputs = model.backups.map((x) => ({
         key: x.key,
-        src: x.pullUrl
+        src: x.pullUrl,
       }));
     }
 
@@ -100,7 +99,7 @@
 
   const close = () => {
     visible = false;
-  }
+  };
 
   const removeBackup = (index: number) => {
     modelStore.update((v) => {
@@ -114,46 +113,45 @@
       v.addBackup();
       return v;
     });
-  }
-
+  };
 </script>
 
 <template>
   <div
-    class='uk-modal uk-open'
+    class="uk-modal uk-open"
     use:saveOrCloseByKeys={{ save: submit, close: close }}
   >
-    <div class='uk-modal-dialog uk-modal-body'>
-      <h2 class='uk-modal-title'>
+    <div class="uk-modal-dialog uk-modal-body">
+      <h2 class="uk-modal-title">
         {#if $modelStore.id}Edit{:else}Add new{/if} input source for re-streaming
       </h2>
       <button
-        class='uk-modal-close-outside'
+        class="uk-modal-close-outside"
         uk-close
-        type='button'
+        type="button"
         on:click={close}
       />
 
       <fieldset>
-        <div class='restream'>
+        <div class="restream">
           <input
-            class='uk-input uk-form-small'
-            type='text'
-            data-testid='add-input-modal:label-input'
+            class="uk-input uk-form-small"
+            type="text"
+            data-testid="add-input-modal:label-input"
             bind:value={$modelStore.label}
             on:change={() => $modelStore.sanitizeLabel()}
-            placeholder='optional label'
+            placeholder="optional label"
           />
           <label
-          >rtmp://{public_host}/<input
-            class='uk-input'
-            type='text'
-            data-testid='add-input-modal:stream-key-input'
-            placeholder='<stream-key>'
-            bind:value={$modelStore.key}
-          />/origin</label
+            >rtmp://{public_host}/<input
+              class="uk-input"
+              type="text"
+              data-testid="add-input-modal:stream-key-input"
+              placeholder="<stream-key>"
+              bind:value={$modelStore.key}
+            />/origin</label
           >
-          <div class='uk-alert'>
+          <div class="uk-alert">
             {#if $modelStore.isPull}
               Server will pull RTMP stream from the address below.
               <br />
@@ -161,65 +159,63 @@
               <code>rtmp://</code>,
               <code>http://.m3u8</code> (HLS)
             {:else}
-              Server will await RTMP stream to be pushed onto the address
-              above.
+              Server will await RTMP stream to be pushed onto the address above.
             {/if}
           </div>
         </div>
-        <div class='pull'>
+        <div class="pull">
           <label
-          ><input
-            class='uk-checkbox'
-            type='checkbox'
-            bind:checked={$modelStore.isPull}
-          /> or pull from</label
+            ><input
+              class="uk-checkbox"
+              type="checkbox"
+              bind:checked={$modelStore.isPull}
+            /> or pull from</label
           >
           {#if $modelStore.isPull}
             <input
-              class='uk-input'
-              type='text'
+              class="uk-input"
+              type="text"
               bind:value={$modelStore.pullUrl}
-              placeholder='rtmp://...'
+              placeholder="rtmp://..."
             />
           {/if}
         </div>
-        <div class='hls'>
+        <div class="hls">
           <label
-          ><input
-            class='uk-checkbox'
-            type='checkbox'
-            bind:checked={$modelStore.withHls}
-          /> with HLS endpoint</label
+            ><input
+              class="uk-checkbox"
+              type="checkbox"
+              bind:checked={$modelStore.withHls}
+            /> with HLS endpoint</label
           >
         </div>
 
         <div class="uk-section uk-section-xsmall backups-section">
-          <button class="uk-button uk-button-primary uk-button-small" on:click={() => addBackup()}>Add backup</button>
+          <button
+            class="uk-button uk-button-primary uk-button-small"
+            on:click={() => addBackup()}>Add backup</button
+          >
           <ul class="uk-list uk-margin-left">
             {#each $modelStore.backups as backup, index}
-              <RestreamBackup
-                backup={backup}
-                removeFn={()=>removeBackup(index)}
-              />
+              <RestreamBackup {backup} removeFn={() => removeBackup(index)} />
             {/each}
           </ul>
         </div>
       </fieldset>
 
       <button
-        class='uk-button uk-button-primary'
-        data-testid='add-input-modal:confirm'
+        class="uk-button uk-button-primary"
+        data-testid="add-input-modal:confirm"
         disabled={!submitable}
         on:click={submit}
       >
         {#if $modelStore.id}Edit{:else}Add{/if}
-      </button
-      >
+      </button>
     </div>
   </div>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
   .uk-modal
     &.uk-open
       display: block
