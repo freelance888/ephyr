@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { mutation } from 'svelte-apollo';
-  import SetRestream from '../../api/client.graphql';
+  import { SetRestream } from '../../api/client.graphql';
   import { showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';

@@ -20,7 +20,7 @@
   import { showError } from '../utils/util';
   import { statusesList } from '../constants/statuses';
 
-  import { restreamModal, outputModal, exportModal } from '../stores';
+  import { outputModal, exportModal } from '../stores';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './Input.svelte';
