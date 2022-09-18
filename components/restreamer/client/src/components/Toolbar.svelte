@@ -10,7 +10,7 @@
   import cloneDeep from 'lodash/cloneDeep';
   import { ExportAllRestreams } from '../../api/client.graphql';
   import { showError } from '../utils/util';
-  import RestreamModalNew from '../modals/RestreamModalNew.svelte';
+
 
   export let info;
   export let state;
@@ -88,7 +88,7 @@
       <i class="fas fa-plus" />&nbsp;<span>Input</span>
     </button>
     {#if openRestreamModal}
-      <RestreamModalNew public_host={$info.data.info.publicHost} bind:visible={openRestreamModal}/>
+      <RestreamModal public_host={$info.data.info.publicHost} bind:visible={openRestreamModal}/>
     {/if}
 
     {#if isOnline && $state.data}

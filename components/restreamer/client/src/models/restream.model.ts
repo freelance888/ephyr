@@ -3,7 +3,7 @@ import { sanitizeLabel, sanitizeUrl } from '../utils/util';
 export class BackupModel {
   isPull: boolean = false;
   key: string = ''
-  pullUrl: string | null = '';
+  pullUrl: string | null = null;
 }
 
 export class RestreamModel {
@@ -63,7 +63,7 @@ export class RestreamModel {
 
   addBackup(): void {
     const index = this.getMaxBackupIndex() + 1;
-    this.backups.push({ key: `${this.backupPrefix}${index}`, isPull: false, pullUrl: '' });
+    this.backups.push({ key: `${this.backupPrefix}${index}`, isPull: false, pullUrl: null });
   }
 
   getMaxBackupIndex(): number {

@@ -30,7 +30,7 @@
   import { getReStreamOutputsCount } from '../utils/restreamHelpers.util';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
   import { RestreamModel } from '../models/restream.model';
-  import RestreamModalNew from '../modals/RestreamModalNew.svelte';
+  import RestreamModal from '../modals/RestreamModal.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -247,7 +247,7 @@
       <i class="far fa-edit" title="Edit input" />
     </a>
     {#if openRestreamModal}
-      <RestreamModalNew public_host={$info.data.info.publicHost} bind:visible={openRestreamModal} model={new RestreamModel(value)}/>
+      <RestreamModal public_host={$info.data.info.publicHost} bind:visible={openRestreamModal} model={new RestreamModel(value)}/>
     {/if}
     <Input
       {public_host}
