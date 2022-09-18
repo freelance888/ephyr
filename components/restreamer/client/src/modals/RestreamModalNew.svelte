@@ -30,8 +30,7 @@
         changed |=
           current.key !== previous.key ||
           current.label !== previous.label ||
-          current.isPull !== previous.isPull ||
-          current.withBackup !== previous.withBackup;
+          current.isPull !== previous.isPull
       }
 
       if (current.isPull) {
@@ -41,17 +40,21 @@
         }
       }
 
-      if (current.withBackup) {
-        if (!!current.id) {
-          changed |= current.backupIsPull !== previous.backupIsPull;
-        }
-        if (current.backupIsPull) {
-          submitable &= current.backupPullUrl !== '';
-          if (!!current.id) {
-            changed |= current.backupPullUrl !== previous.backupPullUrl;
-          }
-        }
+      if (current.backups.length !== previous.backups.length) {
+        changed |= true;
       }
+
+      // if (current.withBackup) {
+      //   if (!!current.id) {
+      //     changed |= current.backupIsPull !== previous.backupIsPull;
+      //   }
+      //   if (current.backupIsPull) {
+      //     submitable &= current.backupPullUrl !== '';
+      //     if (!!current.id) {
+      //       changed |= current.backupPullUrl !== previous.backupPullUrl;
+      //     }
+      //   }
+      // }
 
       if (!!current.id) {
         changed |= current.withHls !== previous.withHls;
@@ -77,11 +80,11 @@
       variables.url = model.pullUrl;
     }
 
-    if (model.withBackup) {
-      variables.with_backup = true;
-      if (model.backupIsPull) {
-        variables.backup_url = model.backupPullUrl;
-      }
+    if (model.backups.length) {
+      variables.backup_inputs = model.backups.map(x => ({
+        key: x.key,
+        src: x.pullUrl
+      }));
     }
 
     if (model.id) {
@@ -101,18 +104,17 @@
   }
 
   const removeBackup = (index: number) => {
-    $modelStore.backups = [
-      ...$modelStore.backups.slice(0, index),
-      ...$modelStore.backups.slice(index + 1, $modelStore.backups.length)
-    ];
+    modelStore.update((v) => {
+      v.removeBackup(index);
+      return v;
+    });
   };
 
   const addBackup = () => {
-    const index = $modelStore.getMaxBackupIndex() + 1;
-    $modelStore.backups = [
-      ...$modelStore.backups,
-      { key: `backup${index}`, isPull: false, pullUrl: '' },
-    ];
+    modelStore.update((v) => {
+      v.addBackup();
+      return v;
+    });
   }
 
 </script>
@@ -195,11 +197,9 @@
         <div class="uk-section uk-section-xsmall">
           <button class="uk-button uk-button-primary uk-button-small" on:click={() => addBackup()}>Add backup</button>
           <ul class="uk-list uk-margin-left">
-            {#each $modelStore.backups as item, index}
+            {#each $modelStore.backups as backup, index}
               <RestreamBackup
-                url={item.pullUrl}
-                key={item.key}
-                isPull={item.isPull}
+                backup={backup}
                 removeFn={()=>removeBackup(index)}
               />
             {/each}

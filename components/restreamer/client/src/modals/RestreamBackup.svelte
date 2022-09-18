@@ -1,22 +1,38 @@
 <script lang="ts">
-  export let removeFn;
-  export let key: string;
-  export let url: string;
-  export let isPull: boolean;
+  import { BackupModel } from '../models/restream.model';
+  import { sanitizeUrl } from '../utils/util';
+
+  export let removeFn: (index: number) => void;
+  export let backup: BackupModel;
+
+  const onIsPullChanged = (): void => {
+    if(!backup.isPull) {
+      backup.pullUrl = null;
+    }
+  }
+
+  const onPullUrlChanged = (): void => {
+    if(backup.pullUrl !== null) {
+      backup.pullUrl = sanitizeUrl(backup.pullUrl)
+    }
+  }
+
 </script>
-<li class='uk-form-small uk-flex uk-flex-between' style='column-gap: 20px;'>
-  <span class='key-label'>{key}</span>
+<li class='uk-form-small uk-flex uk-flex-between backup-item'>
+  <span class='key-label'>{backup.key}</span>
   <label>
     <input
       class='uk-checkbox'
       type='checkbox'
-      bind:checked={isPull}
+      bind:checked={backup.isPull}
+      on:change={onIsPullChanged}
     /> pulled from</label>
   <input
     class='uk-input uk-form-small uk-width-expand'
     type='text'
-    disabled={!isPull}
-    bind:value={url}
+    disabled={!backup.isPull}
+    bind:value={backup.pullUrl}
+    on:change={onPullUrlChanged}
     placeholder='rtmp://...'
   />
   <button class='uk-icon uk-close' uk-close on:click={removeFn}></button>
@@ -24,5 +40,8 @@
 <style lang='stylus'>
   .key-label
     width: 60px;
+
+  .backup-item
+    column-gap: 20px;
 
 </style>
