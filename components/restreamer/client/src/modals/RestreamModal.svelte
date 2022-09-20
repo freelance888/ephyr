@@ -15,43 +15,43 @@
   export let visible = false;
   export let public_host = 'localhost';
 
-  export let model: RestreamModel = new RestreamModel();
-  let previous: RestreamModel = cloneDeep(model);
+  export let restream: RestreamModel = new RestreamModel();
+  let previous: RestreamModel = cloneDeep(restream);
 
-  let modelStore = writable(model);
+  let restreamStore = writable(restream);
 
   let submitable = false;
   onDestroy(
-    modelStore.subscribe((current) => {
+    restreamStore.subscribe((current) => {
       submitable = current.key !== '';
       let changed = !current.id;
 
       if (!!current.id) {
-        changed |=
+        changed ||=
           current.key !== previous.key ||
           current.label !== previous.label ||
           current.isPull !== previous.isPull;
       }
 
       if (current.isPull) {
-        submitable &= current.pullUrl !== '';
+        submitable &&= current.pullUrl !== '';
         if (!!current.id) {
-          changed |= current.pullUrl !== previous.pullUrl;
+          changed ||= current.pullUrl !== previous.pullUrl;
         }
       }
 
       if (current.backups.length !== previous.backups.length) {
-        changed |= true;
+        changed ||= true;
       } else {
         current.backups.forEach((x, i) => {
-          changed |=  !isEqual(x, previous.backups[i]);
-        })
+          changed ||= !isEqual(x, previous.backups[i]);
+        });
       }
 
       if (!!current.id) {
-        changed |= current.withHls !== previous.withHls;
+        changed ||= current.withHls !== previous.withHls;
       }
-      submitable &= changed;
+      submitable &&= changed;
     })
   );
 
@@ -59,27 +59,27 @@
     if (!submitable) return;
 
     let variables: unknown = {
-      key: model.key,
-      with_hls: model.withHls,
+      key: restream.key,
+      with_hls: restream.withHls,
     };
 
-    if (model.label) {
-      variables.label = model.label;
+    if (restream.label) {
+      variables.label = restream.label;
     }
 
-    if (model.isPull) {
-      variables.url = model.pullUrl;
+    if (restream.isPull) {
+      variables.url = restream.pullUrl;
     }
 
-    if (model.backups.length) {
-      variables.backup_inputs = model.backups.map((x) => ({
+    if (restream.backups.length) {
+      variables.backup_inputs = restream.backups.map((x) => ({
         key: x.key,
         src: x.pullUrl,
       }));
     }
 
-    if (model.id) {
-      variables.id = model.id;
+    if (restream.id) {
+      variables.id = restream.id;
     }
 
     try {
@@ -95,26 +95,38 @@
   };
 
   const removeBackup = (index: number) => {
-    modelStore.update((v) => {
+    restreamStore.update((v) => {
       v.removeBackup(index);
       return v;
     });
   };
 
   const addBackup = () => {
-    modelStore.update((v) => {
+    restreamStore.update((v) => {
       v.addBackup();
       return v;
     });
   };
 
   const onChangeLabel = () => {
-    $modelStore.label = sanitizeLabel($modelStore.label);
-  }
+    restreamStore.update((v) => {
+      v.label = sanitizeLabel(v.label);
+      return v;
+    });
+  };
 
   const onChangeRestreamKey = () => {
-    $modelStore.key = sanitizeLabel($modelStore.key);
-  }
+    restreamStore.update((v) => {
+      v.key = sanitizeLabel(v.key);
+      return v;
+    });
+  };
+
+  const onChangeBackup = () => {
+    restreamStore.update((v) => {
+      return v;
+    });
+  };
 </script>
 
 <template>
@@ -124,7 +136,7 @@
   >
     <div class="uk-modal-dialog uk-modal-body">
       <h2 class="uk-modal-title">
-        {#if $modelStore.id}Edit{:else}Add new{/if} input source for re-streaming
+        {#if $restreamStore.id}Edit{:else}Add new{/if} input source for re-streaming
       </h2>
       <button
         class="uk-modal-close-outside"
@@ -139,7 +151,7 @@
             class="uk-input uk-form-small"
             type="text"
             data-testid="add-input-modal:label-input"
-            bind:value={$modelStore.label}
+            bind:value={$restreamStore.label}
             on:change={onChangeLabel}
             placeholder="optional label"
           />
@@ -149,12 +161,12 @@
               type="text"
               data-testid="add-input-modal:stream-key-input"
               placeholder="<stream-key>"
-              bind:value={$modelStore.key}
+              bind:value={$restreamStore.key}
               on:change={onChangeRestreamKey}
             />/origin</label
           >
           <div class="uk-alert">
-            {#if $modelStore.isPull}
+            {#if $restreamStore.isPull}
               Server will pull RTMP stream from the address below.
               <br />
               Supported protocols:
@@ -170,14 +182,14 @@
             ><input
               class="uk-checkbox"
               type="checkbox"
-              bind:checked={$modelStore.isPull}
+              bind:checked={$restreamStore.isPull}
             /> or pull from</label
           >
-          {#if $modelStore.isPull}
+          {#if $restreamStore.isPull}
             <input
               class="uk-input"
               type="text"
-              bind:value={$modelStore.pullUrl}
+              bind:value={$restreamStore.pullUrl}
               placeholder="rtmp://..."
             />
           {/if}
@@ -187,7 +199,7 @@
             ><input
               class="uk-checkbox"
               type="checkbox"
-              bind:checked={$modelStore.withHls}
+              bind:checked={$restreamStore.withHls}
             /> with HLS endpoint</label
           >
         </div>
@@ -195,11 +207,16 @@
         <div class="uk-section uk-section-xsmall backups-section">
           <button
             class="uk-button uk-button-primary uk-button-small"
-            on:click={() => addBackup()}>Add backup</button
-          >
+            on:click={() => addBackup()}
+            >Add backup
+          </button>
           <ul class="uk-list uk-margin-left">
-            {#each $modelStore.backups as backup, index}
-              <RestreamBackup bind:backup removeFn={() => removeBackup(index)} />
+            {#each $restreamStore.backups as backup, index}
+              <RestreamBackup
+                {backup}
+                removeFn={() => removeBackup(index)}
+                onChangeFn={() => onChangeBackup()}
+              />
             {/each}
           </ul>
         </div>
@@ -211,7 +228,7 @@
         disabled={!submitable}
         on:click={submit}
       >
-        {#if $modelStore.id}Edit{:else}Add{/if}
+        {#if $restreamStore.id}Edit{:else}Add{/if}
       </button>
     </div>
   </div>

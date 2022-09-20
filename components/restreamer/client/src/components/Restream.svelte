@@ -217,7 +217,7 @@
       <RestreamModal
         public_host={$info.data.info.publicHost}
         bind:visible={openRestreamModal}
-        model={new RestreamModel(value)}
+        restream={new RestreamModel(value)}
       />
     {/if}
     <Input

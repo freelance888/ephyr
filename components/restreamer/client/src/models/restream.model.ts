@@ -40,7 +40,7 @@ export class RestreamModel {
 
       this.backups = value.input.src.inputs?.slice(1).map((x) => ({
         key: x.key,
-        pullUrl: x.src?.url,
+        pullUrl: x.src?.url ?? null,
         isPull: !!x.src?.url,
       }));
     }

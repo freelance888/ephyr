@@ -1,20 +1,26 @@
 <script lang="ts">
-  import { BackupModel } from '../models/restream.model';
+  import type { BackupModel } from '../models/restream.model';
   import { sanitizeUrl } from '../utils/util';
 
   export let removeFn: (index: number) => void;
+  export let onChangeFn: () => void;
+
   export let backup: BackupModel;
 
   const onIsPullChanged = (): void => {
     if (!backup.isPull) {
       backup.pullUrl = null;
     }
+
+    onChangeFn();
   };
 
   const onPullUrlChanged = (): void => {
     if (backup.pullUrl !== null) {
       backup.pullUrl = sanitizeUrl(backup.pullUrl);
     }
+
+    onChangeFn();
   };
 </script>
 
