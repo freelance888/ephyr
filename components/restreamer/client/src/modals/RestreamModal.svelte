@@ -2,11 +2,12 @@
   import { onDestroy } from 'svelte';
   import { mutation } from 'svelte-apollo';
   import { SetRestream } from '../../api/client.graphql';
-  import { showError } from '../utils/util';
+  import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
   import cloneDeep from 'lodash/cloneDeep';
+  import isEqual from 'lodash/isEqual';
   import RestreamBackup from './RestreamBackup.svelte';
 
   const setRestreamMutation = mutation(SetRestream);
@@ -41,19 +42,11 @@
 
       if (current.backups.length !== previous.backups.length) {
         changed |= true;
+      } else {
+        current.backups.forEach((x, i) => {
+          changed |=  !isEqual(x, previous.backups[i]);
+        })
       }
-
-      // if (current.withBackup) {
-      //   if (!!current.id) {
-      //     changed |= current.backupIsPull !== previous.backupIsPull;
-      //   }
-      //   if (current.backupIsPull) {
-      //     submitable &= current.backupPullUrl !== '';
-      //     if (!!current.id) {
-      //       changed |= current.backupPullUrl !== previous.backupPullUrl;
-      //     }
-      //   }
-      // }
 
       if (!!current.id) {
         changed |= current.withHls !== previous.withHls;
@@ -70,7 +63,7 @@
       with_hls: model.withHls,
     };
 
-    if (model.label !== '') {
+    if (model.label) {
       variables.label = model.label;
     }
 
@@ -114,6 +107,14 @@
       return v;
     });
   };
+
+  const onChangeLabel = () => {
+    $modelStore.label = sanitizeLabel($modelStore.label);
+  }
+
+  const onChangeRestreamKey = () => {
+    $modelStore.key = sanitizeLabel($modelStore.key);
+  }
 </script>
 
 <template>
@@ -139,7 +140,7 @@
             type="text"
             data-testid="add-input-modal:label-input"
             bind:value={$modelStore.label}
-            on:change={() => $modelStore.sanitizeLabel()}
+            on:change={onChangeLabel}
             placeholder="optional label"
           />
           <label
@@ -149,6 +150,7 @@
               data-testid="add-input-modal:stream-key-input"
               placeholder="<stream-key>"
               bind:value={$modelStore.key}
+              on:change={onChangeRestreamKey}
             />/origin</label
           >
           <div class="uk-alert">
@@ -197,7 +199,7 @@
           >
           <ul class="uk-list uk-margin-left">
             {#each $modelStore.backups as backup, index}
-              <RestreamBackup {backup} removeFn={() => removeBackup(index)} />
+              <RestreamBackup bind:backup removeFn={() => removeBackup(index)} />
             {/each}
           </ul>
         </div>

@@ -53,10 +53,6 @@ export class RestreamModel {
     this.withHls = withHls;
   }
 
-  sanitizeLabel(): void {
-    this.label = sanitizeLabel(this.label);
-  }
-
   removeBackup(index: number): void {
     this.backups.splice(index, 1);
   }
