@@ -58,7 +58,7 @@
   async function submit(): Promise<void> {
     if (!submitable) return;
 
-    let variables: unknown = {
+    let variables: any = {
       key: restream.key,
       with_hls: restream.withHls,
     };

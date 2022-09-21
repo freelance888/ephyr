@@ -2,7 +2,7 @@
   import type { BackupModel } from '../models/restream.model';
   import { sanitizeUrl } from '../utils/util';
 
-  export let removeFn: (index: number) => void;
+  export let removeFn: () => void;
   export let onChangeFn: () => void;
 
   export let backup: BackupModel;
