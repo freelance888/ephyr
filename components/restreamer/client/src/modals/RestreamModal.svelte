@@ -163,7 +163,7 @@
               placeholder="<stream-key>"
               bind:value={$restreamStore.key}
               on:change={onChangeRestreamKey}
-            />/origin</label
+            />/primary</label
           >
           <div class="uk-alert">
             {#if $restreamStore.isPull}

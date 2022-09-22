@@ -143,33 +143,39 @@ impl MutationsRoot {
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        let input_src = if let Some(backups) = backup_inputs {
-            Some(spec::v1::InputSrc::FailoverInputs(
-                vec![spec::v1::Input {
-                    id: None,
-                    key: InputKey::new("main").unwrap(),
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::Rtmp,
-                        label: None,
-                    }],
-                    src: src.map(spec::v1::InputSrc::RemoteUrl),
-                    enabled: true,
-                }]
-                .into_iter()
-                .chain(backups.into_iter().map(|b| spec::v1::Input {
-                    id: None,
-                    key: b.key,
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::Rtmp,
-                        label: None,
-                    }],
-                    src: b.src.map(spec::v1::InputSrc::RemoteUrl),
-                    enabled: true,
-                }))
-                .collect(),
-            ))
+        let (input_key, input_src) = if let Some(backups) = backup_inputs {
+            (
+                InputKey::new("playback").unwrap(),
+                Some(spec::v1::InputSrc::FailoverInputs(
+                    vec![spec::v1::Input {
+                        id: None,
+                        key: InputKey::new("primary").unwrap(),
+                        endpoints: vec![spec::v1::InputEndpoint {
+                            kind: InputEndpointKind::Rtmp,
+                            label: None,
+                        }],
+                        src: src.map(spec::v1::InputSrc::RemoteUrl),
+                        enabled: true,
+                    }]
+                    .into_iter()
+                    .chain(backups.into_iter().map(|b| spec::v1::Input {
+                        id: None,
+                        key: b.key,
+                        endpoints: vec![spec::v1::InputEndpoint {
+                            kind: InputEndpointKind::Rtmp,
+                            label: None,
+                        }],
+                        src: b.src.map(spec::v1::InputSrc::RemoteUrl),
+                        enabled: true,
+                    }))
+                    .collect(),
+                )),
+            )
         } else {
-            src.map(spec::v1::InputSrc::RemoteUrl)
+            (
+                InputKey::new("primary").unwrap(),
+                src.map(spec::v1::InputSrc::RemoteUrl),
+            )
         };
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
@@ -189,7 +195,7 @@ impl MutationsRoot {
             label,
             input: spec::v1::Input {
                 id: None,
-                key: InputKey::new("origin").unwrap(),
+                key: input_key,
                 endpoints,
                 src: input_src,
                 enabled: true,
