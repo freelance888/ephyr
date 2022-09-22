@@ -13,13 +13,13 @@ describe('How to start/stop rtmp streams from test', () => {
     cy.get('[placeholder="optional label"]').type('EN1');
     cy.get('[placeholder="<stream-key>"]').type('en1');
     cy.get('button').contains(/^Add$/).click();
-    cy.get("span:contains('/en1/origin'):last").should(
+    cy.get("span:contains('/en1/primary'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/en1/origin'
+      'rtmp://' + Cypress.env('host') + '/en1/primary'
     );
 
     // 2. Send rtmp stream to specific address
-    runTestStream(createRtmpUrl('en1', 'origin'));
+    runTestStream(createRtmpUrl('en1', 'primary'));
 
     cy.wait(5000);
 

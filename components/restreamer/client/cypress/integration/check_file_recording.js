@@ -3,7 +3,7 @@ describe('CHECK FILE RECORDING', () => {
     cy.visit('/');
     cy.deleteAllInputs();
     cy.importJsonConf(Cypress.env('host'));
-    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
+    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/primary');
   });
 
   it('Start streams 2 times to create 2 file records', () => {

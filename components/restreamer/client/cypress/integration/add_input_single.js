@@ -19,9 +19,9 @@ describe('ADD SINGLE INPUT', () => {
   });
 
   it('Assert', () => {
-    cy.get("span:contains('/en/origin'):last").should(
+    cy.get("span:contains('/en/primary'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/en/origin'
+      'rtmp://' + Cypress.env('host') + '/en/primary'
     );
   });
 });

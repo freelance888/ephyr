@@ -24,9 +24,9 @@ describe('ADD BACKUP INPUT', () => {
   });
 
   it('Assert', () => {
-    cy.get("span:contains('/it/main')").should(
+    cy.get("span:contains('/it/primary')").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/main'
+      'rtmp://' + Cypress.env('host') + '/it/primary'
     );
     cy.get("span:contains('/it/backup1')").should(
       'have.text',
