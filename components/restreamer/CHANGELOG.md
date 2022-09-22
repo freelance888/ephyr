@@ -15,6 +15,7 @@ All user visible changes to this project will be documented in this file. This p
 
 - Web UI:
   - Allow to set multiple Teamspeak mixers per output ([#199]);
+  - Allow to set multiple backups per single input ([#208], [#224]);
   - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
   - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]).
 
@@ -46,6 +47,7 @@ All user visible changes to this project will be documented in this file. This p
 [#70]: /../../issues/70
 [#116]: /../../issues/116
 [#164]: /../../issues/164
+[#208]: /../../issues/208
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
 [#39]: /../../pull/39
@@ -57,6 +59,7 @@ All user visible changes to this project will be documented in this file. This p
 [#203]: /../../pull/203
 [#204]: /../../pull/204
 [#212]: /../../pull/212
+[#224]: /../../pull/224
 
 
 
