@@ -19,7 +19,7 @@ All user visible changes to this project will be documented in this file. This p
   - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
   - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
   - Rename `origin -> primary` in case single input mode;
-  - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#]).
+  - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#225]).
 
 - GraphQL API:
   - Types:
@@ -63,6 +63,7 @@ All user visible changes to this project will be documented in this file. This p
 [#204]: /../../pull/204
 [#212]: /../../pull/212
 [#224]: /../../pull/224
+[#225]: /../../pull/225
 
 
 
