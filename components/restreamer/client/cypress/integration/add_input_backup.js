@@ -15,12 +15,12 @@ describe('ADD BACKUP INPUT', () => {
   });
 
   it('Checks a checkbox', () => {
-    cy.get(".backup >> [type='checkbox']").check();
+    cy.get("button:contains('Add backup')").click();
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.get('button').contains(/^Add$/).click();
+    cy.get('button').contains(/^Add$/).should('not.exist');
   });
 
   it('Assert', () => {
@@ -28,9 +28,9 @@ describe('ADD BACKUP INPUT', () => {
       'have.text',
       'rtmp://' + Cypress.env('host') + '/it/main'
     );
-    cy.get("span:contains('/it/backup')").should(
+    cy.get("span:contains('/it/backup1')").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/backup'
+      'rtmp://' + Cypress.env('host') + '/it/backup1'
     );
   });
 });

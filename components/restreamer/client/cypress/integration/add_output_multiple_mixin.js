@@ -67,8 +67,8 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.get('button').contains(/^Add$/).click();
+    cy.get('button').contains(/^Add$/).should('not.exist');
   });
 
   it('Only one sidechain checkbox is possible to check through mixins', () => {

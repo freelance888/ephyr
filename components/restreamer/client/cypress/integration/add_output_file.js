@@ -19,8 +19,8 @@ describe('ADD FILE OUTPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.get('button').contains(/^Add$/).click();
+    cy.get('button').contains(/^Add$/).should('not.exist');
   });
 
   it('Assert', () => {

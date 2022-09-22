@@ -15,7 +15,7 @@ describe('ADD SINGLE INPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
+    cy.get('button').contains(/^Add$/).click();
   });
 
   it('Assert', () => {

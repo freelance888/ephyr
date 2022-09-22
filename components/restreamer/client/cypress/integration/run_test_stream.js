@@ -12,7 +12,7 @@ describe('How to start/stop rtmp streams from test', () => {
     cy.get("span:contains('Input')").click();
     cy.get('[placeholder="optional label"]').type('EN1');
     cy.get('[placeholder="<stream-key>"]').type('en1');
-    cy.get("button:contains('Add')").click();
+    cy.get('button').contains(/^Add$/).click();
     cy.get("span:contains('/en1/origin'):last").should(
       'have.text',
       'rtmp://' + Cypress.env('host') + '/en1/origin'

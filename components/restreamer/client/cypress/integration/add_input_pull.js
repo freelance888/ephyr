@@ -26,8 +26,8 @@ describe('ADD PULL INPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.get('button').contains(/^Add$/).click();
+    cy.get('button').contains(/^Add$/).should('not.exist');
   });
 
   it('Assert', () => {
