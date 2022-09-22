@@ -75,7 +75,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "label": "BACKUP",
       "input": {
         "id": "9723960c-dcdb-499c-94d1-398fc95f06fe",
-        "key": "origin",
+        "key": "playback",
         "endpoints": [
           {
             "kind": "rtmp"
@@ -85,7 +85,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "failover_inputs": [
             {
               "id": "7746a36d-5d99-4fbc-9c1d-6209f759d9cb",
-              "key": "main",
+              "key": "primary",
               "endpoints": [
                 {
                   "kind": "rtmp"
@@ -95,7 +95,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
             },
             {
               "id": "431e9b47-5a7a-45c3-8e70-216e38ff9492",
-              "key": "backup",
+              "key": "backup1",
               "endpoints": [
                 {
                   "kind": "rtmp"
@@ -110,7 +110,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "outputs": [
         {
           "id": "e9e57309-3cca-4872-8c39-bdc1945afe6d",
-          "dst": "rtmp://${host}/ru/origin",
+          "dst": "rtmp://${host}/ru/primary",
           "label": "[Manual Start] FB",
           "preview_url": "https://www.facebook.com/allatratvbulgaria/posts/348462730347939",
           "enabled": true
@@ -136,14 +136,14 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "label": "PULL",
       "input": {
         "id": "7abd81c1-e554-4541-87b4-70becfcff79a",
-        "key": "origin",
+        "key": "primary",
         "endpoints": [
           {
             "kind": "rtmp"
           }
         ],
         "src": {
-          "remote_url": "rtmp://${host}/en/origin"
+          "remote_url": "rtmp://${host}/en/primary"
         },
         "enabled": true
       }
@@ -154,7 +154,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "label": "SINGLE",
       "input": {
         "id": "8383149e-bcea-4a3f-a8a9-661d6e72cbae",
-        "key": "origin",
+        "key": "primary",
         "endpoints": [
           {
             "kind": "rtmp"
@@ -165,7 +165,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "outputs": [
         {
           "id": "1c8229ee-c736-4d55-b5f0-d72c34ab5dea",
-          "dst": "rtmp://${host}/it/backup",
+          "dst": "rtmp://${host}/it/backup1",
           "label": "Teamspeak",
           "preview_url": "https://www.youtube.com/watch?v=99567P5FiD0",
           "mixins": [
@@ -187,7 +187,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
         },
         {
           "id": "06f08ac0-5d96-41d3-8782-14d06d403532",
-          "dst": "rtmp://${host}/it/main",
+          "dst": "rtmp://${host}/it/primary",
           "label": "Twitter",
           "preview_url": "https://creativesociety.com/ru",
           "enabled": true
@@ -200,7 +200,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       "label": "RU",
       "input": {
         "id": "6f5326c0-460f-4d87-958b-e21525f9c01e",
-        "key": "origin",
+        "key": "primary",
         "endpoints": [
           {
             "kind": "rtmp"
@@ -234,15 +234,15 @@ Cypress.Commands.add('checkStartedAllStated', () => {
   ).should('have.css', 'color', greenColor);
 
   cy.get(
-    '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
+    '[data-icon="arrow-right"][title="Accepts primary live RTMP stream"]'
   ).should('have.css', 'color', greenColor);
 
   cy.get(
-    '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
+    '[data-icon="arrow-right"][title="Accepts backup1 live RTMP stream"]'
   ).should('have.css', 'color', greenColor);
 
   cy.get(
-    '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
+    '[data-icon="arrow-down"][title="Pulls primary live RTMP stream"]'
   ).should('have.css', 'color', greenColor);
 
   cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
@@ -295,15 +295,15 @@ Cypress.Commands.add('checkStoppedAllStated', () => {
   ).should('have.css', 'color', redColor);
 
   cy.get(
-    '[data-icon="arrow-right"][title="Accepts main live RTMP stream"]'
+    '[data-icon="arrow-right"][title="Accepts primary live RTMP stream"]'
   ).should('have.css', 'color', redColor);
 
   cy.get(
-    '[data-icon="arrow-right"][title="Accepts backup live RTMP stream"]'
+    '[data-icon="arrow-right"][title="Accepts backup1 live RTMP stream"]'
   ).should('have.css', 'color', redColor);
 
   cy.get(
-    '[data-icon="arrow-down"][title="Pulls origin live RTMP stream"]'
+    '[data-icon="arrow-down"][title="Pulls primary live RTMP stream"]'
   ).should('have.css', 'color', greenColor);
 
   cy.get('[data-testid=SINGLE] [data-icon="arrow-right"]').should(
