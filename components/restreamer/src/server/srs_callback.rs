@@ -114,7 +114,7 @@ fn on_start(
         stream: &str,
     ) -> Option<&'i mut Input> {
         if input.key == *stream {
-            return input.enabled.then(|| input);
+            return input.enabled.then_some(input);
         }
         if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
             s.inputs.iter_mut().find_map(|i| lookup_input(i, stream))
@@ -260,7 +260,7 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
         stream: &str,
     ) -> Option<&'i mut Input> {
         if input.key == *stream {
-            return input.enabled.then(|| input);
+            return input.enabled.then_some(input);
         }
         if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
             s.inputs.iter_mut().find_map(|i| lookup_input(i, stream))
@@ -271,7 +271,7 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
 
     let stream = req.stream.as_deref().unwrap_or_default();
     let kind = (req.vhost.as_str() == "hls")
-        .then(|| InputEndpointKind::Hls)
+        .then_some(InputEndpointKind::Hls)
         .ok_or_else(|| error::ErrorForbidden("Such `vhost` is not allowed"))?;
 
     let mut restreams = state.restreams.lock_mut();

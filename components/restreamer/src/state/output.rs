@@ -111,7 +111,7 @@ impl Output {
                 if let Some(mut old) = olds
                     .iter()
                     .enumerate()
-                    .find_map(|(n, o)| (o.src == new.src).then(|| n))
+                    .find_map(|(n, o)| (o.src == new.src).then_some(n))
                     .map(|n| olds.swap_remove(n))
                 {
                     old.apply(new);

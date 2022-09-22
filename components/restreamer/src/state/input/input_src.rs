@@ -57,7 +57,7 @@ impl InputSrc {
                     if let Some(mut old) = olds
                         .iter()
                         .enumerate()
-                        .find_map(|(n, o)| (o.key == new.key).then(|| n))
+                        .find_map(|(n, o)| (o.key == new.key).then_some(n))
                         .map(|n| olds.swap_remove(n))
                     {
                         old.apply(new);

@@ -143,7 +143,7 @@ impl State {
                 if let Some(mut old) = olds
                     .iter()
                     .enumerate()
-                    .find_map(|(n, o)| (o.key == new.key).then(|| n))
+                    .find_map(|(n, o)| (o.key == new.key).then_some(n))
                     .map(|n| olds.swap_remove(n))
                 {
                     old.apply(new, replace);
@@ -240,7 +240,7 @@ impl State {
         let mut clients = self.clients.lock_mut();
         let prev_len = clients.len();
         clients.retain(|r| r.id != *client_id);
-        (clients.len() != prev_len).then(|| ())
+        (clients.len() != prev_len).then_some(())
     }
 
     /// Adds a new [`Restream`] by the given `spec` to this [`State`].
@@ -295,7 +295,7 @@ impl State {
         let mut restreams = self.restreams.lock_mut();
         let prev_len = restreams.len();
         restreams.retain(|r| r.id != id);
-        (restreams.len() != prev_len).then(|| ())
+        (restreams.len() != prev_len).then_some(())
     }
 
     /// Enables a [`Restream`] with the given `id` in this [`State`].
@@ -471,7 +471,7 @@ impl State {
 
         let prev_len = outputs.len();
         outputs.retain(|o| o.id != id);
-        (outputs.len() != prev_len).then(|| ())
+        (outputs.len() != prev_len).then_some(())
     }
 
     /// Enables an [`Output`] with the given `id` in the specified [`Restream`]

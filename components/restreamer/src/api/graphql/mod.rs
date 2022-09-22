@@ -1,7 +1,11 @@
 //! [GraphQL] APIs provided by application.
 //!
 //! [GraphQL]: https://graphql.com
-#![allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
+#![allow(
+    clippy::needless_pass_by_value,
+    clippy::unnecessary_wraps,
+    clippy::unused_async
+)]
 
 pub mod client;
 pub mod dashboard;
