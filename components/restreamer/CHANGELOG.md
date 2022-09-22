@@ -17,7 +17,9 @@ All user visible changes to this project will be documented in this file. This p
   - Allow to set multiple Teamspeak mixers per output ([#199]);
   - Allow to set multiple backups per single input ([#208], [#224]);
   - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
-  - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]).
+  - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
+  - Rename `origin -> primary` in case single input mode;
+  - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#]).
 
 - GraphQL API:
   - Types:
@@ -45,6 +47,7 @@ All user visible changes to this project will be documented in this file. This p
 [#6]: /../../issues/6
 [#23]: /../../issues/23
 [#70]: /../../issues/70
+[#89]: /../../issues/89
 [#116]: /../../issues/116
 [#164]: /../../issues/164
 [#208]: /../../issues/208
