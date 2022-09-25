@@ -1,0 +1,11 @@
+schema: ../client.graphql.schema.json
+overwrite: true
+documents: './api/client.graphql'
+generates:
+  api/client.generated.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - graphql-codegen-svelte-apollo
+    config:
+      clientPath: './apollo-client'

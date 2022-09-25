@@ -1,20 +1,14 @@
 <script lang="js">
-  import { createGraphQlClient } from '../utils/util';
-
   import { Info, State, ServerInfo } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Toolbar from './Toolbar.svelte';
   import PageAll from './All.svelte';
+  import gqlClient from '../../api/apollo-client';
+  import { isOnline } from '../../api/apollo-client';
 
-  const gqlClient = createGraphQlClient(
-    '/api',
-    () => (isOnline = true),
-    () => (isOnline = false)
-  );
   setClient(gqlClient);
 
-  let isOnline = false;
   const info = subscribe(Info, { errorPolicy: 'all' });
   const state = subscribe(State, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });

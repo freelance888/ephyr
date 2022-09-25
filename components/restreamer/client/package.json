@@ -16,6 +16,7 @@
     "cypress:run:ci": "cypress run --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
     "dev": "webpack-dev-server",
     "doc": "typedoc",
+    "generate": "graphql-codegen && prettier --write .",
     "fmt": "prettier --write .",
     "lint": "prettier --check . && svelte-check"
   },
@@ -31,6 +32,9 @@
   },
   "devDependencies": {
     "@tsconfig/svelte": "^1.0",
+    "@graphql-codegen/cli": "^2.12.1",
+    "@graphql-codegen/typescript": "^2.7.3",
+    "@graphql-codegen/typescript-operations": "^2.5.3",
     "@types/lodash.clonedeep": "^4.5",
     "@types/node": "^16.11",
     "@types/uikit": "^3",
@@ -39,6 +43,7 @@
     "cross-env": "^7.0",
     "css-loader": "^5.2",
     "cypress": "^8.7",
+    "graphql-codegen-svelte-apollo": "^1.1.0",
     "graphql-tag": "^2.12",
     "html-webpack-plugin": "^5.5.0",
     "lodash.clonedeep": "^4.5",
