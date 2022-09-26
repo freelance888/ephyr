@@ -16,16 +16,17 @@
   let label_input;
   let show_edit = false;
 
+  $: info_text = endpoint.label ? 'Edit label' : 'Add label';
+
   async function showEdit() {
     show_edit = true;
   }
-  async function hideEdit() {
-    show_edit = false;
-  }
+
   async function cancelEdit() {
     label_component.value = endpoint.label;
-    hideEdit();
+    show_edit = false;
   }
+
   async function submit() {
     const variables = {
       restream_id: restream_id,
@@ -38,9 +39,9 @@
       if (result_val.data.setEndpointLabel) {
         endpoint.label = label_input.value;
         label_component.value = endpoint.label;
-        await hideEdit();
-      } else {
-        showError('Provided text has invalid characters or is too long.');
+        show_edit = false;
+      } else if (result_val.data.setEndpointLabel === null) {
+        showError('No given input endpoint.');
       }
     } catch (e) {
       showError(e.message);
@@ -66,6 +67,9 @@
           save: submit,
           close: cancelEdit,
         }}
+        on:focusout|preventDefault={() => {
+          cancelEdit();
+        }}
       />
     {/if}
     <a
@@ -75,6 +79,7 @@
         showEdit();
       }}
     >
+      {info_text}
       <i class="far fa-edit" title="Edit label" />
     </a>
   </div>
