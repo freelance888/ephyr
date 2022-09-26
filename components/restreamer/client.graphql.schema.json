@@ -354,7 +354,7 @@
             "deprecationReason": null
           },
           {
-            "name": "changeEndpointLabel",
+            "name": "setEndpointLabel",
             "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not\n`null` if the `Input` or `Endpoint` doesn't exist.",
             "args": [
               {
@@ -403,13 +403,9 @@
                 "name": "label",
                 "description": null,
                 "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "Label",
+                  "ofType": null
                 },
                 "defaultValue": null
               }
@@ -2873,7 +2869,7 @@
         "inputFields": [
           {
             "name": "key",
-            "description": "Key",
+            "description": "Key for this [`StreamInput`]",
             "type": {
               "kind": "NON_NULL",
               "name": null,

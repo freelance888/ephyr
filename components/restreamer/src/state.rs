@@ -362,12 +362,13 @@ impl State {
             .map(Input::disable)
     }
 
+    /// Sets label on [`Input`] with the given `id` in
+    /// the specified [`Restream`] of this [`State`].
     ///
-    ///
-    /// Returns `true` if it has been disabled, or `false` if it already has
-    /// been disabled, or [`None`] if it doesn't exist.
+    /// Returns `true` if it has been set, or `false` if it already has
+    /// been set, or [`None`] if it doesn't exist.
     #[must_use]
-    pub fn change_endpoint_label(
+    pub fn set_endpoint_label(
         &self,
         id: InputId,
         restream_id: RestreamId,
@@ -382,9 +383,15 @@ impl State {
             .find_mut(id)?
             .endpoints
             .iter_mut()
-            .find(|endpoint| endpoint.id == endpoint_id)?
-            .label = label;
-        Some(true)
+            .find(|endpoint| endpoint.id == endpoint_id)
+            .map(|mut ie| {
+                if ie.label == label {
+                    false
+                } else {
+                    ie.label = label;
+                    true
+                }
+            })
     }
 
     /// Adds a new [`Output`] to the specified [`Restream`] of this [`State`].

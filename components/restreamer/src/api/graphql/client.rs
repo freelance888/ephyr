@@ -313,35 +313,18 @@ impl MutationsRoot {
     /// Returns `true` if the label has been set with the given `label`,
     /// `false` if it was not
     /// `null` if the `Input` or `Endpoint` doesn't exist.
-    fn change_endpoint_label(
+    fn set_endpoint_label(
         #[graphql(description = "ID of the `Input` to be changed.")]
         id: InputId,
         #[graphql(description = "ID of the `Restream` to change.")]
         restream_id: RestreamId,
         endpoint_id: EndpointId,
-        label: String,
+        label: Option<Label>,
         context: &Context,
     ) -> Option<bool> {
-        if label.is_empty() {
-            context.state().change_endpoint_label(
-                id,
-                restream_id,
-                endpoint_id,
-                None,
-            )
-        } else {
-            let label_opt: Option<Label> = Label::new(label);
-            if label_opt.is_some() {
-                context.state().change_endpoint_label(
-                    id,
-                    restream_id,
-                    endpoint_id,
-                    label_opt,
-                )
-            } else {
-                Some(false)
-            }
-        }
+        context
+            .state()
+            .set_endpoint_label(id, restream_id, endpoint_id, label)
     }
 
     /// Sets a new `Output` or updates an existing one (if `id` is specified).

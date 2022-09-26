@@ -136,9 +136,9 @@ mutation SetEndpointLabel(
     $restream_id: RestreamId!
     $input_id: InputId!
     $endpoint_id: EndpointId!
-    $label: String!
+    $label: Label!
 ) {
-    changeEndpointLabel(
+    setEndpointLabel(
         id: $input_id
         restreamId: $restream_id
         endpointId: $endpoint_id

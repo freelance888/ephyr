@@ -255,7 +255,7 @@
       {
         "kind": "SCALAR",
         "name": "Label",
-        "description": "Label of a [`Restream`] or an [`Output`].",
+        "description": "Label of a [`Restream`] or an [`Output`].\n\n[`Restream`]: crate::state::Restream\n[`Output`]: crate::state::Output",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -374,7 +374,7 @@
       {
         "kind": "SCALAR",
         "name": "Delay",
-        "description": "Delay of a [`Mixin`] being mixed with an [`Output`].",
+        "description": "Delay of a [`Mixin`] being mixed with an [`Output`].\n\n[`Mixin`]: crate::state::Mixin\n[`Output`]: crate::state::Output",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
