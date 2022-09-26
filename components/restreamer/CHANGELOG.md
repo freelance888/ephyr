@@ -28,7 +28,7 @@ All user visible changes to this project will be documented in this file. This p
 - Smooth `Delay` change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
-- 'Gray screen' appears during switching from 'main' to 'backup' endpoint ([#164], [#204]);
+- Input labels disappearing after Edit action ([#179]);
 - Fast `Delay` adjust makes blaming icon constantly ([#116]).
 
 ### Miscellaneous
@@ -51,6 +51,7 @@ All user visible changes to this project will be documented in this file. This p
 [#116]: /../../issues/116
 [#164]: /../../issues/164
 [#208]: /../../issues/208
+[#179]: /../../issues/179
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
 [#39]: /../../pull/39
