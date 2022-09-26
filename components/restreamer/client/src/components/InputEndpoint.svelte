@@ -2,6 +2,7 @@
   import { mutation } from 'svelte-apollo';
 
   import { SetEndpointLabel } from '../../api/client.graphql';
+  import { saveOrCloseByKeys } from '../utils/directives.util';
 
   import Url from './common/Url.svelte';
   import { showError } from '../utils/util';
@@ -16,33 +17,39 @@
 
   let label_component;
   let label_input;
-  let editing_label = false;
+  let editing_label_visible = false;
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  async function editLabel(startEdit) {
-    if (startEdit) {
-      editing_label = true;
-    } else {
-      const variables = {
-        restream_id: restream_id,
-        input_id: input.id,
-        endpoint_id: endpoint.id,
-        label: label_input.value,
-      };
-      try {
-        let result_val = await setLabelMutation({ variables });
-        if (result_val.data.setEndpointLabel) {
-          endpoint.label = label_input.value;
-          label_component.value = endpoint.label;
-          editing_label = false;
-        } else {
-          showError('Provided text has invalid characters or is too long.');
-        }
-      } catch (e) {
-        showError(e.message);
+  async function showLabelEdit() {
+    editing_label_visible = true;
+  }
+  async function hideLabelEdit() {
+    editing_label_visible = false;
+  }
+  async function cancelEdit() {
+    label_component.value = endpoint.label;
+    hideLabelEdit();
+  }
+  async function submitLabel() {
+    const variables = {
+      restream_id: restream_id,
+      input_id: input.id,
+      endpoint_id: endpoint.id,
+      label: label_input.value,
+    };
+    try {
+      let result_val = await setLabelMutation({ variables });
+      if (result_val.data.setEndpointLabel) {
+        endpoint.label = label_input.value;
+        label_component.value = endpoint.label;
+        await hideLabelEdit();
+      } else {
+        showError('Provided text has invalid characters or is too long.');
       }
+    } catch (e) {
+      showError(e.message);
     }
   }
 
@@ -110,15 +117,16 @@
     <Url url={input_url} />
     {#if with_label}
       <div class="endpoint-label">
-        <span bind:this={label_component} class:hidden={editing_label}
+        <span bind:this={label_component} class:hidden={editing_label_visible}
           >{endpoint.label ? endpoint.label : ''}</span
         >
-        {#if editing_label}
+        {#if editing_label_visible}
           <input
             bind:this={label_input}
             use:init_input
-            on:focusout|preventDefault={() => {
-              editLabel(false);
+            use:saveOrCloseByKeys={{
+              save: submitLabel,
+              close: cancelEdit,
             }}
           />
         {/if}
@@ -126,7 +134,7 @@
           class="edit-label"
           href="/"
           on:click|preventDefault={() => {
-            editLabel(true);
+            showLabelEdit();
           }}
         >
           <i class="far fa-edit" title="Edit label" />
