@@ -20,8 +20,8 @@ All user visible changes to this project will be documented in this file. This p
   - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
   - Rename `origin -> primary` in case single input mode;
   - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#225]);
-  - Add\Cancel input endpoint label edit by Enter\Esc keypress ([#179]);
-  - Make input endpoint label more visible ([#227]).
+  - Add\Cancel input endpoint label edit by Enter\Esc keypress ([#179], [#230]);
+  - Make input endpoint label more visible ([#227], [#230]).
 
 - GraphQL API:
   - Types:
@@ -30,7 +30,7 @@ All user visible changes to this project will be documented in this file. This p
 - Smooth `Delay` change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
-- Input labels disappearing after Edit action ([#179]);
+- Input labels disappearing after Edit action ([#179], [#230]);
 - Fast `Delay` adjust makes blaming icon constantly ([#116]).
 
 ### Miscellaneous
@@ -68,6 +68,7 @@ All user visible changes to this project will be documented in this file. This p
 [#212]: /../../pull/212
 [#224]: /../../pull/224
 [#225]: /../../pull/225
+[#230]: /../../pull/230
 
 
 
