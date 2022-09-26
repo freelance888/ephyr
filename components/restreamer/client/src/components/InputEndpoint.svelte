@@ -12,6 +12,7 @@
   export let input;
   export let input_url;
   export let restream_id;
+  export let with_label;
 
   let label_component;
   let label_input;
@@ -32,7 +33,7 @@
       };
       try {
         let result_val = await changeLabelMutation({ variables });
-        if (result_val.data.changeEndpointLabel) {
+        if (result_val.data.setEndpointLabel) {
           endpoint.label = label_input.value;
           label_component.value = endpoint.label;
           editing_label = false;
@@ -107,29 +108,31 @@
     </div>
 
     <Url url={input_url} />
-    <div class="endpoint-label">
-      <span bind:this={label_component} class:hidden={editing_label}
-        >{endpoint.label ? endpoint.label : ''}</span
-      >
-      {#if editing_label}
-        <input
-          bind:this={label_input}
-          use:init_input
-          on:focusout|preventDefault={() => {
-            editLabel(false);
+    {#if with_label}
+      <div class="endpoint-label">
+        <span bind:this={label_component} class:hidden={editing_label}
+          >{endpoint.label ? endpoint.label : ''}</span
+        >
+        {#if editing_label}
+          <input
+            bind:this={label_input}
+            use:init_input
+            on:focusout|preventDefault={() => {
+              editLabel(false);
+            }}
+          />
+        {/if}
+        <a
+          class="edit-label"
+          href="/"
+          on:click|preventDefault={() => {
+            editLabel(true);
           }}
-        />
-      {/if}
-      <a
-        class="edit-label"
-        href="/"
-        on:click|preventDefault={() => {
-          editLabel(true);
-        }}
-      >
-        <i class="far fa-edit" title="Edit label" />
-      </a>
-    </div>
+        >
+          <i class="far fa-edit" title="Edit label" />
+        </a>
+      </div>
+    {/if}
   </div>
 </template>
 

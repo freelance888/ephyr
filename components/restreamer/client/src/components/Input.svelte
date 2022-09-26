@@ -18,6 +18,7 @@
   export let restream_id;
   export let restream_key;
   export let value;
+  export let with_label;
 
   $: isPull = !!value.src && value.src.__typename === 'RemoteInputSrc';
 
@@ -70,6 +71,7 @@
           input={value}
           input_url={getInputUrl(endpoint)}
           {restream_id}
+          {with_label}
         />
       {/each}
     </div>

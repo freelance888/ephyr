@@ -225,6 +225,7 @@
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
+      with_label={false}
     />
     {#if !!value.input.src && value.input.src.__typename === 'FailoverInputSrc'}
       {#each value.input.src.inputs as input}
@@ -233,11 +234,12 @@
           restream_id={value.id}
           restream_key={value.key}
           value={input}
+          with_label={true}
         />
       {/each}
     {/if}
 
-    <div class="uk-grid uk-grid-small" uk-grid>
+    <div class="uk-grid uk-grid-small">
       {#each value.outputs as output}
         <Output
           {deleteConfirmation}
