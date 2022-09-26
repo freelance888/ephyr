@@ -2869,7 +2869,7 @@
         "inputFields": [
           {
             "name": "key",
-            "description": "Key for this [`StreamInput`]",
+            "description": "Key for this [`BackupInput`]",
             "type": {
               "kind": "NON_NULL",
               "name": null,

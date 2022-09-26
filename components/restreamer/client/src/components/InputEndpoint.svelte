@@ -6,7 +6,7 @@
   import Url from './common/Url.svelte';
   import { showError } from '../utils/util';
 
-  const changeLabelMutation = mutation(SetEndpointLabel);
+  const setLabelMutation = mutation(SetEndpointLabel);
 
   export let endpoint;
   export let input;
@@ -32,7 +32,7 @@
         label: label_input.value,
       };
       try {
-        let result_val = await changeLabelMutation({ variables });
+        let result_val = await setLabelMutation({ variables });
         if (result_val.data.setEndpointLabel) {
           endpoint.label = label_input.value;
           label_component.value = endpoint.label;

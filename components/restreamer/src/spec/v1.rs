@@ -423,7 +423,7 @@ impl Default for Volume {
     Clone, Debug, Deserialize, Eq, PartialEq, Serialize, GraphQLInputObject,
 )]
 pub struct BackupInput {
-    /// Key for this [`StreamInput`]
+    /// Key for this [`BackupInput`]
     pub key: state::InputKey,
 
     /// URL to pull a live stream from for a backup endpoint.
