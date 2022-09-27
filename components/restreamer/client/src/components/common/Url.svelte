@@ -19,6 +19,7 @@
       on:click|preventDefault={() => copyToClipboard(url)}
     >
       Copy
+      <i class="far fa-copy"/>
     </button>
   </div>
 </template>
