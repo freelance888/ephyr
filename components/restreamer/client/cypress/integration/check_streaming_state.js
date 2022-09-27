@@ -6,6 +6,10 @@ describe('CHECK STREAMING STATE', () => {
     cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/primary');
   });
 
+  after(() => {
+    cy.deleteAllInputs();
+  });
+
   it('1 Assert Start All', () => {
     cy.allOutputStart();
     cy.wait(6000);

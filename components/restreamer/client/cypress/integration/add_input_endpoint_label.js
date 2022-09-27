@@ -1,13 +1,12 @@
 describe('CHECK INPUT ENDPOINT LABEL', () => {
   before(() => {
     cy.visit('/');
-    cy.dumpState();
     cy.deleteAllInputs();
     cy.importJsonConf(Cypress.env('host'));
   });
 
   after(() => {
-    cy.restoreState();
+    cy.deleteAllInputs();
   });
 
   it('Assert that first endpoint input does not have label option', () => {

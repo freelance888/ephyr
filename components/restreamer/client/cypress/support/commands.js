@@ -46,7 +46,7 @@ Cypress.Commands.add('dumpState', () => {
   cy.get('.uk-textarea').then(($input) => {
     cy.writeFile('savedState.json', $input.val());
   });
-  cy.get('html').type('{esc}');
+  cy.get('.uk-modal-dialog .uk-close').eq(0).click();
 });
 
 // RESTORE STATE
