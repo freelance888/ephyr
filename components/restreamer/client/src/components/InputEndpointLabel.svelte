@@ -61,6 +61,7 @@
     >
     {#if show_edit}
       <input
+        type="text"
         bind:this={label_input}
         use:init_input
         use:saveOrCloseByKeys={{
