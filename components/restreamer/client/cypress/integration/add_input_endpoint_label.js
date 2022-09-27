@@ -46,6 +46,17 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get('html').trigger('mouseover');
   });
 
+  it('Add new backup input should not affect labels', () => {
+    cy.get(':nth-child(2) > .edit-input').click();
+    cy.get("button:contains('Add backup')").click();
+    cy.get('button')
+      .contains(/^Edit$/)
+      .click();
+    cy.get('button')
+      .contains(/^Edit$/)
+      .should('not.exist');
+  });
+
   it('Assert that endpoint label have text', () => {
     cy.get("span:contains('/it/backup1')")
       .parent()
