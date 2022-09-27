@@ -1,19 +1,17 @@
 describe('CHECK INPUT ENDPOINT LABEL', () => {
-  it('Goes to the homepage', () => {
+  before(() => {
     cy.visit('/');
+    cy.dumpState();
+    cy.deleteAllInputs();
+    cy.importJsonConf(Cypress.env('host'));
   });
 
-  it('Add input with backup', () => {
-    cy.get('.add-input').click();
-    cy.get('[placeholder="optional label"]').type('CHECK INPUT ENDPOINT LABEL');
-    cy.get('[placeholder="<stream-key>"]').type('check-label');
-    cy.get("button:contains('Add backup')").click();
-    cy.get('button').contains(/^Add$/).click();
-    cy.get('button').contains(/^Add$/).should('not.exist');
+  after(() => {
+    cy.restoreState();
   });
 
   it('Assert that first endpoint input does not have label option', () => {
-    cy.get("span:contains('/check-label/playback')")
+    cy.get("span:contains('/it/playback')")
       .parent()
       .parent()
       .find('.endpoint-label')
@@ -21,7 +19,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
   });
 
   it('Add label', () => {
-    cy.get("span:contains('/check-label/backup1')")
+    cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
       .find('.edit-label')
@@ -30,7 +28,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
   });
 
   it('Cancel edit label by click Esc', () => {
-    cy.get("span:contains('/check-label/backup1')")
+    cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
       .find('.edit-label')
@@ -39,7 +37,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
   });
 
   it('Cancel edit label by click outside', () => {
-    cy.get("span:contains('/check-label/backup1')")
+    cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
       .find('.edit-label')
@@ -49,7 +47,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
   });
 
   it('Assert that endpoint label have text', () => {
-    cy.get("span:contains('/check-label/backup1')")
+    cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
       .find('.endpoint-label span')

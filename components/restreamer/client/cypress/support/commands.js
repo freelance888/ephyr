@@ -39,6 +39,28 @@ Cypress.Commands.add('allOutputStop', () => {
 
   cy.get('[slot="confirm"]').should('not.exist');
 });
+
+// DUMP STATE
+Cypress.Commands.add('dumpState', () => {
+  cy.get('.export-import-all').click();
+  cy.get('.uk-textarea').then(($input) => {
+    cy.writeFile('savedState.json', $input.val());
+  });
+  cy.get('html').type('{esc}');
+});
+
+// RESTORE STATE
+Cypress.Commands.add('restoreState', () => {
+  cy.get('.export-import-all').click();
+  cy.readFile('savedState.json').then(($text) => {
+    cy.get('.uk-textarea')
+      .invoke('val', JSON.stringify($text))
+      .trigger('input');
+  });
+  cy.get("button:contains('Replace')").click();
+  cy.get("button:contains('Replace')").should('not.exist');
+});
+
 // REMOVE ALL INPUTS
 Cypress.Commands.add('deleteAllInputs', () => {
   cy.get('.export-import-all').click();
