@@ -1,16 +1,17 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
 
-  import { SetEndpointLabel } from '../../api/client.graphql';
-  import { saveOrCloseByKeys } from '../utils/directives.util';
+  import { SetEndpointLabel } from '../../../api/client.graphql';
+  import { saveOrCloseByKeys } from '../../utils/directives.util';
 
-  import { showError } from '../utils/util';
+  import { showError } from '../../utils/util';
 
   const setLabelMutation = mutation(SetEndpointLabel);
 
   export let endpoint;
   export let input;
   export let restream_id;
+  export let show_controls;
 
   let label_component;
   let label_input;
@@ -56,8 +57,10 @@
 
 <template>
   <div class="endpoint-label">
-    <span bind:this={label_component} class:hidden={show_edit}
-      >{endpoint.label ? endpoint.label : ''}</span
+    <span
+      class={endpoint.label ? 'uk-margin-small-left' : ''}
+      bind:this={label_component}
+      class:hidden={show_edit}>{endpoint.label ? endpoint.label : ''}</span
     >
     {#if show_edit}
       <input
@@ -73,38 +76,33 @@
         }}
       />
     {/if}
-    <a
-      class="edit-label"
-      href="/"
-      on:click|preventDefault={() => {
-        showEdit();
-      }}
-    >
-      {info_text}
-      <i class="far fa-edit" title="Edit label" />
-    </a>
+    {#if show_controls}
+      <button
+        type="button"
+        class="edit-label-btn uk-button uk-button-link uk-button-small"
+        on:click|preventDefault={() => {
+          showEdit();
+        }}
+      >
+        <span class="uk-margin-small-left">{info_text}</span>
+        <i class="far fa-edit" />
+      </button>
+    {/if}
   </div>
 </template>
 
 <style lang="stylus">
   .endpoint-label
-    margin-left 5px
+    display: inline-flex
     color: #999
-
-    &:hover
-      .edit-label
-        opacity: 1
 
     .hidden
       display: none
 
-    .edit-label
-      opacity: 0
-      transition: opacity .3s ease
-      color: #666
-      outline: none
-      &:hover
-        opacity: 1
-        text-decoration: none
-        color: #444
+    .edit-label-btn
+      align-self: flex-start
+      text-transform: initial
+      text-decoration: none
+      font-size: 13px
+      transition: 0.1s ease-in
 </style>

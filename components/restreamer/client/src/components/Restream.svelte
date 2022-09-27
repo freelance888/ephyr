@@ -23,7 +23,7 @@
   import { outputModal, exportModal } from '../stores';
 
   import Confirm from './common/Confirm.svelte';
-  import Input from './Input.svelte';
+  import Input from './input/Input.svelte';
   import Output from './Output.svelte';
   import Toggle from './common/Toggle.svelte';
   import StatusFilter from './common/StatusFilter.svelte';
@@ -72,6 +72,8 @@
     ? globalOutputsFilters
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
+
+  $: showControls = false;
 
   let openRestreamModal = false;
 
@@ -128,6 +130,8 @@
     data-testid={value.label}
     class="uk-section uk-section-muted uk-section-xsmall"
     class:hidden
+    on:mouseenter={(e) => (showControls = true)}
+    on:mouseleave={(e) => (showControls = false)}
   >
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
@@ -226,6 +230,7 @@
       restream_key={value.key}
       value={value.input}
       with_label={false}
+      show_controls={showControls}
     />
     {#if !!value.input.src && value.input.src.__typename === 'FailoverInputSrc'}
       {#each value.input.src.inputs as input}
@@ -235,6 +240,7 @@
           restream_key={value.key}
           value={input}
           with_label={true}
+          show_controls={showControls}
         />
       {/each}
     {/if}

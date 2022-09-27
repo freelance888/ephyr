@@ -1,5 +1,6 @@
 <script lang="js">
-  import Url from './common/Url.svelte';
+  import Url from '../common/Url.svelte';
+  import InputEndpointUrl from './InputEndpointUrl.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
 
   export let endpoint;
@@ -7,6 +8,7 @@
   export let input_url;
   export let restream_id;
   export let with_label;
+  export let show_controls;
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
@@ -67,9 +69,11 @@
       {/if}
     </div>
 
-    <Url url={input_url} />
     {#if with_label}
-      <InputEndpointLabel {endpoint} {restream_id} {input} />
+      <InputEndpointUrl url={input_url} />
+      <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
+    {:else}
+      <Url url={input_url} />
     {/if}
   </div>
 </template>
