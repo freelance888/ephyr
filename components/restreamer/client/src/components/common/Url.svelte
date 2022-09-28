@@ -14,8 +14,7 @@
       >
     {/if}
     <button
-      type="button"
-      class="url-copy-btn uk-button uk-button-link uk-button-small uk-margin-small-left"
+      class="url-copy-btn uk-button uk-button-link uk-margin-small-left"
       on:click|preventDefault={() => copyToClipboard(url)}
     >
       Copy
@@ -27,10 +26,13 @@
 <style lang="stylus">
   .url
     display: inline-flex
+    min-width: 20em
 
-    &:hover .url-copy-btn
-      opacity: 1
-      vertical-align: baseline
+    &:hover
+      .url-copy-btn
+        opacity: 1
+        vertical-align: baseline
+
 
   .url-placeholder
     word-break: break-all
@@ -40,9 +42,12 @@
 
   .url-copy-btn
     align-self: flex-start
+    color: var(--primary-text-color)
     opacity: 0
     text-transform: initial
     text-decoration: none
     font-size: 13px
     transition: 0.1s ease-in
+    &:hover
+      color: var(--primary-text-hover-color)
 </style>

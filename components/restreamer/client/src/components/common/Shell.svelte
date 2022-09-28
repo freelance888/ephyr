@@ -60,6 +60,7 @@
   @require "../../../node_modules/uikit/dist/css/uikit.min.css"
   :root {
     --primary-text-color: #777;
+    --primary-text-hover-color: #333;
   }
 
   .circle

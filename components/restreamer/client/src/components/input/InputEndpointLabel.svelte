@@ -78,15 +78,14 @@
       />
     {/if}
     <button
-      type="button"
-      class="edit-label-btn uk-button uk-button-link uk-button-small"
+      class="edit-label-btn uk-button uk-button-link"
       class:hidden={!show_controls}
       on:click|preventDefault={() => {
         showEdit();
       }}
     >
       <span class="uk-margin-small-left">{btn_text}</span>
-      <i class="far fa-edit" />
+      <i class="fas fa-edit" />
     </button>
   </div>
 </template>
@@ -94,15 +93,20 @@
 <style lang="stylus">
   .endpoint-label
     display: inline-flex
-    color: #999
+    color: var(--primary-text-color)
 
     .hidden
       display: none
 
     .edit-label-btn
+      color: var(--primary-text-color)
       align-self: flex-start
       text-transform: initial
       text-decoration: none
       font-size: 13px
       transition: 0.1s ease-in
+      &:hover
+        color: var(--primary-text-hover-color)
+        opacity: 1
+        vertical-align: baseline
 </style>

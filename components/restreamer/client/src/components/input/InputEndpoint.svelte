@@ -1,6 +1,5 @@
 <script lang="js">
   import Url from '../common/Url.svelte';
-  import InputEndpointUrl from './InputEndpointUrl.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
 
   export let endpoint;
@@ -69,11 +68,9 @@
       {/if}
     </div>
 
+    <Url url={input_url} />
     {#if with_label}
-      <InputEndpointUrl url={input_url} />
       <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
-    {:else}
-      <Url url={input_url} />
     {/if}
   </div>
 </template>
