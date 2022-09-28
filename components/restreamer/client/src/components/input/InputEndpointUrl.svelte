@@ -24,7 +24,7 @@
     display: inline-flex
     min-width: 20em
     padding-right: 10px
-    border-right: 3px dotted gray
+    border-right: 1px dotted gray
 
     &:hover .url-copy-btn
       opacity: 1
