@@ -14,14 +14,16 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 
 - Web UI:
-  - Allow to set multiple Teamspeak mixers per output ([#199]);
-  - Allow to set multiple backups per single input ([#208], [#224]);
-  - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
-  - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
-  - Rename `origin -> primary` in case single input mode;
-  - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#225]);
-  - Add\Cancel input endpoint label edit by Enter\Esc keypress ([#179], [#230]);
-  - Make input endpoint label more visible ([#227], [#230]).
+  - Output:
+    - Allow to set multiple Teamspeak mixers per output ([#199]);
+    - Allow to set multiple backups per single input ([#208], [#224]);
+    - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
+    - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
+  - Input:
+    - Rename `origin -> primary` in case single input mode;
+    - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#225]);
+    - Add\Cancel input endpoint label edit by Enter\Esc keypress ([#179], [#230]);
+    - Make input endpoint label more visible ([#227], [#230]).
 
 - GraphQL API:
   - Types:
@@ -30,8 +32,11 @@ All user visible changes to this project will be documented in this file. This p
 - Smooth `Delay` change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
-- Input labels disappearing after Edit action ([#179], [#230]);
-- Fast `Delay` adjust makes blaming icon constantly ([#116]).
+- Web UI:
+  - Input:
+    - Input labels disappearing after Edit Input action ([#179], [#230]);
+  - Output:
+    - Fast `Delay` adjust makes blaming icon constantly ([#116]).
 
 ### Miscellaneous
 - Server updates:
