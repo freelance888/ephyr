@@ -17,7 +17,7 @@
   let label_input;
   let show_edit = false;
 
-  $: info_text = endpoint.label ? 'Edit label' : 'Add label';
+  $: btn_text = endpoint.label ? 'Edit label' : 'Add label';
 
   async function showEdit() {
     show_edit = true;
@@ -58,6 +58,7 @@
 <template>
   <div class="endpoint-label">
     <span
+      data-testid="endpoint-label-text"
       class={endpoint.label ? 'uk-margin-small-left' : ''}
       bind:this={label_component}
       class:hidden={show_edit}>{endpoint.label ? endpoint.label : ''}</span
@@ -76,18 +77,17 @@
         }}
       />
     {/if}
-    {#if show_controls}
-      <button
-        type="button"
-        class="edit-label-btn uk-button uk-button-link uk-button-small"
-        on:click|preventDefault={() => {
-          showEdit();
-        }}
-      >
-        <span class="uk-margin-small-left">{info_text}</span>
-        <i class="far fa-edit" />
-      </button>
-    {/if}
+    <button
+      type="button"
+      class="edit-label-btn uk-button uk-button-link uk-button-small"
+      class:hidden={!show_controls}
+      on:click|preventDefault={() => {
+        showEdit();
+      }}
+    >
+      <span class="uk-margin-small-left">{btn_text}</span>
+      <i class="far fa-edit" />
+    </button>
   </div>
 </template>
 

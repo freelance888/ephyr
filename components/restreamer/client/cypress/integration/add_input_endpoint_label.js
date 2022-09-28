@@ -1,4 +1,4 @@
-describe('CHECK INPUT ENDPOINT LABEL', () => {
+describe.only('CHECK INPUT ENDPOINT LABEL', () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -13,6 +13,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get("span:contains('/it/playback')")
       .parent()
       .parent()
+      .invoke('show')
       .find('.endpoint-label')
       .should('not.exist');
   });
@@ -21,7 +22,8 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
-      .find('.edit-label')
+      .find('.edit-label-btn')
+      .invoke('show')
       .click();
     cy.focused().type('Some text{enter}');
   });
@@ -30,7 +32,8 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
-      .find('.edit-label')
+      .find('.edit-label-btn')
+      .invoke('show')
       .click();
     cy.focused().type('Text should not be after click Esc{esc}');
   });
@@ -39,7 +42,8 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
-      .find('.edit-label')
+      .find('.edit-label-btn')
+      .invoke('show')
       .click();
     cy.focused().type('Text should not be after click outside');
     cy.get('html').trigger('mouseover');
@@ -60,7 +64,7 @@ describe('CHECK INPUT ENDPOINT LABEL', () => {
     cy.get("span:contains('/it/backup1')")
       .parent()
       .parent()
-      .find('.endpoint-label span')
+      .find('[data-testid="endpoint-label-text"]')
       .should('have.text', 'Some text');
   });
 });
