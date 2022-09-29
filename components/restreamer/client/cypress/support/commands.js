@@ -24,6 +24,30 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
+// CLICK ADD INPUT
+Cypress.Commands.add('clickAddInputBtn', () => {
+  cy.get('[data-testid="add-input-modal:confirm"]').click();
+  cy.get('[data-testid="add-input-modal:confirm"]').should('not.exist');
+});
+
+// CLICK ADD BACKUP BTN
+Cypress.Commands.add('clickAddBackupBtn', () => {
+  cy.get('[data-testid="add-output-modal:add-backup"]').click();
+});
+
+// CLICK ADD BACKUP BTN
+Cypress.Commands.add('clickEditInputBtn', (inputNum) => {
+  cy.get(
+    `:nth-child(${inputNum + 1}) > [data-testid="edit-input-modal:open"]`
+  ).click();
+});
+
+// CLICK ADD OUTPUT
+Cypress.Commands.add('clickAddOutputBtn', () => {
+  cy.get('[data-testid="add-output-modal:confirm"]').click();
+  cy.get('[data-testid="add-output-modal:confirm"]').should('not.exist');
+});
+
 // ALL OTPUTS START
 Cypress.Commands.add('allOutputStart', () => {
   cy.get("span:contains('Start All')").click();

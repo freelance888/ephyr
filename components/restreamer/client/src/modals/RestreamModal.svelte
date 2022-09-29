@@ -206,6 +206,7 @@
 
         <div class="uk-section uk-section-xsmall backups-section">
           <button
+            data-testid="add-output-modal:add-backup"
             class="uk-button uk-button-primary uk-button-small"
             on:click={() => addBackup()}
             >Add backup

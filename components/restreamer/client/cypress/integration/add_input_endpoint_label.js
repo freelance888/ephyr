@@ -1,4 +1,4 @@
-describe.only('CHECK INPUT ENDPOINT LABEL', () => {
+describe('CHECK INPUT ENDPOINT LABEL', () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -50,14 +50,9 @@ describe.only('CHECK INPUT ENDPOINT LABEL', () => {
   });
 
   it('Add new backup input should not affect labels', () => {
-    cy.get(':nth-child(2) > .edit-input').click();
-    cy.get("button:contains('Add backup')").click();
-    cy.get('button')
-      .contains(/^Edit$/)
-      .click();
-    cy.get('button')
-      .contains(/^Edit$/)
-      .should('not.exist');
+    cy.clickEditInputBtn(1);
+    cy.clickAddBackupBtn();
+    cy.clickAddInputBtn();
   });
 
   it('Assert that endpoint label have text', () => {

@@ -211,6 +211,7 @@
     {/if}
 
     <a
+      data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
       on:click|preventDefault={() => (openRestreamModal = true)}

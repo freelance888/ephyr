@@ -32,8 +32,7 @@ describe('ADD MULTIPLE OUTPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get('button').contains(/^Add$/).click();
-    cy.get('button').contains(/^Add$/).should('not.exist');
+    cy.clickAddOutputBtn();
   });
 
   it('Assert', () => {
