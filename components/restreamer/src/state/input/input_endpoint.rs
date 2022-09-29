@@ -69,14 +69,8 @@ impl InputEndpoint {
     /// Applies the given [`spec::v1::InputEndpoint`] to
     /// this [`InputEndpoint`].
     ///
-    /// The original [`spec::v1::InputEndpoint`] is
-    /// created inside [`set_restream`] and
-    /// [`spec::v1::InputEndpoint.label`] is always set to `None`.
-    /// If [`InputEndpoint.label`] has value then it was updated
-    /// with [`set_endpoint_label`] and update is skipped.
-    ///
-    /// [`set_endpoint_label`]: [`state::State::set_endpoint_label`]
-    /// [`set_restream`]: [`client::MutateRoot::set_restream`]
+    /// If `label` is not `None` than we already
+    /// set the value and the update is not required.
     #[inline]
     pub fn apply(&mut self, new: spec::v1::InputEndpoint) {
         self.kind = new.kind;

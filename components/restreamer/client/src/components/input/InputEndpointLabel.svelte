@@ -17,7 +17,7 @@
   let label_input;
   let show_edit = false;
 
-  $: btn_text = endpoint.label ? 'Edit label' : 'Add label';
+  $: btn_text = endpoint.label ? 'Edit' : 'Add label';
 
   async function showEdit() {
     show_edit = true;
