@@ -470,7 +470,7 @@ jobs:
       - name: Install ffmpeg for run tests
         uses: FedericoCarboni/setup-ffmpeg@v1
       - name: Run Cypress tests
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v4
         with:
           browser: chrome
           working-directory: components/restreamer/client
