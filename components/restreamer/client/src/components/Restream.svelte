@@ -130,8 +130,8 @@
     data-testid={value.label}
     class="uk-section uk-section-muted uk-section-xsmall"
     class:hidden
-    on:mouseenter={(e) => (showControls = true)}
-    on:mouseleave={(e) => (showControls = false)}
+    on:mouseenter={() => (showControls = true)}
+    on:mouseleave={() => (showControls = false)}
   >
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />

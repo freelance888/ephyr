@@ -87,10 +87,9 @@
       }}
     >
       <span class="uk-margin-small-left">{btn_text}</span>
-      <span class:hidden={!isEditMode}><i class="fas fa-edit"/></span>
-      <span class:hidden={isEditMode}><i class="fas fa-plus"/></span>
+      <span class:hidden={!isEditMode}><i class="fas fa-edit" /></span>
+      <span class:hidden={isEditMode}><i class="fas fa-plus" /></span>
     </button>
-
   </div>
 </template>
 
