@@ -17,6 +17,9 @@
   let label_input;
   let show_edit = false;
 
+  $: btn_text = endpoint.label ? 'Edit' : 'Add label';
+  $: isEditMode = !!endpoint.label;
+
   async function showEdit() {
     show_edit = true;
   }
@@ -76,29 +79,18 @@
       />
     {/if}
     <!-- The only found way to prevent caching of icon inside button -->
-    {#if endpoint.label}
-      <button
-        class="edit-label-btn uk-button uk-button-link"
-        class:hidden={!show_controls}
-        on:click|preventDefault={() => {
-          showEdit();
-        }}
-      >
-        <span class="uk-margin-small-left">Edit</span>
-        <i class="fas fa-edit" />
-      </button>
-    {:else}
-      <button
-        class="edit-label-btn uk-button uk-button-link"
-        class:hidden={!show_controls}
-        on:click|preventDefault={() => {
-          showEdit();
-        }}
-      >
-        <span class="uk-margin-small-left">Add label</span>
-        <i class="fas fa-plus" />
-      </button>
-    {/if}
+    <button
+      class="edit-label-btn uk-button uk-button-link"
+      class:hidden={!show_controls}
+      on:click|preventDefault={() => {
+        showEdit();
+      }}
+    >
+      <span class="uk-margin-small-left">{btn_text}</span>
+      <span class:hidden={!isEditMode}><i class="fas fa-edit"/></span>
+      <span class:hidden={isEditMode}><i class="fas fa-plus"/></span>
+    </button>
+
   </div>
 </template>
 
@@ -112,7 +104,6 @@
 
     .edit-label-btn
       color: var(--primary-text-color)
-      align-self: flex-start
       text-transform: initial
       text-decoration: none
       font-size: 13px
