@@ -17,8 +17,6 @@
   let label_input;
   let show_edit = false;
 
-  $: btn_text = endpoint.label ? 'Edit' : 'Add label';
-
   async function showEdit() {
     show_edit = true;
   }
@@ -77,16 +75,30 @@
         }}
       />
     {/if}
-    <button
-      class="edit-label-btn uk-button uk-button-link"
-      class:hidden={!show_controls}
-      on:click|preventDefault={() => {
-        showEdit();
-      }}
-    >
-      <span class="uk-margin-small-left">{btn_text}</span>
-      <i class="fas fa-edit" />
-    </button>
+    <!-- The only found way to prevent caching of icon inside button -->
+    {#if endpoint.label}
+      <button
+        class="edit-label-btn uk-button uk-button-link"
+        class:hidden={!show_controls}
+        on:click|preventDefault={() => {
+          showEdit();
+        }}
+      >
+        <span class="uk-margin-small-left">Edit</span>
+        <i class="fas fa-edit" />
+      </button>
+    {:else}
+      <button
+        class="edit-label-btn uk-button uk-button-link"
+        class:hidden={!show_controls}
+        on:click|preventDefault={() => {
+          showEdit();
+        }}
+      >
+        <span class="uk-margin-small-left">Add label</span>
+        <i class="fas fa-plus" />
+      </button>
+    {/if}
   </div>
 </template>
 
