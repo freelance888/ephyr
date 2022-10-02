@@ -113,7 +113,7 @@ By default, each commit in `master` branch deploys to `restreamer-edge` image on
 For release specific version we need to:
 
 1. Update version and description `CHAGNELOG.md`;
-2. Update version in `Cargo.toml`;
+2. Update version in `Cargo.toml` and `package.json`;
 3. Update versions in `docs`;
 4. Add tag `restreamer-v0.0.0` or so;
 5. Push branch with tags;
@@ -123,7 +123,7 @@ For release specific version we need to:
 
 
 ## Commit message commands
-By default we run all steps on CI except release. Release happens only if branch is `master` or commit pushed with tags `restreamer-v` and `vod-meta-server-v`.
+By default, we run all steps on CI except release. Release happens only if branch is `master` or commit pushed with tags `restreamer-v` and `vod-meta-server-v`.
 
 We have configured several actions for CI that could be triggered by adding specific command in the beginning of the commit message.
 

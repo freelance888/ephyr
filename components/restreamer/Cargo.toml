@@ -1,6 +1,6 @@
 [package]
 name = "ephyr-restreamer"
-version = "0.6.0+dev"
+version = "0.6.0"
 edition = "2018"
 authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
