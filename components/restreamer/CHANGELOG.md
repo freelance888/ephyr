@@ -5,7 +5,7 @@ All user visible changes to this project will be documented in this file. This p
 
 
 
-## [0.6.0] · Unreleased
+## [0.6.0] · 02-10-2022
 [0.6.0]: /../../tree/restreamer-v0.6.0
 
 [Diff](/../../compare/restreamer-v0.5.0...restreamer-v0.6.0)
@@ -14,12 +14,13 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 
 - Web UI:
-  - Output:
-    - Allow to set multiple Teamspeak mixers per output ([#199]);
-    - Allow to set multiple backups per single input ([#208], [#224]);
-    - Allow to specify `identity` in Teamspeak `Mixin` ([#6], [#39]);
-    - Add `sidechain` option to `Mixin` in `Output` ([#70], [#203]);
+  - Output.Mixin:
+    - Allow to set up to 3 Teamspeak mixers per output ([#199]);
+    - Allow to specify `identity` with Teamspeak ([#6], [#39]);
+    - Add `sidechain` option ([#70], [#203]);
+    - Smooth `Delay` change ([#23], [#212]). 
   - Input:
+    - Allow to set multiple backups per single input ([#208], [#224]);
     - Rename `origin -> primary` in case single input mode;
     - Rename `origin -> playback` and `main -> primary` in case multi input mode ([#89], [#225]);
     - Add\Cancel input endpoint label edit by Enter\Esc keypress ([#179], [#230]);
@@ -29,7 +30,6 @@ All user visible changes to this project will be documented in this file. This p
   - Types:
     - Add `sidechain` scalar to `Mixin` ([#203]);
 
-- Smooth `Delay` change in Restreamer Mixin ([#23], [#212]).
 
 ### Fixed
 - Web UI:
@@ -42,13 +42,19 @@ All user visible changes to this project will be documented in this file. This p
 - Server updates:
   - [FFmpeg] from 4.4 to 5.1 ([e1faef9]);
   - [SRS] server updated to v4.0-r1 ([e1faef9], [#200]);
+  - Dockerfile image moved from CentOS 7 to Ubuntu 20.04 ([#200]).
 
-- Update Tokio to v1+, Actix to v4+ and related libs ([#193]);
-- Split `ffmpeg.rs` to separate modules ([#202]);
-- Dockerfile image moved from CentOS 7 to Ubuntu 20.04 ([#200]);
+- Tech debt:
+  - Split `ffmpeg.rs` to separate modules ([#202]);
+  - Split `server.rs` to separate modules ([#219]);
+  - Update Tokio to v1+, Actix to v4+ and related libs ([#193]);
+  - Updates to webpack config and frontend tooling ([#181], [#206], [a1dcd4d]);
+  - Remove state.ts in favor inner component state ([#224]);
+  - Update Rust to 1.64 ([c4d7de5]).
+
+- Gracefully shutdown [FFmpeg] processes ([#204]);
 - Added test for check file recording ([#197]);
 - Use FIFO for feeding data into FFmpeg in mixer output ([#199]);
-- Gracefully shutdown [FFmpeg] processes ([#204]).
 
 
 [#6]: /../../issues/6
@@ -62,7 +68,10 @@ All user visible changes to this project will be documented in this file. This p
 [#227]: /../../issues/227
 
 [e1faef9]: /../../commit/e1faef91cc8551505afdf7fc4622c530f9e2c6f6
+[c4d7de5]: /../../commit/c4d7de52783cb6ccc69577468763119e8a9879de
+[a1dcd4d]: /../../commit/a1dcd4dfc40878af1a520fd0901f4bcf1496c7fe
 [#39]: /../../pull/39
+[#181]: /../../pull/181
 [#193]: /../../pull/193
 [#197]: /../../pull/197
 [#199]: /../../pull/199
@@ -70,7 +79,9 @@ All user visible changes to this project will be documented in this file. This p
 [#202]: /../../pull/202
 [#203]: /../../pull/203
 [#204]: /../../pull/204
+[#206]: /../../pull/206
 [#212]: /../../pull/212
+[#219]: /../../pull/219
 [#224]: /../../pull/224
 [#225]: /../../pull/225
 [#230]: /../../pull/230
