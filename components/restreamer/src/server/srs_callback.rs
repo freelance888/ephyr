@@ -171,6 +171,7 @@ fn on_start(
                 endpoint.srs_player_ids.insert(req.client_id.clone().into());
         }
     }
+
     Ok(())
 }
 

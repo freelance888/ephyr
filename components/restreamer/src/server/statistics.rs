@@ -4,8 +4,10 @@ use systemstat::{Platform, System};
 use tokio::time;
 
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
+use actix_web::middleware::ErrorHandlerResponse::Response;
 use ephyr_log::log;
 use futures::FutureExt;
+use serde::{Deserialize, Serialize};
 use std::panic::AssertUnwindSafe;
 
 /// Runs statistics monitoring
@@ -117,6 +119,8 @@ pub async fn run(state: State) -> Result<(), Failure> {
                 }
 
                 *state.server_info.lock_mut() = info;
+
+                update_stream_info(state).await
             })
             .catch_unwind()
             .await
@@ -132,4 +136,19 @@ pub async fn run(state: State) -> Result<(), Failure> {
     drop(tokio::spawn(spawner));
 
     Ok(())
+}
+
+async fn update_stream_info(state: &State) {
+    let response: Result<StreamsResponse, reqwest::Error> =
+        reqwest::get("http://127.0.0.1:8002/api/v1/streams")
+            .await?
+            .json::<StreamsResponse>()
+            .await?;
+
+    match response {
+        StreamsResponse(streams) => {}
+        Err(error) => {}
+    }
+
+    println!("body = {:?}", body);
 }

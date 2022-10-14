@@ -230,3 +230,44 @@ impl<'de> Deserialize<'de> for ClientId {
         Ok(Self::new(Url::deserialize(deserializer)?))
     }
 }
+
+/// Response of SRS streams info i.e /api/v1/streams
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct StreamsResponse {
+    streams: Vec<Stream>,
+}
+
+/// SRS stream info
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct Stream {
+    /// Stream ID
+    pub id: String,
+    /// Stream name => input.key
+    pub name: String,
+    /// vhost
+    pub vhost: String,
+    /// App name
+    pub app: String,
+    /// Parameters of video
+    pub video: VideoInfo,
+    /// Parameters of audio
+    pub audio: AudioInfo,
+}
+
+/// SRS stream video parameters
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct VideoInfo {
+    pub codec: String,
+    pub profile: String,
+    pub level: u16,
+    pub width: u16,
+}
+
+// SRS stream audio parameters
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct AudioInfo {
+    pub codec: String,
+    pub sample_rate: String,
+    pub channel: u16,
+    pub profile: String,
+}
