@@ -3,8 +3,11 @@ use std::time::Duration;
 use systemstat::{Platform, System};
 use tokio::time;
 
-use crate::{cli::Failure, display_panic, state::ServerInfo, State};
-use actix_web::middleware::ErrorHandlerResponse::Response;
+use crate::{
+    cli::Failure, display_panic, state::ServerInfo, state::StreamsResponse,
+    State,
+};
+use anyhow::anyhow;
 use ephyr_log::log;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
@@ -120,7 +123,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
 
                 *state.server_info.lock_mut() = info;
 
-                update_stream_info(state).await
+                // update_stream_info(state).await
             })
             .catch_unwind()
             .await
@@ -138,17 +141,25 @@ pub async fn run(state: State) -> Result<(), Failure> {
     Ok(())
 }
 
-async fn update_stream_info(state: &State) {
-    let response: Result<StreamsResponse, reqwest::Error> =
-        reqwest::get("http://127.0.0.1:8002/api/v1/streams")
-            .await?
-            .json::<StreamsResponse>()
-            .await?;
-
-    match response {
-        StreamsResponse(streams) => {}
-        Err(error) => {}
-    }
-
-    println!("body = {:?}", body);
-}
+// async fn update_stream_info(state: &State) {
+//     let result = fetch_stream_info().await;
+//     match result {
+//         Ok(response) => {
+//             response
+//                 .streams
+//                 .into_iter()
+//                 .for_each(|s| state.update_stream_info(s));
+//         }
+//         Err(err) => println!("{:?}", err),
+//     };
+// }
+//
+// async fn fetch_stream_info() -> anyhow::Result<StreamsResponse> {
+//     let res = reqwest::get("http://127.0.0.1:8002/api/v1/streams")
+//         .await
+//         .map_err(|_| anyhow!("Failed to retrieve data from SRS /v1/streams"))?
+//         .json::<StreamsResponse>()
+//         .await?;
+//
+//     Ok(res)
+// }

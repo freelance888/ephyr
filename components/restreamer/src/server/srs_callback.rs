@@ -4,11 +4,16 @@
 use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
+use anyhow::anyhow;
 use ephyr_log::log;
+use futures::{future, FutureExt as _, TryFutureExt};
+use std::panic::AssertUnwindSafe;
 
+use crate::state::{InputEndpoint, StreamInfo, StreamsResponse};
 use crate::{
     api::srs::callback,
     cli::{Failure, Opts},
+    display_panic,
     state::{Input, InputEndpointKind, InputSrc, State, Status},
 };
 
@@ -54,9 +59,9 @@ async fn on_callback(
 ) -> Result<&'static str, Error> {
     match req.action {
         callback::Event::OnConnect => on_connect(&req, &*state),
-        callback::Event::OnPublish => on_start(&req, &*state, true),
+        callback::Event::OnPublish => on_start(&req, &*state, true).await,
         callback::Event::OnUnpublish => on_stop(&req, &*state, true),
-        callback::Event::OnPlay => on_start(&req, &*state, false),
+        callback::Event::OnPlay => on_start(&req, &*state, false).await,
         callback::Event::OnStop => on_stop(&req, &*state, false),
         callback::Event::OnHls => on_hls(&req, &*state),
     }
@@ -101,7 +106,7 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
 /// [`state::Restream`]: crate::state::Restream
 ///
 /// [SRS]: https://github.com/ossrs/srs
-fn on_start(
+async fn on_start(
     req: &callback::Request,
     state: &State,
     publishing: bool,
@@ -163,6 +168,14 @@ fn on_start(
 
         endpoint.status = Status::Online;
     } else {
+        update_stream_info(
+            state,
+            stream.to_string(),
+            req.app.clone(),
+            req.vhost.clone(),
+        )
+        .await;
+
         // `srs::ClientId` kicks the client when `Drop`ped, so we should be
         // careful here to not accidentally kick the client by creating a
         // temporary binding.
@@ -299,4 +312,50 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
         let _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
     }
     Ok(())
+}
+
+async fn update_stream_info(
+    state: &State,
+    stream: String,
+    app: String,
+    vhost: String,
+) {
+    drop(tokio::spawn(
+        AssertUnwindSafe(async move {
+            let stream_info = fetch_stream_info(stream, app, vhost)
+                .await
+                .unwrap_or_else(|e| {
+                    log::error!("Can not fetch stream info: {}", e);
+                    None
+                });
+
+            log::info!(
+                "STREAM INFO: Can not fetch stream info: {:?}",
+                stream_info
+            );
+        })
+        .catch_unwind()
+        .map_err(move |p| {
+            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+        }),
+    ));
+}
+
+async fn fetch_stream_info(
+    stream: String,
+    app: String,
+    vhost: String,
+) -> anyhow::Result<Option<StreamInfo>> {
+    let response = reqwest::get("http://127.0.0.1:8002/api/v1/streams")
+        .await
+        .map_err(|_| anyhow!("Failed to retrieve data from SRS /v1/streams"))?
+        .json::<StreamsResponse>()
+        .await?;
+
+    let result = response
+        .streams
+        .into_iter()
+        .find(|s| s.app == app && s.name == stream && s.vhost == vhost);
+
+    Ok(result)
 }

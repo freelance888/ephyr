@@ -11,7 +11,7 @@ mod settings;
 pub use self::{
     client_statistics::{
         Client, ClientId, ClientStatistics, ClientStatisticsResponse,
-        ServerInfo, StatusStatistics,
+        ServerInfo, StatusStatistics, StreamInfo, StreamsResponse,
     },
     input::{
         EndpointId, FailoverInputSrc, Input, InputEndpoint, InputEndpointKind,
@@ -692,6 +692,20 @@ impl State {
         mixin.sidechain = sidechain;
         Some(true)
     }
+
+    /// Set information about video and audio stream parameters
+    /// to the corresponding input
+    pub fn update_stream_info(&self, stream: StreamInfo) {
+        // let mut restreams = self.restreams.lock_mut();
+        // restreams
+        //     .iter_mut()
+        //     .find_map(|r| r.input.key == stream.app && )
+        //     .find(|e| e.key == stream.app && e.)
+        //     .map()
+
+        println!("{:?}", stream);
+    }
+
     /// Gather statistics about [`Input`]s statuses
     #[must_use]
     pub fn get_inputs_statistics(&self) -> Vec<StatusStatistics> {

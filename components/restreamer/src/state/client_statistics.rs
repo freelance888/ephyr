@@ -231,15 +231,15 @@ impl<'de> Deserialize<'de> for ClientId {
     }
 }
 
-/// Response of SRS streams info i.e /api/v1/streams
+/// Response from SRS streams api call: /api/v1/streams
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct StreamsResponse {
-    streams: Vec<Stream>,
+pub struct StreamsResponse {
+    pub streams: Vec<StreamInfo>,
 }
 
 /// SRS stream info
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct Stream {
+pub struct StreamInfo {
     /// Stream ID
     pub id: String,
     /// Stream name => input.key
@@ -256,18 +256,16 @@ struct Stream {
 
 /// SRS stream video parameters
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct VideoInfo {
+pub struct VideoInfo {
     pub codec: String,
-    pub profile: String,
-    pub level: u16,
     pub width: u16,
+    pub height: u16,
 }
 
 // SRS stream audio parameters
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AudioInfo {
+pub struct AudioInfo {
     pub codec: String,
-    pub sample_rate: String,
+    pub sample_rate: u32,
     pub channel: u16,
-    pub profile: String,
 }
