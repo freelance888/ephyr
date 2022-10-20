@@ -695,15 +695,51 @@ impl State {
 
     /// Set information about video and audio stream parameters
     /// to the corresponding input
-    pub fn update_stream_info(&self, stream: StreamInfo) {
-        // let mut restreams = self.restreams.lock_mut();
-        // restreams
-        //     .iter_mut()
-        //     .find_map(|r| r.input.key == stream.app && )
-        //     .find(|e| e.key == stream.app && e.)
-        //     .map()
+    pub fn update_stream_info(&self, stream: StreamInfo) -> anyhow::Result<()> {
+        #[must_use]
+        fn lookup_input<'i>(
+            input: &'i mut Input,
+            stream: &str,
+        ) -> Option<&'i mut Input> {
+            if input.key == *stream {
+                return Some(input);
+            }
+            if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
+                s.inputs.iter_mut().find_map(|i| lookup_input(i, stream))
+            } else {
+                None
+            }
+        }
 
-        println!("{:?}", stream);
+        let kind = match stream.vhost.as_str() {
+            "hls" => InputEndpointKind::Hls,
+            _ => InputEndpointKind::Rtmp,
+        };
+
+        let mut restreams = self.restreams.lock_mut();
+        let restream = restreams
+            .iter_mut()
+            .find(|r| r.key == *stream.app)
+            .ok_or_else(|| {
+                anyhow!("Such `app`: {} doesn't exist", stream.app)
+            })?;
+
+        let input = lookup_input(&mut restream.input, &stream.name)
+            .ok_or_else(|| {
+                anyhow!("Such `stream`: {} doesn't exist", stream.name)
+            })?;
+
+        let endpoint = input
+            .endpoints
+            .iter_mut()
+            .find(|e| e.kind == kind)
+            .ok_or_else(|| {
+                anyhow!("Such `vhost`: {} is not allowed", stream.vhost)
+            })?;
+
+        println!("{:?}", endpoint);
+
+        Ok(())
     }
 
     /// Gather statistics about [`Input`]s statuses
