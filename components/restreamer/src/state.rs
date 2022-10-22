@@ -699,13 +699,15 @@ impl State {
         #[must_use]
         fn lookup_input<'i>(
             input: &'i mut Input,
-            stream: &str,
+            stream_name: &str,
         ) -> Option<&'i mut Input> {
-            if input.key == *stream {
+            if input.key == *stream_name {
                 return Some(input);
             }
             if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
-                s.inputs.iter_mut().find_map(|i| lookup_input(i, stream))
+                s.inputs
+                    .iter_mut()
+                    .find_map(|i| lookup_input(i, stream_name))
             } else {
                 None
             }
@@ -737,7 +739,7 @@ impl State {
                 anyhow!("Such `vhost`: {} is not allowed", stream.vhost)
             })?;
 
-        println!("{:?}", endpoint);
+        endpoint.stream_info = Some(stream);
 
         Ok(())
     }

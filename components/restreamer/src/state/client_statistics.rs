@@ -238,15 +238,19 @@ pub struct StreamsResponse {
 }
 
 /// SRS stream info
-#[derive(Clone, Debug, Deserialize, Serialize)]
+/// [`Input`]: crate::state::Input
+/// [`Restream`]: crate::state::Restream
+#[derive(
+    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
+)]
 pub struct StreamInfo {
     /// Stream ID
     pub id: String,
-    /// Stream name => input.key
+    /// Stream name == [`Input`] key
     pub name: String,
     /// vhost
     pub vhost: String,
-    /// App name
+    /// App name == [`Restream`] key
     pub app: String,
     /// Parameters of video
     pub video: VideoInfo,
@@ -255,17 +259,21 @@ pub struct StreamInfo {
 }
 
 /// SRS stream video parameters
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
+)]
 pub struct VideoInfo {
     pub codec: String,
-    pub width: u16,
-    pub height: u16,
+    pub width: i32,
+    pub height: i32,
 }
 
 // SRS stream audio parameters
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
+)]
 pub struct AudioInfo {
     pub codec: String,
-    pub sample_rate: u32,
-    pub channel: u16,
+    pub sample_rate: i32,
+    pub channel: i32,
 }

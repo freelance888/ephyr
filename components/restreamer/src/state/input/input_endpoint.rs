@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
+use crate::state::StreamInfo;
 use crate::{
     spec, srs,
     state::{InputKey, Label, RestreamKey, Status},
@@ -48,6 +49,10 @@ pub struct InputEndpoint {
     #[graphql(skip)]
     #[serde(skip)]
     pub srs_player_ids: HashSet<srs::ClientId>,
+
+    /// Corresponding stream info from SRS
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_info: Option<StreamInfo>,
 }
 
 impl InputEndpoint {
@@ -63,6 +68,7 @@ impl InputEndpoint {
             label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
+            stream_info: None,
         }
     }
 
