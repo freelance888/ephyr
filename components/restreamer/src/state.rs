@@ -695,7 +695,10 @@ impl State {
 
     /// Set information about video and audio stream parameters
     /// to the corresponding input
-    pub fn update_stream_info(&self, stream: StreamInfo) -> anyhow::Result<()> {
+    pub fn update_stream_info(
+        &self,
+        srs_stream: StreamInfo,
+    ) -> anyhow::Result<()> {
         #[must_use]
         fn lookup_input<'i>(
             input: &'i mut Input,
@@ -713,7 +716,7 @@ impl State {
             }
         }
 
-        let kind = match stream.vhost.as_str() {
+        let kind = match srs_stream.vhost.as_str() {
             "hls" => InputEndpointKind::Hls,
             _ => InputEndpointKind::Rtmp,
         };
@@ -721,14 +724,14 @@ impl State {
         let mut restreams = self.restreams.lock_mut();
         let restream = restreams
             .iter_mut()
-            .find(|r| r.key == *stream.app)
+            .find(|r| r.key == *srs_stream.app)
             .ok_or_else(|| {
-                anyhow!("Such `app`: {} doesn't exist", stream.app)
+                anyhow!("Such `app`: {} doesn't exist", srs_stream.app)
             })?;
 
-        let input = lookup_input(&mut restream.input, &stream.name)
+        let input = lookup_input(&mut restream.input, &srs_stream.name)
             .ok_or_else(|| {
-                anyhow!("Such `stream`: {} doesn't exist", stream.name)
+                anyhow!("Such `stream`: {} doesn't exist", srs_stream.name)
             })?;
 
         let endpoint = input
@@ -736,10 +739,10 @@ impl State {
             .iter_mut()
             .find(|e| e.kind == kind)
             .ok_or_else(|| {
-                anyhow!("Such `vhost`: {} is not allowed", stream.vhost)
+                anyhow!("Such `vhost`: {} is not allowed", srs_stream.vhost)
             })?;
 
-        endpoint.stream_info = Some(stream);
+        endpoint.update_stream_statistics(srs_stream);
 
         Ok(())
     }

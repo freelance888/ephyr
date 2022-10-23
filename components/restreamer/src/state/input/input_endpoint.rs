@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
+use crate::state::client_statistics::StreamStatistics;
 use crate::state::StreamInfo;
 use crate::{
     spec, srs,
@@ -52,7 +53,7 @@ pub struct InputEndpoint {
 
     /// Corresponding stream info from SRS
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stream_info: Option<StreamInfo>,
+    pub stream_stat: Option<StreamStatistics>,
 }
 
 impl InputEndpoint {
@@ -68,8 +69,22 @@ impl InputEndpoint {
             label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
-            stream_info: None,
+            stream_stat: None,
         }
+    }
+
+    /// Updates statistics for video and audio parameters from SRS stream
+    pub fn update_stream_statistics(&mut self, srs_steam: StreamInfo) {
+        self.stream_stat = Some(StreamStatistics {
+            width: srs_steam.video.width,
+            height: srs_steam.video.height,
+            kbps: srs_steam.kbps.recv_30s,
+            fps: 10,
+            video_codec: srs_steam.video.codec,
+            audio_channel: srs_steam.audio.channel,
+            audio_codec: srs_steam.audio.codec,
+            audio_sample_rate: srs_steam.audio.sample_rate,
+        });
     }
 
     /// Applies the given [`spec::v1::InputEndpoint`] to

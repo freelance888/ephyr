@@ -157,7 +157,7 @@ async fn update_stream_info(state: &State) {
 
 /// Fetches info about all streams in SRS
 async fn fetch_stream_info() -> anyhow::Result<StreamsResponse> {
-    let res = reqwest::get("http://127.0.0.1:8002/api/v1/streams")
+    let res = reqwest::get("http://127.0.0.1:8002/api/v1/streams?count=10000")
         .await
         .map_err(|_| anyhow!("Failed to retrieve data from SRS /v1/streams"))?
         .json::<StreamsResponse>()

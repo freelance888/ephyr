@@ -240,9 +240,7 @@ pub struct StreamsResponse {
 /// SRS stream info
 /// [`Input`]: crate::state::Input
 /// [`Restream`]: crate::state::Restream
-#[derive(
-    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
-)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StreamInfo {
     /// Stream ID
     pub id: String,
@@ -252,6 +250,12 @@ pub struct StreamInfo {
     pub vhost: String,
     /// App name == [`Restream`] key
     pub app: String,
+    /// Throughput
+    pub kbps: Kbps,
+    /// Time stamp
+    pub live_ms: u64,
+    /// Amount of frames sent
+    pub frames: u32,
     /// Parameters of video
     pub video: VideoInfo,
     /// Parameters of audio
@@ -259,9 +263,7 @@ pub struct StreamInfo {
 }
 
 /// SRS stream video parameters
-#[derive(
-    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
-)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct VideoInfo {
     pub codec: String,
     pub width: i32,
@@ -269,11 +271,31 @@ pub struct VideoInfo {
 }
 
 // SRS stream audio parameters
-#[derive(
-    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
-)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AudioInfo {
     pub codec: String,
     pub sample_rate: i32,
     pub channel: i32,
+}
+
+/// Throughput. Kilobyte per seconds
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Kbps {
+    pub recv_30s: i32,
+    pub send_30s: i32,
+}
+
+/// Stream statistics
+#[derive(
+    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
+)]
+pub struct StreamStatistics {
+    pub width: i32,
+    pub height: i32,
+    pub fps: i32,
+    pub kbps: i32,
+    pub video_codec: String,
+    pub audio_codec: String,
+    pub audio_sample_rate: i32,
+    pub audio_channel: i32,
 }

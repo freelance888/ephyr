@@ -33,6 +33,19 @@ subscription State {
                 kind
                 status
                 label
+                streamInfo {
+                    id
+                    video {
+                        codec
+                        height
+                        width
+                    }
+                    audio {
+                        codec
+                        channel
+                        sampleRate
+                    }
+                }
             }
             src {
                 ... on RemoteInputSrc {
@@ -48,6 +61,19 @@ subscription State {
                             kind
                             status
                             label
+                            streamInfo {
+                                id
+                                video {
+                                    codec
+                                    height
+                                    width
+                                }
+                                audio {
+                                    codec
+                                    channel
+                                    sampleRate
+                                }
+                            }
                         }
                         src {
                             ... on RemoteInputSrc {

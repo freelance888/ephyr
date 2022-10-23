@@ -11,6 +11,11 @@
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
+
+  $: {
+    console.log('endpoint', endpoint);
+  }
+
 </script>
 
 <template>
