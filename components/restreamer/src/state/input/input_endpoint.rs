@@ -54,6 +54,11 @@ pub struct InputEndpoint {
     /// Corresponding stream info from SRS
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_stat: Option<StreamStatistics>,
+
+    /// History of stream changes. It's used for calculation of FPS value of [`StreamStatistics`]
+    #[graphql(skip)]
+    #[serde(skip)]
+    stream_history: Option<Vec<StreamInfo>>,
 }
 
 impl InputEndpoint {
@@ -70,16 +75,44 @@ impl InputEndpoint {
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
             stream_stat: None,
+            stream_history: Some(vec![]),
         }
     }
 
     /// Updates statistics for video and audio parameters from SRS stream
     pub fn update_stream_statistics(&mut self, srs_steam: StreamInfo) {
+        let prev_fps = match &self.stream_stat {
+            Some(s) => s.fps,
+            None => 0,
+        };
+
+        let fps = match &mut self.stream_history {
+            Some(h) if h.len() > 5 => {
+                let srs_stream0 = &h[0];
+                // Calculates FPS value
+                let result = (srs_steam.frames - srs_stream0.frames)
+                    / ((srs_steam.live_ms - srs_stream0.live_ms) / 1000) as u32;
+
+                h.clear();
+                // This is safe because we don't expect too big numbers.
+                // But even in case of overflow it will return 0 and not fail
+                result as i32
+            }
+            Some(h) => {
+                h.push(srs_steam.clone());
+                prev_fps
+            }
+            None => {
+                self.stream_history = Some(vec![]);
+                prev_fps
+            }
+        };
+
         self.stream_stat = Some(StreamStatistics {
+            fps,
+            kbps: srs_steam.kbps.recv_30s,
             width: srs_steam.video.width,
             height: srs_steam.video.height,
-            kbps: srs_steam.kbps.recv_30s,
-            fps: 10,
             video_codec: srs_steam.video.codec,
             audio_channel: srs_steam.audio.channel,
             audio_codec: srs_steam.audio.codec,

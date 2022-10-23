@@ -234,13 +234,14 @@ impl<'de> Deserialize<'de> for ClientId {
 /// Response from SRS streams api call: /api/v1/streams
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StreamsResponse {
+    /// List of streams published in SRS
     pub streams: Vec<StreamInfo>,
 }
 
 /// SRS stream info
 /// [`Input`]: crate::state::Input
 /// [`Restream`]: crate::state::Restream
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct StreamInfo {
     /// Stream ID
     pub id: String,
@@ -263,7 +264,7 @@ pub struct StreamInfo {
 }
 
 /// SRS stream video parameters
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct VideoInfo {
     pub codec: String,
     pub width: i32,
@@ -271,7 +272,7 @@ pub struct VideoInfo {
 }
 
 // SRS stream audio parameters
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct AudioInfo {
     pub codec: String,
     pub sample_rate: i32,
@@ -279,7 +280,7 @@ pub struct AudioInfo {
 }
 
 /// Throughput. Kilobyte per seconds
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Kbps {
     pub recv_30s: i32,
     pub send_30s: i32,
