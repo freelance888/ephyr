@@ -13,7 +13,7 @@
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
   $: {
-    console.log('endpoint', endpoint.streamStat?.fps);
+    console.log('endpoint', endpoint.streamStat?.fps, 'url: ', input_url);
   }
 
 </script>

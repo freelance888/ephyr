@@ -716,11 +716,6 @@ impl State {
             }
         }
 
-        let kind = match srs_stream.vhost.as_str() {
-            "hls" => InputEndpointKind::Hls,
-            _ => InputEndpointKind::Rtmp,
-        };
-
         let mut restreams = self.restreams.lock_mut();
         let restream = restreams
             .iter_mut()
@@ -733,6 +728,11 @@ impl State {
             .ok_or_else(|| {
                 anyhow!("Such `stream`: {} doesn't exist", srs_stream.name)
             })?;
+
+        let kind = match srs_stream.vhost.as_str() {
+            "hls" => InputEndpointKind::Hls,
+            _ => InputEndpointKind::Rtmp,
+        };
 
         let endpoint = input
             .endpoints

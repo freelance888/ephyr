@@ -122,8 +122,8 @@ pub async fn run(state: State) -> Result<(), Failure> {
 
                 *state.server_info.lock_mut() = info;
 
-                time::sleep(Duration::from_secs(3)).await;
-                update_stream_info(state).await;
+                // time::sleep(Duration::from_secs(3)).await;
+                // update_stream_info(state).await;
             })
             .catch_unwind()
             .await

@@ -87,13 +87,14 @@ impl InputEndpoint {
         };
 
         let fps = match &mut self.stream_history {
-            Some(h) if h.len() > 5 => {
+            Some(h) if h.len() > 10 => {
                 let srs_stream0 = &h[0];
                 // Calculates FPS value
-                let result = (srs_steam.frames - srs_stream0.frames)
-                    / ((srs_steam.live_ms - srs_stream0.live_ms) / 1000) as u32;
+                let result = ((srs_steam.frames - srs_stream0.frames) * 1000)
+                    as u64
+                    / (srs_steam.live_ms - srs_stream0.live_ms);
 
-                h.clear();
+                self.stream_history = Some(vec![]);
                 // This is safe because we don't expect too big numbers.
                 // But even in case of overflow it will return 0 and not fail
                 result as i32
@@ -118,6 +119,8 @@ impl InputEndpoint {
             audio_codec: srs_steam.audio.codec,
             audio_sample_rate: srs_steam.audio.sample_rate,
         });
+
+        println!("NAME: {}, FPS: {}", srs_steam.name, fps);
     }
 
     /// Applies the given [`spec::v1::InputEndpoint`] to

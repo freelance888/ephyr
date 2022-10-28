@@ -9,6 +9,7 @@ use ephyr_log::log;
 use crate::{
     api::srs::callback,
     cli::{Failure, Opts},
+    ffprobe,
     state::{Input, InputEndpointKind, InputSrc, State, Status},
 };
 
@@ -145,6 +146,22 @@ fn on_start(
         .ok_or_else(|| error::ErrorForbidden("Such `vhost` is not allowed"))?;
 
     if publishing {
+        match ffprobe::ffprobe(
+            format!(
+                "rtmp://0.0.0.0/{}/{}",
+                req.app,
+                req.stream.clone().unwrap_or_default()
+            )
+            .as_str(),
+        ) {
+            Ok(info) => {
+                print!("{:?}", info);
+            }
+            Err(err) => {
+                eprintln!("Could not analyze file with ffprobe: {:?}", err);
+            }
+        }
+
         if !req.ip.is_loopback() && (input.src.is_some() || !endpoint.is_rtmp())
         {
             return Err(error::ErrorForbidden(
