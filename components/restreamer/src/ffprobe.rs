@@ -21,12 +21,12 @@
 /// Execute ffprobe with default settings and return the extracted data.
 ///
 /// See [`ffprobe_config`] if you need to customize settings.
-pub fn ffprobe(path: &str) -> Result<FfProbe, FfProbeError> {
+pub fn ffprobe(path: String) -> Result<FfProbe, FfProbeError> {
     ffprobe_config(
         Config {
             count_frames: false,
         },
-        path,
+        path.as_str(),
     )
 }
 

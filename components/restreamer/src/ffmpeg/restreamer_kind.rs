@@ -15,6 +15,7 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
+use crate::state::{InputEndpoint, StreamInfo};
 use crate::{
     dvr,
     ffmpeg::{
@@ -22,6 +23,7 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
+    ffprobe,
     state::{self, State, Status},
 };
 
@@ -57,6 +59,32 @@ impl RestreamerKind {
             Self::Copy(c) => c.id.into(),
             Self::Transcoding(c) => c.id.into(),
             Self::Mixing(m) => m.id.into(),
+        }
+    }
+
+    /// Returns destination url of [FFmpeg].
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    #[inline]
+    #[must_use]
+    pub fn to_url(&self) -> Url {
+        match self {
+            Self::Copy(c) => c.to_url.clone(),
+            Self::Transcoding(t) => t.to_url.clone(),
+            Self::Mixing(m) => m.to_url.clone(),
+        }
+    }
+
+    /// Returns source url of [FFmpeg].
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    #[inline]
+    #[must_use]
+    pub fn src_url(&self) -> Url {
+        match self {
+            Self::Copy(c) => c.from_url.clone(),
+            Self::Transcoding(t) => t.from_url.clone(),
+            Self::Mixing(m) => m.from_url.clone(),
         }
     }
 
@@ -302,6 +330,62 @@ impl RestreamerKind {
         }
     }
 
+    /// Search for input endpoint by id
+    fn find_input_endpoint<'i>(
+        &self,
+        input: &'i mut state::Input,
+        id: state::EndpointId,
+    ) -> Option<&'i mut InputEndpoint> {
+        if let Some(endpoint) = input.endpoints.iter_mut().find(|e| e.id == id)
+        {
+            return Some(endpoint);
+        }
+
+        if let Some(state::InputSrc::Failover(s)) = input.src.as_mut() {
+            for i in s.inputs.iter_mut() {
+                if let Some(endpoint) = self.find_input_endpoint(i, id) {
+                    return Some(endpoint);
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Update stream info taken by `ffprobe`
+    pub fn update_stream_info(&self, state: &State) {
+        /// TODO: move this logic to InputKey ?
+        let is_input_stream = vec!["/primary", "/backup"]
+            .into_iter()
+            .any(|key| self.src_url().to_string().ends_with(key));
+
+        if !is_input_stream {
+            return;
+        };
+
+        match ffprobe::ffprobe(self.to_url().to_string()) {
+            Ok(info) => {
+                log::debug!("FFPROBE INFO: {:?}", info);
+                let mut restreams = state.restreams.lock_mut();
+                let endpoint = restreams.iter_mut().find_map(|r| {
+                    self.find_input_endpoint(&mut r.input, self.id())
+                });
+
+                log::debug!("ENDPOINT INFO: {:?}", endpoint);
+                log::debug!("END");
+                // let stream_info = StreamInfo {
+                //
+                // }
+            }
+            Err(err) => {
+                eprintln!(
+                    "FFPROBE ERROR: Could not analyze file with ffprobe: {:?}",
+                    err
+                );
+            }
+        };
+    }
+
     /// Renews [`Status`] of this [FFmpeg] re-streaming process in the `actual`
     /// [`State`].
     ///
@@ -320,32 +404,10 @@ impl RestreamerKind {
 
             // `Status::Online` for `state::Input` is set by SRS HTTP Callback.
             if status != Status::Online {
-                fn renew_input_status(
-                    input: &mut state::Input,
-                    status: Status,
-                    my_id: state::EndpointId,
-                ) -> bool {
-                    if let Some(endpoint) =
-                        input.endpoints.iter_mut().find(|e| e.id == my_id)
-                    {
-                        endpoint.status = status;
-                        return true;
-                    }
-
-                    if let Some(state::InputSrc::Failover(s)) =
-                        input.src.as_mut()
-                    {
-                        for i in &mut s.inputs {
-                            if renew_input_status(i, status, my_id) {
-                                return true;
-                            }
-                        }
-                    }
-
-                    false
-                }
-
-                if renew_input_status(&mut restream.input, status, self.id()) {
+                if let Some(endpoint) =
+                    self.find_input_endpoint(&mut restream.input, self.id())
+                {
+                    endpoint.status = status;
                     return;
                 }
             }
