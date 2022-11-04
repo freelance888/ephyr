@@ -37,6 +37,9 @@ pub struct RestreamersPool {
     /// [FFmpeg]: https://ffmpeg.org
     /// [`State`]: crate::state::State
     state: State,
+
+    /// Counter for already started outputs
+    started_outputs_count: u16,
 }
 
 impl RestreamersPool {
@@ -48,6 +51,7 @@ impl RestreamersPool {
             ffmpeg_path: ffmpeg_path.into(),
             pool: HashMap::new(),
             state,
+            started_outputs_count: 0,
         }
     }
 
@@ -130,6 +134,7 @@ impl RestreamersPool {
                     self.ffmpeg_path.clone(),
                     new_kind,
                     self.state.clone(),
+                    None,
                 )
             });
 
@@ -166,10 +171,12 @@ impl RestreamersPool {
             .remove(&id)
             .and_then(|mut p| (!p.kind.needs_restart(&new_kind)).then_some(p))
             .unwrap_or_else(|| {
+                self.started_outputs_count += 1;
                 Restreamer::run(
                     self.ffmpeg_path.clone(),
                     new_kind,
                     self.state.clone(),
+                    Some(self.started_outputs_count),
                 )
             });
 

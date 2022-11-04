@@ -27,6 +27,9 @@ pub struct Settings {
     /// Whether do we need to confirm enabling/disabling of inputs or outputs
     /// If `true` we should confirm, `false` - do not confirm
     pub enable_confirmation: Option<bool>,
+
+    /// Delay before starting next output
+    pub output_start_delay: Option<u8>,
 }
 
 impl Settings {
@@ -58,6 +61,7 @@ impl Default for Settings {
             title: None,
             delete_confirmation: Some(true),
             enable_confirmation: Some(true),
+            output_start_delay: None,
         }
     }
 }

@@ -68,6 +68,7 @@ impl Restreamer {
         ffmpeg_path: P,
         kind: RestreamerKind,
         state: State,
+        order_number: Option<u16>,
     ) -> Self {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
@@ -104,6 +105,11 @@ impl Restreamer {
                             );
                         })
                         .await?;
+
+                        if let Some(index) = order_number {
+                            time::sleep(Duration::from_secs(index as u64 * 3))
+                                .await;
+                        }
 
                         let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
                         pin_mut!(running);
