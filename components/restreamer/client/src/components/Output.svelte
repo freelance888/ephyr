@@ -234,6 +234,8 @@
       white-space: nowrap
       overflow: hidden
       text-overflow: ellipsis
+      font-weight: bold
+      text-transform: capitalize
 
     a.single-view, a.edit-output
       position: absolute

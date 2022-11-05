@@ -20,15 +20,15 @@ pub struct Settings {
     /// are used.
     pub title: Option<String>,
 
-    /// Whether do we need to confirm deletion of inputs and outputs
+    /// Ask for confirmation when we delete input(s) or output(s)
     /// If `true` we should confirm deletion, `false` - do not confirm
     pub delete_confirmation: Option<bool>,
 
-    /// Whether do we need to confirm enabling/disabling of inputs or outputs
+    /// Ask for confirmation when we enable / disable input(s) or output(s)
     /// If `true` we should confirm, `false` - do not confirm
     pub enable_confirmation: Option<bool>,
 
-    /// Delay before starting next output
+    /// Delay before starting the next output
     pub output_start_delay: Option<u8>,
 }
 
@@ -41,6 +41,7 @@ impl Settings {
             delete_confirmation: self.delete_confirmation,
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
+            output_start_delay: self.output_start_delay,
         }
     }
 
@@ -50,6 +51,7 @@ impl Settings {
         self.title = new.title;
         self.delete_confirmation = new.delete_confirmation;
         self.enable_confirmation = new.enable_confirmation;
+        self.output_start_delay = new.output_start_delay;
     }
 }
 

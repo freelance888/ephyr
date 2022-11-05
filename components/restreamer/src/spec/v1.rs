@@ -55,13 +55,14 @@ pub struct Settings {
     /// are used.
     pub title: Option<String>,
 
-    /// Whether do we need to confirm deletion of inputs and outputs
-    /// If `true` we should confirm deletion, `false` - do not confirm
+    /// Ask for confirmation when we delete input(s) or output(s)
     pub delete_confirmation: Option<bool>,
 
-    /// Whether do we need to confirm enabling/disabling of inputs \
-    /// or outputs
+    /// Ask for confirmation when we enable / disable input(s) or output(s)
     pub enable_confirmation: Option<bool>,
+
+    /// Delay before starting the next output
+    pub output_start_delay: Option<u8>,
 }
 
 /// Shareable (exportable and importable) specification of a

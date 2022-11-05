@@ -50,7 +50,7 @@
           /> Confirm deletion</label
         >
         <div class="uk-alert">
-          Whether do we need to confirm deletion of inputs and outputs
+          Ask for confirmation when we delete input(s) or output(s)
         </div>
         <label
           ><input
@@ -60,7 +60,18 @@
           /> Confirm enabling/disabling</label
         >
         <div class="uk-alert">
-          Whether do we need to confirm enabling/disabling of inputs or outputs
+          Ask for confirmation when we enable/disable input(s) or output(s)
+        </div>
+        <input
+          min="0"
+          step="1"
+          max="120"
+          class="uk-input uk-width-small"
+          bind:value={info.outputStarDelay}
+          type="number"
+        />
+        <div class="uk-alert">
+          <span>Delay before starting next output in</span> <span class='uk-text-bold'>seconds</span><span>. Min = 0. Max = 120.</span>
         </div>
       </fieldset>
 

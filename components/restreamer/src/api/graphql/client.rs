@@ -778,14 +778,14 @@ impl MutationsRoot {
     /// characters length. Otherwise returns `true`
     fn set_settings(
         #[graphql(description = "Title for the server")] title: Option<String>,
-        #[graphql(description = "Whether do we need to confirm deletion \
-                                 of inputs and outputs")]
+        #[graphql(description = "Ask for confirmation when we \
+            delete input(s) or output(s)")]
         delete_confirmation: Option<bool>,
-        #[graphql(
-            description = "Whether do we need to confirm enabling/disabling \
-                           of inputs or outputs"
-        )]
+        #[graphql(description = "Ask for confirmation when we \
+            enable/disable input(s) or output(s)")]
         enable_confirmation: Option<bool>,
+        #[graphql(description = "Delay before starting the next output")]
+        output_start_delay: Option<u8>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -800,6 +800,7 @@ impl MutationsRoot {
         settings.title = Some(value);
         settings.delete_confirmation = delete_confirmation;
         settings.enable_confirmation = enable_confirmation;
+        settings.output_start_delay = output_start_delay;
         Ok(true)
     }
 }
@@ -968,11 +969,14 @@ pub struct Info {
     /// Title of the server
     pub title: Option<String>,
 
-    /// Whether do we need to confirm deletion of inputs and outputs
+    /// Ask for confirmation when we delete input(s) or output(s)
     pub delete_confirmation: Option<bool>,
 
-    /// Whether do we need to confirm enabling/disabling of inputs or outputs
+    /// Ask for confirmation when we enable / disable input(s) or output(s)
     pub enable_confirmation: Option<bool>,
+
+    /// Delay before starting the next output
+    pub output_start_delay: Option<u8>,
 
     /// [Argon2] hash of the password that this server's GraphQL API is
     /// protected with, if any.
