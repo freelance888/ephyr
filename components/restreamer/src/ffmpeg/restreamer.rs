@@ -74,6 +74,7 @@ impl Restreamer {
         let kind_for_spawn = kind.clone();
         let mut time_of_fail: Option<DateTime<Utc>> = None;
         let (kill_tx, kill_rx) = watch::channel(RestreamerStatus::Started);
+        let output_start_delay = state.settings.lock_mut().output_start_delay;
 
         let (spawner, abort_if_hanged) = future::abortable(async move {
             let kill_rx_for_loop = kill_rx.clone();
@@ -106,9 +107,15 @@ impl Restreamer {
                         })
                         .await?;
 
-                        if let Some(index) = order_number {
-                            time::sleep(Duration::from_secs(index as u64 * 3))
+                        // Delay initialization based on index of started output
+                        // and default delay setting if set
+                        if Some(delay) = output_start_delay {
+                            if let Some(index) = order_number {
+                                time::sleep(Duration::from_secs(
+                                    index as u64 * delay,
+                                ))
                                 .await;
+                            }
                         }
 
                         let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
