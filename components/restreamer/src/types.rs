@@ -41,6 +41,11 @@ impl UNumber {
         Self(value)
     }
 
+    /// Return value of base type
+    pub fn to_value(&self) -> u16 {
+        self.0
+    }
+
     #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
         juniper::Value::scalar(self.0.to_owned().to_string())

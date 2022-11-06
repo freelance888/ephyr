@@ -108,11 +108,11 @@ impl Restreamer {
                         .await?;
 
                         // Delay initialization based on index of started output
-                        // and default delay setting if set
-                        if Some(delay) = output_start_delay {
+                        // and default delay setting
+                        if let Some(delay) = output_start_delay {
                             if let Some(index) = order_number {
                                 time::sleep(Duration::from_secs(
-                                    index as u64 * delay,
+                                    index as u64 * delay.to_value() as u64,
                                 ))
                                 .await;
                             }
