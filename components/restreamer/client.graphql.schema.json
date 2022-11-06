@@ -1031,7 +1031,7 @@
               },
               {
                 "name": "deleteConfirmation",
-                "description": "Whether do we need to confirm deletion of inputs and outputs",
+                "description": "Ask for confirmation when we delete input(s) or output(s)",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Boolean",
@@ -1041,10 +1041,20 @@
               },
               {
                 "name": "enableConfirmation",
-                "description": "Whether do we need to confirm enabling/disabling of inputs or outputs",
+                "description": "Ask for confirmation when we enable/disable input(s) or output(s)",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "outputStartDelay",
+                "description": "Delay before starting the next output",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "UNumber",
                   "ofType": null
                 },
                 "defaultValue": null
@@ -2460,7 +2470,7 @@
           },
           {
             "name": "deleteConfirmation",
-            "description": "Whether do we need to confirm deletion of inputs and outputs",
+            "description": "Ask for confirmation when we delete input(s) or output(s)",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2472,11 +2482,23 @@
           },
           {
             "name": "enableConfirmation",
-            "description": "Whether do we need to confirm enabling/disabling of inputs or outputs",
+            "description": "Ask for confirmation when we enable / disable input(s) or output(s)",
             "args": [],
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "outputStartDelay",
+            "description": "Delay before starting the next output",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "UNumber",
               "ofType": null
             },
             "isDeprecated": false,
@@ -2972,6 +2994,17 @@
             "deprecationReason": null
           }
         ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "UNumber",
+        "description": "Generic number for using with Graphql",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
         "possibleTypes": null
       },
       {

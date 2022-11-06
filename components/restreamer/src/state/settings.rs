@@ -1,5 +1,6 @@
 //! Server's settings.
 use crate::spec;
+use crate::types::UNumber;
 use serde::{Deserialize, Serialize};
 
 /// Server's settings.
@@ -29,7 +30,7 @@ pub struct Settings {
     pub enable_confirmation: Option<bool>,
 
     /// Delay before starting the next output
-    pub output_start_delay: Option<u8>,
+    pub output_start_delay: Option<UNumber>,
 }
 
 impl Settings {

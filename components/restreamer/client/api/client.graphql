@@ -6,6 +6,7 @@ subscription Info {
         enableConfirmation
         passwordHash
         passwordOutputHash
+        outputStartDelay
     }
 }
 
@@ -247,10 +248,12 @@ mutation SetSettings(
     $title: String
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
+    $outputStartDelay: UNumber
 ) {
     setSettings(
         title: $title
         deleteConfirmation: $deleteConfirmation
         enableConfirmation: $enableConfirmation
+        outputStartDelay: $outputStartDelay
     )
 }

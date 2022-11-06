@@ -21,6 +21,7 @@
       showError(e.message);
     }
   }
+
 </script>
 
 <template>
@@ -63,15 +64,16 @@
           Ask for confirmation when we enable/disable input(s) or output(s)
         </div>
         <input
-          min="0"
+          min="1"
           step="1"
           max="120"
           class="uk-input uk-width-small"
-          bind:value={info.outputStarDelay}
+          bind:value={info.outputStartDelay}
+          oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null"
           type="number"
         />
         <div class="uk-alert">
-          <span>Delay before starting next output in</span> <span class='uk-text-bold'>seconds</span><span>. Min = 0. Max = 120.</span>
+          <span>Delay before starting next output in</span> <span class='uk-text-bold'>seconds</span><span>. Min = 1. Max = 120. Can be empty.</span>
         </div>
       </fieldset>
 

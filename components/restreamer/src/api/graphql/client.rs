@@ -24,6 +24,7 @@ use crate::{
 };
 
 use super::Context;
+use crate::types::UNumber;
 use crate::{
     spec::v1::BackupInput,
     state::{EndpointId, ServerInfo, VolumeLevel},
@@ -785,7 +786,7 @@ impl MutationsRoot {
             enable/disable input(s) or output(s)")]
         enable_confirmation: Option<bool>,
         #[graphql(description = "Delay before starting the next output")]
-        output_start_delay: Option<u8>,
+        output_start_delay: Option<UNumber>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -823,6 +824,7 @@ impl QueriesRoot {
             title: settings.title,
             delete_confirmation: settings.delete_confirmation,
             enable_confirmation: settings.enable_confirmation,
+            output_start_delay: settings.output_start_delay,
         }
     }
 
@@ -928,6 +930,7 @@ impl SubscriptionsRoot {
                 title: h.title,
                 delete_confirmation: h.delete_confirmation,
                 enable_confirmation: h.enable_confirmation,
+                output_start_delay: h.output_start_delay,
             })
             .to_stream()
             .boxed()
@@ -976,7 +979,7 @@ pub struct Info {
     pub enable_confirmation: Option<bool>,
 
     /// Delay before starting the next output
-    pub output_start_delay: Option<u8>,
+    pub output_start_delay: Option<UNumber>,
 
     /// [Argon2] hash of the password that this server's GraphQL API is
     /// protected with, if any.

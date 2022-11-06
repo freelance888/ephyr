@@ -5,6 +5,7 @@
 
 use std::collections::HashSet;
 
+use crate::types::UNumber;
 use crate::{serde::is_false, state};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
@@ -62,7 +63,7 @@ pub struct Settings {
     pub enable_confirmation: Option<bool>,
 
     /// Delay before starting the next output
-    pub output_start_delay: Option<u8>,
+    pub output_start_delay: Option<UNumber>,
 }
 
 /// Shareable (exportable and importable) specification of a
