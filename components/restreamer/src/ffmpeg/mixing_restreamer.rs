@@ -7,6 +7,7 @@
 use std::{
     borrow::Cow,
     collections::HashMap,
+    ffi::OsStr,
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
@@ -299,16 +300,32 @@ impl MixingRestreamer {
             .args(["-max_muxing_queue_size", "50000000"]);
 
         let _ = match self.to_url.scheme() {
-            "file"
-                if Path::new(self.to_url.path()).extension()
-                    == Some("flv".as_ref()) =>
+            "file" => match Path::new(self.to_url.path())
+                .extension()
+                .and_then(OsStr::to_str)
             {
-                cmd.args(["-map", "0:v"])
+                Some("flv") => cmd
+                    .args(["-map", "0:v"])
                     .args(["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
-                    .arg(dvr::new_file_path(&self.to_url).await?)
-            }
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("wav") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "pcm_s16le"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("mp3") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "libmp3lame"])
+                    .args(["-b:a", "64k"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                _ => unimplemented!(),
+            },
 
             "icecast" => cmd
+                .arg("-vn")
                 .args(["-c:a", "libmp3lame", "-b:a", "64k"])
                 .args(["-f", "mp3", "-content_type", "audio/mpeg"])
                 .arg(self.to_url.as_str()),

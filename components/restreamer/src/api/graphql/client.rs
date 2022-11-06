@@ -852,6 +852,8 @@ impl QueriesRoot {
     /// server in `dvr/` directory, so the download link should look like this:
     /// ```ignore
     /// http://my.host:8080/dvr/returned/file/path.flv
+    /// http://my.host:8080/dvr/returned/file/path.wav
+    /// http://my.host:8080/dvr/returned/file/path.mp3
     /// ```
     ///
     /// [SRS]: https://github.com/ossrs/srs
