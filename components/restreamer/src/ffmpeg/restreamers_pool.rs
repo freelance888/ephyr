@@ -80,6 +80,7 @@ impl RestreamersPool {
                     continue;
                 }
             };
+            self.started_outputs_count = 0;
             for o in &r.outputs {
                 let _ = self.apply_output(&input_url, o, &mut new_pool);
             }
