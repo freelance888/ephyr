@@ -11,7 +11,7 @@ mod settings;
 pub use self::{
     client_statistics::{
         Client, ClientId, ClientStatistics, ClientStatisticsResponse,
-        ServerInfo, StatusStatistics, StreamInfo, StreamsResponse,
+        ServerInfo, StatusStatistics,
     },
     input::{
         EndpointId, FailoverInputSrc, Input, InputEndpoint, InputEndpointKind,
@@ -691,60 +691,6 @@ impl State {
 
         mixin.sidechain = sidechain;
         Some(true)
-    }
-
-    /// Set information about video and audio stream parameters
-    /// to the corresponding input
-    pub fn update_stream_info(
-        &self,
-        srs_stream: StreamInfo,
-    ) -> anyhow::Result<()> {
-        #[must_use]
-        fn lookup_input<'i>(
-            input: &'i mut Input,
-            stream_name: &str,
-        ) -> Option<&'i mut Input> {
-            if input.key == *stream_name {
-                return Some(input);
-            }
-            if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
-                s.inputs
-                    .iter_mut()
-                    .find_map(|i| lookup_input(i, stream_name))
-            } else {
-                None
-            }
-        }
-
-        let mut restreams = self.restreams.lock_mut();
-        let restream = restreams
-            .iter_mut()
-            .find(|r| r.key == *srs_stream.app)
-            .ok_or_else(|| {
-                anyhow!("Such `app`: {} doesn't exist", srs_stream.app)
-            })?;
-
-        let input = lookup_input(&mut restream.input, &srs_stream.name)
-            .ok_or_else(|| {
-                anyhow!("Such `stream`: {} doesn't exist", srs_stream.name)
-            })?;
-
-        let kind = match srs_stream.vhost.as_str() {
-            "hls" => InputEndpointKind::Hls,
-            _ => InputEndpointKind::Rtmp,
-        };
-
-        let endpoint = input
-            .endpoints
-            .iter_mut()
-            .find(|e| e.kind == kind)
-            .ok_or_else(|| {
-                anyhow!("Such `vhost`: {} is not allowed", srs_stream.vhost)
-            })?;
-
-        endpoint.update_stream_statistics(srs_stream);
-
-        Ok(())
     }
 
     /// Gather statistics about [`Input`]s statuses

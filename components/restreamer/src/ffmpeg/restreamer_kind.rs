@@ -15,6 +15,8 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
+use crate::client_stat::StreamStatistics;
+
 use crate::state::{InputEndpoint, StreamInfo};
 use crate::{
     dvr,
@@ -373,9 +375,23 @@ impl RestreamerKind {
 
                 log::debug!("ENDPOINT INFO: {:?}", endpoint);
                 log::debug!("END");
-                // let stream_info = StreamInfo {
-                //
-                // }
+                let audio_stream = info.streams[1].clone();
+                let video_stream = info.streams[2].clone();
+
+                let stream_stat = StreamStatistics {
+                    audio_codec_name: audio_stream.codec_name,
+                    audio_channel_layout: audio_stream.channel_layout,
+                    audio_sample_rate: audio_stream.sample_rate,
+                    audio_channels: audio_stream.channels,
+                    video_codec_name: video_stream.codec_name,
+                    video_r_frame_rate: video_stream.r_frame_rate,
+                    video_avg_frame_rate: video_stream.avg_frame_rate,
+                    video_bit_rate: video_stream.bit_rate,
+                    video_width: video_stream.width,
+                    video_height: video_stream.height,
+                };
+
+                endpoint.stream_stat = Some(stream_stat);
             }
             Err(err) => {
                 eprintln!(

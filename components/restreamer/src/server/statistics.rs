@@ -3,10 +3,7 @@ use std::time::Duration;
 use systemstat::{Platform, System};
 use tokio::time;
 
-use crate::{
-    cli::Failure, display_panic, state::ServerInfo, state::StreamsResponse,
-    State,
-};
+use crate::{cli::Failure, display_panic, state::ServerInfo, State};
 use anyhow::anyhow;
 use ephyr_log::log;
 use futures::FutureExt;
@@ -139,30 +136,4 @@ pub async fn run(state: State) -> Result<(), Failure> {
     drop(tokio::spawn(spawner));
 
     Ok(())
-}
-
-/// Gathers streams info from SRS and update corresponding `InputEndpoint`
-async fn update_stream_info(state: &State) {
-    let result = fetch_stream_info().await;
-    match result {
-        Ok(response) => {
-            response.streams.into_iter().for_each(|s| {
-                state.update_stream_info(s).unwrap_or_else(|e| {
-                    log::error!("Can't update stream info: {}", e)
-                });
-            });
-        }
-        Err(err) => log::error!("{}", err),
-    };
-}
-
-/// Fetches info about all streams in SRS
-async fn fetch_stream_info() -> anyhow::Result<StreamsResponse> {
-    let res = reqwest::get("http://127.0.0.1:8002/api/v1/streams?count=10000")
-        .await
-        .map_err(|_| anyhow!("Failed to retrieve data from SRS /v1/streams"))?
-        .json::<StreamsResponse>()
-        .await?;
-
-    Ok(res)
 }

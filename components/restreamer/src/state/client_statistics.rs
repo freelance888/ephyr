@@ -12,6 +12,7 @@ use juniper::{
     ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 
+use crate::types::UNumber;
 use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
 
@@ -231,72 +232,31 @@ impl<'de> Deserialize<'de> for ClientId {
     }
 }
 
-/// Response from SRS streams api call: /api/v1/streams
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct StreamsResponse {
-    /// List of streams published in SRS
-    pub streams: Vec<StreamInfo>,
-}
-
-/// SRS stream info
-/// [`Input`]: crate::state::Input
-/// [`Restream`]: crate::state::Restream
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct StreamInfo {
-    /// Stream ID
-    pub id: String,
-    /// Stream name == [`Input`] key
-    pub name: String,
-    /// vhost
-    pub vhost: String,
-    /// App name == [`Restream`] key
-    pub app: String,
-    /// Throughput
-    pub kbps: Kbps,
-    /// Time stamp
-    pub live_ms: u64,
-    /// Amount of frames sent
-    pub frames: u32,
-    /// Parameters of video
-    pub video: VideoInfo,
-    /// Parameters of audio
-    pub audio: AudioInfo,
-}
-
-/// SRS stream video parameters
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct VideoInfo {
-    pub codec: String,
-    pub width: i32,
-    pub height: i32,
-}
-
-// SRS stream audio parameters
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct AudioInfo {
-    pub codec: String,
-    pub sample_rate: i32,
-    pub channel: i32,
-}
-
-/// Throughput. Kilobyte per seconds
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct Kbps {
-    pub recv_30s: i32,
-    pub send_30s: i32,
-}
-
 /// Stream statistics
 #[derive(
     Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
 )]
 pub struct StreamStatistics {
-    pub width: i32,
-    pub height: i32,
-    pub fps: i32,
-    pub kbps: i32,
-    pub video_codec: String,
-    pub audio_codec: String,
-    pub audio_sample_rate: i32,
-    pub audio_channel: i32,
+    // Some("aac")
+    pub audio_codec_name: Option<string>,
+    // Some("stereo")
+    pub audio_channel_layout: Option<string>,
+    // Some("44100")
+    pub audio_sample_rate: Option<UNumber>,
+    // Some(2)
+    pub audio_channels: Option<UNumber>,
+
+    // Some("h264")
+    pub video_codec_name: Option<string>,
+    // "30/1"
+    pub video_r_frame_rate: Option<string>,
+    // "30/1"
+    pub video_avg_frame_rate: Option<string>,
+    // Some("790009")
+    //pub video_bit_rate: Option<u32>,
+    pub video_bit_rate: Option<i32>,
+    // Some(1280)
+    pub video_width: Option<UNumber>,
+    // Some(720)
+    pub video_height: Option<UNumber>,
 }
