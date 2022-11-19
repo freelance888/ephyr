@@ -15,9 +15,8 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
-use crate::client_stat::StreamStatistics;
-
-use crate::state::{InputEndpoint, StreamInfo};
+use crate::state::InputEndpoint;
+use crate::stream_probe::stream_probe;
 use crate::{
     dvr,
     ffmpeg::{
@@ -25,8 +24,8 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    ffprobe,
     state::{self, State, Status},
+    stream_probe,
 };
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
@@ -332,31 +331,9 @@ impl RestreamerKind {
         }
     }
 
-    /// Search for input endpoint by id
-    fn find_input_endpoint<'i>(
-        &self,
-        input: &'i mut state::Input,
-        id: state::EndpointId,
-    ) -> Option<&'i mut InputEndpoint> {
-        if let Some(endpoint) = input.endpoints.iter_mut().find(|e| e.id == id)
-        {
-            return Some(endpoint);
-        }
-
-        if let Some(state::InputSrc::Failover(s)) = input.src.as_mut() {
-            for i in s.inputs.iter_mut() {
-                if let Some(endpoint) = self.find_input_endpoint(i, id) {
-                    return Some(endpoint);
-                }
-            }
-        }
-
-        None
-    }
-
     /// Update stream info taken by `ffprobe`
     pub fn update_stream_info(&self, state: &State) {
-        /// TODO: move this logic to InputKey ?
+        // TODO: move this logic to InputKey ?
         let is_input_stream = vec!["/primary", "/backup"]
             .into_iter()
             .any(|key| self.src_url().to_string().ends_with(key));
@@ -365,36 +342,15 @@ impl RestreamerKind {
             return;
         };
 
-        match ffprobe::ffprobe(self.to_url().to_string()) {
+        match stream_probe(self.to_url()) {
             Ok(info) => {
-                log::debug!("FFPROBE INFO: {:?}", info);
-                let mut restreams = state.restreams.lock_mut();
-                let endpoint = restreams.iter_mut().find_map(|r| {
-                    self.find_input_endpoint(&mut r.input, self.id())
-                });
-
-                log::debug!("ENDPOINT INFO: {:?}", endpoint);
-                log::debug!("END");
-                let audio_stream = info.streams[1].clone();
-                let video_stream = info.streams[2].clone();
-
-                let stream_stat = StreamStatistics {
-                    audio_codec_name: audio_stream.codec_name,
-                    audio_channel_layout: audio_stream.channel_layout,
-                    audio_sample_rate: audio_stream.sample_rate,
-                    audio_channels: audio_stream.channels,
-                    video_codec_name: video_stream.codec_name,
-                    video_r_frame_rate: video_stream.r_frame_rate,
-                    video_avg_frame_rate: video_stream.avg_frame_rate,
-                    video_bit_rate: video_stream.bit_rate,
-                    video_width: video_stream.width,
-                    video_height: video_stream.height,
-                };
-
-                endpoint.stream_stat = Some(stream_stat);
+                let result = state.set_stream_info(self.id(), info);
+                if (result.is_err()) {
+                    log::error!(err);
+                }
             }
             Err(err) => {
-                eprintln!(
+                log::error!(
                     "FFPROBE ERROR: Could not analyze file with ffprobe: {:?}",
                     err
                 );
@@ -421,7 +377,7 @@ impl RestreamerKind {
             // `Status::Online` for `state::Input` is set by SRS HTTP Callback.
             if status != Status::Online {
                 if let Some(endpoint) =
-                    self.find_input_endpoint(&mut restream.input, self.id())
+                    actual.find_input_endpoint(&mut restream.input, self.id())
                 {
                     endpoint.status = status;
                     return;

@@ -41,6 +41,9 @@ use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
+use crate::state::client_statistics::StreamStatistics;
+use crate::stream_probe::StreamInfo;
+use crate::types::UNumber;
 use crate::{display_panic, spec, Spec};
 use std::collections::HashMap;
 
@@ -691,6 +694,59 @@ impl State {
 
         mixin.sidechain = sidechain;
         Some(true)
+    }
+
+    /// Updates info about stream for [InputEndpoint]
+    pub fn set_stream_info(
+        &self,
+        id: EndpointId,
+        info: StreamInfo,
+    ) -> anyhow::Result<()> {
+        let mut restreams = self.restreams.lock_mut();
+        let endpoint = restreams
+            .iter_mut()
+            .find_map(|r| self.find_input_endpoint(&mut r.input, id))
+            .ok_or(anyhow!("Can't find endpoint with id: {:?}", id))?;
+
+        let audio_stream = info.streams[0].clone();
+        let video_stream = info.streams[1].clone();
+
+        // let stream_stat = StreamStatistics {
+        //     audio_codec_name: audio_stream.codec_name,
+        //     audio_channel_layout: audio_stream.channel_layout,
+        //     audio_sample_rate: audio_stream.sample_rate,
+        //     audio_channels: audio_stream.channels.or_else()
+        //     video_codec_name: video_stream.codec_name,
+        //     video_r_frame_rate: video_stream.r_frame_rate,
+        //     video_avg_frame_rate: video_stream.avg_frame_rate,
+        //     video_bit_rate: video_stream.bit_rate,
+        //     video_width: video_stream.width,
+        //     video_height: video_stream.height,
+        // };
+        //
+        endpoint.stream_stat = None;
+        Ok(())
+    }
+
+    pub fn find_input_endpoint<'i>(
+        &self,
+        input: &'i mut Input,
+        id: EndpointId,
+    ) -> Option<&'i mut InputEndpoint> {
+        if let Some(endpoint) = input.endpoints.iter_mut().find(|e| e.id == id)
+        {
+            return Some(endpoint);
+        }
+
+        if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
+            for i in s.inputs.iter_mut() {
+                if let Some(endpoint) = self.find_input_endpoint(i, id) {
+                    return Some(endpoint);
+                }
+            }
+        }
+
+        None
     }
 
     /// Gather statistics about [`Input`]s statuses

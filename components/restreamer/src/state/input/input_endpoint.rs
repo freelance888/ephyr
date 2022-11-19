@@ -7,7 +7,6 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::state::client_statistics::StreamStatistics;
-use crate::state::StreamInfo;
 use crate::{
     spec, srs,
     state::{InputKey, Label, RestreamKey, Status},

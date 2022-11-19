@@ -233,25 +233,23 @@ impl<'de> Deserialize<'de> for ClientId {
 }
 
 /// Stream statistics
-#[derive(
-    Clone, Debug, Deserialize, Serialize, Eq, PartialEq, GraphQLObject,
-)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, GraphQLObject)]
 pub struct StreamStatistics {
     // Some("aac")
-    pub audio_codec_name: Option<string>,
+    pub audio_codec_name: Option<String>,
     // Some("stereo")
-    pub audio_channel_layout: Option<string>,
+    pub audio_channel_layout: Option<String>,
     // Some("44100")
-    pub audio_sample_rate: Option<UNumber>,
+    pub audio_sample_rate: Option<String>,
     // Some(2)
     pub audio_channels: Option<UNumber>,
 
     // Some("h264")
-    pub video_codec_name: Option<string>,
+    pub video_codec_name: Option<String>,
     // "30/1"
-    pub video_r_frame_rate: Option<string>,
+    pub video_r_frame_rate: Option<String>,
     // "30/1"
-    pub video_avg_frame_rate: Option<string>,
+    pub video_avg_frame_rate: Option<String>,
     // Some("790009")
     //pub video_bit_rate: Option<u32>,
     pub video_bit_rate: Option<i32>,

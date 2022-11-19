@@ -15,7 +15,7 @@ use crate::state::InputEndpoint;
 use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
-    ffprobe, state,
+    state,
     state::{State, Status},
 };
 

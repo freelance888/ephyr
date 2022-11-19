@@ -33,12 +33,6 @@ subscription State {
                 kind
                 status
                 label
-                streamStat {
-                    width
-                    height
-                    fps
-                    kbps
-                }
             }
             src {
                 ... on RemoteInputSrc {
@@ -54,13 +48,6 @@ subscription State {
                             kind
                             status
                             label
-                            streamStat {
-                                width
-                                height
-                                fps
-                                kbps
-                            }
-
                         }
                         src {
                             ... on RemoteInputSrc {

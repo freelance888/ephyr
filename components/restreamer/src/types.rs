@@ -2,8 +2,10 @@
 use fmt::Debug;
 use futures::future;
 use juniper::{
-    InputValue, ParseScalarResult, ParseScalarValue, ScalarToken, ScalarValue,
+    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
+    ScalarToken, ScalarValue,
 };
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt;
 
@@ -28,9 +30,8 @@ impl Drop for DroppableAbortHandle {
 
 /// Generic number for using with Graphql
 #[derive(
-    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar,
+    Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, GraphQLScalar,
 )]
-#[graphql(with = Self)]
 pub struct UNumber(u16);
 
 impl UNumber {
@@ -39,12 +40,7 @@ impl UNumber {
         Self(value)
     }
 
-    /// Return value of base type
-    pub fn to_value(&self) -> u16 {
-        self.0
-    }
-
-    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
+    // #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
         juniper::Value::scalar(self.0.to_owned().to_string())
     }
@@ -70,3 +66,13 @@ impl UNumber {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }
+//
+// impl<'de> Deserialize<'de> for UNumber {
+//     #[inline]
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         Ok(Self::new(u16::deserialize(deserializer)?))
+//     }
+// }
