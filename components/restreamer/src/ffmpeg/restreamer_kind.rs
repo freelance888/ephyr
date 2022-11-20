@@ -344,14 +344,13 @@ impl RestreamerKind {
 
         match stream_probe(self.to_url()) {
             Ok(info) => {
-                let result = state.set_stream_info(self.id(), info);
-                if (result.is_err()) {
-                    log::error!(err);
+                if let Err(err) = state.set_stream_info(self.id(), info) {
+                    log::error!("{}", err);
                 }
             }
             Err(err) => {
                 log::error!(
-                    "FFPROBE ERROR: Could not analyze file with ffprobe: {:?}",
+                    "FFPROBE ERROR: Could not analyze file with ffprobe: {}",
                     err
                 );
             }

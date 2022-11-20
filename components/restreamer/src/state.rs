@@ -42,7 +42,7 @@ use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::state::client_statistics::StreamStatistics;
-use crate::stream_probe::StreamInfo;
+use crate::stream_probe::{Stream, StreamInfo};
 use crate::types::UNumber;
 use crate::{display_panic, spec, Spec};
 use std::collections::HashMap;
@@ -708,23 +708,35 @@ impl State {
             .find_map(|r| self.find_input_endpoint(&mut r.input, id))
             .ok_or(anyhow!("Can't find endpoint with id: {:?}", id))?;
 
-        let audio_stream = info.streams[0].clone();
-        let video_stream = info.streams[1].clone();
+        fn find_stream(
+            stream_type: &str,
+            stream_info: &StreamInfo,
+        ) -> Option<Stream> {
+            stream_info.streams.clone().into_iter().find(|x| {
+                x.codec_type.clone().unwrap_or_default() == stream_type
+            })
+        };
 
-        // let stream_stat = StreamStatistics {
-        //     audio_codec_name: audio_stream.codec_name,
-        //     audio_channel_layout: audio_stream.channel_layout,
-        //     audio_sample_rate: audio_stream.sample_rate,
-        //     audio_channels: audio_stream.channels.or_else()
-        //     video_codec_name: video_stream.codec_name,
-        //     video_r_frame_rate: video_stream.r_frame_rate,
-        //     video_avg_frame_rate: video_stream.avg_frame_rate,
-        //     video_bit_rate: video_stream.bit_rate,
-        //     video_width: video_stream.width,
-        //     video_height: video_stream.height,
-        // };
-        //
-        endpoint.stream_stat = None;
+        let audio_stream = find_stream("audio", &info)
+            .ok_or(anyhow!("Can't find 'audio' stream"))?;
+        let video_stream = find_stream("video", &info)
+            .ok_or(anyhow!("Can't find 'video' stream"))?;
+
+        let stream_stat = StreamStatistics {
+            audio_codec_name: audio_stream.codec_name,
+            audio_channel_layout: audio_stream.channel_layout,
+            audio_sample_rate: audio_stream.sample_rate,
+            audio_channels: audio_stream
+                .channels
+                .and_then(|x| Some(UNumber::new(x.into()))),
+            video_codec_name: video_stream.codec_name,
+            video_r_frame_rate: video_stream.r_frame_rate,
+            video_bit_rate: video_stream.bit_rate,
+            video_width: None, // video_stream.width.and_then(UNumber::new),
+            video_height: None, // video_stream.height.and_then(UNumber::new),
+        };
+
+        endpoint.stream_stat = Some(stream_stat);
         Ok(())
     }
 
