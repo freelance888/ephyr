@@ -243,16 +243,14 @@ pub struct StreamStatistics {
     pub audio_sample_rate: Option<String>,
     // Some(2)
     pub audio_channels: Option<UNumber>,
-
     // Some("h264")
     pub video_codec_name: Option<String>,
     // "30/1"
     pub video_r_frame_rate: Option<String>,
-    // Some("790009")
-    //pub video_bit_rate: Option<u32>,
-    pub video_bit_rate: Option<String>,
     // Some(1280)
     pub video_width: Option<UNumber>,
     // Some(720)
     pub video_height: Option<UNumber>,
+    // Some("790009")
+    pub bit_rate: Option<String>,
 }

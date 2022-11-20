@@ -48,6 +48,17 @@ subscription State {
                             kind
                             status
                             label
+                            streamStat {
+                                audioChannelLayout,
+                                audioChannels,
+                                audioSampleRate,
+                                audioCodecName,
+                                videoCodecName,
+                                videoRFrameRate,
+                                videoHeight,
+                                videoWidth,
+                                bitRate
+                            }
                         }
                         src {
                             ... on RemoteInputSrc {

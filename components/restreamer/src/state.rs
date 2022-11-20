@@ -731,9 +731,11 @@ impl State {
                 .and_then(|x| Some(UNumber::new(x.into()))),
             video_codec_name: video_stream.codec_name,
             video_r_frame_rate: video_stream.r_frame_rate,
-            video_bit_rate: video_stream.bit_rate,
-            video_width: None, // video_stream.width.and_then(UNumber::new),
-            video_height: None, // video_stream.height.and_then(UNumber::new),
+            video_width: video_stream.width.and_then(|x| Some(UNumber::new(x))),
+            video_height: video_stream
+                .height
+                .and_then(|x| Some(UNumber::new(x))),
+            bit_rate: info.format.bit_rate,
         };
 
         endpoint.stream_stat = Some(stream_stat);
