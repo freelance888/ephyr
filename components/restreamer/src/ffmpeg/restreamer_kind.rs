@@ -333,6 +333,8 @@ impl RestreamerKind {
 
     /// Update stream info taken by `ffprobe`
     pub fn update_stream_info(&self, state: &State) {
+        log::debug!("COPY_RESTREAMER: {:?}", self);
+
         // TODO: move this logic to InputKey ?
         let is_input_stream = vec!["/primary", "/backup"]
             .into_iter()
