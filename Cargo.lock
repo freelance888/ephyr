@@ -2032,6 +2032,7 @@ dependencies = [
  "spinning",
  "thiserror",
  "to_method",
+ "tokio",
  "winapi",
 ]
 

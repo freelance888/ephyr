@@ -24,8 +24,8 @@ futures-signals = "0.3"
 graphql_client = "0.11"
 hex = "0.4"
 humantime = "2.1"
-libc = "0.2.131"
-nix = "0.24.2"
+libc = "0.2"
+nix = "0.24"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
 rand = "0.8"
@@ -37,20 +37,20 @@ serde_humantime = { version = "1.0", package = "humantime-serde" }
 serde_json = "1.0"
 smart-default = "0.6"
 structopt = "0.3"
-systemstat = "0.1.8"
+systemstat = "0.1"
 url = { version = "2.1", features = ["serde"] }
-uuid = { version = "1.1.2", features = ["serde", "v4"] }
-zeromq = "0.3.3"
-tsclientlib = "0.2.0"
-tsproto-packets = "0.1.0"
-interprocess = "1.1.1"
+uuid = { version = "1.1", features = ["serde", "v4"] }
+zeromq = "0.3"
+tsclientlib = "0.2"
+tsproto-packets = "0.1"
+interprocess = { version = "1.2", features = ["tokio_support"] }
 tokio-stream = { version="0.1", features = ["fs"]}
 [dependencies.derive_more]
-    version = "0.99.11"
+    version = "0.99"
     features = ["as_ref", "deref", "display", "error", "from"]
     default-features = false
 [dependencies.tokio]
-    version = "1.19.2"
+    version = "1.19"
     features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
     git="https://github.com/graphql-rust/juniper"
