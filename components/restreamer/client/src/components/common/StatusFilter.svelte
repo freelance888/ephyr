@@ -5,19 +5,18 @@
   export let disabled;
   export let title;
   export let handleClick = () => {};
+  function _handleClick(e) {
+    // TODO: What is happening here?
+    if (disabled) {
+      return;
+    }
+
+    handleClick(e);
+  }
 </script>
 
 <template>
-  <div
-    class="status-filter"
-    on:click={(e) => {
-      if (disabled) {
-        return;
-      }
-
-      handleClick(e);
-    }}
-  >
+  <div class="status-filter" on:keydown={_handleClick} on:click={_handleClick}>
     <div
       title={title ? title : status}
       class="content"
