@@ -51,7 +51,6 @@ pub struct InputEndpoint {
     pub srs_player_ids: HashSet<srs::ClientId>,
 
     /// Corresponding stream info from SRS
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_stat: Option<StreamStatistics>,
 }
 

@@ -15,7 +15,6 @@
   $: {
     console.log(endpoint.label, endpoint.streamStat);
   }
-
 </script>
 
 <template>

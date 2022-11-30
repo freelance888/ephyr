@@ -36,7 +36,7 @@ pub fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     let out = cmd.output()?;
 
     if !out.status.success() {
-        let err = String::from_utf8_lossy(&out.stderr).to_string();
+        let err = String::from_utf8_lossy(&out.stdout).to_string();
         return Err(anyhow!(err));
     }
 

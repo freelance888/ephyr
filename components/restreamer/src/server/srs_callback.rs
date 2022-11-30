@@ -172,7 +172,10 @@ fn on_start(
         endpoint.status = Status::Online;
 
         let url = rtmp_url(&restream.key, &input.key);
-        if !url.to_string().ends_with("/playback") {
+        if !url.to_string().contains("playback") {
+            log::debug!("TEST: {} online", url);
+            endpoint.stream_stat = None;
+            log::debug!("TEST: Endpoint ID: {}", endpoint.id);
             update_stream_info(endpoint.id, url, state.clone());
         }
     } else {
@@ -245,6 +248,12 @@ fn on_stop(
     if publishing {
         endpoint.srs_publisher_id = None;
         endpoint.status = Status::Offline;
+
+        let url = rtmp_url(&restream.key, &input.key);
+        if !url.to_string().ends_with("/playback") {
+            log::debug!("TEST: {} offline", url);
+            endpoint.stream_stat = None;
+        }
     } else {
         let _ = endpoint.srs_player_ids.remove(&req.client_id);
     }
@@ -313,9 +322,12 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     Ok(())
 }
 
-fn rtmp_url(restream: &RestreamKey, input: &InputKey) -> Url {
-    Url::parse(&format!("rtmp://127.0.0.1:1935/{}/{}", restream, input,))
-        .unwrap()
+fn rtmp_url(restream_key: &RestreamKey, input_key: &InputKey) -> Url {
+    Url::parse(&format!(
+        "rtmp://127.0.0.1:1935/{}/{}",
+        restream_key, input_key,
+    ))
+    .unwrap()
 }
 
 fn update_stream_info(id: EndpointId, url: Url, state: State) {

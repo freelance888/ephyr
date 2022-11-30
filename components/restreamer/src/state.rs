@@ -696,6 +696,22 @@ impl State {
         Some(true)
     }
 
+    /// Clean up stream statistics info
+    pub fn cleanup_stream_info(&self) {
+        let mut restreams = self.restreams.lock_mut();
+        restreams.iter_mut().for_each(|r| {
+            if let Some(InputSrc::Failover(s)) = &mut r.input.src {
+                for mut e in
+                    s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
+                {
+                    if e.status == Status::Offline {
+                        e.stream_stat = None;
+                    }
+                }
+            }
+        });
+    }
+
     /// Updates info about stream for [InputEndpoint]
     pub fn set_stream_info(
         &self,
@@ -707,6 +723,8 @@ impl State {
             .iter_mut()
             .find_map(|r| self.find_input_endpoint(&mut r.input, id))
             .ok_or(anyhow!("Can't find endpoint with id: {:?}", id))?;
+
+        log::debug!("TEST: found endpoint {:?}", endpoint);
 
         fn find_stream(
             stream_type: &str,

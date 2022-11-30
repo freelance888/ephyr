@@ -49,14 +49,14 @@ subscription State {
                             status
                             label
                             streamStat {
-                                audioChannelLayout,
-                                audioChannels,
-                                audioSampleRate,
-                                audioCodecName,
-                                videoCodecName,
-                                videoRFrameRate,
-                                videoHeight,
-                                videoWidth,
+                                audioChannelLayout
+                                audioChannels
+                                audioSampleRate
+                                audioCodecName
+                                videoCodecName
+                                videoRFrameRate
+                                videoHeight
+                                videoWidth
                                 bitRate
                             }
                         }

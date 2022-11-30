@@ -331,34 +331,6 @@ impl RestreamerKind {
         }
     }
 
-    /// Update stream info taken by `ffprobe`
-    pub fn update_stream_info(&self, state: &State) {
-        log::debug!("COPY_RESTREAMER: {:?}", self);
-
-        // TODO: move this logic to InputKey ?
-        let is_input_stream = vec!["/primary", "/backup"]
-            .into_iter()
-            .any(|key| self.src_url().to_string().ends_with(key));
-
-        if !is_input_stream {
-            return;
-        };
-
-        match stream_probe(self.to_url()) {
-            Ok(info) => {
-                if let Err(err) = state.set_stream_info(self.id(), info) {
-                    log::error!("{}", err);
-                }
-            }
-            Err(err) => {
-                log::error!(
-                    "FFPROBE ERROR: Could not analyze file with ffprobe: {}",
-                    err
-                );
-            }
-        };
-    }
-
     /// Renews [`Status`] of this [FFmpeg] re-streaming process in the `actual`
     /// [`State`].
     ///

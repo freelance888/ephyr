@@ -116,9 +116,6 @@ impl Restreamer {
                             time::sleep(Duration::from_secs(10)).await;
                             kind.renew_status(Status::Online, state);
 
-                            // Get stream info and save in to state
-                            kind.update_stream_info(state);
-
                             future::pending::<()>().await;
                             Ok(())
                         };
