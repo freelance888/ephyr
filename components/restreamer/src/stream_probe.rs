@@ -4,12 +4,15 @@
 
 use anyhow::anyhow;
 use juniper::GraphQLScalar;
+use std::process::Stdio;
+use tokio::process::Command;
 use url::Url;
 
 /// Gather information about `rtmp` stream
 ///
-pub fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
-    let mut cmd = std::process::Command::new("ffprobe");
+pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
+    let mut cmd = Command::new("ffprobe");
+    cmd.stdin(Stdio::null()).kill_on_drop(true);
 
     let entries = [
         "format=bit_rate:stream=codec_type",
@@ -31,16 +34,24 @@ pub fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
         "-of",
         "json",
     ]);
+
     cmd.arg(url.as_str());
 
-    let out = cmd.output()?;
+    let out = cmd
+        .output()
+        .await
+        .map_err(|e| anyhow!("Error of getting info with FFPROBE: {}", e))?;
 
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stdout).to_string();
         return Err(anyhow!(err));
     }
 
-    let result = serde_json::from_slice::<StreamInfo>(&out.stdout)?;
+    let result =
+        serde_json::from_slice::<StreamInfo>(&out.stdout).map_err(|e| {
+            anyhow!("Error of deserializing output of FFPROBE: {}", e)
+        })?;
+
     anyhow::Ok(result)
 }
 

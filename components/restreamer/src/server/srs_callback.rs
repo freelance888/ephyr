@@ -173,9 +173,7 @@ fn on_start(
 
         let url = rtmp_url(&restream.key, &input.key);
         if !url.to_string().contains("playback") {
-            log::debug!("TEST: {} online", url);
             endpoint.stream_stat = None;
-            log::debug!("TEST: Endpoint ID: {}", endpoint.id);
             update_stream_info(endpoint.id, url, state.clone());
         }
     } else {
@@ -248,12 +246,6 @@ fn on_stop(
     if publishing {
         endpoint.srs_publisher_id = None;
         endpoint.status = Status::Offline;
-
-        let url = rtmp_url(&restream.key, &input.key);
-        if !url.to_string().ends_with("/playback") {
-            log::debug!("TEST: {} offline", url);
-            endpoint.stream_stat = None;
-        }
     } else {
         let _ = endpoint.srs_player_ids.remove(&req.client_id);
     }
@@ -333,9 +325,7 @@ fn rtmp_url(restream_key: &RestreamKey, input_key: &InputKey) -> Url {
 fn update_stream_info(id: EndpointId, url: Url, state: State) {
     drop(tokio::spawn(
         AssertUnwindSafe(async move {
-            time::sleep(Duration::from_secs(10)).await;
-
-            stream_probe(url).map_or_else(
+            stream_probe(url).await.map_or_else(
                 |e| log::error!("{}", e),
                 |info| {
                     state
