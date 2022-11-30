@@ -3,11 +3,15 @@ use std::time::Duration;
 use systemstat::{Platform, System};
 use tokio::time;
 
+use crate::state::{EndpointId, InputKey, InputSrc, RestreamKey, Status};
+use crate::stream_probe::stream_probe;
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
 use anyhow::anyhow;
 use ephyr_log::log;
-use futures::FutureExt;
+use ephyr_log::slog::log;
+use futures::{FutureExt, TryFutureExt};
 use std::panic::AssertUnwindSafe;
+use url::Url;
 
 /// Runs statistics monitoring
 ///
@@ -119,8 +123,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
 
                 *state.server_info.lock_mut() = info;
 
-                // time::sleep(Duration::from_secs(3)).await;
-                // update_stream_info(state).await;
+                // update_streams_info(state.clone()).await;
             })
             .catch_unwind()
             .await
@@ -136,4 +139,53 @@ pub async fn run(state: State) -> Result<(), Failure> {
     drop(tokio::spawn(spawner));
 
     Ok(())
+}
+
+fn rtmp_url(restream_key: &RestreamKey, input_key: &InputKey) -> Url {
+    Url::parse(&format!(
+        "rtmp://127.0.0.1:1935/{}/{}",
+        restream_key, input_key,
+    ))
+    .unwrap()
+}
+
+async fn update_streams_info(state: State) {
+    let mut restreams = state.restreams.lock_mut();
+    restreams.iter_mut().for_each(|r| {
+        if let Some(InputSrc::Failover(s)) = &mut r.input.src {
+            for mut i in s.inputs.iter_mut() {
+                for mut e in i.endpoints.iter_mut() {
+                    log::debug!("ENDPOINT: {:?}", e);
+                    if e.status == Status::Online && e.stream_stat.is_none() {
+                        let url = rtmp_url(&r.key, &i.key);
+                        if !url.to_string().contains("playback") {
+                            e.stream_stat = None;
+                            set_stream_info(e.id, url, state.clone());
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+fn set_stream_info(id: EndpointId, url: Url, state: State) {
+    drop(tokio::spawn(
+        AssertUnwindSafe(async move {
+            time::sleep(Duration::from_secs(10)).await;
+
+            stream_probe(url).await.map_or_else(
+                |e| log::error!("FFPROBE ERROR: {}", e),
+                |info| {
+                    state.set_stream_info(id, info).unwrap_or_else(|e| {
+                        log::error!("SET STREAM INFO ERROR: {}", e)
+                    })
+                },
+            );
+        })
+        .catch_unwind()
+        .map_err(move |p| {
+            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+        }),
+    ));
 }
