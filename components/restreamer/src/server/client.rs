@@ -1,4 +1,5 @@
 //! Client HTTP server responding to client requests.
+use std::fmt;
 use std::time::Duration;
 
 use actix_web::{
@@ -9,6 +10,7 @@ use actix_web_httpauth::extractors::{
     basic::{self, BasicAuth},
     AuthExtractorConfig, AuthenticationError,
 };
+use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web_static_files::ResourceFiles;
 use ephyr_log::log;
 use juniper::http::playground::playground_source;
@@ -20,8 +22,6 @@ use crate::{
     cli::{Failure, Opts},
     State,
 };
-use actix_web_httpauth::middleware::HttpAuthentication;
-use std::fmt;
 
 const MIX_ROUTE: &str = "/mix";
 const MIX_ROUTE_API: &str = "/api-mix";
