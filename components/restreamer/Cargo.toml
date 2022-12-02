@@ -25,7 +25,7 @@ graphql_client = "0.11"
 hex = "0.4"
 humantime = "2.1"
 libc = "0.2"
-nix = "0.24"
+nix = "0.26"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
 rand = "0.8"
