@@ -37,7 +37,7 @@ serde_humantime = { version = "1.0", package = "humantime-serde" }
 serde_json = "1.0"
 smart-default = "0.6"
 structopt = "0.3"
-systemstat = "0.1"
+systemstat = "0.2"
 url = { version = "2.1", features = ["serde"] }
 uuid = { version = "1.1", features = ["serde", "v4"] }
 zeromq = "0.3"
