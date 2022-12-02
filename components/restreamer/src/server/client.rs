@@ -1,18 +1,16 @@
 //! Client HTTP server responding to client requests.
 use std::time::Duration;
 
-use actix_service::Service as _;
 use actix_web::{
     dev::ServiceRequest, get, middleware, route, web, App, Error, HttpRequest,
     HttpResponse, HttpServer,
 };
 use actix_web_httpauth::extractors::{
     basic::{self, BasicAuth},
-    AuthExtractor as _, AuthExtractorConfig, AuthenticationError,
+    AuthExtractorConfig, AuthenticationError,
 };
 use actix_web_static_files::ResourceFiles;
 use ephyr_log::log;
-use futures::{future, FutureExt as _};
 use juniper::http::playground::playground_source;
 use juniper_actix::{graphql_handler, subscriptions::subscriptions_handler};
 use juniper_graphql_ws::ConnectionConfig;
@@ -22,6 +20,7 @@ use crate::{
     cli::{Failure, Opts},
     State,
 };
+use actix_web_httpauth::middleware::HttpAuthentication;
 use std::fmt;
 
 const MIX_ROUTE: &str = "/mix";
@@ -76,6 +75,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         let root_dir_files = public_dir::generate();
         let mix_dir_files = public_mix_dir::generate();
         let dashboard_dir_files = public_dashboard_dir::generate();
+        let auth = HttpAuthentication::basic(authorize);
 
         let mut app = App::new()
             .app_data(stored_cfg.clone())
@@ -86,10 +86,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .app_data(web::Data::new(api::graphql::dashboard::schema()))
             .app_data(web::Data::new(api::graphql::statistics::schema()))
             .wrap(middleware::Logger::default())
-            .wrap_fn(|req, srv| match authorize(req) {
-                Ok(req) => srv.call(req).left_future(),
-                Err(e) => future::err(e).right_future(),
-            })
+            .wrap(auth)
             .service(graphql_client)
             .service(graphql_mix)
             .service(graphql_statistics)
@@ -278,7 +275,11 @@ async fn playground() -> HttpResponse {
 /// No-op if [`State::password_hash`] is [`None`].
 ///
 /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
-fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
+#[allow(clippy::unused_async)]
+async fn authorize(
+    req: ServiceRequest,
+    creds: BasicAuth,
+) -> Result<ServiceRequest, (Error, ServiceRequest)> {
     let route = req.uri().path();
     log::debug!("authorize URI PATH: {}", route);
 
@@ -310,10 +311,12 @@ fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         )
     };
 
-    let auth = BasicAuth::from_service_request(&req).into_inner()?;
-    let pass = auth.password().ok_or_else(err)?;
+    let pass = match creds.password() {
+        Some(v) => v,
+        None => return Err((err().into(), req)),
+    };
     if argon2::verify_encoded(hash.as_str(), pass.as_bytes()) != Ok(true) {
-        return Err(err().into());
+        return Err((err().into(), req));
     }
 
     Ok(req)
