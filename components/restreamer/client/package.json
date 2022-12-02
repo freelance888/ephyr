@@ -37,7 +37,7 @@
     "@types/webpack": "^5.28",
     "copy-webpack-plugin": "^6.4",
     "cross-env": "^7.0",
-    "css-loader": "^5.2",
+    "css-loader": "^6.7",
     "cypress": "^8.7",
     "graphql-tag": "^2.12",
     "html-webpack-plugin": "^5.5.0",
