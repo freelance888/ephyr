@@ -26,6 +26,7 @@ hex = "0.4"
 humantime = "2.1"
 libc = "0.2.131"
 nix = "0.24.2"
+num_cpus = "1.14.0"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
 rand = "0.8"

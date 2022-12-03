@@ -32,7 +32,7 @@
       <div class="server-info-row">
         <span class="title">CPU</span> -
         <span class="value uk-text-muted" title="CPU usage"
-          >{formatCpuUsage(serverInfo.cpuUsage)}%</span
+          >{formatCpuUsage(serverInfo.cpuUsage)}% ({formatCpuUsage(serverInfo.cpuCores)} cores)</span
         >
       </div>
       <div class="server-info-row">
