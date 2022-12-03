@@ -18,14 +18,14 @@ jobs:
             || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           components: clippy
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: cargo lint
@@ -36,7 +36,7 @@ jobs:
             || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -57,10 +57,10 @@ jobs:
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
 
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
@@ -94,21 +94,21 @@ jobs:
         include:
           - crate: log
             if: true
-          - crate: serde
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
-          - crate: api-allatra-video
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+#          - crate: serde
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                    || !startsWith(github.ref, 'refs/tags/') }}
+#          - crate: api-allatra-video
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                    || !startsWith(github.ref, 'refs/tags/') }}
           - crate: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
-          - crate: vod-meta-server
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+#          - crate: vod-meta-server
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                    || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
       - uses: actions-rs/toolchain@v1
         with:
@@ -116,7 +116,7 @@ jobs:
           toolchain: stable
         if: ${{ matrix.if }}
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.crate }}
         if: ${{ matrix.if
@@ -134,13 +134,13 @@ jobs:
             || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: cargo run -p ephyr-restreamer --bin export_schema -- --out-dir=./
@@ -167,12 +167,12 @@ jobs:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
                     || !startsWith(github.ref, 'refs/tags/') }}
-          - component: vod-meta-server
-            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+#          - component: vod-meta-server
+#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+#                    || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
       - uses: actions-rs/toolchain@v1
         with:
@@ -180,7 +180,7 @@ jobs:
           toolchain: stable
         if: ${{ matrix.if }}
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.component }}
         if: ${{ matrix.if
@@ -203,10 +203,10 @@ jobs:
                     || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
 
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
@@ -256,7 +256,7 @@ jobs:
                     || startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
       - uses: docker/setup-buildx-action@v1
         if: ${{ matrix.if }}
@@ -265,7 +265,7 @@ jobs:
                                comp=${{ matrix.component }}
         if: ${{ matrix.if && env.no-cache == 'true' }}
 
-      - uses: satackey/action-docker-layer-caching@v0.0.11
+      - uses: jpribyl/action-docker-layer-caching@v0.1.0
         with:
           key: docker-${{ matrix.component }}-build-{hash}
           restore-keys: docker-${{ matrix.component }}-build-
@@ -320,7 +320,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.tags.outputs.result }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ matrix.if }}
       - uses: docker/setup-buildx-action@v1
         if: ${{ matrix.if }}
@@ -466,7 +466,7 @@ jobs:
       - run: ssh root@$SERVER_IPV4 "curl -sL curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh | EPHYR_VER=${{ needs.release.outputs.release_tag }} bash -s"
 
       # Setup and run tests
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install ffmpeg for run tests
         uses: FedericoCarboni/setup-ffmpeg@v1
       - name: Run Cypress tests

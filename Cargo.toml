@@ -1,5 +1,5 @@
 [workspace]
-members = ["common/api/*", "common/log", "common/serde", "components/*"]
+members = ["common/log", "components/restreamer"]
 
 [profile.release]
 lto = "thin"
