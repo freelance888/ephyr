@@ -830,6 +830,7 @@ impl QueriesRoot {
         let info = context.state().server_info.get_cloned();
         ServerInfo {
             cpu_usage: info.cpu_usage,
+            cpu_cores: info.cpu_cores,
             ram_total: info.ram_total,
             ram_free: info.ram_free,
             tx_delta: info.tx_delta,
