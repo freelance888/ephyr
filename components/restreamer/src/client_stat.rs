@@ -83,12 +83,9 @@ pub struct StatisticsQuery;
 
 impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
     fn from(item: StatisticsQueryStatisticsServerInfo) -> Self {
-        // println!("3a: client_stats: {:?}", item.cpu_cores);
         ServerInfo {
             cpu_usage: item.cpu_usage,
-            /* TODO dummy value, update_cores will overwrite it */
-            cpu_cores: Some(-1.0),
-            // cpu_cores: item.cpu_cores,
+            cpu_cores: item.cpu_cores,
             ram_total: item.ram_total,
             ram_free: item.ram_free,
             rx_delta: item.rx_delta,

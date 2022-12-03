@@ -1703,7 +1703,7 @@
           },
           {
             "name": "dvrFiles",
-            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\n```\n\n[SRS]: https://github.com/ossrs/srs",
+            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\nhttp://my.host:8080/dvr/returned/file/path.wav\nhttp://my.host:8080/dvr/returned/file/path.mp3\n```\n\n[SRS]: https://github.com/ossrs/srs",
             "args": [
               {
                 "name": "id",
@@ -2416,7 +2416,7 @@
       {
         "kind": "SCALAR",
         "name": "OutputDstUrl",
-        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV] file URL (starting with `file:///` scheme, without host and\n  subdirectories, and with `.flv` extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
+        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV]|[WAV]|[MP3] file URL (starting with `file:///` scheme,\n  without host and subdirectories, and with `.flv`|`.wav`|`.mp3`\n   extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[WAV]: https://en.wikipedia.org/wiki/WAV\n[MP3]: https://en.wikipedia.org/wiki/MP3\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -2521,6 +2521,18 @@
           {
             "name": "cpuUsage",
             "description": "Total CPU usage, %",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "cpuCores",
+            "description": "CPU cores count",
             "args": [],
             "type": {
               "kind": "SCALAR",
