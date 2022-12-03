@@ -162,6 +162,7 @@
 
   .section-label
     font-size: smaller
+    font-weight: bold
     position: absolute
     top: -12px
     left: 0

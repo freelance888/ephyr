@@ -8,6 +8,7 @@
 <template>
   <div class="url">
     <span class="url-placeholder">{url}</span>
+
     {#if previewUrl}
       <span class="url-preview"
         >&nbsp;[<a href={previewUrl} target="_blank">Preview</a>]</span

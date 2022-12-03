@@ -171,7 +171,11 @@
     </a>
 
     {#if !!value.label}
-      <span class="section-label">{value.label}</span>
+      <span class="section-label">
+        {value.label}
+
+        <i class="fa fa-info-circle info-icon pulse uk-alert-primary"></i>
+      </span>
     {/if}
 
     {#if value.outputs && value.outputs.length > 0}
@@ -334,5 +338,17 @@
     .uk-grid
       margin-top: 10px
       margin-left: -10px
+
+    .info-icon
+      font-size: 18px
+
+    .pulse
+      animation: pulse-animation 2s infinite
+
+    @keyframes pulse-animation
+      0%
+        opacity: 0.2
+      100%
+        opacity: 1
 
 </style>

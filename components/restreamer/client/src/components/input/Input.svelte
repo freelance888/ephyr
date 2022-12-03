@@ -8,6 +8,7 @@
   import Toggle from '../common/Toggle.svelte';
   import Confirm from '../common/Confirm.svelte';
   import InputEndpoint from './InputEndpoint.svelte';
+  import StreamInfo from './StreamInfo.svelte';
 
   const disableInputMutation = mutation(DisableInput);
   const enableInputMutation = mutation(EnableInput);
@@ -75,6 +76,9 @@
           {with_label}
           {show_controls}
         />
+        {#if endpoint.streamStat}
+          <StreamInfo streamInfo={endpoint.streamStat}/>
+        {/if}
       {/each}
     </div>
   </div>

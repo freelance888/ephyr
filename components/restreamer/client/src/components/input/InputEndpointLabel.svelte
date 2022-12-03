@@ -95,6 +95,7 @@
 
 <style lang="stylus">
   .endpoint-label
+    align-items: baseline
     display: inline-flex
     color: var(--primary-text-color)
 
