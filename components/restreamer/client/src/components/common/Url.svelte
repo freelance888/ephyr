@@ -3,12 +3,15 @@
 
   export let url;
   export let previewUrl;
+  export let hasStreamInfo;
 </script>
 
 <template>
   <div class="url">
     <span class="url-placeholder">{url}</span>
-
+    {#if hasStreamInfo}
+      <span uk-icon="icon: info; ratio: 0.7"></span>
+    {/if}
     {#if previewUrl}
       <span class="url-preview"
         >&nbsp;[<a href={previewUrl} target="_blank">Preview</a>]</span
@@ -42,7 +45,7 @@
     margin-left: 4px
 
   .url-copy-btn
-    align-self: flex-start
+    align-self: center
     color: var(--primary-text-color)
     opacity: 0
     text-transform: initial

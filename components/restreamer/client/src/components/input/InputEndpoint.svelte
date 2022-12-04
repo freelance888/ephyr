@@ -1,7 +1,6 @@
 <script lang="js">
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
-  import StreamInfo from './StreamInfo.svelte';
 
   export let endpoint;
   export let input;
@@ -13,9 +12,25 @@
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  $: {
-    console.log(endpoint.label, endpoint.streamStat);
+  // $: {
+  //   console.log(endpoint.label, endpoint);
+  // }
+
+  const formatStreamInfo = (info) => {
+    return info ? `
+        <span><strong>${input.key}</strong></span>
+        <br/>
+        <span><strong>video</strong>&#58; ${info.videoCodecName}, </span>
+        <span>${info.videoWidth}x${info.videoHeight},</span>
+        <span>${info.videoRFrameRate?.replace('/1', '')} FPS</span>
+        <br/>
+        <span><strong>audio</strong>&#58; ${info.audioCodecName},</span>
+        <span>${info.audioSampleRate},</span>
+        <span>${info.audioChannelLayout},</span>
+        <span>channels&#58; ${info.audioChannels}</span>
+` : '';
   }
+
 </script>
 
 <template>
@@ -74,8 +89,8 @@
 
     </div>
 
-    <div>
-      <Url url={input_url} />
+    <div uk-tooltip={formatStreamInfo(endpoint.streamStat)}>
+      <Url url={input_url} hasStreamInfo={endpoint.streamStat} />
     </div>
     {#if with_label}
       <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />

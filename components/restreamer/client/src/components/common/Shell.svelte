@@ -170,4 +170,7 @@
     border-top-left-radius: 4px
     border-top-right-radius: 4px
     background-color: #f8f8f8
+
+  .uk-tooltip
+    max-width: 400px
 </style>

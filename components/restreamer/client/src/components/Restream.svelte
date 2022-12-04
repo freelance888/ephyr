@@ -17,7 +17,7 @@
     Info,
   } from '../../api/client.graphql';
 
-  import { showError } from '../utils/util';
+  import { isFailoverInput, showError } from '../utils/util';
   import { statusesList } from '../constants/statuses';
 
   import { outputModal, exportModal } from '../stores';
@@ -123,6 +123,36 @@
       );
     }
   }
+
+  function getStreamsDifferenceTooltip(input) {
+    let streamInfoKeys = [];
+    if (isFailoverInput(input)) {
+      for (let i of input.src.inputs) {
+        const key = i.key;
+        const primary = i.endpoints[0];
+        for (let endpoint of i.endpoints) {
+          if(primary && endpoint.streamStat && areStreamInfoEqual(primary.streamStat, endpoint.streamStat)) {
+            streamInfoKeys = [...streamInfoKeys, key];
+          }
+        }
+      }
+    }
+
+    return streamInfoKeys.length ? `<strong>${streamInfoKeys.join(', ')}</strong> stream(s) params differ from <strong>primary</strong> stream params` :  '';
+  }
+
+  function areStreamInfoEqual(info1, info2) {
+    return info1.audioChannelLayout === info2.audioChannelLayout &&
+    info1.audioChannels === info2.audioChannels &&
+    info1.audioSampleRate === info2.audioSampleRate &&
+    info1.audioCodecName === info2.audioCodecName &&
+    info1.videoCodecName === info2.videoCodecName &&
+    info1.videoRFrameRate === info2.videoRFrameRate &&
+    info1.videoHeight === info2.videoHeight &&
+    info1.videoWidth === info2.videoWidth;
+  }
+
+
 </script>
 
 <template>
@@ -174,7 +204,7 @@
       <span class="section-label">
         {value.label}
 
-        <i class="fa fa-info-circle info-icon pulse uk-alert-primary"></i>
+        <i class="fa fa-info-circle info-icon pulse uk-alert-warning" uk-tooltip={getStreamsDifferenceTooltip(value.input)}></i>
       </span>
     {/if}
 
@@ -237,7 +267,7 @@
       with_label={false}
       show_controls={showControls}
     />
-    {#if !!value.input.src && value.input.src.__typename === 'FailoverInputSrc'}
+    {#if isFailoverInput(value.input)}
       {#each value.input.src.inputs as input}
         <Input
           {public_host}
