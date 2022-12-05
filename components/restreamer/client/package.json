@@ -20,7 +20,7 @@
     "lint": "prettier --check . && svelte-check"
   },
   "dependencies": {
-    "@apollo/client": "~3.6",
+    "@apollo/client": "~3.7",
     "clipboard-copy": "^4.0",
     "graphql": "^16.5",
     "subscriptions-transport-ws": "^0.11",

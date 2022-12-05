@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@apollo/client@~3.6":
-  version "3.6.10"
-  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.6.10.tgz#f12d1f0cc4811d6bfe68b3f48a18e08a757ee301"
-  integrity sha512-zow8+Z7Wz8OeH+8bhIxqPtqqXY87APoUbXlaXD/rgs3O9ijSyHSbUt3E4DnkLNP9q3+/OsRWY+Mx+WxkQQ4oig==
+"@apollo/client@~3.7":
+  version "3.7.1"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.7.1.tgz#86ce47c18a0714e229231148b0306562550c2248"
+  integrity sha512-xu5M/l7p9gT9Fx7nF3AQivp0XukjB7TM7tOd5wifIpI8RskYveL4I+rpTijzWrnqCPZabkbzJKH7WEAKdctt9w==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/context" "^0.7.0"
@@ -15,6 +15,7 @@
     hoist-non-react-statics "^3.3.2"
     optimism "^0.16.1"
     prop-types "^15.7.2"
+    response-iterator "^0.2.6"
     symbol-observable "^4.0.0"
     ts-invariant "^0.10.3"
     tslib "^2.3.0"
@@ -3363,6 +3364,11 @@ resolve@^1.20.0:
     is-core-module "^2.9.0"
     path-parse "^1.0.7"
     supports-preserve-symlinks-flag "^1.0.0"
+
+response-iterator@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/response-iterator/-/response-iterator-0.2.6.tgz#249005fb14d2e4eeb478a3f735a28fd8b4c9f3da"
+  integrity sha512-pVzEEzrsg23Sh053rmDUvLSkGXluZio0qu8VT6ukrYuvtjVfCbDZH9d6PGXb8HZfzdNZt8feXv/jvUzlhRgLnw==
 
 restore-cursor@^3.1.0:
   version "3.1.0"
