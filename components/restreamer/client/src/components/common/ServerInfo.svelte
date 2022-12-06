@@ -32,9 +32,10 @@
       <div class="server-info-row">
         <span class="title">CPU</span> -
         <span class="value uk-text-muted" title="CPU usage"
-          >{formatInteger(serverInfo.cpuUsage)}%
-          ({formatInteger(serverInfo.cpuCores)}
-           serverInfo.cpuCores == 1 ? core : cores)</span
+          >{formatInteger(serverInfo.cpuUsage)}% ({formatInteger(
+            serverInfo.cpuCores
+          )}
+          serverInfo.cpuCores == 1 ? core : cores)</span
         >
       </div>
       <div class="server-info-row">
