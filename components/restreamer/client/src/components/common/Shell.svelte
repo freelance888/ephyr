@@ -173,4 +173,13 @@
 
   .uk-tooltip
     max-width: 400px
+
+  .pulse
+    animation: pulse-animation 2s infinite
+
+  @keyframes pulse-animation
+    0%
+      opacity: 0.2
+    100%
+      opacity: 1
 </style>

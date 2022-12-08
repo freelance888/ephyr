@@ -203,7 +203,6 @@
     {#if !!value.label}
       <span class="section-label">
         {value.label}
-
         <i class="fa fa-info-circle info-icon pulse uk-alert-warning" uk-tooltip={getStreamsDifferenceTooltip(value.input)}></i>
       </span>
     {/if}
@@ -370,15 +369,5 @@
       margin-left: -10px
 
     .info-icon
-      font-size: 18px
-
-    .pulse
-      animation: pulse-animation 2s infinite
-
-    @keyframes pulse-animation
-      0%
-        opacity: 0.2
-      100%
-        opacity: 1
-
+      font-size: 16px
 </style>

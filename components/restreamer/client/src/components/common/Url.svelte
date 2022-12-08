@@ -10,7 +10,7 @@
   <div class="url">
     <span class="url-placeholder">{url}</span>
     {#if hasStreamInfo}
-      <span uk-icon="icon: info; ratio: 0.7"></span>
+      <span class='info-icon' uk-icon="icon: info; ratio: 0.7"></span>
     {/if}
     {#if previewUrl}
       <span class="url-preview"
@@ -29,6 +29,7 @@
 
 <style lang="stylus">
   .url
+    align-items: center
     display: inline-flex
     min-width: 20em
 
@@ -37,6 +38,8 @@
         opacity: 1
         vertical-align: baseline
 
+  .info-icon
+    margin-left: 4px
 
   .url-placeholder
     word-break: break-all
