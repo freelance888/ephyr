@@ -21,6 +21,10 @@
   const formatErrorMsg = (value) => {
     return value ? value.substring(0, 100) : '';
   };
+
+  const formatCoresText = (value) => {
+    return value === 1 ? 'core' : 'cores';
+  };
 </script>
 
 <template>
@@ -35,7 +39,7 @@
           >{formatInteger(serverInfo.cpuUsage)}% ({formatInteger(
             serverInfo.cpuCores
           )}
-          serverInfo.cpuCores == 1 ? core : cores)</span
+          {formatCoresText(serverInfo.cpuCores)})</span
         >
       </div>
       <div class="server-info-row">
