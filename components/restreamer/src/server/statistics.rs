@@ -20,6 +20,7 @@ use std::panic::AssertUnwindSafe;
 /// run in `future::try_join3`
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_precision_loss)]
+#[allow(clippy::cast_possible_wrap)]
 pub async fn run(state: State) -> Result<(), Failure> {
     // we use tx_last and rx_last to compute the delta
     // (send/receive bytes last second)
@@ -52,7 +53,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                         ));
 
                         let cpus_usize = num_cpus::get();
-                        let cpus: f64 = cpus_usize as f64;
+                        let cpus: i32 = cpus_usize as i32;
 
                         info.update_cores(Some(cpus));
                     }
