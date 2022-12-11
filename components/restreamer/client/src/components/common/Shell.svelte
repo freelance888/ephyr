@@ -171,6 +171,9 @@
     border-top-right-radius: 4px
     background-color: #f8f8f8
 
+  .hidden
+    display: none
+
   .uk-tooltip
     max-width: 400px
 

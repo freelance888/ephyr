@@ -31,6 +31,7 @@
   import { toggleFilterStatus } from '../utils/statusFilters.util';
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
+  import isEqual from 'lodash/isEqual';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -74,6 +75,8 @@
   $: hasActiveFilters = reStreamOutputsFilters.length;
 
   $: showControls = false;
+
+  $: streamsDiffTooltip = getStreamsDifferenceTooltip(value.input);
 
   let openRestreamModal = false;
 
@@ -127,11 +130,11 @@
   function getStreamsDifferenceTooltip(input) {
     let streamInfoKeys = [];
     if (isFailoverInput(input)) {
+      const primary = input.src.inputs[0].endpoints[0]
       for (let i of input.src.inputs) {
         const key = i.key;
-        const primary = i.endpoints[0];
         for (let endpoint of i.endpoints) {
-          if(primary && endpoint.streamStat && areStreamInfoEqual(primary.streamStat, endpoint.streamStat)) {
+          if (primary && endpoint.streamStat && !isEqual(primary.streamStat, endpoint.streamStat)) {
             streamInfoKeys = [...streamInfoKeys, key];
           }
         }
@@ -140,19 +143,6 @@
 
     return streamInfoKeys.length ? `<strong>${streamInfoKeys.join(', ')}</strong> stream(s) params differ from <strong>primary</strong> stream params` :  '';
   }
-
-  function areStreamInfoEqual(info1, info2) {
-    return info1.audioChannelLayout === info2.audioChannelLayout &&
-    info1.audioChannels === info2.audioChannels &&
-    info1.audioSampleRate === info2.audioSampleRate &&
-    info1.audioCodecName === info2.audioCodecName &&
-    info1.videoCodecName === info2.videoCodecName &&
-    info1.videoRFrameRate === info2.videoRFrameRate &&
-    info1.videoHeight === info2.videoHeight &&
-    info1.videoWidth === info2.videoWidth;
-  }
-
-
 </script>
 
 <template>
@@ -203,7 +193,13 @@
     {#if !!value.label}
       <span class="section-label">
         {value.label}
-        <i class="fa fa-info-circle info-icon pulse uk-alert-warning" uk-tooltip={getStreamsDifferenceTooltip(value.input)}></i>
+        {#if streamsDiffTooltip}
+          <span>
+             <i class="fa fa-info-circle info-icon pulse uk-alert-warning"
+               uk-tooltip={streamsDiffTooltip}>
+             </i>
+            </span>
+        {/if}
       </span>
     {/if}
 

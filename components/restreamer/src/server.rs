@@ -78,12 +78,6 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         future::ready(())
     });
 
-    let state1 = state.clone();
-    State::on_change("cleanup_stream_info", &state.restreams, move |_| {
-        state1.cleanup_stream_info();
-        future::ready(())
-    });
-
     future::try_join3(
         self::client::run(&cfg, state.clone()),
         self::statistics::run(state.clone()),

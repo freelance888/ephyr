@@ -12,22 +12,18 @@
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  // $: {
-  //   console.log(endpoint.label, endpoint);
-  // }
-
-  const formatStreamInfo = (info) => {
-    return info ? `
+  const formatStreamInfo = (streamStat) => {
+    return streamStat ? `
         <span><strong>${input.key}</strong></span>
         <br/>
-        <span><strong>video</strong>&#58; ${info.videoCodecName}, </span>
-        <span>${info.videoWidth}x${info.videoHeight},</span>
-        <span>${info.videoRFrameRate?.replace('/1', '')} FPS</span>
+        <span><strong>video</strong>&#58; ${streamStat.videoCodecName}, </span>
+        <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
+        <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
         <br/>
-        <span><strong>audio</strong>&#58; ${info.audioCodecName},</span>
-        <span>${info.audioSampleRate},</span>
-        <span>${info.audioChannelLayout},</span>
-        <span>channels&#58; ${info.audioChannels}</span>
+        <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
+        <span>${streamStat.audioSampleRate},</span>
+        <span>${streamStat.audioChannelLayout},</span>
+        <span>channels&#58; ${streamStat.audioChannels}</span>
 ` : '';
   }
 
@@ -89,9 +85,7 @@
 
     </div>
 
-    <div uk-tooltip={formatStreamInfo(endpoint.streamStat)}>
-      <Url url={input_url} hasStreamInfo={endpoint.streamStat} />
-    </div>
+    <Url url={input_url} streamInfo={formatStreamInfo(endpoint.streamStat)} />
     {#if with_label}
       <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
     {/if}
