@@ -38,12 +38,12 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {}", e);
+            log::error!("Failed to resolve FFmpeg binary path: {e}");
         })?;
 
     let state = State::try_new(&cfg.state_path)
         .await
-        .map_err(|e| log::error!("Failed to initialize server state: {}", e))?;
+        .map_err(|e| log::error!("Failed to initialize server state: {e}"))?;
 
     let srs = srs::Server::try_new(
         &cfg.srs_path,
@@ -54,7 +54,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     )
     .await
-    .map_err(|e| log::error!("Failed to initialize SRS server: {}", e))?;
+    .map_err(|e| log::error!("Failed to initialize SRS server: {e}"))?;
     State::on_change(
         "cleanup_dvr_files",
         &state.restreams,

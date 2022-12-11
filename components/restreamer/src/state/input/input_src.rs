@@ -174,7 +174,7 @@ impl<'de> Deserialize<'de> for InputSrcUrl {
         D: Deserializer<'de>,
     {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
-            D::Error::custom(format!("Not a valid RemoteInputSrc.url: {}", url))
+            D::Error::custom(format!("Not a valid RemoteInputSrc.url: {url}"))
         })
     }
 }

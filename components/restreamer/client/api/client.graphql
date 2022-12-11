@@ -12,6 +12,7 @@ subscription Info {
 subscription ServerInfo {
     serverInfo {
         cpuUsage
+        cpuCores
         ramTotal
         ramFree
         txDelta

@@ -112,10 +112,10 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         .service(ResourceFiles::new("/", root_dir_files))
     })
     .bind((cfg.client_http_ip, cfg.client_http_port))
-    .map_err(|e| log::error!("Failed to bind client HTTP server: {}", e))?
+    .map_err(|e| log::error!("Failed to bind client HTTP server: {e}"))?
     .run()
     .await
-    .map_err(|e| log::error!("Failed to run client HTTP server: {}", e))?)
+    .map_err(|e| log::error!("Failed to run client HTTP server: {e}"))?)
 }
 
 /// List of schemes

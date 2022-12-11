@@ -7,6 +7,7 @@
 use std::{
     borrow::Cow,
     collections::HashMap,
+    ffi::OsStr,
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
@@ -170,7 +171,7 @@ impl MixingRestreamer {
             });
 
         if ephyr_log::logger().is_debug_enabled() {
-            let _ = cmd.stderr(Stdio::inherit()).args(&["-loglevel", "debug"]);
+            let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         } else {
             let _ = cmd.stderr(Stdio::null());
         }
@@ -191,7 +192,7 @@ impl MixingRestreamer {
             volume = orig_volume.display_as_fraction(),
             port = self.orig_zmq_port,
         ));
-        let _ = cmd.args(&["-i", self.from_url.as_str()]);
+        let _ = cmd.args(["-i", self.from_url.as_str()]);
 
         for (n, mixin) in self.mixins.iter().enumerate() {
             let mut extra_filters = String::new();
@@ -199,11 +200,11 @@ impl MixingRestreamer {
             let _ = match mixin.url.scheme() {
                 "ts" => {
                     extra_filters.push_str("aresample=async=1,");
-                    cmd.args(&["-thread_queue_size", "512"])
-                        .args(&["-f", "f32be"])
-                        .args(&["-sample_rate", "48000"])
-                        .args(&["-channels", "2"])
-                        .args(&["-use_wallclock_as_timestamps", "true"])
+                    cmd.args(["-thread_queue_size", "512"])
+                        .args(["-f", "f32be"])
+                        .args(["-sample_rate", "48000"])
+                        .args(["-channels", "2"])
+                        .args(["-use_wallclock_as_timestamps", "true"])
                         .arg("-i")
                         .arg(mixin.get_fifo_path())
                 }
@@ -213,7 +214,7 @@ impl MixingRestreamer {
                         == Some("mp3".as_ref()) =>
                 {
                     extra_filters.push_str("aresample=48000,");
-                    cmd.args(&["-i", mixin.url.as_str()])
+                    cmd.args(["-i", mixin.url.as_str()])
                 }
 
                 _ => unimplemented!(),
@@ -294,35 +295,51 @@ impl MixingRestreamer {
 
         log::debug!("FFmpeg FILTER COMPLEX: {:?}", &filter_complex.join(";"));
         let _ = cmd
-            .args(&["-filter_complex", &filter_complex.join(";")])
-            .args(&["-map", "[out]"])
-            .args(&["-max_muxing_queue_size", "50000000"]);
+            .args(["-filter_complex", &filter_complex.join(";")])
+            .args(["-map", "[out]"])
+            .args(["-max_muxing_queue_size", "50000000"]);
 
         let _ = match self.to_url.scheme() {
-            "file"
-                if Path::new(self.to_url.path()).extension()
-                    == Some("flv".as_ref()) =>
+            "file" => match Path::new(self.to_url.path())
+                .extension()
+                .and_then(OsStr::to_str)
             {
-                cmd.args(&["-map", "0:v"])
-                    .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
-                    .arg(dvr::new_file_path(&self.to_url).await?)
-            }
+                Some("flv") => cmd
+                    .args(["-map", "0:v"])
+                    .args(["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("wav") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "pcm_s16le"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("mp3") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "libmp3lame"])
+                    .args(["-b:a", "64k"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                _ => unimplemented!(),
+            },
 
             "icecast" => cmd
-                .args(&["-c:a", "libmp3lame", "-b:a", "64k"])
-                .args(&["-f", "mp3", "-content_type", "audio/mpeg"])
+                .arg("-vn")
+                .args(["-c:a", "libmp3lame", "-b:a", "64k"])
+                .args(["-f", "mp3", "-content_type", "audio/mpeg"])
                 .arg(self.to_url.as_str()),
 
             "rtmp" | "rtmps" => cmd
-                .args(&["-map", "0:v"])
-                .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
-                .args(&["-f", "flv"])
+                .args(["-map", "0:v"])
+                .args(["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+                .args(["-f", "flv"])
                 .arg(self.to_url.as_str()),
 
             "srt" => cmd
-                .args(&["-map", "0:v"])
-                .args(&["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
-                .args(&["-strict", "-2", "-y", "-f", "mpegts"])
+                .args(["-map", "0:v"])
+                .args(["-c:a", "libfdk_aac", "-c:v", "copy", "-shortest"])
+                .args(["-strict", "-2", "-y", "-f", "mpegts"])
                 .arg(self.to_url.as_str()),
 
             _ => unimplemented!(),
@@ -458,7 +475,7 @@ impl Mixin {
                 prev.and_then(|m| m.stdin.clone()).or_else(|| {
                     let mut host = Cow::Borrowed(state.src.host_str()?);
                     if let Some(port) = state.src.port() {
-                        host = Cow::Owned(format!("{}:{}", host, port));
+                        host = Cow::Owned(format!("{host}:{port}"));
                     }
 
                     let channel = state.src.path().trim_start_matches('/');
@@ -468,7 +485,7 @@ impl Mixin {
                     let name = query
                         .get("name")
                         .cloned()
-                        .or_else(|| label.map(|l| format!("🤖 {}", l)))
+                        .or_else(|| label.map(|l| format!("🤖 {l}")))
                         .unwrap_or_else(|| format!("🤖 {}", state.id));
                     let identity = query.get("identity").map_or_else(
                         Identity::create,
@@ -559,7 +576,7 @@ fn new_unique_zmq_port() -> u16 {
 fn tune_volume(track: Uuid, port: u16, volume: Volume) {
     tune_with_zmq(
         port,
-        format!("volume@{} volume {}", track, volume.display_as_fraction())
+        format!("volume@{track} volume {}", volume.display_as_fraction())
             .into(),
     );
 }
@@ -572,7 +589,7 @@ fn tune_volume(track: Uuid, port: u16, volume: Volume) {
 fn tune_delay(track: Uuid, port: u16, delay: Delay) {
     tune_with_zmq(
         port,
-        format!("adelay@{} delays all:{}", track, delay.as_millis()).into(),
+        format!("adelay@{track} delays all:{}", delay.as_millis()).into(),
     );
 }
 
@@ -587,37 +604,28 @@ fn tune_with_zmq(port: u16, command: ZmqMessage) {
 
     drop(tokio::spawn(
         AssertUnwindSafe(async move {
-            let addr = format!("tcp://127.0.0.1:{}", port);
+            let addr = format!("tcp://127.0.0.1:{port}");
 
             let mut socket = zeromq::ReqSocket::new();
             socket.connect(&addr).await.map_err(|e| {
                 log::error!(
-                    "Failed to establish ZeroMQ connection with {} : {}",
-                    addr,
-                    e,
+                    "Failed to establish ZeroMQ connection with {addr} : {e}"
                 );
             })?;
             socket.send(command).await.map_err(|e| {
-                log::error!(
-                    "Failed to send ZeroMQ message to {} : {}",
-                    addr,
-                    e,
-                );
+                log::error!("Failed to send ZeroMQ message to {addr} : {e}");
             })?;
 
             let resp = socket.recv().await.map_err(|e| {
                 log::error!(
-                    "Failed to receive ZeroMQ response from {} : {}",
-                    addr,
-                    e,
+                    "Failed to receive ZeroMQ response from {addr} : {e}"
                 );
             })?;
 
             let data = resp.into_vec().pop().unwrap();
             if data.as_ref() != "0 Success".as_bytes() {
                 log::error!(
-                    "Received invalid ZeroMQ response from {} : {}",
-                    addr,
+                    "Received invalid ZeroMQ response from {addr} : {}",
                     std::str::from_utf8(&data).map_or_else(
                         |_| Cow::Owned(format!("{:?}", &data)),
                         Cow::Borrowed,

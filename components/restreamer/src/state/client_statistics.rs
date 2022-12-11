@@ -97,6 +97,9 @@ pub struct ServerInfo {
     /// Total CPU usage, %
     pub cpu_usage: Option<f64>,
 
+    /// CPU cores count
+    pub cpu_cores: Option<i32>,
+
     /// Total RAM installed on current machine
     pub ram_total: Option<f64>,
 
@@ -117,6 +120,11 @@ impl ServerInfo {
     /// Updates cpu usage
     pub fn update_cpu(&mut self, cpu: Option<f64>) {
         self.cpu_usage = cpu;
+    }
+
+    /// Updates cpu cores
+    pub fn update_cores(&mut self, cpu: Option<i32>) {
+        self.cpu_cores = cpu;
     }
 
     /// Sets error message

@@ -12,6 +12,7 @@ query StatisticsQuery {
         }
         serverInfo {
             cpuUsage
+            cpuCores
             ramTotal
             ramFree
             txDelta

@@ -69,7 +69,7 @@ impl Deref for Context {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &**self.0.as_ref().unwrap()
+        self.0.as_ref().unwrap()
     }
 }
 
@@ -78,7 +78,7 @@ impl juniper::Context for Context {}
 
 /// Error returned to the client by GraphQL API.
 #[derive(Clone, Debug, Display, Error, SmartDefault)]
-#[display(fmt = "{}", message)]
+#[display(fmt = "{message}")]
 pub struct Error {
     /// Unique literal code of this [`Error`](struct@Error).
     #[default = "UNKNOWN"]
@@ -162,7 +162,7 @@ impl Error {
     /// [1]: https://facebook.github.io/graphql/June2018/#sec-Errors
     #[inline]
     pub fn set_message<M: fmt::Display + ?Sized>(&mut self, m: &M) {
-        self.message = format!("{}", m).into();
+        self.message = format!("{m}").into();
     }
 
     /// Sets backtrace of this [`Error`](struct@Error).
@@ -171,7 +171,7 @@ impl Error {
     #[inline]
     pub fn set_backtrace<B: fmt::Display + ?Sized>(&mut self, bt: &B) {
         self.backtrace =
-            Some(format!("{}", bt).split('\n').map(String::from).collect());
+            Some(format!("{bt}").split('\n').map(String::from).collect());
     }
 }
 

@@ -486,7 +486,7 @@ impl Playlist {
             start_time = next_day;
         }
 
-        set.sequences = sequences.into_iter().map(|(_, seq)| seq).collect();
+        set.sequences = sequences.into_values().collect();
         set
     }
 }

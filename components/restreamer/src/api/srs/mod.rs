@@ -33,7 +33,7 @@ impl Client {
     /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi#kickoff-client
     pub async fn kickoff_client(id: String) -> Result<(), Error> {
         let resp = reqwest::Client::new()
-            .delete(&format!("{}/clients/{}", Self::V1_URL, id))
+            .delete(&format!("{}/clients/{id}", Self::V1_URL))
             .send()
             .await
             .map_err(Error::RequestFailed)?;
@@ -50,13 +50,13 @@ impl Client {
 #[derive(Debug, Display, Error)]
 pub enum Error {
     /// Performing HTTP request failed itself.
-    #[display(fmt = "Failed to perform HTTP request: {}", _0)]
+    #[display(fmt = "Failed to perform HTTP request: {_0}")]
     RequestFailed(reqwest::Error),
 
     /// [SRS HTTP API][1] responded with a bad [`StatusCode`].
     ///
     /// [`StatusCode`]: reqwest::StatusCode
     /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPApi
-    #[display(fmt = "SRS HTTP API responded with bad status: {}", _0)]
+    #[display(fmt = "SRS HTTP API responded with bad status: {_0}")]
     BadStatus(#[error(not(source))] reqwest::StatusCode),
 }

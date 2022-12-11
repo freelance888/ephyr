@@ -632,6 +632,19 @@
             "deprecationReason": null
           },
           {
+            "name": "cpuCores",
+            "description": "CPU cores count",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+
+          {
             "name": "ramTotal",
             "description": "Total RAM installed on current machine, bytes",
             "args": [],

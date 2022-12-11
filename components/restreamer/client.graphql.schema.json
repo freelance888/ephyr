@@ -1568,86 +1568,13 @@
         "possibleTypes": null
       },
       {
-        "kind": "OBJECT",
-        "name": "InputEndpoint",
-        "description": "Endpoint of an `Input` serving a live stream for `Output`s and clients.",
+        "kind": "SCALAR",
+        "name": "Int",
+        "description": null,
         "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "id",
-            "description": "Unique ID of this `InputEndpoint`.\n\nOnce assigned, it never changes.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "EndpointId",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "kind",
-            "description": "Kind of this `InputEndpoint`.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "ENUM",
-                "name": "InputEndpointKind",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "label",
-            "description": "User defined label for each Endpoint",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Label",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "status",
-            "description": "`Status` of this `InputEndpoint` indicating whether it actually serves a\nlive stream ready to be consumed by `Output`s and clients.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "ENUM",
-                "name": "Status",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "streamStat",
-            "description": "Corresponding stream info from SRS",
-            "args": [],
-            "type": {
-              "kind": "OBJECT",
-              "name": "StreamStatistics",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
+        "fields": null,
         "inputFields": null,
-        "interfaces": [],
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -1715,7 +1642,7 @@
           },
           {
             "name": "dvrFiles",
-            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\n```\n\n[SRS]: https://github.com/ossrs/srs",
+            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\nhttp://my.host:8080/dvr/returned/file/path.wav\nhttp://my.host:8080/dvr/returned/file/path.mp3\n```\n\n[SRS]: https://github.com/ossrs/srs",
             "args": [
               {
                 "name": "id",
@@ -1783,6 +1710,78 @@
               "kind": "SCALAR",
               "name": "String",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "InputEndpoint",
+        "description": "Endpoint of an `Input` serving a live stream for `Output`s and clients.",
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "id",
+            "description": "Unique ID of this `InputEndpoint`.\n\nOnce assigned, it never changes.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "EndpointId",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "kind",
+            "description": "Kind of this `InputEndpoint`.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "InputEndpointKind",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "label",
+            "description": "User defined label for each Endpoint",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Label",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "status",
+            "description": "`Status` of this `InputEndpoint` indicating whether it actually serves a\nlive stream ready to be consumed by `Output`s and clients.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "Status",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2428,7 +2427,7 @@
       {
         "kind": "SCALAR",
         "name": "OutputDstUrl",
-        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV] file URL (starting with `file:///` scheme, without host and\n  subdirectories, and with `.flv` extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
+        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV]|[WAV]|[MP3] file URL (starting with `file:///` scheme,\n  without host and subdirectories, and with `.flv`|`.wav`|`.mp3`\n   extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[WAV]: https://en.wikipedia.org/wiki/WAV\n[MP3]: https://en.wikipedia.org/wiki/MP3\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -2543,6 +2542,18 @@
             "deprecationReason": null
           },
           {
+            "name": "cpuCores",
+            "description": "CPU cores count",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "ramTotal",
             "description": "Total RAM installed on current machine",
             "args": [],
@@ -2616,126 +2627,6 @@
         "fields": null,
         "inputFields": null,
         "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "StreamStatistics",
-        "description": "Stream statistics",
-        "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "audioCodecName",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "audioChannelLayout",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "audioSampleRate",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "audioChannels",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "UNumber",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "videoCodecName",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "videoRFrameRate",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "videoWidth",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "UNumber",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "videoHeight",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "UNumber",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "bitRate",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -2874,6 +2765,74 @@
         "possibleTypes": null
       },
       {
+        "kind": "OBJECT",
+        "name": "__EnumValue",
+        "description": null,
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "isDeprecated",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "deprecationReason",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "SCALAR",
         "name": "RestreamId",
         "description": "ID of a `Restream`.",
@@ -2956,85 +2915,6 @@
             "defaultValue": null
           }
         ],
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "__EnumValue",
-        "description": null,
-        "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "name",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "description",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "isDeprecated",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "deprecationReason",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "UNumber",
-        "description": "Generic number for using with Graphql",
-        "specifiedByUrl": null,
-        "fields": null,
-        "inputFields": null,
         "interfaces": null,
         "enumValues": null,
         "possibleTypes": null

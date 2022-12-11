@@ -15,7 +15,9 @@
     {/if}
     {#if previewUrl}
       <span class="url-preview"
-        >&nbsp;[<a href={previewUrl} target="_blank">Preview</a>]</span
+        >&nbsp;[<a href={previewUrl} target="_blank" rel="noopener noreferrer"
+          >Preview</a
+        >]</span
       >
     {/if}
     <button

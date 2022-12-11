@@ -176,6 +176,7 @@
             class="single-view"
             href="/mix?id={restream_id}&output={value.id}"
             target="_blank"
+            rel="noopener noreferrer"
             title="Open in a separate window"
             ><i class="fas fa-external-link-alt" />
           </a>

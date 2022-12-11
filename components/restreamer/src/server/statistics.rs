@@ -3,15 +3,11 @@ use std::time::Duration;
 use systemstat::{Platform, System};
 use tokio::time;
 
-use crate::state::{EndpointId, InputKey, InputSrc, RestreamKey, Status};
-use crate::stream_probe::stream_probe;
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
-use anyhow::anyhow;
 use ephyr_log::log;
-use ephyr_log::slog::log;
-use futures::{FutureExt, TryFutureExt};
+use futures::FutureExt;
+use num_cpus;
 use std::panic::AssertUnwindSafe;
-use url::Url;
 
 /// Runs statistics monitoring
 ///
@@ -24,6 +20,7 @@ use url::Url;
 /// run in `future::try_join3`
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_precision_loss)]
+#[allow(clippy::cast_possible_wrap)]
 pub async fn run(state: State) -> Result<(), Failure> {
     // we use tx_last and rx_last to compute the delta
     // (send/receive bytes last second)
@@ -54,6 +51,11 @@ pub async fn run(state: State) -> Result<(), Failure> {
                         info.update_cpu(Some(
                             f64::from(1.0 - cpu.idle) * 100.0,
                         ));
+
+                        let cpus_usize = num_cpus::get();
+                        let cpus: i32 = cpus_usize as i32;
+
+                        info.update_cores(Some(cpus));
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
@@ -120,10 +122,8 @@ pub async fn run(state: State) -> Result<(), Failure> {
                         log::error!("Statistics. Networks: error: {}", x);
                     }
                 }
-                *state.server_info.lock_mut() = info;
 
-                // Try to clean up stream info
-                state.cleanup_stream_info();
+                *state.server_info.lock_mut() = info;
             })
             .catch_unwind()
             .await

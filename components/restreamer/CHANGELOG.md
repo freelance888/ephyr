@@ -8,13 +8,16 @@ All user visible changes to this project will be documented in this file. This p
 
 [Diff](/../../compare/restreamer-v0.6.0...restreamer-v0.7.0)
 
+### Added
+- Option to record audio-only files ([#239]);
 ### Miscellaneous
 - Server updates:
-  - [SRS] server updated to v4.0-r3 ([9eec27]);
+  - [SRS] server updated to v4.0-r4 ([#244]);
 
+    
+[#239]: /../../pull/244
+[#244]: /../../pull/244
 
-
-[9eec27]: /../../commit/9eec27ee594b79a5e23dcbae67f846edc16e4003
 
 
 ## [0.6.0] · 02-10-2022

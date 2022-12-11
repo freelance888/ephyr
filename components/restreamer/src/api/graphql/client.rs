@@ -690,7 +690,7 @@ impl MutationsRoot {
         if path.starts_with('/') || path.contains("../") {
             return Err(graphql::Error::new("INVALID_DVR_FILE_PATH")
                 .status(StatusCode::BAD_REQUEST)
-                .message(&format!("Invalid DVR file path: {}", path)));
+                .message(&format!("Invalid DVR file path: {path}")));
         }
 
         Ok(dvr::Storage::global().remove_file(path).await)
@@ -752,7 +752,7 @@ impl MutationsRoot {
             argon2::hash_encoded(
                 v.as_bytes(),
                 &rand::thread_rng().gen::<[u8; 32]>(),
-                &*HASH_CFG,
+                &HASH_CFG,
             )
             .unwrap()
         });
@@ -830,6 +830,7 @@ impl QueriesRoot {
         let info = context.state().server_info.get_cloned();
         ServerInfo {
             cpu_usage: info.cpu_usage,
+            cpu_cores: info.cpu_cores,
             ram_total: info.ram_total,
             ram_free: info.ram_free,
             tx_delta: info.tx_delta,
@@ -852,6 +853,8 @@ impl QueriesRoot {
     /// server in `dvr/` directory, so the download link should look like this:
     /// ```ignore
     /// http://my.host:8080/dvr/returned/file/path.flv
+    /// http://my.host:8080/dvr/returned/file/path.wav
+    /// http://my.host:8080/dvr/returned/file/path.mp3
     /// ```
     ///
     /// [SRS]: https://github.com/ossrs/srs
@@ -897,7 +900,7 @@ impl QueriesRoot {
                 }
                 .into();
                 serde_json::to_string(&spec).map_err(|e| {
-                    anyhow!("Failed to JSON-serialize spec: {}", e).into()
+                    anyhow!("Failed to JSON-serialize spec: {e}").into()
                 })
             })
             .transpose()

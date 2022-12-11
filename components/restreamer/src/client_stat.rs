@@ -81,10 +81,14 @@ type DateTimeUtc = DateTime<Utc>;
 #[derive(Debug)]
 pub struct StatisticsQuery;
 
+#[allow(clippy::cast_possible_truncation)]
 impl From<StatisticsQueryStatisticsServerInfo> for ServerInfo {
     fn from(item: StatisticsQueryStatisticsServerInfo) -> Self {
+        let cpu_cores_unwrapped = item.cpu_cores.unwrap_or(0);
+
         ServerInfo {
             cpu_usage: item.cpu_usage,
+            cpu_cores: Some(cpu_cores_unwrapped as i32),
             ram_total: item.ram_total,
             ram_free: item.ram_free,
             rx_delta: item.rx_delta,
@@ -207,7 +211,7 @@ impl ClientJob {
             .build()
             .unwrap();
 
-        let url = format!("{}api-statistics", client_id);
+        let url = format!("{client_id}api-statistics");
         let res = request
             .post(url.as_str())
             .json(&request_body)

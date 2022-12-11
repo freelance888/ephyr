@@ -1,0 +1,17 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+
+  # Maintain dependencies for Ephyr Restreamer backend
+  - package-ecosystem: "cargo" # See documentation for possible values
+    directory: "/components/restreamer" # Location of package manifests
+    schedule:
+      interval: "weekly"
+
+  # Maintain dependencies for Ephyr Restreamer frontend
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "/components/restreamer/client" # Location of package manifests
+    schedule:
+      interval: "weekly"

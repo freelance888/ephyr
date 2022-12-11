@@ -340,7 +340,7 @@
             <code>rtmp://</code>,
             <code>srt://</code>,
             <code>icecast://</code>,
-            <code>file:///.flv</code>
+            <code>file:///.flv|.wav|.mp3</code>
           </div>
 
           {#each $value.mix_urls as mix_url, i}

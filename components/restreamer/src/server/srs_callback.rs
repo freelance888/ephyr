@@ -38,11 +38,11 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .service(on_callback)
     })
     .bind((cfg.callback_http_ip, cfg.callback_http_port))
-    .map_err(|e| log::error!("Failed to bind callback HTTP server: {}", e))?
+    .map_err(|e| log::error!("Failed to bind callback HTTP server: {e}"))?
     .run()
     .await
     .map_err(|e| {
-        log::error!("Failed to run callback HTTP server: {}", e);
+        log::error!("Failed to run callback HTTP server: {e}");
     })?)
 }
 
@@ -61,12 +61,12 @@ async fn on_callback(
     state: Data<State>,
 ) -> Result<&'static str, Error> {
     match req.action {
-        callback::Event::OnConnect => on_connect(&req, &*state),
-        callback::Event::OnPublish => on_start(&req, &*state, true),
-        callback::Event::OnUnpublish => on_stop(&req, &*state, true),
-        callback::Event::OnPlay => on_start(&req, &*state, false),
-        callback::Event::OnStop => on_stop(&req, &*state, false),
-        callback::Event::OnHls => on_hls(&req, &*state),
+        callback::Event::OnConnect => on_connect(&req, &state),
+        callback::Event::OnPublish => on_start(&req, &state, true),
+        callback::Event::OnUnpublish => on_stop(&req, &state, true),
+        callback::Event::OnPlay => on_start(&req, &state, false),
+        callback::Event::OnStop => on_stop(&req, &state, false),
+        callback::Event::OnHls => on_hls(&req, &state),
     }
     .map(|_| "0")
 }

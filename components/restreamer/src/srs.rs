@@ -95,11 +95,11 @@ impl Server {
                 let cmd = &mut cmd;
                 let _ = AssertUnwindSafe(async move {
                     let process = cmd.spawn().map_err(|e| {
-                        log::crit!("Cannot start SRS server: {}", e);
+                        log::crit!("Cannot start SRS server: {e}");
                     })?;
                     let out =
                         process.wait_with_output().await.map_err(|e| {
-                            log::crit!("Failed to observe SRS server: {}", e);
+                            log::crit!("Failed to observe SRS server: {e}");
                         })?;
                     log::crit!(
                         "SRS server stopped with exit code: {}",
@@ -146,11 +146,11 @@ impl Server {
         fs::write(
             &self.conf_path,
             cfg.render().map_err(|e| {
-                anyhow!("Failed to render SRS config from template: {}", e)
+                anyhow!("Failed to render SRS config from template: {e}")
             })?,
         )
         .await
-        .map_err(|e| anyhow!("Failed to write SRS config file: {}", e))
+        .map_err(|e| anyhow!("Failed to write SRS config file: {e}"))
     }
 }
 
@@ -196,7 +196,7 @@ impl Deref for ClientId {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.0
+        &self.0
     }
 }
 

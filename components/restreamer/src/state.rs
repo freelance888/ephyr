@@ -112,7 +112,7 @@ impl State {
                 serde_json::to_vec(&persisted_state)
                     .expect("Failed to serialize server state"),
             )
-            .map_err(|e| log::error!("Failed to persist server state: {}", e))
+            .map_err(|e| log::error!("Failed to persist server state: {e}"))
         };
         let persist_state2 = persist_state1.clone();
         let persist_state3 = persist_state1.clone();
@@ -835,7 +835,7 @@ impl State {
         let settings = self.settings.get_cloned();
         let title = match settings.title {
             Some(t) => t,
-            None => "".to_string(),
+            None => String::new(),
         };
 
         let inputs_stat = self.get_inputs_statistics();

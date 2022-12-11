@@ -182,10 +182,13 @@ impl OutputId {
 ///   host);
 /// - [SRT] URL (starting with `srt://` scheme and having a host);
 /// - [Icecast] URL (starting with `icecast://` scheme and having a host);
-/// - [FLV] file URL (starting with `file:///` scheme, without host and
-///   subdirectories, and with `.flv` extension in its path).
+/// - [FLV]|[WAV]|[MP3] file URL (starting with `file:///` scheme,
+///   without host and subdirectories, and with `.flv`|`.wav`|`.mp3`
+///    extension in its path).
 ///
 /// [FLV]: https://en.wikipedia.org/wiki/Flash_Video
+/// [WAV]: https://en.wikipedia.org/wiki/WAV
+/// [MP3]: https://en.wikipedia.org/wiki/MP3
 /// [Icecast]: https://icecast.org
 /// [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 /// [SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport
@@ -230,7 +233,9 @@ impl OutputDstUrl {
                 let path = Path::new(url.path());
                 !url.has_host()
                     && path.is_absolute()
-                    && path.extension() == Some("flv".as_ref())
+                    && (path.extension() == Some("flv".as_ref())
+                        || path.extension() == Some("wav".as_ref())
+                        || path.extension() == Some("mp3".as_ref()))
                     && path.parent() == Some("/".as_ref())
                     && !url.path().contains("/../")
             }
@@ -246,7 +251,7 @@ impl<'de> Deserialize<'de> for OutputDstUrl {
         D: Deserializer<'de>,
     {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
-            D::Error::custom(format!("Not a valid Output.src URL: {}", url))
+            D::Error::custom(format!("Not a valid Output.src URL: {url}"))
         })
     }
 }
