@@ -11,12 +11,11 @@ use ephyr_log::log;
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use tokio::{process::Command, sync::watch, time};
 
-use crate::state::InputEndpoint;
 use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
     state,
-    state::{State, Status},
+    state::{InputEndpoint, State, Status},
 };
 
 /// Status of [Restreamer] process
