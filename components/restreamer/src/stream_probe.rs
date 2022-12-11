@@ -9,7 +9,6 @@ use tokio::process::Command;
 use url::Url;
 
 /// Gather information about `rtmp` stream
-///
 pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     let mut cmd = Command::new("ffprobe");
     cmd.stdin(Stdio::null()).kill_on_drop(true);

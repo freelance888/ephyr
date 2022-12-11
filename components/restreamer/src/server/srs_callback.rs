@@ -1,23 +1,26 @@
 //! Callback HTTP server responding to [SRS] HTTP callbacks.
 //!
 //! [SRS]: https://github.com/ossrs/srs
-use crate::display_panic;
+use std::{panic::AssertUnwindSafe, time::Duration};
+
 use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
-use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
-use std::panic::AssertUnwindSafe;
-use std::time::Duration;
 use tokio::time;
 use url::Url;
 
-use crate::state::{EndpointId, InputKey, RestreamKey};
-use crate::stream_probe::stream_probe;
+use ephyr_log::log;
+
 use crate::{
     api::srs::callback,
     cli::{Failure, Opts},
-    state::{Input, InputEndpointKind, InputSrc, State, Status},
+    display_panic,
+    state::{
+        EndpointId, Input, InputEndpointKind, InputKey, InputSrc, RestreamKey,
+        State, Status,
+    },
+    stream_probe::stream_probe,
 };
 
 /// Runs HTTP server for exposing [SRS] [HTTP Callback API][1] on `/`

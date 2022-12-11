@@ -6,8 +6,7 @@ use juniper::{
     ScalarToken, ScalarValue,
 };
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
-use std::fmt;
+use std::{convert::TryFrom, fmt};
 
 /// Abort handle of a future.
 #[derive(Clone, Debug)]
@@ -40,7 +39,6 @@ impl UNumber {
         Self(value)
     }
 
-    // #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
     fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
         juniper::Value::scalar(self.0.to_owned().to_string())
     }
@@ -66,13 +64,3 @@ impl UNumber {
         <String as ParseScalarValue<S>>::from_str(value)
     }
 }
-//
-// impl<'de> Deserialize<'de> for UNumber {
-//     #[inline]
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         Ok(Self::new(u16::deserialize(deserializer)?))
-//     }
-// }

@@ -15,8 +15,6 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
-use crate::state::InputEndpoint;
-use crate::stream_probe::stream_probe;
 use crate::{
     dvr,
     ffmpeg::{
@@ -24,8 +22,8 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    state::{self, State, Status},
-    stream_probe,
+    state::{self, InputEndpoint, State, Status},
+    stream_probe::stream_probe,
 };
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a

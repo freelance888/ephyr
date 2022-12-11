@@ -41,10 +41,13 @@ use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
-use crate::state::client_statistics::StreamStatistics;
-use crate::stream_probe::{Stream, StreamInfo};
-use crate::types::UNumber;
-use crate::{display_panic, spec, Spec};
+use crate::{
+    display_panic, spec,
+    state::client_statistics::StreamStatistics,
+    stream_probe::{Stream, StreamInfo},
+    types::UNumber,
+    Spec,
+};
 use std::collections::HashMap;
 
 /// Reactive application's state.

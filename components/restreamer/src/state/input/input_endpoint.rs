@@ -6,10 +6,12 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
-use crate::state::client_statistics::StreamStatistics;
 use crate::{
     spec, srs,
-    state::{InputKey, Label, RestreamKey, Status},
+    state::{
+        client_statistics::StreamStatistics, InputKey, Label, RestreamKey,
+        Status,
+    },
 };
 
 /// Endpoint of an `Input` serving a live stream for `Output`s and clients.
