@@ -35,7 +35,7 @@
     "@types/node": "^18.11",
     "@types/uikit": "^3",
     "@types/webpack": "^5.28",
-    "copy-webpack-plugin": "^6.4",
+    "copy-webpack-plugin": "^11.0",
     "cross-env": "^7.0",
     "css-loader": "^6.7",
     "cypress": "^8.7",
