@@ -151,6 +151,7 @@ impl InputEndpointKind {
         Self::get_rtmp_url(restream, input, self)
     }
 
+    /// Create RTMP URL for specific [`RestreamKey`] and [`InputKey`] and [`InputEndpointKind`]
     pub fn get_rtmp_url(
         restream: &RestreamKey,
         input: &InputKey,

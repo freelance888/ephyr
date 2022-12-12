@@ -15,10 +15,7 @@ use crate::{
     api::srs::callback,
     cli::{Failure, Opts},
     display_panic,
-    state::{
-        EndpointId, Input, InputEndpointKind, InputKey, InputSrc, RestreamKey,
-        State, Status,
-    },
+    state::{EndpointId, Input, InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
 };
 
