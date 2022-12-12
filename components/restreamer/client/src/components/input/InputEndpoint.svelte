@@ -13,7 +13,8 @@
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
   const formatStreamInfo = (streamStat) => {
-    return streamStat ? `
+    return streamStat
+      ? `
         <span><strong>${input.key}</strong></span>
         <br/>
         <span><strong>video</strong>&#58; ${streamStat.videoCodecName}, </span>
@@ -24,9 +25,9 @@
         <span>${streamStat.audioSampleRate},</span>
         <span>${streamStat.audioChannelLayout},</span>
         <span>channels&#58; ${streamStat.audioChannels}</span>
-` : '';
-  }
-
+`
+      : '';
+  };
 </script>
 
 <template>
@@ -82,7 +83,6 @@
           />
         </span>
       {/if}
-
     </div>
 
     <Url url={input_url} streamInfo={formatStreamInfo(endpoint.streamStat)} />

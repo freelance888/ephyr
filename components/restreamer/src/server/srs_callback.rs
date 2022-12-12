@@ -173,7 +173,11 @@ fn on_start(
 
         endpoint.status = Status::Online;
 
-        let url = rtmp_url(&restream.key, &input.key);
+        let url = InputEndpointKind::get_rtmp_url(
+            &restream.key,
+            &input.key,
+            InputEndpointKind::Rtmp,
+        );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
             update_stream_info(endpoint.id, url, state.clone());
@@ -314,14 +318,6 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
         let _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
     }
     Ok(())
-}
-
-fn rtmp_url(restream_key: &RestreamKey, input_key: &InputKey) -> Url {
-    Url::parse(&format!(
-        "rtmp://127.0.0.1:1935/{}/{}",
-        restream_key, input_key,
-    ))
-    .unwrap()
 }
 
 fn update_stream_info(id: EndpointId, url: Url, state: State) {

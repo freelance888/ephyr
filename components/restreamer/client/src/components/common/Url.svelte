@@ -4,14 +4,17 @@
   export let url;
   export let previewUrl;
   export let streamInfo;
-
 </script>
 
 <template>
   <div class="url">
     <span class="url-placeholder">{url}</span>
     {#if streamInfo}
-      <span class='info-icon' uk-icon="icon: info; ratio: 0.7" uk-tooltip={streamInfo}></span>
+      <span
+        class="info-icon"
+        uk-icon="icon: info; ratio: 0.7"
+        uk-tooltip={streamInfo}
+      />
     {/if}
     {#if previewUrl}
       <span class="url-preview"

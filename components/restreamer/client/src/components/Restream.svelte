@@ -130,18 +130,26 @@
   function getStreamsDifferenceTooltip(input) {
     let streamInfoKeys = [];
     if (isFailoverInput(input)) {
-      const primary = input.src.inputs[0].endpoints[0]
+      const primary = input.src.inputs[0].endpoints[0];
       for (let i of input.src.inputs) {
         const key = i.key;
         for (let endpoint of i.endpoints) {
-          if (primary && endpoint.streamStat && !isEqual(primary.streamStat, endpoint.streamStat)) {
+          if (
+            primary &&
+            endpoint.streamStat &&
+            !isEqual(primary.streamStat, endpoint.streamStat)
+          ) {
             streamInfoKeys = [...streamInfoKeys, key];
           }
         }
       }
     }
 
-    return streamInfoKeys.length ? `<strong>${streamInfoKeys.join(', ')}</strong> stream(s) params differ from <strong>primary</strong> stream params` :  '';
+    return streamInfoKeys.length
+      ? `<strong>${streamInfoKeys.join(
+          ', '
+        )}</strong> stream(s) params differ from <strong>primary</strong> stream params`
+      : '';
   }
 </script>
 
@@ -195,10 +203,11 @@
         {value.label}
         {#if streamsDiffTooltip}
           <span>
-             <i class="fa fa-info-circle info-icon pulse uk-alert-warning"
-               uk-tooltip={streamsDiffTooltip}>
-             </i>
-            </span>
+            <i
+              class="fa fa-info-circle info-icon pulse uk-alert-warning"
+              uk-tooltip={streamsDiffTooltip}
+            />
+          </span>
         {/if}
       </span>
     {/if}

@@ -148,12 +148,20 @@ impl InputEndpointKind {
     /// [SRS]: https://github.com/ossrs/srs
     #[must_use]
     pub fn rtmp_url(self, restream: &RestreamKey, input: &InputKey) -> Url {
+        Self::get_rtmp_url(restream, input, self)
+    }
+
+    pub fn get_rtmp_url(
+        restream: &RestreamKey,
+        input: &InputKey,
+        kind: InputEndpointKind,
+    ) -> Url {
         Url::parse(&format!(
             "rtmp://127.0.0.1:1935/{}{}/{}",
             restream,
-            match self {
-                Self::Rtmp => "",
-                Self::Hls => "?vhost=hls",
+            match kind {
+                InputEndpointKind::Rtmp => "",
+                InputEndpointKind::Hls => "?vhost=hls",
             },
             input,
         ))
