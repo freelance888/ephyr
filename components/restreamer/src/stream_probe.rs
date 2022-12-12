@@ -10,8 +10,6 @@ use url::Url;
 /// Gather information about `rtmp` stream
 pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     let mut cmd = Command::new("ffprobe");
-    cmd.stdin(Stdio::null()).kill_on_drop(true);
-
     let entries = [
         "format=bit_rate:stream=codec_type",
         "codec_name",
@@ -24,16 +22,18 @@ pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     ];
 
     // Default args.
-    cmd.args(&[
-        "-v",
-        "quiet",
-        "-show_entries",
-        entries.join(",").as_str(),
-        "-of",
-        "json",
-    ]);
-
-    cmd.arg(url.as_str());
+    let _ = cmd
+        .args(&[
+            "-v",
+            "quiet",
+            "-show_entries",
+            entries.join(",").as_str(),
+            "-of",
+            "json",
+            url.as_str(),
+        ])
+        .stdin(Stdio::null())
+        .kill_on_drop(true);
 
     let out = cmd
         .output()
@@ -68,7 +68,7 @@ pub struct StreamInfo {
     pub format: Format,
 }
 
-// Common structure for info about video and audio streams
+/// Common structure for info about video and audio streams
 #[derive(
     Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
 )]
@@ -104,5 +104,6 @@ pub struct Stream {
     serde(deny_unknown_fields)
 )]
 pub struct Format {
+    /// Total bitrate (audio + video)
     pub bit_rate: Option<String>,
 }
