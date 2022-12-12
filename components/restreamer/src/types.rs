@@ -53,7 +53,7 @@ impl UNumber {
             .and_then(|v| u16::try_from(v).ok());
         match v {
             Some(n) => Ok(UNumber::new(n)),
-            _ => Err("Error parsing UNumber(u16) from string".to_string()),
+            _ => Err("Error converting UNumber(u16) from i32".to_string()),
         }
     }
 
