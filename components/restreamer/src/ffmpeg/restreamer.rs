@@ -14,8 +14,7 @@ use tokio::{process::Command, sync::watch, time};
 use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
-    state,
-    state::{InputEndpoint, State, Status},
+    state::{State, Status},
 };
 
 /// Status of [Restreamer] process

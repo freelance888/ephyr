@@ -22,8 +22,7 @@ use crate::{
         restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    state::{self, InputEndpoint, State, Status},
-    stream_probe::stream_probe,
+    state::{self, RestreamKey, State, Status},
 };
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
@@ -98,7 +97,7 @@ impl RestreamerKind {
     pub fn from_input(
         input: &state::Input,
         endpoint: &state::InputEndpoint,
-        key: &state::RestreamKey,
+        key: &RestreamKey,
     ) -> Option<Self> {
         if !input.enabled {
             return None;

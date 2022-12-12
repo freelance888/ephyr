@@ -736,7 +736,7 @@ impl State {
             stream_info.streams.clone().into_iter().find(|x| {
                 x.codec_type.clone().unwrap_or_default() == stream_type
             })
-        };
+        }
 
         let audio_stream = find_stream("audio", &info)
             .ok_or(anyhow!("Can't find 'audio' stream"))?;
@@ -763,6 +763,7 @@ impl State {
         Ok(())
     }
 
+    /// Find [`InputEndpoint`] with specified `Id` within [`Input`]
     pub fn find_input_endpoint<'i>(
         &self,
         input: &'i mut Input,

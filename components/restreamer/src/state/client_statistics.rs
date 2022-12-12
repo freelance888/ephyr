@@ -241,7 +241,9 @@ impl<'de> Deserialize<'de> for ClientId {
 }
 
 /// Stream statistics
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, GraphQLObject)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, Serialize, PartialEq, GraphQLObject,
+)]
 pub struct StreamStatistics {
     /// Name of audio codec
     pub audio_codec_name: Option<String>,

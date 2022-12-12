@@ -3,7 +3,6 @@
 //! [FFprobe]: https://ffmpeg.org/ffprobe.html
 
 use anyhow::anyhow;
-use juniper::GraphQLScalar;
 use std::process::Stdio;
 use tokio::process::Command;
 use url::Url;
@@ -63,7 +62,9 @@ pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     serde(deny_unknown_fields)
 )]
 pub struct StreamInfo {
+    /// Video, audio streams
     pub streams: Vec<Stream>,
+    /// Generic parameters of stream
     pub format: Format,
 }
 
@@ -76,17 +77,25 @@ pub struct StreamInfo {
     serde(deny_unknown_fields)
 )]
 pub struct Stream {
+    /// Type of codec. Example: "audio" or "video"
     pub codec_type: Option<String>,
+    /// Codec name. For audio and video streams. Example: "aac", "h264"
     pub codec_name: Option<String>,
+    /// Video width
     pub width: Option<u16>,
+    /// Video height
     pub height: Option<u16>,
+    /// Frame rate (fps). Example: "30/1"
     pub r_frame_rate: Option<String>,
+    /// Only for audio stream. Sample rate. Example: "44100"
     pub sample_rate: Option<String>,
+    /// Only for audio stream. Count of channels. Example: 2
     pub channels: Option<u8>,
+    /// Only for audio stream. Stereo or Mono. Example: "stereo"
     pub channel_layout: Option<String>,
 }
 
-///
+/// Generic parameters of stream
 #[derive(
     Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
 )]

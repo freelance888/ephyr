@@ -1,13 +1,12 @@
 //! Callback HTTP server responding to [SRS] HTTP callbacks.
 //!
 //! [SRS]: https://github.com/ossrs/srs
-use std::{panic::AssertUnwindSafe, time::Duration};
+use std::panic::AssertUnwindSafe;
 
 use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
 use futures::{FutureExt, TryFutureExt};
-use tokio::time;
 use url::Url;
 
 use ephyr_log::log;
