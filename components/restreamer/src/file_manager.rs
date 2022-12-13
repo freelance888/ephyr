@@ -108,6 +108,7 @@ impl FileManager {
                 name: None,
                 state: FileState::Pending,
                 download_state: None,
+                error: None,
             };
             all_files.push(new_file);
             drop(all_files);
