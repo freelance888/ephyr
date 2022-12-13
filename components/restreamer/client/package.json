@@ -45,7 +45,7 @@
     "mini-css-extract-plugin": "^0.12",
     "minify-html-webpack-plugin": "^1.1",
     "prettier": "^2.6",
-    "prettier-plugin-svelte": "^2.7",
+    "prettier-plugin-svelte": "^2.9",
     "style-loader": "^0.23",
     "stylus": "^0.59",
     "stylus-loader": "^7.1",
