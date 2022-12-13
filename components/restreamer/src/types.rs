@@ -35,6 +35,7 @@ pub struct UNumber(u16);
 
 impl UNumber {
     /// Creates new instance of [`UNumber`]
+    #[must_use]
     pub fn new(value: u16) -> Self {
         Self(value)
     }

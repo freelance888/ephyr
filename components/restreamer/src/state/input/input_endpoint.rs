@@ -142,9 +142,6 @@ impl InputEndpointKind {
     /// Returns RTMP URL on a local [SRS] server of this [`InputEndpointKind`]
     /// for the given `restream` and `input`.
     ///
-    /// # Panics
-    /// No panics, because [`RestreamKey`] and [`InputKey`] are validated.
-    ///
     /// [SRS]: https://github.com/ossrs/srs
     #[must_use]
     pub fn rtmp_url(self, restream: &RestreamKey, input: &InputKey) -> Url {
@@ -153,6 +150,10 @@ impl InputEndpointKind {
 
     /// Create RTMP URL for specific [`RestreamKey`] and [`InputKey`]
     /// and [`InputEndpointKind`]
+    ///
+    /// # Panics
+    /// No panics, because [`RestreamKey`] and [`InputKey`] are validated.
+    #[must_use]
     pub fn get_rtmp_url(
         restream: &RestreamKey,
         input: &InputKey,

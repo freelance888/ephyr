@@ -8,6 +8,11 @@ use tokio::process::Command;
 use url::Url;
 
 /// Gather information about `rtmp` stream
+///
+/// # Errors
+///
+/// If `ffprobe` command fails for some reason
+/// Or if we fail to deserialize results of `ffprobe` command
 pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     let mut cmd = Command::new("ffprobe");
     let entries = [
@@ -23,7 +28,7 @@ pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
 
     // Default args.
     let _ = cmd
-        .args(&[
+        .args([
             "-v",
             "quiet",
             "-show_entries",
@@ -53,9 +58,9 @@ pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
     anyhow::Ok(result)
 }
 
-/// Short and only valuable info about video and audio streams
+/// Only valuable info about video and audio streams
 #[derive(
-    Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
+    Default, Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize,
 )]
 #[cfg_attr(
     feature = "__internal_deny_unknown_fields",
@@ -70,7 +75,7 @@ pub struct StreamInfo {
 
 /// Common structure for info about video and audio streams
 #[derive(
-    Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
+    Default, Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize,
 )]
 #[cfg_attr(
     feature = "__internal_deny_unknown_fields",
@@ -97,7 +102,7 @@ pub struct Stream {
 
 /// Generic parameters of stream
 #[derive(
-    Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
+    Default, Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize,
 )]
 #[cfg_attr(
     feature = "__internal_deny_unknown_fields",

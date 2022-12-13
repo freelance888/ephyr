@@ -325,7 +325,7 @@ fn update_stream_info(id: EndpointId, url: Url, state: State) {
                 |info| {
                     state
                         .set_stream_info(id, info)
-                        .unwrap_or_else(|e| log::error!("{}", e))
+                        .unwrap_or_else(|e| log::error!("{}", e));
                 },
             );
         })

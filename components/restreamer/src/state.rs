@@ -715,20 +715,18 @@ impl State {
         });
     }
 
-    /// Updates info about stream for [InputEndpoint]
+    /// Updates info about stream for [`InputEndpoint`]
+    ///
+    /// # Errors
+    ///
+    /// If endpoint with specified `id` is not found.
+    /// Or if audio stream not found in [`StreamInfo`]
+    /// Or if video stream not found in [`StreamInfo`]
     pub fn set_stream_info(
         &self,
         id: EndpointId,
         info: StreamInfo,
     ) -> anyhow::Result<()> {
-        let mut restreams = self.restreams.lock_mut();
-        let endpoint = restreams
-            .iter_mut()
-            .find_map(|r| self.find_input_endpoint(&mut r.input, id))
-            .ok_or(anyhow!("Can't find endpoint with id: {:?}", id))?;
-
-        log::debug!("TEST: found endpoint {:?}", endpoint);
-
         fn find_stream(
             stream_type: &str,
             stream_info: &StreamInfo,
@@ -738,10 +736,18 @@ impl State {
             })
         }
 
+        let mut restreams = self.restreams.lock_mut();
+        let endpoint = restreams
+            .iter_mut()
+            .find_map(|r| self.find_input_endpoint(&mut r.input, id))
+            .ok_or_else(|| anyhow!("Can't find endpoint with id: {:?}", id))?;
+
+        log::debug!("TEST: found endpoint {:?}", endpoint);
+
         let audio_stream = find_stream("audio", &info)
-            .ok_or(anyhow!("Can't find 'audio' stream"))?;
+            .ok_or_else(|| anyhow!("Can't find 'audio' stream"))?;
         let video_stream = find_stream("video", &info)
-            .ok_or(anyhow!("Can't find 'video' stream"))?;
+            .ok_or_else(|| anyhow!("Can't find 'video' stream"))?;
 
         let stream_stat = StreamStatistics {
             audio_codec_name: audio_stream.codec_name,
@@ -749,13 +755,11 @@ impl State {
             audio_sample_rate: audio_stream.sample_rate,
             audio_channels: audio_stream
                 .channels
-                .and_then(|x| Some(UNumber::new(x.into()))),
+                .map(|x| UNumber::new(x.into())),
             video_codec_name: video_stream.codec_name,
             video_r_frame_rate: video_stream.r_frame_rate,
             video_width: video_stream.width.and_then(|x| Some(UNumber::new(x))),
-            video_height: video_stream
-                .height
-                .and_then(|x| Some(UNumber::new(x))),
+            video_height: video_stream.height.map(|x| UNumber::new(x)),
             bit_rate: info.format.bit_rate,
         };
 
@@ -775,7 +779,7 @@ impl State {
         }
 
         if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
-            for i in s.inputs.iter_mut() {
+            for i in &mut s.inputs {
                 if let Some(endpoint) = self.find_input_endpoint(i, id) {
                     return Some(endpoint);
                 }
