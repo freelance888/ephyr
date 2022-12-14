@@ -9,14 +9,23 @@ All user visible changes to this project will be documented in this file. This p
 [Diff](/../../compare/restreamer-v0.6.0...restreamer-v0.7.0)
 
 ### Added
+- Deploy:
+    - Open ports 80, 8000 and 1935 ports by default ([#267]);
 - Option to record audio-only files ([#239]);
+### Fixed
+- State diapers after restart ([#235], [#267]);
+- Not possible to write DVR on local disk ([#236], [#267]);
 ### Miscellaneous
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
 
+
+[#235]: /../../issues/235
+[#236]: /../../issues/236
     
 [#239]: /../../pull/244
 [#244]: /../../pull/244
+[#267]: /../../pull/267
 
 
 
