@@ -64,7 +64,7 @@ cat <<'EOF' > /usr/local/bin/run-ephyr-restreamer.sh
 set -e
 
 # Detect directory for DVR.
-ephyr_www_dir="/var/run/ephyr-restreamer/www"
+ephyr_www_dir="/usr/local/share/ephyr-restreamer/www"
 do_volume="$(set +e; find /mnt/volume_* -type d | head -1 | tr -d '\n')"
 if [ -d "$do_volume" ]; then
   ephyr_www_dir="$do_volume/www"
