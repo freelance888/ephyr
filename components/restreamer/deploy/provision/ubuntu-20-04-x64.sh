@@ -3,14 +3,25 @@
 set -e
 
 EPHYR_CLI_ARGS=${EPHYR_CLI_ARGS:-''}
-EPHYR_VER=${EPHYR_VER:-'0.4.0'}
+EPHYR_VER=${EPHYR_VER:-'0.6.0'}
+
+# If want to use custom Docker registry
+REGISTRY_USER=${REGISTRY_USER:-0}
+REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
+REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
+
+# If provider require firewalld instead of ufw (Oracle for example)
+WITH_FIREWALLD=${WITH_FIREWALLD:-0}
+
+# If provider require full update before install (Selectel for example)
+WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
+
 if [ "$EPHYR_VER" == "latest" ]; then
   EPHYR_VER=''
 else
   EPHYR_VER="-$EPHYR_VER"
 fi
 
-WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
 if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
     apt-get -qy update
     DEBIAN_FRONTEND=noninteractive \
@@ -23,15 +34,11 @@ apt-get -qy update
 curl -sL https://get.docker.com | bash -s
 
 # Login to custom Docker Registry if provided
-REGISTRY_USER=${REGISTRY_USER:-0}
-REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
-REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
 if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != "docker.io" ]]; then
   docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
 fi
 
 
-WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 if [ "$WITH_FIREWALLD" == "1" ]; then
   # Install and setup firewalld, if required.
   apt-get -qy install firewalld
