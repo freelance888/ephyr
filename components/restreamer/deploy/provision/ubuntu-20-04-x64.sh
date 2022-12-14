@@ -12,14 +12,14 @@ fi
 
 WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
 if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
-    apt-get -y update
+    apt-get -qy update
     DEBIAN_FRONTEND=noninteractive \
         apt-get -qy -o "Dpkg::Options::=--force-confdef" \
                     -o "Dpkg::Options::=--force-confold" upgrade
 fi
 
 # Install Docker for running containers.
-apt-get -y update
+apt-get -qy update
 curl -sL https://get.docker.com | bash -s
 
 # Login to custom Docker Registry if provided
@@ -34,13 +34,19 @@ fi
 WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 if [ "$WITH_FIREWALLD" == "1" ]; then
   # Install and setup firewalld, if required.
-  apt-get -y install firewalld
+  apt-get -qy install firewalld
   systemctl unmask firewalld.service
   systemctl enable firewalld.service
   systemctl start firewalld.service
   firewall-cmd --zone=public --permanent \
                --add-port=80/tcp --add-port=1935/tcp --add-port=8000/tcp
   firewall-cmd --reload
+else
+  # Open default ports
+  apt-get -yq install ufw
+  ufw allow 80/tcp
+  ufw allow 8000/tcp
+  ufw allow 1935/tcp
 fi
 
 
