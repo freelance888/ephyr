@@ -82,12 +82,13 @@ echo "EPHYR_IMAGE_TAG=$EPHYR_IMAGE_TAG"
 echo "EPHYR_CLI_ARGS=$EPHYR_CLI_ARGS"
 echo "EPHYR_CONTAINER_NAME=$EPHYR_CONTAINER_NAME"
 echo "EPHYR_IMAGE_NAME=$EPHYR_IMAGE_NAME"
+echo "EPHYR_RESTREAMER_STATE_PATH=$EPHYR_RESTREAMER_STATE_PATH"
 
-# Run Podman service
+# Run Docker service
 /usr/bin/docker run \
   --network=host \
   -v /var/lib/$EPHYR_CONTAINER_NAME/srs.conf:/usr/local/srs/conf/srs.conf \
-  -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:/state.json \
+  -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:$EPHYR_RESTREAMER_STATE_PATH \
   -v $ephyr_www_dir/:/var/www/srs/ \
   --name=$EPHYR_CONTAINER_NAME \
   $EPHYR_IMAGE_NAME:$EPHYR_IMAGE_TAG $EPHYR_CLI_ARGS
@@ -99,7 +100,7 @@ chmod +x /usr/local/bin/run-ephyr-restreamer.sh
 cat <<EOF > /etc/systemd/system/ephyr-restreamer.service
 [Unit]
 Description=Ephyr service for re-streaming RTMP streams
-After=local-fs.target podman.service
+After=local-fs.target docker.service
 Requires=local-fs.target
 
 
@@ -107,6 +108,7 @@ Requires=local-fs.target
 Environment=EPHYR_CONTAINER_NAME=ephyr-restreamer
 Environment=EPHYR_IMAGE_NAME=${REGISTRY_URL}/allatra/ephyr
 Environment=EPHYR_IMAGE_TAG=restreamer${EPHYR_VER}
+Environment=EPHYR_RESTREAMER_STATE_PATH=/tmp/workdir/state.json
 
 ExecStartPre=/usr/bin/mkdir -p /var/lib/\${EPHYR_CONTAINER_NAME}/
 ExecStartPre=touch /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf
