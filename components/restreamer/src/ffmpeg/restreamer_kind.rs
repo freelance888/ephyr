@@ -346,8 +346,7 @@ impl RestreamerKind {
 
             // `Status::Online` for `state::Input` is set by SRS HTTP Callback.
             if status != Status::Online {
-                if let Some(endpoint) =
-                    actual.find_input_endpoint(&mut restream.input, self.id())
+                if let Some(endpoint) = restream.input.find_endpoint(self.id())
                 {
                     endpoint.status = status;
                     return;

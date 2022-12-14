@@ -739,7 +739,7 @@ impl State {
         let mut restreams = self.restreams.lock_mut();
         let endpoint = restreams
             .iter_mut()
-            .find_map(|r| self.find_input_endpoint(&mut r.input, id))
+            .find_map(|r| r.input.find_endpoint(id))
             .ok_or_else(|| anyhow!("Can't find endpoint with id: {:?}", id))?;
 
         log::debug!("TEST: found endpoint {:?}", endpoint);
@@ -758,35 +758,13 @@ impl State {
                 .map(|x| UNumber::new(x.into())),
             video_codec_name: video_stream.codec_name,
             video_r_frame_rate: video_stream.r_frame_rate,
-            video_width: video_stream.width.and_then(|x| Some(UNumber::new(x))),
-            video_height: video_stream.height.map(|x| UNumber::new(x)),
+            video_width: video_stream.width.map(UNumber::new),
+            video_height: video_stream.height.map(UNumber::new),
             bit_rate: info.format.bit_rate,
         };
 
         endpoint.stream_stat = Some(stream_stat);
         Ok(())
-    }
-
-    /// Find [`InputEndpoint`] with specified `Id` within [`Input`]
-    pub fn find_input_endpoint<'i>(
-        &self,
-        input: &'i mut Input,
-        id: EndpointId,
-    ) -> Option<&'i mut InputEndpoint> {
-        if let Some(endpoint) = input.endpoints.iter_mut().find(|e| e.id == id)
-        {
-            return Some(endpoint);
-        }
-
-        if let Some(InputSrc::Failover(s)) = input.src.as_mut() {
-            for i in &mut s.inputs {
-                if let Some(endpoint) = self.find_input_endpoint(i, id) {
-                    return Some(endpoint);
-                }
-            }
-        }
-
-        None
     }
 
     /// Gather statistics about [`Input`]s statuses

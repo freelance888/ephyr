@@ -184,6 +184,27 @@ impl Input {
         }
     }
 
+    /// Lookups for an [`InputEndpoint`] with the given `id` inside this [`Input`] or
+    /// its [`FailoverInputSrc::inputs`].
+    pub fn find_endpoint(
+        &mut self,
+        id: EndpointId,
+    ) -> Option<&mut InputEndpoint> {
+        if let Some(endpoint) = self.endpoints.iter_mut().find(|e| e.id == id) {
+            return Some(endpoint);
+        }
+
+        if let Some(InputSrc::Failover(s)) = self.src.as_mut() {
+            for i in &mut s.inputs {
+                if let Some(endpoint) = i.find_endpoint(id) {
+                    return Some(endpoint);
+                }
+            }
+        }
+
+        None
+    }
+
     /// Indicates whether this [`Input`] is ready to serve a live stream for
     /// [`Output`]s.
     ///

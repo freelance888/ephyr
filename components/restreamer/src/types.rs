@@ -33,6 +33,8 @@ impl Drop for DroppableAbortHandle {
 )]
 pub struct UNumber(u16);
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
+#[allow(clippy::wrong_self_convention)]
 impl UNumber {
     /// Creates new instance of [`UNumber`]
     #[must_use]
