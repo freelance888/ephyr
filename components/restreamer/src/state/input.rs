@@ -184,8 +184,8 @@ impl Input {
         }
     }
 
-    /// Lookups for an [`InputEndpoint`] with the given `id` inside this [`Input`] or
-    /// its [`FailoverInputSrc::inputs`].
+    /// Lookups for an [`InputEndpoint`] with the given `id` inside
+    /// [`Input`] or its [`FailoverInputSrc::inputs`].
     pub fn find_endpoint(
         &mut self,
         id: EndpointId,
