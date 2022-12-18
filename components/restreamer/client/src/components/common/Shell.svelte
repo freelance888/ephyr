@@ -62,8 +62,12 @@
 <style lang="stylus" global>
   @require "../../../node_modules/uikit/dist/css/uikit.min.css"
   :root {
-    --primary-text-color: #777;
-    --primary-text-hover-color: #333;
+    --primary-text-color: #777
+    --primary-text-hover-color: #333
+    --warning-color: #faa05a
+    --success-color: #32d296
+    --danger-color: #f0506e
+    --secondary-warning-color: #7a5128
   }
 
   .circle
@@ -75,13 +79,13 @@
     margin-bottom: 2px
 
   .initializing
-    color: #faa05a
+    color: var(--warning-color)
   .online
-    color: #32d296
+    color: var(--success-color)
   .offline
-    color: #f0506e;
+    color: var(--danger-color)
   .unstable
-    color: #7a5128;
+    color: var(--secondary-warning-color)
 
   .page
     min-height: 100vh;
@@ -180,12 +184,4 @@
   .uk-tooltip
     max-width: 400px
 
-  .pulse
-    animation: pulse-animation 2s infinite
-
-  @keyframes pulse-animation
-    0%
-      opacity: 0.2
-    100%
-      opacity: 1
 </style>

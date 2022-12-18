@@ -42,11 +42,8 @@ use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
-    display_panic, spec,
-    state::client_statistics::StreamStatistics,
-    stream_probe::{Stream, StreamInfo},
-    types::UNumber,
-    Spec,
+    display_panic, spec, state::client_statistics::StreamStatistics,
+    stream_probe::StreamInfo, Spec,
 };
 use std::collections::HashMap;
 
@@ -720,50 +717,21 @@ impl State {
     /// # Errors
     ///
     /// If endpoint with specified `id` is not found.
-    /// Or if audio stream not found in [`StreamInfo`]
-    /// Or if video stream not found in [`StreamInfo`]
     pub fn set_stream_info(
         &self,
         id: EndpointId,
-        info: StreamInfo,
+        result: anyhow::Result<StreamInfo>,
     ) -> anyhow::Result<()> {
-        fn find_stream(
-            stream_type: &str,
-            stream_info: &StreamInfo,
-        ) -> Option<Stream> {
-            stream_info.streams.clone().into_iter().find(|x| {
-                x.codec_type.clone().unwrap_or_default() == stream_type
-            })
-        }
-
         let mut restreams = self.restreams.lock_mut();
         let endpoint = restreams
             .iter_mut()
             .find_map(|r| r.input.find_endpoint(id))
             .ok_or_else(|| anyhow!("Can't find endpoint with id: {:?}", id))?;
 
-        log::debug!("TEST: found endpoint {:?}", endpoint);
-
-        let audio_stream = find_stream("audio", &info)
-            .ok_or_else(|| anyhow!("Can't find 'audio' stream"))?;
-        let video_stream = find_stream("video", &info)
-            .ok_or_else(|| anyhow!("Can't find 'video' stream"))?;
-
-        let stream_stat = StreamStatistics {
-            audio_codec_name: audio_stream.codec_name,
-            audio_channel_layout: audio_stream.channel_layout,
-            audio_sample_rate: audio_stream.sample_rate,
-            audio_channels: audio_stream
-                .channels
-                .map(|x| UNumber::new(x.into())),
-            video_codec_name: video_stream.codec_name,
-            video_r_frame_rate: video_stream.r_frame_rate,
-            video_width: video_stream.width.map(UNumber::new),
-            video_height: video_stream.height.map(UNumber::new),
-            bit_rate: info.format.bit_rate,
-        };
-
-        endpoint.stream_stat = Some(stream_stat);
+        // endpoint.stream_stat = Some(StreamStatistics::new(result));
+        endpoint.stream_stat = Some(StreamStatistics::create_error_instance(
+            &anyhow!("Can't get ffprobe info"),
+        ));
         Ok(())
     }
 

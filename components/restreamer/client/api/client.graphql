@@ -59,6 +59,7 @@ subscription State {
                                 videoHeight
                                 videoWidth
                                 bitRate
+                                error
                             }
                         }
                         src {

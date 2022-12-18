@@ -320,14 +320,10 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
 fn update_stream_info(id: EndpointId, url: Url, state: State) {
     drop(tokio::spawn(
         AssertUnwindSafe(async move {
-            stream_probe(url).await.map_or_else(
-                |e| log::error!("{}", e),
-                |info| {
-                    state
-                        .set_stream_info(id, info)
-                        .unwrap_or_else(|e| log::error!("{}", e));
-                },
-            );
+            let result = stream_probe(url).await;
+            state
+                .set_stream_info(id, result)
+                .unwrap_or_else(|e| log::error!("{}", e));
         })
         .catch_unwind()
         .map_err(move |p| {

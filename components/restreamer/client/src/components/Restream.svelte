@@ -77,6 +77,8 @@
 
   $: showControls = false;
 
+  $: streamsErrorsTooltip = getStreamErrorTooltip(value.input);
+
   $: streamsDiffTooltip = getStreamsDifferenceTooltip(value.input);
 
   let openRestreamModal = false;
@@ -128,6 +130,22 @@
     }
   }
 
+  function getStreamErrorTooltip(input) {
+    if (isFailoverInput(input)) {
+      const endpoints = input.src.inputs
+        .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
+        .filter((x) => x[1] && x[1].streamStat.error);
+
+      const inputKeys = endpoints.map(x => x[0]).join(', ');
+      return inputKeys
+        ? `Can't get stream info from: <strong>${inputKeys}</strong>`
+        : '';
+
+    }
+
+    return '';
+  }
+
   function getStreamsDifferenceTooltip(input) {
     if (isFailoverInput(input)) {
       const endpoints = input.src.inputs
@@ -151,7 +169,6 @@
           return diff;
         }, []);
 
-      console.log(endpoints);
       return differentStreamInfoKeys.length
         ? `<strong>${differentStreamInfoKeys.join(
             ', '
@@ -213,11 +230,11 @@
     {#if !!value.label}
       <span class="section-label">
         {value.label}
-        {#if streamsDiffTooltip}
+        {#if streamsErrorsTooltip}
           <span>
             <i
               class="fa fa-info-circle info-icon uk-alert-warning"
-              uk-tooltip={streamsDiffTooltip}
+              uk-tooltip={streamsErrorsTooltip}
             />
           </span>
         {/if}
@@ -387,4 +404,5 @@
 
     .info-icon
       font-size: 16px
+
 </style>

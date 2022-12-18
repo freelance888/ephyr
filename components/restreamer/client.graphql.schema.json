@@ -2650,7 +2650,7 @@
         "fields": [
           {
             "name": "audioCodecName",
-            "description": null,
+            "description": "Name of audio codec.  Example: \"aac\"",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2662,7 +2662,7 @@
           },
           {
             "name": "audioChannelLayout",
-            "description": null,
+            "description": "Stereo / Mono layout",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2686,7 +2686,7 @@
           },
           {
             "name": "audioChannels",
-            "description": null,
+            "description": "Count of audio channels. Example: 2",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2722,7 +2722,7 @@
           },
           {
             "name": "videoWidth",
-            "description": null,
+            "description": "Video width",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -2746,6 +2746,18 @@
           },
           {
             "name": "bitRate",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "error",
             "description": null,
             "args": [],
             "type": {

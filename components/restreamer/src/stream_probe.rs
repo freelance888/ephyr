@@ -73,6 +73,17 @@ pub struct StreamInfo {
     pub format: Format,
 }
 
+impl StreamInfo {
+    /// Search for the stream with specified `stream_type`
+    #[must_use]
+    pub fn find_stream(&self, stream_type: &str) -> Option<Stream> {
+        self.streams
+            .clone()
+            .into_iter()
+            .find(|x| x.codec_type.clone().unwrap_or_default() == stream_type)
+    }
+}
+
 /// Common structure for info about video and audio streams
 #[derive(
     Default, Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize,

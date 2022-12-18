@@ -4,6 +4,7 @@
   export let url;
   export let previewUrl;
   export let streamInfo;
+  export let isError;
 </script>
 
 <template>
@@ -12,6 +13,7 @@
     {#if streamInfo}
       <span
         class="info-icon"
+        class:has-error={isError}
         uk-icon="icon: info; ratio: 0.7"
         uk-tooltip={streamInfo}
       />
@@ -63,4 +65,8 @@
     transition: 0.1s ease-in
     &:hover
       color: var(--primary-text-hover-color)
+
+  .has-error
+    color:  var(--danger-color)
+
 </style>
