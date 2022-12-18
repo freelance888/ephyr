@@ -32,6 +32,7 @@
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
   import isEqual from 'lodash/isEqual';
+  import omit from 'lodash/omit';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -128,28 +129,39 @@
   }
 
   function getStreamsDifferenceTooltip(input) {
-    let streamInfoKeys = [];
     if (isFailoverInput(input)) {
-      const primary = input.src.inputs[0].endpoints[0];
-      for (let i of input.src.inputs) {
-        const key = i.key;
-        for (let endpoint of i.endpoints) {
-          if (
-            primary &&
-            endpoint.streamStat &&
-            !isEqual(primary.streamStat, endpoint.streamStat)
-          ) {
-            streamInfoKeys = [...streamInfoKeys, key];
+      const endpoints = input.src.inputs
+        .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
+        .filter((x) => x[1]);
+
+      const excludeProps = ['videoRFrameRate', 'bitRate'];
+      const firstEndpoint = endpoints[0];
+      const differentStreamInfoKeys = endpoints
+        .slice(1)
+        .reduce((diff, current) => {
+          const currentStat = omit(current[1].streamStat, excludeProps);
+          const firstEndpointStat = omit(
+            firstEndpoint[1].streamStat,
+            excludeProps
+          );
+          if (!isEqual(currentStat, firstEndpointStat)) {
+            diff = [...diff, current[0]];
           }
-        }
-      }
+
+          return diff;
+        }, []);
+
+      console.log(endpoints);
+      return differentStreamInfoKeys.length
+        ? `<strong>${differentStreamInfoKeys.join(
+            ', '
+          )}</strong> stream(s) params differ from <strong>${
+            firstEndpoint[0]
+          }</strong> stream params`
+        : '';
     }
 
-    return streamInfoKeys.length
-      ? `<strong>${streamInfoKeys.join(
-          ', '
-        )}</strong> stream(s) params differ from <strong>primary</strong> stream params`
-      : '';
+    return '';
   }
 </script>
 
@@ -204,7 +216,7 @@
         {#if streamsDiffTooltip}
           <span>
             <i
-              class="fa fa-info-circle info-icon pulse uk-alert-warning"
+              class="fa fa-info-circle info-icon uk-alert-warning"
               uk-tooltip={streamsDiffTooltip}
             />
           </span>

@@ -245,17 +245,17 @@ impl<'de> Deserialize<'de> for ClientId {
     Clone, Debug, Deserialize, Eq, Serialize, PartialEq, GraphQLObject,
 )]
 pub struct StreamStatistics {
-    /// Name of audio codec
+    /// Name of audio codec.  Example: "aac"
     pub audio_codec_name: Option<String>,
     /// Stereo / Mono layout
     pub audio_channel_layout: Option<String>,
-    // Audio sample rate
+    // Audio sample rate. Example - "44100"
     pub audio_sample_rate: Option<String>,
-    /// Count of audio channels
+    /// Count of audio channels. Example: 2
     pub audio_channels: Option<UNumber>,
-    // Name of video codec
+    // Name of video codec. Example: "h264"
     pub video_codec_name: Option<String>,
-    // Video frame rate
+    // Video frame rate (fps). Example: "30/1"
     pub video_r_frame_rate: Option<String>,
     /// Video width
     pub video_width: Option<UNumber>,
