@@ -138,7 +138,7 @@
 
       const inputKeys = endpoints.map(x => x[0]).join(', ');
       return inputKeys
-        ? `Can't get stream info from: <strong>${inputKeys}</strong>`
+        ? `Can't get stream info from <strong>${inputKeys}</strong>`
         : '';
 
     }
@@ -230,11 +230,13 @@
     {#if !!value.label}
       <span class="section-label">
         {value.label}
-        {#if streamsErrorsTooltip}
+        {#if !!streamsErrorsTooltip || !!streamsDiffTooltip}
           <span>
             <i
-              class="fa fa-info-circle info-icon uk-alert-warning"
-              uk-tooltip={streamsErrorsTooltip}
+              class="fa fa-info-circle info-icon"
+              class:has-error={!!streamsErrorsTooltip}
+              class:has-warning={!!streamsDiffTooltip}
+              uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
             />
           </span>
         {/if}
@@ -404,5 +406,12 @@
 
     .info-icon
       font-size: 16px
+
+    .has-error
+      color: var(--danger-color)
+
+    .has-warning
+      color: var(--warning-color)
+
 
 </style>
