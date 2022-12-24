@@ -6,8 +6,8 @@
   import ToolbarDashboard from './ToolbarDashboard.svelte';
   import ClientStatistics from './ClientStatistics.svelte';
   import StatusFilter from './common/StatusFilter.svelte';
-  import { statusesList } from '../constants/statuses';
-  import { toggleFilterStatus } from '../utils/statusFilters.util';
+  import { statusesList } from '../utils/constants';
+  import { toggleFilterStatus } from '../utils/filters.util';
 
   const gqlClient = createGraphQlClient(
     '/api-dashboard',

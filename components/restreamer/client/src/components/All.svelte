@@ -10,12 +10,12 @@
   } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
-  import { getAggregatedStreamsData } from '../utils/allHelpers.util';
-  import { statusesList } from '../constants/statuses';
-  import { toggleFilterStatus } from '../utils/statusFilters.util';
+  import { getAggregatedStreamsData, toggleFilterStatus } from '../utils/filters.util';
+  import { statusesList } from '../utils/constants';
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
+  import StreamInfoFilter from './common/StreamInfoFilter.svelte';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -179,7 +179,11 @@
           {/each}
         </span>
       </div>
+      <div>
+        <StreamInfoFilter>
 
+        </StreamInfoFilter>
+      </div>
       <div class="uk-width-expand">
         <span class="toolbar-label"
           >OUTPUTS:

@@ -728,10 +728,10 @@ impl State {
             .find_map(|r| r.input.find_endpoint(id))
             .ok_or_else(|| anyhow!("Can't find endpoint with id: {:?}", id))?;
 
-        // endpoint.stream_stat = Some(StreamStatistics::new(result));
-        endpoint.stream_stat = Some(StreamStatistics::create_error_instance(
-            &anyhow!("Can't get ffprobe info"),
-        ));
+        endpoint.stream_stat = Some(StreamStatistics::new(result));
+        // endpoint.stream_stat = Some(StreamStatistics::create_error_instance(
+        //     &anyhow!("Can't get ffprobe info"),
+        // ));
         Ok(())
     }
 
