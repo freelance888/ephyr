@@ -207,6 +207,7 @@
               class="fa fa-info-circle info-icon"
               class:has-error={!!streamsErrorsTooltip}
               class:has-warning={!!streamsDiffTooltip}
+              class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
               uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
             />
           </span>
