@@ -146,10 +146,8 @@
 
   function getStreamsDifferenceTooltip(input) {
     const result = getEndpointsWithDiffStreams(input);
-    return result
-      ? `<strong>${result.endpointsWithDiffStreams.join(
-        ', '
-      )}</strong> ${result.endpointsWithDiffStreams.length === 1
+    return result?.endpointsWithDiffStreams?.length
+      ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${result.endpointsWithDiffStreams.length === 1
           ? 'stream' : 'streams'
     } params ${result.endpointsWithDiffStreams.length === 1
         ? 'differs' : 'differ'} from <strong>${

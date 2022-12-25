@@ -2,6 +2,10 @@ import { isFailoverInput } from './util';
 import omit from 'lodash/omit';
 import isEqual from 'lodash/isEqual';
 
+export const hasEndpointsWithStreamsErrors = (input) => {
+  return !!getEndpointsWithStreamsErrors(input)?.length;
+}
+
 export const getEndpointsWithStreamsErrors = (input) => {
   if (isFailoverInput(input)) {
     const endpoints = input.src.inputs
@@ -12,6 +16,10 @@ export const getEndpointsWithStreamsErrors = (input) => {
   }
 
   return [];
+}
+
+export const hasEndpointsWithDiffStreams = (input) => {
+  return !!getEndpointsWithDiffStreams(input)?.endpointsWithDiffStreams?.length;
 }
 
 export const getEndpointsWithDiffStreams = (input) => {
