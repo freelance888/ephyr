@@ -14,19 +14,20 @@
 
   const formatStreamInfo = (streamStat) => {
     if (streamStat) {
-        return streamStat.error
-          ? streamStat.error
-          : `<span><strong>${input.key}</strong></span>
+      return streamStat.error
+        ? streamStat.error
+        : `<span><strong>${input.key}</strong></span>
           <br/>
-          <span><strong>video</strong>&#58; ${streamStat.videoCodecName}, </span>
+          <span><strong>video</strong>&#58; ${
+            streamStat.videoCodecName
+          }, </span>
           <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
           <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
           <br/>
           <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
           <span>${streamStat.audioSampleRate},</span>
           <span>${streamStat.audioChannelLayout},</span>
-          <span>channels&#58; ${streamStat.audioChannels}</span>`
-          ;
+          <span>channels&#58; ${streamStat.audioChannels}</span>`;
     }
 
     return '';
@@ -88,7 +89,11 @@
       {/if}
     </div>
 
-    <Url url={input_url} streamInfo={formatStreamInfo(endpoint.streamStat)} isError={!!endpoint.streamStat?.error} />
+    <Url
+      url={input_url}
+      streamInfo={formatStreamInfo(endpoint.streamStat)}
+      isError={!!endpoint.streamStat?.error}
+    />
     {#if with_label}
       <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
     {/if}

@@ -1,5 +1,15 @@
-import { ONLINE, OFFLINE, INITIALIZING, UNSTABLE, STREAM_ERROR, STREAM_WARNING } from './constants';
-import { hasEndpointsWithDiffStreams, hasEndpointsWithStreamsErrors } from './input.util';
+import {
+  ONLINE,
+  OFFLINE,
+  INITIALIZING,
+  UNSTABLE,
+  STREAM_ERROR,
+  STREAM_WARNING,
+} from './constants';
+import {
+  hasEndpointsWithDiffStreams,
+  hasEndpointsWithStreamsErrors,
+} from './input.util';
 
 export const getAggregatedStreamsData = (reStreams) =>
   reStreams.reduce(
@@ -12,11 +22,11 @@ export const getAggregatedStreamsData = (reStreams) =>
 
       acc.inputsCountByStatus[streamInputStatus]++;
 
-      if(hasEndpointsWithDiffStreams(reStream.input)) {
+      if (hasEndpointsWithDiffStreams(reStream.input)) {
         acc.endpointsStreamsStatus[STREAM_WARNING].push(reStream.input.id);
       }
 
-      if(hasEndpointsWithStreamsErrors(reStream.input)) {
+      if (hasEndpointsWithStreamsErrors(reStream.input)) {
         acc.endpointsStreamsStatus[STREAM_ERROR].push(reStream.input.id);
       }
 

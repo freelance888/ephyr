@@ -35,7 +35,7 @@
         <i
           class:streams-errors={status === STREAM_ERROR}
           class:streams-warnings={status === STREAM_WARNING}
-          class='fa fa-info-circle info-icon'
+          class="fa fa-info-circle info-icon"
         />
       {:else}
         <span class="circle" />

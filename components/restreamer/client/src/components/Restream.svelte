@@ -1,6 +1,6 @@
 <svelte:options immutable={true} />
 
-<script lang='js'>
+<script lang="js">
   import { mutation, getClient, subscribe } from 'svelte-apollo';
 
   import {
@@ -14,7 +14,7 @@
     TuneDelay,
     TuneVolume,
     TuneSidechain,
-    Info
+    Info,
   } from '../../api/client.graphql';
 
   import { isFailoverInput, showError } from '../utils/util';
@@ -27,7 +27,10 @@
   import Output from './Output.svelte';
   import Toggle from './common/Toggle.svelte';
   import StatusFilter from './common/StatusFilter.svelte';
-  import { getReStreamOutputsCount, toggleFilterStatus } from '../utils/filters.util';
+  import {
+    getReStreamOutputsCount,
+    toggleFilterStatus,
+  } from '../utils/filters.util';
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
   import { getEndpointsWithDiffStreams } from '../utils/input.util';
@@ -51,7 +54,7 @@
     RemoveOutput,
     TuneVolume,
     TuneDelay,
-    TuneSidechain
+    TuneSidechain,
   };
 
   $: deleteConfirmation = $info.data
@@ -113,7 +116,7 @@
       resp = await gqlClient.query({
         query: ExportRestream,
         variables: { id: value.id },
-        fetchPolicy: 'no-cache'
+        fetchPolicy: 'no-cache',
       });
     } catch (e) {
       showError(e.message);
@@ -134,11 +137,10 @@
         .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
         .filter((x) => x[1] && x[1].streamStat.error);
 
-      const inputKeys = endpoints.map(x => x[0]).join(', ');
+      const inputKeys = endpoints.map((x) => x[0]).join(', ');
       return inputKeys
         ? `Can't get stream info from <strong>${inputKeys}</strong>`
         : '';
-
     }
 
     return '';
@@ -147,12 +149,11 @@
   function getStreamsDifferenceTooltip(input) {
     const result = getEndpointsWithDiffStreams(input);
     return result?.endpointsWithDiffStreams?.length
-      ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${result.endpointsWithDiffStreams.length === 1
-          ? 'stream' : 'streams'
-    } params ${result.endpointsWithDiffStreams.length === 1
-        ? 'differs' : 'differ'} from <strong>${
-        result.firstEndpointKey
-      }</strong> stream params`
+      ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
+          result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'
+        } params ${
+          result.endpointsWithDiffStreams.length === 1 ? 'differs' : 'differ'
+        } from <strong>${result.firstEndpointKey}</strong> stream params`
       : '';
   }
 </script>
@@ -160,55 +161,55 @@
 <template>
   <div
     data-testid={value.label}
-    class='uk-section uk-section-muted uk-section-xsmall'
+    class="uk-section uk-section-muted uk-section-xsmall"
     class:hidden
     on:mouseenter={() => (showControls = true)}
     on:mouseleave={() => (showControls = false)}
   >
-    <div class='left-buttons-area' />
-    <div class='right-buttons-area' />
+    <div class="left-buttons-area" />
+    <div class="right-buttons-area" />
     <Confirm let:confirm>
       <button
-        type='button'
-        class='uk-close'
+        type="button"
+        class="uk-close"
         uk-close
         on:click={deleteConfirmation
           ? () => confirm(removeRestream)
           : removeRestream}
       />
-      <span slot='title'
-      >Removing <code>{value.key}</code> input source for re-streaming</span
+      <span slot="title"
+        >Removing <code>{value.key}</code> input source for re-streaming</span
       >
-      <span slot='description'
-      >All its outputs will be removed too. You won't be able to undone this.</span
+      <span slot="description"
+        >All its outputs will be removed too. You won't be able to undone this.</span
       >
-      <span slot='confirm'>Remove</span>
+      <span slot="confirm">Remove</span>
     </Confirm>
 
     <button
-      class='uk-button uk-button-primary uk-button-small'
-      data-testid='add-output:open-modal-btn'
+      class="uk-button uk-button-primary uk-button-small"
+      data-testid="add-output:open-modal-btn"
       on:click={openAddOutputModal}
     >
-      <i class='fas fa-plus' />&nbsp;<span>Output</span>
+      <i class="fas fa-plus" />&nbsp;<span>Output</span>
     </button>
 
     <a
-      class='export-import'
-      href='/'
+      class="export-import"
+      href="/"
       on:click|preventDefault={openExportModal}
-      title='Export/Import'
+      title="Export/Import"
     >
-      <i class='fas fa-share-square' />
+      <i class="fas fa-share-square" />
     </a>
 
     {#if !!value.label}
-      <span class='section-label'>
+      <span class="section-label">
         {value.label}
         {#if !!streamsErrorsTooltip || !!streamsDiffTooltip}
           <span>
             <i
-              class='fa fa-info-circle info-icon'
+              class="fa fa-info-circle info-icon"
               class:has-error={!!streamsErrorsTooltip}
               class:has-warning={!!streamsDiffTooltip}
               uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
@@ -219,7 +220,7 @@
     {/if}
 
     {#if value.outputs && value.outputs.length > 0}
-      <span class='total'>
+      <span class="total">
         {#each statusesList as status (status)}
           <StatusFilter
             {status}
@@ -238,29 +239,29 @@
 
         <Confirm let:confirm>
           <Toggle
-            data-testid='toggle-all-outputs-status'
-            id='all-outputs-toggle-{value.id}'
+            data-testid="toggle-all-outputs-status"
+            id="all-outputs-toggle-{value.id}"
             checked={allEnabled}
-            title='{toggleStatusText} all outputs'
+            title="{toggleStatusText} all outputs"
             confirmFn={enableConfirmation ? confirm : undefined}
             onChangeFn={toggleAllOutputs}
           />
-          <span slot='title'
-          >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+          <span slot="title"
+            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
           >
-          <span slot='description'>Are you sure about it?</span>
-          <span slot='confirm'>{toggleStatusText}</span>
+          <span slot="description">Are you sure about it?</span>
+          <span slot="confirm">{toggleStatusText}</span>
         </Confirm>
       </span>
     {/if}
 
     <a
-      data-testid='edit-input-modal:open'
-      class='edit-input'
-      href='/'
+      data-testid="edit-input-modal:open"
+      class="edit-input"
+      href="/"
       on:click|preventDefault={() => (openRestreamModal = true)}
     >
-      <i class='far fa-edit' title='Edit input' />
+      <i class="far fa-edit" title="Edit input" />
     </a>
     {#if openRestreamModal}
       <RestreamModal
@@ -290,7 +291,7 @@
       {/each}
     {/if}
 
-    <div class='uk-grid uk-grid-small'>
+    <div class="uk-grid uk-grid-small">
       {#each value.outputs as output}
         <Output
           {deleteConfirmation}
@@ -303,11 +304,11 @@
           mutations={outputMutations}
         />
       {:else}
-        <div class='uk-flex-1'>
-          <div class='uk-card-default uk-padding-small uk-text-center'>
+        <div class="uk-flex-1">
+          <div class="uk-card-default uk-padding-small uk-text-center">
             There are no Outputs for current Input. You can add it by clicking <b
-          >+OUTPUT</b
-          > button.
+              >+OUTPUT</b
+            > button.
           </div>
         </div>
       {/each}
@@ -315,7 +316,7 @@
   </div>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
   .uk-section
     position: relative
     margin-top: 20px
