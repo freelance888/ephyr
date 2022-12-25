@@ -121,7 +121,7 @@ export const isNumber = (value: unknown): boolean => {
 };
 
 export const isFailoverInput = (input: any) => {
-  return !!input && !!input.src && input.src.__typename === 'FailoverInputSrc';
+  return input?.src?.__typename === 'FailoverInputSrc';
 };
 
 export const escapeRegExp = (str: string) => {

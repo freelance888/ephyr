@@ -33,7 +33,10 @@
   } from '../utils/filters.util';
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
-  import { getEndpointsWithDiffStreams } from '../utils/input.util';
+  import {
+    getEndpointsWithDiffStreams,
+    getEndpointsWithStreamsErrors,
+  } from '../utils/input.util';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -131,22 +134,14 @@
     }
   }
 
-  function getStreamErrorTooltip(input) {
-    if (isFailoverInput(input)) {
-      const endpoints = input.src.inputs
-        .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
-        .filter((x) => x[1] && x[1].streamStat.error);
+  const getStreamErrorTooltip = (input) => {
+    const inputKeys = getEndpointsWithStreamsErrors(input);
+    return inputKeys?.length
+      ? `Can't get stream info from <strong>${inputKeys}</strong>`
+      : '';
+  };
 
-      const inputKeys = endpoints.map((x) => x[0]).join(', ');
-      return inputKeys
-        ? `Can't get stream info from <strong>${inputKeys}</strong>`
-        : '';
-    }
-
-    return '';
-  }
-
-  function getStreamsDifferenceTooltip(input) {
+  const getStreamsDifferenceTooltip = (input) => {
     const result = getEndpointsWithDiffStreams(input);
     return result?.endpointsWithDiffStreams?.length
       ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
@@ -155,7 +150,7 @@
           result.endpointsWithDiffStreams.length === 1 ? 'differs' : 'differ'
         } from <strong>${result.firstEndpointKey}</strong> stream params`
       : '';
-  }
+  };
 </script>
 
 <template>
@@ -206,7 +201,7 @@
     {#if !!value.label}
       <span class="section-label">
         {value.label}
-        {#if !!streamsErrorsTooltip || !!streamsDiffTooltip}
+        {#key streamsErrorsTooltip || streamsDiffTooltip}
           <span>
             <i
               class="fa fa-info-circle info-icon"
@@ -215,7 +210,7 @@
               uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
             />
           </span>
-        {/if}
+        {/key}
       </span>
     {/if}
 

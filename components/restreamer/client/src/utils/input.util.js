@@ -10,12 +10,12 @@ export const getEndpointsWithStreamsErrors = (input) => {
   if (isFailoverInput(input)) {
     const endpoints = input.src.inputs
       .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
-      .filter((x) => x[1] && x[1].streamStat.error);
+      .filter(([_, endpoint] = x) => endpoint?.streamStat?.error);
 
-    return endpoints.map((x) => x[0]);
+    return endpoints.map(([inputKey, _] = x) => inputKey);
   }
 
-  return [];
+  return false;
 };
 
 export const hasEndpointsWithDiffStreams = (input) => {
@@ -26,7 +26,7 @@ export const getEndpointsWithDiffStreams = (input) => {
   if (isFailoverInput(input)) {
     const endpoints = input.src.inputs
       .map((i) => [i.key, i.endpoints.filter((e) => e.streamStat)[0]])
-      .filter(([_, streamStat] = x) => streamStat);
+      .filter(([_, endpoint] = x) => endpoint);
 
     if (!endpoints?.length) {
       return false;

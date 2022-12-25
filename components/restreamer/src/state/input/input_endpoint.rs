@@ -52,7 +52,7 @@ pub struct InputEndpoint {
     #[serde(skip)]
     pub srs_player_ids: HashSet<srs::ClientId>,
 
-    /// Corresponding stream info from SRS
+    /// Corresponding stream info
     pub stream_stat: Option<StreamStatistics>,
 }
 

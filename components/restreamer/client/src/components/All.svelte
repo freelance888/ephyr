@@ -273,7 +273,7 @@
           {/if}
         {/key}
       </div>
-      <div class="uk-flex-none">
+      <div class="uk-margin-auto-left">
         <!-- TODO: move Confirm modals to other files -->
         <Confirm let:confirm>
           <button
