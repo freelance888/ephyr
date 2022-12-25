@@ -24,12 +24,12 @@ export const getEndpointsWithDiffStreams = (input) => {
       return false;
     }
 
-    const excludeProps = ['videoRFrameRate', 'bitRate'];
+    const excludedProps = ['videoRFrameRate', 'bitRate'];
     const [[firstEndpointKey, { streamStat: firstStreamStat }], _] = endpoints;
     const endpointsWithDiffStreams = endpoints
       .slice(1)
       .reduce((diffKeys, [currentKey, { streamStat: currentStreamStat }] = current) => {
-        if (!isEqual(omit(currentStreamStat, excludeProps), omit(firstStreamStat,excludeProps))) {
+        if (!isEqual(omit(currentStreamStat, excludedProps), omit(firstStreamStat,excludedProps))) {
           diffKeys = [...diffKeys, currentKey];
         }
 

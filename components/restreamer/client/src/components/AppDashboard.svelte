@@ -114,7 +114,7 @@
         <span class="section-label">Filters:</span>
         <div class="uk-grid uk-grid-small">
           <div class="uk-width-1-4@m">
-            <span class="toolbar-label total-inputs-label">
+            <span class="toolbar-label">
               INPUTS:
 
               {#each statusesList as status (status)}
@@ -129,7 +129,7 @@
             </span>
           </div>
           <div class="uk-width-1-4@m">
-            <span class="toolbar-label total-inputs-label">
+            <span class="toolbar-label">
               OUTPUTS:
 
               {#each statusesList as status (status)}

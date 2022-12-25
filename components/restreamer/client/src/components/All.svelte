@@ -4,10 +4,7 @@
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
   import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
-  import {
-    DisableAllOutputsOfRestreams,
-    EnableAllOutputsOfRestreams,
-  } from '../../api/client.graphql';
+  import { DisableAllOutputsOfRestreams, EnableAllOutputsOfRestreams } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
   import { getAggregatedStreamsData, toggleFilterStatus } from '../utils/filters.util';
@@ -15,7 +12,7 @@
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
-  import StreamInfoFilter from './common/StreamInfoFilter.svelte';
+  import StreamInfoBar from './common/StreamInfoBar.svelte';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -160,9 +157,9 @@
 
   <section class="uk-section-muted toolbar">
     <span class="section-label">Filters</span>
-    <div class="uk-grid uk-grid-small">
-      <div class="uk-width-1-2@m uk-width-1-3@s">
-        <span class="toolbar-label total-inputs-label">
+    <div class="uk-grid uk-grid-small uk-flex-middle">
+      <div>
+        <span class="toolbar-label">
           INPUTS:
 
           {#each statusesList as status (status)}
@@ -179,12 +176,10 @@
           {/each}
         </span>
       </div>
-      <div>
-        <StreamInfoFilter>
-
-        </StreamInfoFilter>
+      <div class='uk-margin-small-left'>
+        <StreamInfoBar/>
       </div>
-      <div class="uk-width-expand">
+      <div class="uk-flex-auto uk-flex-right uk-flex uk-flex-middle">
         <span class="toolbar-label"
           >OUTPUTS:
 
@@ -225,7 +220,7 @@
           {/if}
         {/key}
       </div>
-      <div class="uk-panel uk-width-auto uk-flex-right">
+      <div class="uk-flex-none">
         <!-- TODO: move Confirm modals to other files -->
         <Confirm let:confirm>
           <button
@@ -233,9 +228,8 @@
             data-testid="start-all-outputs"
             title="Start all outputs of all restreams"
             on:click={() => confirm(enableAllOutputsOfRestreams)}
-            ><span class="uk-visible@m">Start All</span><span
-              class="uk-hidden@m">Start</span
-            ></button
+            ><span>Start All</span>
+            </button
           >
           <span slot="title">Start all outputs</span>
           <span slot="description"
@@ -251,9 +245,7 @@
             title="Stop all outputs of all restreams"
             on:click={() => confirm(disableAllOutputsOfRestreams)}
             value=""
-            ><span class="uk-visible@m">Stop All</span><span class="uk-hidden@m"
-              >Stop</span
-            ></button
+            ><span>Stop All</span></button
           >
           <span slot="title">Stop all outputs</span>
           <span slot="description"

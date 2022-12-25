@@ -1,4 +1,4 @@
-import { ONLINE, OFFLINE, INITIALIZING, UNSTABLE, STREAMS_ERROR, STREAMS_WARNING } from './constants';
+import { ONLINE, OFFLINE, INITIALIZING, UNSTABLE, STREAM_ERROR, STREAM_WARNING } from './constants';
 
 export const getAggregatedStreamsData = (streams) =>
   streams.reduce(
@@ -21,8 +21,8 @@ export const getAggregatedStreamsData = (streams) =>
         [UNSTABLE]: 0,
       },
       endpointsStreamsStatus: {
-        [STREAMS_ERROR]: 0,
-        [STREAMS_WARNING]: 0,
+        [STREAM_ERROR]: 0,
+        [STREAM_WARNING]: 0,
       },
       outputsCountByStatus: {
         [OFFLINE]: 0,
