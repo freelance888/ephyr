@@ -53,7 +53,7 @@ impl Api {
     /// If API request cannot be performed, or fails. See [`Error`](enum@Error)
     /// for details.
     pub async fn get_videos_yt(id: &YoutubeId) -> Result<Video, Error> {
-        let resp = reqwest::get(&format!("{}/videos/yt/{}", Api::V1_URL, id))
+        let resp = reqwest::get(&format!("{}/videos/yt/{id}", Api::V1_URL))
             .await
             .map_err(Error::RequestFailed)?;
         if !resp.status().is_success() {
@@ -71,17 +71,17 @@ impl Api {
 #[derive(Debug, Display, Error)]
 pub enum Error {
     /// Performing HTTP request failed itself.
-    #[display(fmt = "Failed to perform HTTP request: {}", _0)]
+    #[display(fmt = "Failed to perform HTTP request: {_0}")]
     RequestFailed(reqwest::Error),
 
     /// [`Api`] responded with a bad [`StatusCode`].
     ///
     /// [`StatusCode`]: reqwest::StatusCode
-    #[display(fmt = "API responded with bad status: {}", _0)]
+    #[display(fmt = "API responded with bad status: {_0}")]
     BadStatus(#[error(not(source))] reqwest::StatusCode),
 
     /// [`Api`] responded with a bad body, which cannot be deserialized.
-    #[display(fmt = "Failed to decode API response: {}", _0)]
+    #[display(fmt = "Failed to decode API response: {_0}")]
     BadBody(reqwest::Error),
 }
 

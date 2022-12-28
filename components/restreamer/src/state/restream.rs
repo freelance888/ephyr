@@ -85,7 +85,7 @@ impl Restream {
                 if let Some(mut old) = olds
                     .iter()
                     .enumerate()
-                    .find_map(|(n, o)| (o.dst == new.dst).then(|| n))
+                    .find_map(|(n, o)| (o.dst == new.dst).then_some(n))
                     .map(|n| olds.swap_remove(n))
                 {
                     old.apply(new, replace);

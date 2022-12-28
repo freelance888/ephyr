@@ -45,32 +45,28 @@ where
         .next()
         .ok_or_else(|| D::Error::custom("no hours specified"))?
         .parse()
-        .map_err(|e| D::Error::custom(format!("cannot parse hours: {}", e)))?;
+        .map_err(|e| D::Error::custom(format!("cannot parse hours: {e}")))?;
 
     let mins: u64 = iter
         .next()
         .ok_or_else(|| D::Error::custom("no minutes specified"))?
         .parse()
-        .map_err(|e| {
-            D::Error::custom(format!("cannot parse minutes: {}", e))
-        })?;
+        .map_err(|e| D::Error::custom(format!("cannot parse minutes: {e}")))?;
     if mins >= 60 {
-        return Err(D::Error::custom(format!("invalid minutes: {}", mins)));
+        return Err(D::Error::custom(format!("invalid minutes: {mins}")));
     }
 
     let secs: u64 = iter
         .next()
         .ok_or_else(|| D::Error::custom("no seconds specified"))?
         .parse()
-        .map_err(|e| {
-            D::Error::custom(format!("cannot parse seconds: {}", e))
-        })?;
+        .map_err(|e| D::Error::custom(format!("cannot parse seconds: {e}")))?;
     if secs >= 60 {
-        return Err(D::Error::custom(format!("invalid seconds: {}", secs)));
+        return Err(D::Error::custom(format!("invalid seconds: {secs}")));
     }
 
     if iter.next().is_some() {
-        return Err(D::Error::custom(format!("invalid format: {}", s)));
+        return Err(D::Error::custom(format!("invalid format: {s}")));
     }
 
     Ok(Duration::from_secs(hours * 3600 + mins * 60 + secs))

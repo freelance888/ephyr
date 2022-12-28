@@ -180,7 +180,7 @@ impl Input {
             },
         )
         .map_err(move |e| {
-            log::error!("Cannot capture audio from TeamSpeak server: {}", e);
+            log::error!("Cannot capture audio from TeamSpeak server: {e}");
             is_conn_unrecoverable.store(true, Ordering::SeqCst);
         });
 
@@ -356,10 +356,10 @@ impl AudioCapture {
         let mut rng = rand::thread_rng();
 
         let mut first = [0_u8; HEX_BYTES];
-        hex::encode_to_slice(&rng.gen::<[u8; BYTES]>(), &mut first).unwrap();
+        hex::encode_to_slice(rng.gen::<[u8; BYTES]>(), &mut first).unwrap();
 
         let mut second = [0_u8; HEX_BYTES];
-        hex::encode_to_slice(&rng.gen::<[u8; BYTES]>(), &mut second).unwrap();
+        hex::encode_to_slice(rng.gen::<[u8; BYTES]>(), &mut second).unwrap();
 
         // This is totally safe, because hex-encoded data is guaranteed to be
         // a valid UTF-8 string.
@@ -444,7 +444,7 @@ impl Future for AudioCapture {
                 ) {
                     return Poll::Ready(Err(E::DecodingFailed(e)));
                 }
-                log::warn!("Drop audio packet from TeamSpeak server: {}", e);
+                log::warn!("Drop audio packet from TeamSpeak server: {e}");
             }
         }
     }
@@ -476,15 +476,14 @@ pub enum AudioCaptureError {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[display(
-        fmt = "Initializing connection with TeamSpeak server failed: {}",
-        _0
+        fmt = "Initializing connection with TeamSpeak server failed: {_0}"
     )]
     InitializationFailed(tsclientlib::Error),
 
     /// Establishing connection with [TeamSpeak] server failed.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    #[display(fmt = "Connecting to TeamSpeak server failed: {}", _0)]
+    #[display(fmt = "Connecting to TeamSpeak server failed: {_0}")]
     ConnectionFailed(tsclientlib::Error),
 
     /// Receiving packets from [TeamSpeak] server finished unexpectedly.
@@ -507,7 +506,7 @@ pub enum AudioCaptureError {
     /// Failed to decode audio packet received from [TeamSpeak] server.
     ///
     /// [TeamSpeak]: https://teamspeak.com
-    #[display(fmt = "Failed to decode audio packet: {}", _0)]
+    #[display(fmt = "Failed to decode audio packet: {_0}")]
     DecodingFailed(tsclientlib::audio::Error),
 }
 

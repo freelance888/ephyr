@@ -5,9 +5,9 @@
 
 use std::collections::HashSet;
 
-use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
-
 use crate::{serde::is_false, state, state::NumberOfItems};
+use juniper::GraphQLInputObject;
+use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
 
 /// Shareable (exportable and importable) specification of a [`State`].
@@ -151,6 +151,37 @@ pub struct Input {
     pub enabled: bool,
 }
 
+impl Input {
+    /// Creates a new [`Input`] out of the given
+    /// [`state::InputKey`] and [`InputSrc`].
+    #[must_use]
+    pub fn new(
+        input_key: state::InputKey,
+        input_src: Option<InputSrc>,
+        with_hls: bool,
+    ) -> Input {
+        let mut endpoints = vec![InputEndpoint {
+            kind: state::InputEndpointKind::Rtmp,
+            label: None,
+            file_id: None,
+        }];
+        if with_hls {
+            endpoints.push(InputEndpoint {
+                kind: state::InputEndpointKind::Hls,
+                label: None,
+                file_id: None,
+            });
+        }
+
+        Input {
+            id: None,
+            key: input_key,
+            endpoints,
+            src: input_src,
+            enabled: true,
+        }
+    }
+}
 impl<'de> Deserialize<'de> for Input {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -403,4 +434,17 @@ impl Default for Volume {
     fn default() -> Self {
         state::Volume::default().export()
     }
+}
+
+/// Backup input
+#[derive(
+    Clone, Debug, Deserialize, Eq, PartialEq, Serialize, GraphQLInputObject,
+)]
+pub struct BackupInput {
+    /// Key for this [`BackupInput`]
+    pub key: state::InputKey,
+
+    /// URL to pull a live stream from for a backup endpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub src: Option<state::InputSrcUrl>,
 }

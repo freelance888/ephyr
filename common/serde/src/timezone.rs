@@ -22,7 +22,7 @@ pub fn serialize<S>(tz: &TimeZone, ser: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    ser.serialize_str(&format!("{:?}", tz))
+    ser.serialize_str(&format!("{tz:?}"))
 }
 
 /// Deserializes [`TimeZone`] from a [RFC 3339 format][1] (`+04:03`, for
@@ -43,9 +43,7 @@ where
         Some('+') => (1, &s[1..]),
         Some('-') => (-1, &s[1..]),
         Some(_) => (1, &*s),
-        None => {
-            return Err(D::Error::custom(format!("invalid timezone: {}", s)))
-        }
+        None => return Err(D::Error::custom(format!("invalid timezone: {s}"))),
     };
     let mut iter = s.split(':');
 
@@ -53,36 +51,34 @@ where
         .next()
         .ok_or_else(|| D::Error::custom("no hours specified"))?
         .parse()
-        .map_err(|e| D::Error::custom(format!("cannot parse hours: {}", e)))?;
+        .map_err(|e| D::Error::custom(format!("cannot parse hours: {e}")))?;
 
     let mins: u32 = iter
         .next()
         .ok_or_else(|| D::Error::custom("no minutes specified"))?
         .parse()
-        .map_err(|e| {
-            D::Error::custom(format!("cannot parse minutes: {}", e))
-        })?;
+        .map_err(|e| D::Error::custom(format!("cannot parse minutes: {e}")))?;
     if mins >= 60 {
-        return Err(D::Error::custom(format!("invalid minutes: {}", mins)));
+        return Err(D::Error::custom(format!("invalid minutes: {mins}")));
     }
 
     let secs: u32 = if let Some(s) = iter.next() {
         s.parse().map_err(|e| {
-            D::Error::custom(format!("cannot parse seconds: {}", e))
+            D::Error::custom(format!("cannot parse seconds: {e}"))
         })?
     } else {
         0
     };
     if secs >= 60 {
-        return Err(D::Error::custom(format!("invalid seconds: {}", secs)));
+        return Err(D::Error::custom(format!("invalid seconds: {secs}")));
     }
 
     #[allow(clippy::map_err_ignore)]
     let total_secs = i32::try_from(hours * 3600 + mins * 60 + secs)
-        .map_err(|_| D::Error::custom(format!("invalid timezone: {}", s)))?;
+        .map_err(|_| D::Error::custom(format!("invalid timezone: {s}")))?;
 
     TimeZone::east_opt(sign * total_secs)
-        .ok_or_else(|| D::Error::custom(format!("invalid timezone: {}", s)))
+        .ok_or_else(|| D::Error::custom(format!("invalid timezone: {s}")))
 }
 
 /// [`Option`] support.

@@ -124,7 +124,7 @@ impl State {
                 serde_json::to_vec(&persisted_state)
                     .expect("Failed to serialize server state"),
             )
-            .map_err(|e| log::error!("Failed to persist server state: {}", e))
+            .map_err(|e| log::error!("Failed to persist server state: {e}"))
         };
         let persist_state2 = persist_state1.clone();
         let persist_state3 = persist_state1.clone();
@@ -158,7 +158,7 @@ impl State {
                 if let Some(mut old) = olds
                     .iter()
                     .enumerate()
-                    .find_map(|(n, o)| (o.key == new.key).then(|| n))
+                    .find_map(|(n, o)| (o.key == new.key).then_some(n))
                     .map(|n| olds.swap_remove(n))
                 {
                     old.apply(new, replace);
@@ -255,7 +255,7 @@ impl State {
         let mut clients = self.clients.lock_mut();
         let prev_len = clients.len();
         clients.retain(|r| r.id != *client_id);
-        (clients.len() != prev_len).then(|| ())
+        (clients.len() != prev_len).then_some(())
     }
 
     /// Adds a new [`Restream`] by the given `spec` to this [`State`].
@@ -310,7 +310,7 @@ impl State {
         let mut restreams = self.restreams.lock_mut();
         let prev_len = restreams.len();
         restreams.retain(|r| r.id != id);
-        (restreams.len() != prev_len).then(|| ())
+        (restreams.len() != prev_len).then_some(())
     }
 
     /// Enables a [`Restream`] with the given `id` in this [`State`].
@@ -377,12 +377,13 @@ impl State {
             .map(Input::disable)
     }
 
+    /// Sets label on [`Input`] with the given `id` in
+    /// the specified [`Restream`] of this [`State`].
     ///
-    ///
-    /// Returns `true` if it has been disabled, or `false` if it already has
-    /// been disabled, or [`None`] if it doesn't exist.
+    /// Returns `true` if it has been set, or `false` if it already has
+    /// been set, or [`None`] if it doesn't exist.
     #[must_use]
-    pub fn change_endpoint_label(
+    pub fn set_endpoint_label(
         &self,
         id: InputId,
         restream_id: RestreamId,
@@ -397,9 +398,15 @@ impl State {
             .find_mut(id)?
             .endpoints
             .iter_mut()
-            .find(|endpoint| endpoint.id == endpoint_id)?
-            .label = label;
-        Some(true)
+            .find(|endpoint| endpoint.id == endpoint_id)
+            .map(|mut ie| {
+                if ie.label == label {
+                    false
+                } else {
+                    ie.label = label;
+                    true
+                }
+            })
     }
 
     /// Adds a new [`Output`] to the specified [`Restream`] of this [`State`].
@@ -486,7 +493,7 @@ impl State {
 
         let prev_len = outputs.len();
         outputs.retain(|o| o.id != id);
-        (outputs.len() != prev_len).then(|| ())
+        (outputs.len() != prev_len).then_some(())
     }
 
     /// Enables an [`Output`] with the given `id` in the specified [`Restream`]
@@ -754,7 +761,7 @@ impl State {
         let settings = self.settings.get_cloned();
         let title = match settings.title {
             Some(t) => t,
-            None => "".to_string(),
+            None => String::new(),
         };
 
         let inputs_stat = self.get_inputs_statistics();

@@ -41,11 +41,11 @@ use crate::{
 pub async fn run(opts: cli::Opts) -> Result<(), cli::Failure> {
     let request_max_size =
         opts.request_max_size.get_bytes().try_into().map_err(|e| {
-            log::error!("Maximum request size has too big value: {}", e);
+            log::error!("Maximum request size has too big value: {e}");
         })?;
 
     let state = state::Manager::try_new(&opts.state).await.map_err(|e| {
-        log::error!("Failed to initialize vod::meta::State: {}", e);
+        log::error!("Failed to initialize vod::meta::State: {e}");
     })?;
     state.refresh_playlists_positions().await.map_err(|e| {
         log::error!(
@@ -56,7 +56,7 @@ pub async fn run(opts: cli::Opts) -> Result<(), cli::Failure> {
 
     let cache =
         Arc::new(file::cache::Manager::try_new(opts.cache_dir).map_err(
-            |e| log::error!("Failed to initialize vod::file::cache: {}", e),
+            |e| log::error!("Failed to initialize vod::file::cache: {e}"),
         )?);
 
     drop(tokio::spawn(refill_state_with_cache_files(
@@ -95,7 +95,7 @@ pub async fn run(opts: cli::Opts) -> Result<(), cli::Failure> {
             .service(delete_playlist)
     })
     .bind((opts.http_ip, opts.http_port))
-    .map_err(|e| log::error!("Failed to bind web server: {}", e))?
+    .map_err(|e| log::error!("Failed to bind web server: {e}"))?
     .run()
     .await;
 
@@ -120,7 +120,7 @@ async fn produce_meta(
             .playlist(&slug)
             .await
             .ok_or_else(|| {
-                error::ErrorNotFound(format!("Unknown playlist '{}'", slug))
+                error::ErrorNotFound(format!("Unknown playlist '{slug}'"))
             })?
             .schedule_nginx_vod_module_set(None, 5),
     ))
@@ -139,7 +139,7 @@ async fn show_playlist(
     slug: web::Path<state::PlaylistSlug>,
 ) -> Result<web::Json<state::Playlist>, error::Error> {
     Ok(web::Json(state.playlist(&slug.0).await.ok_or_else(
-        || error::ErrorNotFound(format!("Unknown playlist '{}'", slug)),
+        || error::ErrorNotFound(format!("Unknown playlist '{slug}'")),
     )?))
 }
 

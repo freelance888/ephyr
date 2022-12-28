@@ -182,7 +182,7 @@ impl<'de> Deserialize<'de> for MixinSrcUrl {
         D: Deserializer<'de>,
     {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
-            D::Error::custom(format!("Not a valid Mixin.src URL: {}", url))
+            D::Error::custom(format!("Not a valid Mixin.src URL: {url}"))
         })
     }
 }
