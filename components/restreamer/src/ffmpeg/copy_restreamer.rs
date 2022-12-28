@@ -4,7 +4,7 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
-use std::path::Path;
+use std::{ffi::OsStr, path::Path};
 
 use tokio::{io, process::Command};
 use url::Url;
@@ -54,47 +54,57 @@ impl CopyRestreamer {
         &self,
         cmd: &mut Command,
     ) -> io::Result<()> {
-        match self.from_url.scheme() {
-            "http" | "https" => {
+        let _ = match self.from_url.scheme() {
+            "http" | "https"
                 if Path::new(self.from_url.path()).extension()
-                    != Some("m3u8".as_ref())
-                {
-                    let _ = cmd.arg("-re");
-                }
+                    == Some("m3u8".as_ref()) =>
+            {
+                cmd.arg("-re")
             }
 
-            "rtmp" | "rtmps" => (),
-            "file" => {
-                let _ = cmd.arg("-re");
-                let _ = cmd.args(&["-stream_loop", "-1"]);
-            }
+            "rtmp" | "rtmps" => cmd,
 
             _ => unimplemented!(),
-        };
-        let _ = cmd.args(&["-i", self.from_url.as_str()]);
+        }
+        .args(["-i", self.from_url.as_str()]);
 
         let _ = match self.to_url.scheme() {
-            "file"
-                if Path::new(self.to_url.path()).extension()
-                    == Some("flv".as_ref()) =>
+            "file" => match Path::new(self.to_url.path())
+                .extension()
+                .and_then(OsStr::to_str)
             {
-                cmd.args(&["-c", "copy"])
-                    .arg(dvr::new_file_path(&self.to_url).await?)
-            }
-
+                Some("flv") => cmd
+                    .args(["-c", "copy"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("wav") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "pcm_s16le"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                Some("mp3") => cmd
+                    .arg("-vn")
+                    .args(["-acodec", "libmp3lame"])
+                    .args(["-b:a", "64k"])
+                    .args(["-ar", "48000"])
+                    .args(["-ac", "2"])
+                    .arg(dvr::new_file_path(&self.to_url).await?),
+                _ => unimplemented!(),
+            },
             "icecast" => cmd
-                .args(&["-c:a", "libmp3lame", "-b:a", "64k"])
-                .args(&["-f", "mp3", "-content_type", "audio/mpeg"])
+                .arg("-vn")
+                .args(["-acodec", "libmp3lame", "-b:a", "64k"])
+                .args(["-f", "mp3", "-content_type", "audio/mpeg"])
                 .arg(self.to_url.as_str()),
 
             "rtmp" | "rtmps" => cmd
-                .args(&["-c", "copy"])
-                .args(&["-f", "flv"])
+                .args(["-c", "copy"])
+                .args(["-f", "flv"])
                 .arg(self.to_url.as_str()),
 
             "srt" => cmd
-                .args(&["-c", "copy"])
-                .args(&["-strict", "-2", "-y", "-f", "mpegts"])
+                .args(["-c", "copy"])
+                .args(["-strict", "-2", "-y", "-f", "mpegts"])
                 .arg(self.to_url.as_str()),
 
             _ => unimplemented!(),

@@ -57,7 +57,7 @@ impl InputSrc {
                     if let Some(mut old) = olds
                         .iter()
                         .enumerate()
-                        .find_map(|(n, o)| (o.key == new.key).then(|| n))
+                        .find_map(|(n, o)| (o.key == new.key).then_some(n))
                         .map(|n| olds.swap_remove(n))
                     {
                         old.apply(new);
@@ -174,7 +174,7 @@ impl<'de> Deserialize<'de> for InputSrcUrl {
         D: Deserializer<'de>,
     {
         Self::new(Url::deserialize(deserializer)?).map_err(|url| {
-            D::Error::custom(format!("Not a valid RemoteInputSrc.url: {}", url))
+            D::Error::custom(format!("Not a valid RemoteInputSrc.url: {url}"))
         })
     }
 }

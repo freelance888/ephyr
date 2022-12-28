@@ -17,7 +17,7 @@ use structopt::StructOpt;
 fn main() -> anyhow::Result<()> {
     let opts = CliOpts::from_args_safe()?;
 
-    let err_fn = |e| anyhow!("Failed to execute introspection query: {}", e);
+    let err_fn = |e| anyhow!("Failed to execute introspection query: {e}");
 
     let (res, _) = match opts.api {
         Api::Client => juniper::introspect(
@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     let json = serde_json::to_string_pretty(&res)
-        .map_err(|e| anyhow!("Failed to encode schema as JSON: {}", e))?;
+        .map_err(|e| anyhow!("Failed to encode schema as JSON: {e}"))?;
 
     let filename = format!(
         "{}/{}.graphql.schema.json",
@@ -58,10 +58,10 @@ fn main() -> anyhow::Result<()> {
         &filename,
         // "data" wrapping is required by GraphDoc.
         // See: https://github.com/2fd/graphdoc/issues/54
-        format!(r#"{{"data":{}}}"#, json),
+        format!(r#"{{"data":{json}}}"#),
     )
     .map_err(|e| {
-        anyhow!("Failed to write schema to the `{}` file: {}", filename, e)
+        anyhow!("Failed to write schema to the `{filename}` file: {e}")
     })?;
 
     Ok(())

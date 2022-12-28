@@ -20,6 +20,7 @@
         <a
           href="https://creativesociety.com"
           target="_blank"
+          rel="noopener noreferrer"
           class="logo uk-flex"
           title="Join us on creativesociety.com"
         >
@@ -51,7 +52,9 @@
 
     <footer class="uk-container">
       Developed for people with ❤ by
-      <a href="https://github.com/ALLATRA-IT" target="_blank">AllatRa IT</a>
+      <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
+        >AllatRa IT</a
+      >
     </footer>
   </div>
 </template>
@@ -60,6 +63,7 @@
   @require "../../../node_modules/uikit/dist/css/uikit.min.css"
   :root {
     --primary-text-color: #777;
+    --primary-text-hover-color: #333;
   }
 
   .circle

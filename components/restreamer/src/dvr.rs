@@ -167,7 +167,7 @@ impl Storage {
                 })
                 .await
                 .unwrap_or_else(|e| {
-                    log::error!("Failed to cleanup DVR files: {}", e);
+                    log::error!("Failed to cleanup DVR files: {e}");
                 });
         };
     }
