@@ -3,7 +3,11 @@ describe('CHECK STREAMING STATE', () => {
     cy.visit('/');
     cy.deleteAllInputs();
     cy.importJsonConf(Cypress.env('host'));
-    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
+    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/primary');
+  });
+
+  after(() => {
+    cy.deleteAllInputs();
   });
 
   it('1 Assert Start All', () => {

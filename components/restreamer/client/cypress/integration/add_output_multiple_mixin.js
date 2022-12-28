@@ -1,7 +1,19 @@
 describe('ADD MULTIPLE MIXIN OUTPUT', () => {
-  it('Goes to the homepage', () => {
+  before(() => {
     cy.visit('/');
+    cy.deleteAllInputs();
   });
+
+  after(() => {
+    cy.deleteAllInputs();
+  });
+  it('Add-input', () => {
+    cy.get("span:contains('Input')").click();
+    cy.get('[placeholder="optional label"]').type('SINGLE');
+    cy.get('[placeholder="<stream-key>"]').type('en');
+    cy.get('button').contains(/^Add$/).click();
+  });
+
   it('Click Output', () => {
     cy.get("span:contains('Output'):last").click();
     cy.wait(5000);
@@ -67,8 +79,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.clickAddOutputBtn();
   });
 
   it('Only one sidechain checkbox is possible to check through mixins', () => {

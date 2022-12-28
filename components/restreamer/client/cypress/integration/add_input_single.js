@@ -1,7 +1,13 @@
 describe('ADD SINGLE INPUT', () => {
-  it('Goes to the homepage', () => {
+  before(() => {
     cy.visit('/');
+    cy.deleteAllInputs();
   });
+
+  after(() => {
+    cy.deleteAllInputs();
+  });
+
   it('Add-input', () => {
     cy.get("span:contains('Input')").click();
   });
@@ -15,13 +21,13 @@ describe('ADD SINGLE INPUT', () => {
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
+    cy.clickAddInputBtn();
   });
 
   it('Assert', () => {
-    cy.get("span:contains('/en/origin'):last").should(
+    cy.get("span:contains('/en/primary'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/en/origin'
+      'rtmp://' + Cypress.env('host') + '/en/primary'
     );
   });
 });

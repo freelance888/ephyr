@@ -3,7 +3,11 @@ describe('CHECK FILE RECORDING', () => {
     cy.visit('/');
     cy.deleteAllInputs();
     cy.importJsonConf(Cypress.env('host'));
-    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/origin');
+    cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/primary');
+  });
+
+  after(() => {
+    cy.deleteAllInputs();
   });
 
   it('Start streams 2 times to create 2 file records', () => {
@@ -34,5 +38,6 @@ describe('CHECK FILE RECORDING', () => {
 
   it('File record should be downloaded', () => {
     cy.get('.record').first().find('[title="Download recorded file"]').click();
+    cy.get('.uk-modal-dialog .uk-close').eq(0).click();
   });
 });

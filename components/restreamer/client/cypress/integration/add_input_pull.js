@@ -1,7 +1,13 @@
 describe('ADD PULL INPUT', () => {
-  it('Goes to the homepage', () => {
+  before(() => {
     cy.visit('/');
+    cy.deleteAllInputs();
   });
+
+  after(() => {
+    cy.deleteAllInputs();
+  });
+
   it('Add-input', () => {
     cy.get('.add-input').click();
   });
@@ -19,21 +25,20 @@ describe('ADD PULL INPUT', () => {
   });
 
   it('Set rtmp://', () => {
-    const urlToPaste = 'rtmp://' + Cypress.env('host') + '/en/origin';
+    const urlToPaste = 'rtmp://' + Cypress.env('host') + '/en/primary';
     cy.get('[placeholder="rtmp://..."]')
       .invoke('val', urlToPaste)
       .trigger('input');
   });
 
   it('Submits', () => {
-    cy.get("button:contains('Add')").click();
-    cy.get("button:contains('Add')").should('not.exist');
+    cy.clickAddInputBtn();
   });
 
   it('Assert', () => {
-    cy.get("span:contains('/en/origin'):last").should(
+    cy.get("span:contains('/en/primary'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/en/origin'
+      'rtmp://' + Cypress.env('host') + '/en/primary'
     );
   });
 });
