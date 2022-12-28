@@ -3,44 +3,57 @@
 set -e
 
 EPHYR_CLI_ARGS=${EPHYR_CLI_ARGS:-''}
-EPHYR_VER=${EPHYR_VER:-'0.4.0'}
+EPHYR_VER=${EPHYR_VER:-'0.6.0'}
+
+# If want to use custom Docker registry
+REGISTRY_USER=${REGISTRY_USER:-0}
+REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
+REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
+
+# If provider require firewalld instead of ufw (Oracle for example)
+WITH_FIREWALLD=${WITH_FIREWALLD:-0}
+
+# If provider require full update before install (Selectel for example)
+WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
+
 if [ "$EPHYR_VER" == "latest" ]; then
   EPHYR_VER=''
 else
   EPHYR_VER="-$EPHYR_VER"
 fi
 
-WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
 if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
-    apt-get -y update
+    apt-get -qy update
     DEBIAN_FRONTEND=noninteractive \
         apt-get -qy -o "Dpkg::Options::=--force-confdef" \
                     -o "Dpkg::Options::=--force-confold" upgrade
 fi
 
 # Install Docker for running containers.
-apt-get -y update
+apt-get -qy update
 curl -sL https://get.docker.com | bash -s
 
 # Login to custom Docker Registry if provided
-REGISTRY_USER=${REGISTRY_USER:-0}
-REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-0}
-REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
 if [[ "$REGISTRY_USER" != 0 && "$REGISTRY_PASSWORD" != 0 && "$REGISTRY_URL" != "docker.io" ]]; then
   docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
 fi
 
 
-WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 if [ "$WITH_FIREWALLD" == "1" ]; then
   # Install and setup firewalld, if required.
-  apt-get -y install firewalld
+  apt-get -qy install firewalld
   systemctl unmask firewalld.service
   systemctl enable firewalld.service
   systemctl start firewalld.service
   firewall-cmd --zone=public --permanent \
                --add-port=80/tcp --add-port=1935/tcp --add-port=8000/tcp
   firewall-cmd --reload
+else
+  # Open default ports
+  apt-get -yq install ufw
+  ufw allow 80/tcp
+  ufw allow 8000/tcp
+  ufw allow 1935/tcp
 fi
 
 
@@ -51,7 +64,7 @@ cat <<'EOF' > /usr/local/bin/run-ephyr-restreamer.sh
 set -e
 
 # Detect directory for DVR.
-ephyr_www_dir="/var/run/ephyr-restreamer/www"
+ephyr_www_dir="/usr/local/share/ephyr-restreamer/www"
 do_volume="$(set +e; find /mnt/volume_* -type d | head -1 | tr -d '\n')"
 if [ -d "$do_volume" ]; then
   ephyr_www_dir="$do_volume/www"
@@ -69,12 +82,13 @@ echo "EPHYR_IMAGE_TAG=$EPHYR_IMAGE_TAG"
 echo "EPHYR_CLI_ARGS=$EPHYR_CLI_ARGS"
 echo "EPHYR_CONTAINER_NAME=$EPHYR_CONTAINER_NAME"
 echo "EPHYR_IMAGE_NAME=$EPHYR_IMAGE_NAME"
+echo "EPHYR_RESTREAMER_STATE_PATH=$EPHYR_RESTREAMER_STATE_PATH"
 
-# Run Podman service
+# Run Docker service
 /usr/bin/docker run \
   --network=host \
   -v /var/lib/$EPHYR_CONTAINER_NAME/srs.conf:/usr/local/srs/conf/srs.conf \
-  -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:/state.json \
+  -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:$EPHYR_RESTREAMER_STATE_PATH \
   -v $ephyr_www_dir/:/var/www/srs/ \
   --name=$EPHYR_CONTAINER_NAME \
   $EPHYR_IMAGE_NAME:$EPHYR_IMAGE_TAG $EPHYR_CLI_ARGS
@@ -86,7 +100,7 @@ chmod +x /usr/local/bin/run-ephyr-restreamer.sh
 cat <<EOF > /etc/systemd/system/ephyr-restreamer.service
 [Unit]
 Description=Ephyr service for re-streaming RTMP streams
-After=local-fs.target podman.service
+After=local-fs.target docker.service
 Requires=local-fs.target
 
 
@@ -94,6 +108,7 @@ Requires=local-fs.target
 Environment=EPHYR_CONTAINER_NAME=ephyr-restreamer
 Environment=EPHYR_IMAGE_NAME=${REGISTRY_URL}/allatra/ephyr
 Environment=EPHYR_IMAGE_TAG=restreamer${EPHYR_VER}
+Environment=EPHYR_RESTREAMER_STATE_PATH=/tmp/workdir/state.json
 
 ExecStartPre=/usr/bin/mkdir -p /var/lib/\${EPHYR_CONTAINER_NAME}/
 ExecStartPre=touch /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf

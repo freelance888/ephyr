@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf8" />
         <meta name="robots" content="noindex, nofollow" />
@@ -7,6 +7,7 @@
         <title><%= htmlWebpackPlugin.options.title %></title>
         <base
             target="_blank"
+            rel="noopener noreferrer"
             href="<%= htmlWebpackPlugin.options.baseHref %>"
         />
         <link rel=icon type=image/png sizes=48x48 href="favicon.ico"> <link
@@ -16,6 +17,11 @@
             rel="stylesheet"
             href="https://pro.fontawesome.com/releases/v5.15.4/css/all.css"
         />
+        <style>
+            html {
+                min-width: 735px;
+            }
+        </style>
     </head>
     <body>
         <script

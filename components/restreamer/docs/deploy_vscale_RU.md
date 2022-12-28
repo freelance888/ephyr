@@ -71,7 +71,7 @@
 ![IP-адрес сервера](images/vscale_1.6.png)
 
 ```bash
-ssh root@ip_адрес_сервера "curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh  | EPHYR_VER=0.5.0 WITH_INITIAL_UPGRADE=1 bash -s"
+ssh root@ip_адрес_сервера "curl -sL https://raw.githubusercontent.com/ALLATRA-IT/ephyr/master/components/restreamer/deploy/provision/ubuntu-20-04-x64.sh  | EPHYR_VER=0.6.0 WITH_INITIAL_UPGRADE=1 bash -s"
 ```
 
 Если у вас не настроен [SSH] то, будет предложение ввести пароль с пункта [1.5](#15-%D1%81%D0%BE%D0%B7%D0%B4%D0%B0%D0%B9%D1%82%D0%B5-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80).
