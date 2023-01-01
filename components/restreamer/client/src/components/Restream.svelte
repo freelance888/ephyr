@@ -20,15 +20,17 @@
   import { getFullStreamUrl, showError } from '../utils/util';
   import { statusesList } from '../constants/statuses';
 
-  import { restreamModal, outputModal, exportModal } from '../stores';
+  import { outputModal, exportModal } from '../stores';
 
   import Confirm from './common/Confirm.svelte';
-  import Input from './Input.svelte';
   import Output from './Output.svelte';
   import Toggle from './common/Toggle.svelte';
   import StatusFilter from './common/StatusFilter.svelte';
   import { getReStreamOutputsCount } from '../utils/restreamHelpers.util';
   import { toggleFilterStatus } from '../utils/statusFilters.util';
+  import { RestreamModel } from '../models/restream.model';
+  import RestreamModal from '../modals/RestreamModal.svelte';
+  import Input from './input/Input.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -76,44 +78,9 @@
 
   $: hasVideos = value.playlist && value.playlist.queue.length > 0;
 
-  function openEditRestreamModal() {
-    const with_hls = value.input.endpoints.some((e) => e.kind === 'HLS');
+  $: showControls = false;
 
-    let pull_url = null;
-    let backup = null;
-    let fileId = null;
-
-    if (!!value.input.src && value.input.src.__typename === 'RemoteInputSrc') {
-      pull_url = value.input.src.url;
-    }
-
-    if (
-      !!value.input.src &&
-      value.input.src.__typename === 'FailoverInputSrc'
-    ) {
-      backup = true;
-      if (!!value.input.src.inputs[0].src) {
-        pull_url = value.input.src.inputs[0].src.url;
-      }
-      if (!!value.input.src.inputs[1].src) {
-        backup = value.input.src.inputs[1].src.url;
-      }
-      if (!!value.input.src.inputs[1].endpoints[0].fileId) {
-        fileId = value.input.src.inputs[1].endpoints[0].fileId;
-      }
-    }
-
-    restreamModal.openEdit(
-      value.id,
-      value.key,
-      value.label,
-      pull_url,
-      backup,
-      fileId,
-      with_hls,
-      value.maxFilesInPlaylist
-    );
-  }
+  let openRestreamModal = false;
 
   async function removeRestream() {
     try {
@@ -168,6 +135,8 @@
     data-testid={value.label}
     class="uk-section uk-section-muted uk-section-xsmall"
     class:hidden
+    on:mouseenter={() => (showControls = true)}
+    on:mouseleave={() => (showControls = false)}
   >
     <div class="left-buttons-area" />
     <div class="right-buttons-area" />
@@ -209,6 +178,7 @@
         href={getFullStreamUrl(value.id, parentOutputId)}
         hidden={isFullView || !parentOutputId}
         target="_blank"
+        rel='noreferrer'
         class="uk-text-uppercase uk-text-small"
         title="Open Full Stream Page"
       >
@@ -264,18 +234,28 @@
     </div>
 
     <a
+      data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
-      on:click|preventDefault={openEditRestreamModal}
+      on:click|preventDefault={() => (openRestreamModal = true)}
     >
       <i class="far fa-edit" title="Edit input" />
     </a>
+    {#if openRestreamModal}
+      <RestreamModal
+        public_host={$info.data.info.publicHost}
+        bind:visible={openRestreamModal}
+        restream={new RestreamModel(value)}
+      />
+    {/if}
     <Input
       {public_host}
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
       {files}
+      with_label={false}
+      show_controls={showControls}
     />
     {#if !!value.input.src && value.input.src.__typename === 'FailoverInputSrc'}
       {#each value.input.src.inputs as input}
@@ -285,6 +265,8 @@
           restream_key={value.key}
           value={input}
           {files}
+          with_label={true}
+          show_controls={showControls}
         />
       {/each}
     {/if}
@@ -329,6 +311,7 @@
         opacity: 1
 
     .uk-button-small
+      float: right
       font-size: 0.7rem
       margin-top: 8px
       transition: opacity .3s ease

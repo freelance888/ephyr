@@ -1,10 +1,11 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
 
-  import { SetEndpointLabel } from '../../api/client.graphql';
+  import { SetEndpointLabel } from '../../../api/client.graphql';
 
-  import Url from './common/Url.svelte';
-  import { showError } from '../utils/util';
+  import Url from '../common/Url.svelte';
+  import { showError } from '../../utils/util';
+  import InputEndpointLabel from './InputEndpointLabel.svelte';
 
   const changeLabelMutation = mutation(SetEndpointLabel);
 
@@ -12,6 +13,8 @@
   export let input;
   export let input_url;
   export let restream_id;
+  export let with_label;
+  export let show_controls;
   export let files;
 
   let label_component;
@@ -149,30 +152,10 @@
       />
     {:else}
       <Url url={input_url} />
-    {/if}
-    <div class="endpoint-label">
-      <span bind:this={label_component} class:hidden={editing_label}
-        >{endpoint.label ? endpoint.label : ''}</span
-      >
-      {#if editing_label}
-        <input
-          bind:this={label_input}
-          use:init_input
-          on:focusout|preventDefault={() => {
-            editLabel(false);
-          }}
-        />
+      {#if with_label}
+        <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
       {/if}
-      <a
-        class="edit-label"
-        href="/"
-        on:click|preventDefault={() => {
-          editLabel(true);
-        }}
-      >
-        <i class="far fa-edit" title="Edit label" />
-      </a>
-    </div>
+    {/if}
   </div>
 </template>
 
@@ -187,27 +170,6 @@
     .fa-circle, .fa-dot-circle
       font-size: 13px
       cursor: help
-
-    .endpoint-label
-      margin-left 5px
-      color: #999
-
-      &:hover
-        .edit-label
-          opacity: 1
-
-      .hidden
-        display: none
-
-      .edit-label
-        opacity: 0
-        transition: opacity .3s ease
-        color: #666
-        outline: none
-        &:hover
-          opacity: 1
-          text-decoration: none
-          color: #444
 
     .endpoint-status-icon
       flex-shrink: 0

@@ -14,12 +14,16 @@
     return isNumber(value) ? value.toFixed(1) : '';
   };
 
-  const formatCpuUsage = (value) => {
+  const formatInteger = (value) => {
     return isNumber(value) ? value.toFixed() : '';
   };
 
   const formatErrorMsg = (value) => {
     return value ? value.substring(0, 100) : '';
+  };
+
+  const formatCoresText = (value) => {
+    return value === 1 ? 'core' : 'cores';
   };
 </script>
 
@@ -32,7 +36,10 @@
       <div class="server-info-row">
         <span class="title">CPU</span> -
         <span class="value uk-text-muted" title="CPU usage"
-          >{formatCpuUsage(serverInfo.cpuUsage)}%</span
+          >{formatInteger(serverInfo.cpuUsage)}% ({formatInteger(
+            serverInfo.cpuCores
+          )}
+          {formatCoresText(serverInfo.cpuCores)})</span
         >
       </div>
       <div class="server-info-row">

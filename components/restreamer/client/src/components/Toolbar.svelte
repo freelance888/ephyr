@@ -1,5 +1,5 @@
 <script lang="js">
-  import { exportModal, restreamModal } from '../stores';
+  import { exportModal } from '../stores';
 
   import RestreamModal from '../modals/RestreamModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
@@ -40,6 +40,7 @@
 
   let openPasswordModal = false;
   let openSettingsModal = false;
+  let openRestreamModal = false;
 </script>
 
 <template>
@@ -81,10 +82,16 @@
     <button
       data-testid="add-input:open-modal-btn"
       class="uk-button uk-button-primary"
-      on:click={() => restreamModal.openAdd()}
+      on:click={() => (openRestreamModal = true)}
     >
       <i class="fas fa-plus" />&nbsp;<span>Input</span>
     </button>
+    {#if openRestreamModal}
+      <RestreamModal
+        public_host={$info.data.info.publicHost}
+        bind:visible={openRestreamModal}
+      />
+    {/if}
 
     {#if isOnline && $state.data}
       <ExportModal />
@@ -97,8 +104,6 @@
         <i class="fas fa-share-square" />
       </a>
     {/if}
-
-    <RestreamModal public_host={$info.data.info.publicHost} />
   </div>
 </template>
 
@@ -108,6 +113,7 @@
     font-size: 26px
     color: var(--primary-text-color)
     outline: none
+
     &:hover
       text-decoration: none
       color: #444
@@ -125,6 +131,7 @@
     transition: opacity .3s ease
     color: var(--primary-text-color)
     outline: none
+
     &:hover
       text-decoration: none
       color: #444

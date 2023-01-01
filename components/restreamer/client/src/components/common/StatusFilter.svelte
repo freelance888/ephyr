@@ -8,6 +8,7 @@
 </script>
 
 <template>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="status-filter"
     on:click={(e) => {
