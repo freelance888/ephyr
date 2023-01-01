@@ -14,6 +14,7 @@ subscription Info {
 subscription ServerInfo {
     serverInfo {
         cpuUsage
+        cpuCores
         ramTotal
         ramFree
         txDelta
@@ -78,8 +79,7 @@ mutation SetRestream(
     $url: InputSrcUrl
     $label: Label
     $id: RestreamId
-    $with_backup: Boolean!
-    $backup_url: InputSrcUrl
+    $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
     $file_id: String
     $max_files_in_playlist: NumberOfItems
@@ -88,8 +88,7 @@ mutation SetRestream(
         key: $key
         src: $url
         label: $label
-        withBackup: $with_backup
-        backupSrc: $backup_url
+        backupInputs: $backup_inputs
         fileId: $file_id
         withHls: $with_hls
         id: $id
@@ -129,9 +128,9 @@ mutation SetEndpointLabel(
     $restream_id: RestreamId!
     $input_id: InputId!
     $endpoint_id: EndpointId!
-    $label: String!
+    $label: Label!
 ) {
-    changeEndpointLabel(
+    setEndpointLabel(
         id: $input_id
         restreamId: $restream_id
         endpointId: $endpoint_id

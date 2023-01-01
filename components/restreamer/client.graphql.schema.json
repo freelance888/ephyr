@@ -13,6 +13,74 @@
     "types": [
       {
         "kind": "OBJECT",
+        "name": "__EnumValue",
+        "description": null,
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "isDeprecated",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "deprecationReason",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
         "name": "__Directive",
         "description": null,
         "specifiedByUrl": null,
@@ -164,6 +232,17 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "OutputId",
+        "description": "ID of an `Output`.",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "ENUM",
         "name": "__DirectiveLocation",
         "description": null,
@@ -239,17 +318,6 @@
             "deprecationReason": null
           }
         ],
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "OutputId",
-        "description": "ID of an `Output`.",
-        "specifiedByUrl": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -370,12 +438,20 @@
                 "defaultValue": null
               },
               {
-                "name": "backupSrc",
-                "description": "URL to pull a live stream from for a backup endpoint.\n\nIf not specified then `Restream` will await for a live stream being pushed to its backup endpoint.\n\nHas no effect if `withBackup` argument is not `true`.",
+                "name": "backupInputs",
+                "description": "List of backup Inputs",
                 "type": {
-                  "kind": "SCALAR",
-                  "name": "InputSrcUrl",
-                  "ofType": null
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "BackupInput",
+                      "ofType": null
+                    }
+                  }
                 },
                 "defaultValue": null
               },
@@ -390,18 +466,14 @@
                 "defaultValue": null
               },
               {
-                "name": "withBackup",
-                "description": "Indicator whether the `Restream` should have a backup endpoint for a live stream.",
+                "name": "maxFilesInPlaylist",
+                "description": "Override for global maximum for files in playlist",
                 "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "Boolean",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "NumberOfItems",
+                  "ofType": null
                 },
-                "defaultValue": "false"
+                "defaultValue": null
               },
               {
                 "name": "withHls",
@@ -416,16 +488,6 @@
                   }
                 },
                 "defaultValue": "false"
-              },
-              {
-                "name": "maxFilesInPlaylist",
-                "description": "Override for global maximum for files in playlist",
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "NumberOfItems",
-                  "ofType": null
-                },
-                "defaultValue": null
               },
               {
                 "name": "id",
@@ -822,7 +884,7 @@
             "deprecationReason": null
           },
           {
-            "name": "changeEndpointLabel",
+            "name": "setEndpointLabel",
             "description": "Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.\n\n### Result\n\nReturns `true` if the label has been set with the given `label`,\n`false` if it was not\n`null` if the `Input` or `Endpoint` doesn't exist.",
             "args": [
               {
@@ -871,13 +933,9 @@
                 "name": "label",
                 "description": null,
                 "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "Label",
+                  "ofType": null
                 },
                 "defaultValue": null
               }
@@ -2060,6 +2118,159 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "Int",
+        "description": null,
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "Query",
+        "description": null,
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "info",
+            "description": "Returns the current `Info` parameters of this server.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "Info",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "serverInfo",
+            "description": "Returns the current `ServerInfo`",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ServerInfo",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "allRestreams",
+            "description": "Returns all the `Restream`s happening on this server.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Restream",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "dvrFiles",
+            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\nhttp://my.host:8080/dvr/returned/file/path.wav\nhttp://my.host:8080/dvr/returned/file/path.mp3\n```\n\n[SRS]: https://github.com/ossrs/srs",
+            "args": [
+              {
+                "name": "id",
+                "description": "ID of the `Output` to return recorded files of.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "OutputId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "export",
+            "description": "Returns `Restream`s happening on this server and identifiable by the\ngiven `ids` in an exportable JSON format.\n\nIf no `ids` specified, then returns all the `Restream`s happening on\nthis server at the moment.",
+            "args": [
+              {
+                "name": "ids",
+                "description": "IDs of `Restream`s to be exported. \n\n If empty, then all the `Restream`s will be exported.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "RestreamId",
+                        "ofType": null
+                      }
+                    }
+                  }
+                },
+                "defaultValue": "[]"
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "InputEndpoint",
         "description": "Endpoint of an `Input` serving a live stream for `Output`s and clients.",
@@ -2133,148 +2344,6 @@
                 "name": "Status",
                 "ofType": null
               }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "Query",
-        "description": null,
-        "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "info",
-            "description": "Returns the current `Info` parameters of this server.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "Info",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "serverInfo",
-            "description": "Returns the current `ServerInfo`",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "ServerInfo",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "allRestreams",
-            "description": "Returns all the `Restream`s happening on this server.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Restream",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "dvrFiles",
-            "description": "Returns list of recorded files of the specified `Output`.\n\nIf returned list is empty, the there is no recorded files for the\nspecified `Output`.\n\nEach recorded file is represented as a relative path on [SRS] HTTP\nserver in `dvr/` directory, so the download link should look like this:\n```ignore\nhttp://my.host:8080/dvr/returned/file/path.flv\n```\n\n[SRS]: https://github.com/ossrs/srs",
-            "args": [
-              {
-                "name": "id",
-                "description": "ID of the `Output` to return recorded files of.",
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "export",
-            "description": "Returns `Restream`s happening on this server and identifiable by the\ngiven `ids` in an exportable JSON format.\n\nIf no `ids` specified, then returns all the `Restream`s happening on\nthis server at the moment.",
-            "args": [
-              {
-                "name": "ids",
-                "description": "IDs of `Restream`s to be exported. \n\n If empty, then all the `Restream`s will be exported.",
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "LIST",
-                    "name": null,
-                    "ofType": {
-                      "kind": "NON_NULL",
-                      "name": null,
-                      "ofType": {
-                        "kind": "SCALAR",
-                        "name": "RestreamId",
-                        "ofType": null
-                      }
-                    }
-                  }
-                },
-                "defaultValue": "[]"
-              }
-            ],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -2875,7 +2944,7 @@
       {
         "kind": "SCALAR",
         "name": "OutputDstUrl",
-        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV] file URL (starting with `file:///` scheme, without host and\n  subdirectories, and with `.flv` extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
+        "description": "[`Url`] of an [`Output::dst`].\n\nOnly the following URLs are allowed at the moment:\n- [RTMP] URL (starting with `rtmp://` or `rtmps://` scheme and having a\n  host);\n- [SRT] URL (starting with `srt://` scheme and having a host);\n- [Icecast] URL (starting with `icecast://` scheme and having a host);\n- [FLV]|[WAV]|[MP3] file URL (starting with `file:///` scheme,\n  without host and subdirectories, and with `.flv`|`.wav`|`.mp3`\n   extension in its path).\n\n[FLV]: https://en.wikipedia.org/wiki/Flash_Video\n[WAV]: https://en.wikipedia.org/wiki/WAV\n[MP3]: https://en.wikipedia.org/wiki/MP3\n[Icecast]: https://icecast.org\n[RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol\n[SRT]: https://en.wikipedia.org/wiki/Secure_Reliable_Transport",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -2997,77 +3066,6 @@
       },
       {
         "kind": "OBJECT",
-        "name": "PlaylistFileInfo",
-        "description": "Information necessary for every video in playlist",
-        "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "fileId",
-            "description": "Google ID of this file",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "name",
-            "description": "Name of this file",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "wasPlayed",
-            "description": "Whether the file was already played",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "RestreamKey",
-        "description": "Key of a [`Restream`] identifying it, and used to form its endpoints URLs.",
-        "specifiedByUrl": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
         "name": "ServerInfo",
         "description": "Server's info",
         "specifiedByUrl": null,
@@ -3079,6 +3077,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "Float",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "cpuCores",
+            "description": "CPU cores count",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
               "ofType": null
             },
             "isDeprecated": false,
@@ -3140,6 +3150,77 @@
               "kind": "SCALAR",
               "name": "String",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "RestreamKey",
+        "description": "Key of a [`Restream`] identifying it, and used to form its endpoints URLs.",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "PlaylistFileInfo",
+        "description": "Information necessary for every video in playlist",
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "fileId",
+            "description": "Google ID of this file",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "name",
+            "description": "Name of this file",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "wasPlayed",
+            "description": "Whether the file was already played",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -3387,6 +3468,42 @@
         "possibleTypes": null
       },
       {
+        "kind": "INPUT_OBJECT",
+        "name": "BackupInput",
+        "description": "Backup input",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "key",
+            "description": "Key for this [`BackupInput`]",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "InputKey",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "src",
+            "description": "URL to pull a live stream from for a backup endpoint.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "InputSrcUrl",
+              "ofType": null
+            },
+            "defaultValue": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "LocalFileInfo",
         "description": "Represents a File with given ID and hold additional information",
@@ -3432,6 +3549,18 @@
                 "name": "FileState",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "error",
+            "description": "Download error message",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -3548,114 +3677,6 @@
             "deprecationReason": null
           }
         ],
-        "possibleTypes": null
-      },
-      {
-        "kind": "OBJECT",
-        "name": "__Field",
-        "description": null,
-        "specifiedByUrl": null,
-        "fields": [
-          {
-            "name": "name",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "description",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "args",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "__InputValue",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "type",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "__Type",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "isDeprecated",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "deprecationReason",
-            "description": null,
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ],
-        "inputFields": null,
-        "interfaces": [],
-        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -3892,7 +3913,7 @@
       },
       {
         "kind": "OBJECT",
-        "name": "__EnumValue",
+        "name": "__Field",
         "description": null,
         "specifiedByUrl": null,
         "fields": [
@@ -3920,6 +3941,46 @@
               "kind": "SCALAR",
               "name": "String",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "args",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "__InputValue",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "type",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "__Type",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null

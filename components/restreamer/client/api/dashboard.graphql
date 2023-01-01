@@ -16,6 +16,7 @@ subscription Statistics {
                 }
                 serverInfo {
                     cpuUsage
+                    cpuCores
                     ramTotal
                     ramFree
                     txDelta
