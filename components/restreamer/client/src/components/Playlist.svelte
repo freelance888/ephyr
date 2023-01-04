@@ -95,6 +95,7 @@
 </script>
 
 <template>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="playlist">
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
@@ -132,7 +133,6 @@
           <span
             class="item-drag-zone uk-icon"
             uk-icon="table"
-            tabindex="0"
             on:mousedown={startDrag}
           />
 

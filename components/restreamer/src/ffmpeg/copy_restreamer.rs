@@ -63,7 +63,10 @@ impl CopyRestreamer {
             }
 
             "rtmp" | "rtmps" => cmd,
-
+            "file" => {
+                cmd.arg("-re");
+                cmd.args(&["-stream_loop", "-1"])
+            }
             _ => unimplemented!(),
         }
         .args(["-i", self.from_url.as_str()]);

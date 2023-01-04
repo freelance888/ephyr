@@ -65,6 +65,7 @@
             <a
               download
               target="_blank"
+              rel="noopener noreferrer"
               title="Download recorded file"
               href="http://{public_host}:8000/dvr/{file}"
               >{file.split('/').slice(-1)[0]}</a

@@ -84,6 +84,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         let root_dir_files = public_dir::generate();
         let mix_dir_files = public_mix_dir::generate();
         let dashboard_dir_files = public_dashboard_dir::generate();
+        let full_stream_dir_files = public_full_stream_dir::generate();
 
         let mut app = App::new()
             .app_data(stored_cfg.clone())

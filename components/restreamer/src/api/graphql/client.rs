@@ -27,6 +27,7 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
+    spec::v1::BackupInput,
     state::{EndpointId, NumberOfItems, ServerInfo, VolumeLevel},
 };
 use url::Url;
@@ -129,27 +130,16 @@ impl MutationsRoot {
                            If not specified then `Restream` will await for a \
                            live stream being pushed to its endpoint.")]
         src: Option<InputSrcUrl>,
-        #[graphql(
-            description = "URL to pull a live stream from for a backup \
-                           endpoint.\
-                           \n\n\
-                           If not specified then `Restream` will await for a \
-                           live stream being pushed to its backup endpoint.\
-                           \n\n\
-                           Has no effect if `withBackup` argument is not \
-                           `true`."
-        )]
-        backup_src: Option<InputSrcUrl>,
+        #[graphql(description = "List of backup Inputs")] backup_inputs: Option<
+            Vec<BackupInput>,
+        >,
         #[graphql(
             description = "Google drive file ID for failover file endpoint."
         )]
         file_id: Option<String>,
-        #[graphql(
-            description = "Indicator whether the `Restream` should have a \
-                               backup endpoint for a live stream.",
-            default = false
-        )]
-        with_backup: bool,
+        #[graphql(description = "Override for global maximum for files in \
+                                 playlist")]
+        max_files_in_playlist: Option<NumberOfItems>,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
                            additional endpoint for serving a live stream via \
@@ -157,55 +147,69 @@ impl MutationsRoot {
             default = false
         )]
         with_hls: bool,
-        #[graphql(description = "Override for global maximum for files in \
-                                 playlist")]
-        max_files_in_playlist: Option<NumberOfItems>,
         #[graphql(description = "ID of the `Restream` to be updated \
                                  rather than creating a new one.")]
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        let input_src = if with_backup {
-            let mut inputs = vec![spec::v1::Input {
-                id: None,
-                key: InputKey::new("main").unwrap(),
-                endpoints: vec![spec::v1::InputEndpoint {
-                    kind: InputEndpointKind::Rtmp,
-                    label: None,
-                    file_id: None,
-                }],
-                src: src.map(spec::v1::InputSrc::RemoteUrl),
-                enabled: true,
-            }];
-
-            if file_id.is_some() {
-                inputs.push(spec::v1::Input {
-                    id: None,
-                    key: InputKey::new("backup").unwrap(),
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::File,
-                        label: None,
-                        file_id,
-                    }],
-                    src: None,
-                    enabled: true,
-                });
-            } else {
-                inputs.push(spec::v1::Input {
-                    id: None,
-                    key: InputKey::new("backup").unwrap(),
-                    endpoints: vec![spec::v1::InputEndpoint {
-                        kind: InputEndpointKind::Rtmp,
-                        label: None,
-                        file_id: None,
-                    }],
-                    src: backup_src.map(spec::v1::InputSrc::RemoteUrl),
-                    enabled: true,
-                });
-            }
-            Some(spec::v1::InputSrc::FailoverInputs(inputs))
+        let (input_key, input_src) = if let Some(backups) = backup_inputs {
+            (
+                InputKey::new("playback").unwrap(),
+                Some(spec::v1::InputSrc::FailoverInputs(
+                    vec![spec::v1::Input {
+                        id: None,
+                        key: InputKey::new("primary").unwrap(),
+                        endpoints: vec![spec::v1::InputEndpoint {
+                            kind: InputEndpointKind::Rtmp,
+                            label: None,
+                            file_id: None,
+                        }],
+                        src: src.map(spec::v1::InputSrc::RemoteUrl),
+                        enabled: true,
+                    }]
+                    .into_iter()
+                    .chain(backups.into_iter().map(|b| spec::v1::Input {
+                        id: None,
+                        key: b.key,
+                        endpoints: vec![spec::v1::InputEndpoint {
+                            kind: InputEndpointKind::Rtmp,
+                            label: None,
+                            file_id: None,
+                        }],
+                        src: b.src.map(spec::v1::InputSrc::RemoteUrl),
+                        enabled: true,
+                    }))
+                    .chain(
+                        file_id
+                            .map_or_else(
+                                || vec![],
+                                |id| {
+                                    vec![spec::v1::Input {
+                                        id: None,
+                                        key: InputKey::new("file_backup")
+                                            .unwrap(),
+                                        endpoints: vec![
+                                            spec::v1::InputEndpoint {
+                                                kind: InputEndpointKind::File,
+                                                label: None,
+                                                file_id: Some(id),
+                                            },
+                                        ],
+                                        src: None,
+                                        enabled: true,
+                                    }]
+                                },
+                            )
+                            .into_iter(),
+                    )
+                    .collect(),
+                )),
+            )
         } else {
-            src.map(spec::v1::InputSrc::RemoteUrl)
+            (
+                InputKey::new("primary").unwrap(),
+                src.map(spec::v1::InputSrc::RemoteUrl),
+            )
         };
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
@@ -225,15 +229,15 @@ impl MutationsRoot {
             id: None,
             key,
             label,
-            max_files_in_playlist,
             input: spec::v1::Input {
                 id: None,
-                key: InputKey::new("origin").unwrap(),
+                key: input_key,
                 endpoints,
                 src: input_src,
                 enabled: true,
             },
             outputs: vec![],
+            max_files_in_playlist,
         };
 
         #[allow(clippy::option_if_let_else)] // due to consuming `spec`
@@ -513,35 +517,18 @@ impl MutationsRoot {
     /// Returns `true` if the label has been set with the given `label`,
     /// `false` if it was not
     /// `null` if the `Input` or `Endpoint` doesn't exist.
-    fn change_endpoint_label(
+    fn set_endpoint_label(
         #[graphql(description = "ID of the `Input` to be changed.")]
         id: InputId,
         #[graphql(description = "ID of the `Restream` to change.")]
         restream_id: RestreamId,
         endpoint_id: EndpointId,
-        label: String,
+        label: Option<Label>,
         context: &Context,
     ) -> Option<bool> {
-        if label.is_empty() {
-            context.state().change_endpoint_label(
-                id,
-                restream_id,
-                endpoint_id,
-                None,
-            )
-        } else {
-            let label_opt: Option<Label> = Label::new(label);
-            if label_opt.is_some() {
-                context.state().change_endpoint_label(
-                    id,
-                    restream_id,
-                    endpoint_id,
-                    label_opt,
-                )
-            } else {
-                Some(false)
-            }
-        }
+        context
+            .state()
+            .set_endpoint_label(id, restream_id, endpoint_id, label)
     }
 
     /// Sets a new `Output` or updates an existing one (if `id` is specified).
@@ -904,7 +891,7 @@ impl MutationsRoot {
         if path.starts_with('/') || path.contains("../") {
             return Err(graphql::Error::new("INVALID_DVR_FILE_PATH")
                 .status(StatusCode::BAD_REQUEST)
-                .message(&format!("Invalid DVR file path: {}", path)));
+                .message(&format!("Invalid DVR file path: {path}")));
         }
 
         Ok(dvr::Storage::global().remove_file(path).await)
@@ -966,7 +953,7 @@ impl MutationsRoot {
             argon2::hash_encoded(
                 v.as_bytes(),
                 &rand::thread_rng().gen::<[u8; 32]>(),
-                &*HASH_CFG,
+                &HASH_CFG,
             )
             .unwrap()
         });
@@ -1052,6 +1039,7 @@ impl QueriesRoot {
         let info = context.state().server_info.get_cloned();
         ServerInfo {
             cpu_usage: info.cpu_usage,
+            cpu_cores: info.cpu_cores,
             ram_total: info.ram_total,
             ram_free: info.ram_free,
             tx_delta: info.tx_delta,
@@ -1074,6 +1062,8 @@ impl QueriesRoot {
     /// server in `dvr/` directory, so the download link should look like this:
     /// ```ignore
     /// http://my.host:8080/dvr/returned/file/path.flv
+    /// http://my.host:8080/dvr/returned/file/path.wav
+    /// http://my.host:8080/dvr/returned/file/path.mp3
     /// ```
     ///
     /// [SRS]: https://github.com/ossrs/srs
@@ -1119,7 +1109,7 @@ impl QueriesRoot {
                 }
                 .into();
                 serde_json::to_string(&spec).map_err(|e| {
-                    anyhow!("Failed to JSON-serialize spec: {}", e).into()
+                    anyhow!("Failed to JSON-serialize spec: {e}").into()
                 })
             })
             .transpose()
