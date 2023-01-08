@@ -19,9 +19,10 @@
     unused_qualifications,
     unused_results
 )]
-
-pub use slog::{self, Drain};
-pub use slog_scope::{self as log, logger};
+pub use tracing::{self, Level};
+pub use tracing_log::log;
+use tracing_log::LogTracer;
+use tracing_subscriber::FmtSubscriber;
 
 /// Initializes global logger with the given verbosity `level` ([`Info`] by
 /// default, if [`None`]), returning its guard that should be held as long as
@@ -31,41 +32,13 @@ pub use slog_scope::{self as log, logger};
 ///
 /// If failed to initialize logger.
 ///
-/// [`Info`]: slog::Level::Info
-pub fn init(level: Option<slog::Level>) -> slog_scope::GlobalLoggerGuard {
-    let guard = slog_scope::set_global_logger(main_logger(
-        level.unwrap_or(slog::Level::Info),
-    ));
-    if let Err(e) = slog_stdlog::init() {
+/// [`Info`]: tracing::Level::INFO
+pub fn init(level: Option<Level>) {
+    if let Err(e) = LogTracer::init() {
         panic!("Failed to initialize logger: {}", e);
     };
-    guard
-}
-
-/// Creates, configures and returns main [`Logger`] of the application.
-///
-/// [`Logger`]: slog::Logger
-#[must_use]
-pub fn main_logger(level: slog::Level) -> slog::Logger {
-    use slog::Drain as _;
-    use slog_async::OverflowStrategy::Drop;
-
-    let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::CompactFormat::new(decorator).build().fuse();
-
-    let drain = drain
-        .filter_level(level)
-        .filter(|rec| {
-            // Disable annoying DEBUG logs from `hyper` crate.
-            !(rec.level() == slog::Level::Debug
-                && rec.module() == "hyper::proto::h1::io")
-        })
-        .fuse();
-
-    let drain = slog_async::Async::new(drain)
-        .overflow_strategy(Drop)
-        .build()
-        .fuse();
-
-    slog::Logger::root(drain, slog::o!())
+    let level = level.unwrap_or(Level::INFO);
+    let subscriber = FmtSubscriber::builder().with_max_level(level).finish();
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting tracing subscriber failed");
 }

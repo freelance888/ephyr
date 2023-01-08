@@ -20,7 +20,7 @@ use std::{
 use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
 use derive_more::{Display, Error};
-use ephyr_log::log;
+use ephyr_log::{log, tracing};
 use futures::{
     future, ready, sink, FutureExt as _, Stream, StreamExt as _,
     TryFutureExt as _,
@@ -116,19 +116,14 @@ impl Input {
     #[must_use]
     pub fn new<C: Into<Config>>(cfg: C) -> Self {
         let cfg = {
-            use ephyr_log::Drain as _;
-
-            let lgr = ephyr_log::logger();
-            let is_debug = lgr.is_debug_enabled();
-            let is_trace = lgr.is_trace_enabled();
+            let current_level = tracing::level_filters::LevelFilter::current();
+            let is_debug = current_level == tracing::Level::DEBUG;
+            let is_trace = current_level == tracing::Level::TRACE;
 
             // TODO #6: Memoize TeamSpeak Identity and reuse.
             //      https://github.com/ALLATRA-IT/ephyr/issues/6
-            let mut cfg = cfg
-                .into()
-                .logger(lgr)
-                .log_commands(is_debug)
-                .log_packets(is_trace);
+            let mut cfg =
+                cfg.into().log_commands(is_debug).log_packets(is_trace);
             // TeamSpeak limits client names by 30 UTF-8 characters max. If the
             // provided name is longer, then we should truncate it to fit into
             // the requirement.
@@ -139,7 +134,6 @@ impl Input {
             cfg
         };
 
-        let lgr = ephyr_log::logger();
         Self {
             cfg,
             ticker: time::interval(Duration::from_millis(
@@ -147,7 +141,7 @@ impl Input {
             )),
             frame: vec![0.0; Self::FRAME_SIZE],
             cursor: 0,
-            audio: Arc::new(Mutex::new(AudioHandler::new(lgr))),
+            audio: Arc::new(Mutex::new(AudioHandler::new())),
             conn: None,
             is_conn_unrecoverable: Arc::new(AtomicBool::default()),
         }

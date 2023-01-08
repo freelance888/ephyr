@@ -2,12 +2,11 @@
 name = "ephyr-log"
 version = "0.1.0"
 edition = "2018"
-authors = ["Kai Ren <tyranron@gmail.com>"]
+authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 
 [dependencies]
-slog = "2.5"
-slog-async = "2.5"
-slog-scope = "4.3"
-slog-stdlog = "4.0"
-slog-term = "2.5"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+tracing-log = "0.1"
+tracing-futures = "0.2.5"

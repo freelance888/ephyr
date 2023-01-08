@@ -14,7 +14,7 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, slog};
+use ephyr_log::{log, tracing};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{fs, process::Command};
@@ -95,13 +95,13 @@ impl Server {
                 let cmd = &mut cmd;
                 let _ = AssertUnwindSafe(async move {
                     let process = cmd.spawn().map_err(|e| {
-                        log::crit!("Cannot start SRS server: {e}");
+                        log::error!("Cannot start SRS server: {e}");
                     })?;
                     let out =
                         process.wait_with_output().await.map_err(|e| {
-                            log::crit!("Failed to observe SRS server: {e}");
+                            log::error!("Failed to observe SRS server: {e}");
                         })?;
-                    log::crit!(
+                    log::error!(
                         "SRS server stopped with exit code: {}",
                         out.status,
                     );
@@ -111,7 +111,7 @@ impl Server {
                 .catch_unwind()
                 .await
                 .map_err(|p| {
-                    log::crit!(
+                    log::error!(
                         "Panicked while spawning/observing SRS server: {}",
                         display_panic(&p),
                     );
@@ -289,14 +289,14 @@ pub enum LogLevel {
     Verbose,
 }
 
-impl From<slog::Level> for LogLevel {
+impl From<tracing::Level> for LogLevel {
     #[inline]
-    fn from(lvl: slog::Level) -> Self {
+    fn from(lvl: tracing::Level) -> Self {
         match lvl {
-            slog::Level::Critical | slog::Level::Error => Self::Error,
-            slog::Level::Warning | slog::Level::Info => Self::Warn,
-            slog::Level::Debug => Self::Trace,
-            slog::Level::Trace => Self::Info,
+            tracing::Level::ERROR => Self::Error,
+            tracing::Level::WARN | tracing::Level::INFO => Self::Warn,
+            tracing::Level::DEBUG => Self::Trace,
+            tracing::Level::TRACE => Self::Info,
         }
     }
 }

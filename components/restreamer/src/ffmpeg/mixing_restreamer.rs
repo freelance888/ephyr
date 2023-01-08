@@ -15,7 +15,7 @@ use std::{
     sync::Arc,
 };
 
-use ephyr_log::{log, Drain as _};
+use ephyr_log::{log, tracing};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{
@@ -170,7 +170,9 @@ impl MixingRestreamer {
                 r.outputs.iter().find(|o| o.id == my_id).cloned()
             });
 
-        if ephyr_log::logger().is_debug_enabled() {
+        if tracing::level_filters::LevelFilter::current()
+            >= tracing::Level::DEBUG
+        {
             let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         } else {
             let _ = cmd.stderr(Stdio::null());
@@ -637,7 +639,7 @@ fn tune_with_zmq(port: u16, command: ZmqMessage) {
         })
         .catch_unwind()
         .map_err(|p| {
-            log::crit!(
+            log::trace!(
                 "Panicked while sending ZeroMQ message: {}",
                 display_panic(&p),
             );

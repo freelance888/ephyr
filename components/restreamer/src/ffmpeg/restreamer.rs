@@ -142,7 +142,7 @@ impl Restreamer {
                 .catch_unwind()
                 .await
                 .map_err(|p| {
-                    log::crit!(
+                    log::error!(
                         "Panicked while spawning/observing FFmpeg \
                          re-streamer: {}",
                         display_panic(&p),

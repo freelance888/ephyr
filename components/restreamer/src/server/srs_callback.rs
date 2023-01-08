@@ -327,7 +327,7 @@ fn update_stream_info(id: EndpointId, url: Url, state: State) {
         })
         .catch_unwind()
         .map_err(move |p| {
-            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+            log::error!("Can not fetch stream info: {}", display_panic(&p),);
         }),
     ));
 }

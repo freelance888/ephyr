@@ -43,7 +43,7 @@ pub mod types;
 
 use std::{any::Any, mem};
 
-use ephyr_log::slog;
+use ephyr_log::tracing;
 
 pub use self::{spec::Spec, state::State};
 
@@ -57,7 +57,7 @@ pub fn run() -> Result<(), cli::Failure> {
     let mut cfg = cli::Opts::from_args();
     cfg.verbose = cfg.verbose.or({
         if cfg.debug {
-            Some(slog::Level::Debug)
+            Some(tracing::Level::DEBUG)
         } else {
             None
         }

@@ -3,7 +3,7 @@
 use std::{fmt, net::IpAddr, path::PathBuf, str::FromStr as _};
 
 use anyhow::anyhow;
-use ephyr_log::slog;
+use ephyr_log::tracing;
 use structopt::StructOpt;
 
 /// CLI (command line interface) of the re-streamer server.
@@ -131,9 +131,9 @@ pub struct Opts {
         long,
         parse(try_from_str = Self::parse_log_level),
         help = "Logs verbosity level: \
-                OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE"
+                OFF | ERRO | WARN | INFO | DEBG | TRCE"
     )]
-    pub verbose: Option<slog::Level>,
+    pub verbose: Option<tracing::Level>,
 }
 
 impl Opts {
@@ -158,9 +158,9 @@ impl Opts {
     ///
     /// [`Display`]: std::fmt::Display
     /// [`FromStr`]: std::str::FromStr
-    pub fn parse_log_level(lvl: &str) -> Result<slog::Level, anyhow::Error> {
+    pub fn parse_log_level(lvl: &str) -> Result<tracing::Level, anyhow::Error> {
         #[allow(clippy::map_err_ignore)]
-        slog::Level::from_str(lvl).map_err(|_| {
+        tracing::Level::from_str(lvl).map_err(|_| {
             anyhow!(
                 "'{}' is invalid verbosity level, allowed levels are: \
                  OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE",

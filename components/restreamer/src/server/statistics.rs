@@ -131,7 +131,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
             .catch_unwind()
             .await
             .map_err(|p| {
-                log::crit!(
+                log::error!(
                     "Panicked while getting server statistics {}",
                     display_panic(&p),
                 );
