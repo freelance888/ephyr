@@ -24,7 +24,7 @@
   };
 </script>
 
-<li class="uk-form-small uk-flex uk-flex-between backup-item">
+<li class="uk-form-small uk-flex uk-flex-between uk-flex-middle backup-item">
   <span class="key-label">{backup.key}</span>
   <label>
     <input

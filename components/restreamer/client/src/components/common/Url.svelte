@@ -43,6 +43,7 @@
     margin-left: 4px
 
   .url-copy-btn
+    height: 100%
     align-self: flex-start
     color: var(--primary-text-color)
     opacity: 0

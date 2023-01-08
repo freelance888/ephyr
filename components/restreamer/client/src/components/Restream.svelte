@@ -1,26 +1,26 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
-  import { mutation, getClient, subscribe } from 'svelte-apollo';
+  import { getClient, mutation, subscribe } from 'svelte-apollo';
 
   import {
-    RemoveRestream,
-    DisableOutput,
     DisableAllOutputs,
+    DisableOutput,
     EnableAllOutputs,
     EnableOutput,
     ExportRestream,
-    RemoveOutput,
-    TuneDelay,
-    TuneVolume,
-    TuneSidechain,
     Info,
+    RemoveOutput,
+    RemoveRestream,
+    TuneDelay,
+    TuneSidechain,
+    TuneVolume
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, showError } from '../utils/util';
   import { statusesList } from '../constants/statuses';
 
-  import { outputModal, exportModal } from '../stores';
+  import { exportModal, outputModal } from '../stores';
 
   import Confirm from './common/Confirm.svelte';
   import Output from './Output.svelte';
@@ -31,6 +31,7 @@
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
   import Input from './input/Input.svelte';
+  import cloneDeep from 'lodash/cloneDeep';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -245,7 +246,7 @@
       <RestreamModal
         public_host={$info.data.info.publicHost}
         bind:visible={openRestreamModal}
-        restream={new RestreamModel(value)}
+        restream={new RestreamModel(cloneDeep(value))}
       />
     {/if}
     <Input

@@ -48,6 +48,14 @@
         });
       }
 
+      if (current.maxFilesInPlaylist ?? '' !== previous.maxFilesInPlaylist) {
+        changed ||= true;
+      }
+
+      if (current.fileId !== previous.fileId) {
+        changed ||= true;
+      }
+
       if (!!current.id) {
         changed ||= current.withHls !== previous.withHls;
       }
@@ -60,7 +68,7 @@
 
     let variables: any = {
       key: restream.key,
-      with_hls: restream.withHls,
+      with_hls: restream.withHls
     };
 
     if (restream.label) {
@@ -74,7 +82,7 @@
     if (restream.backups.length) {
       variables.backup_inputs = restream.backups.map((x) => ({
         key: x.key,
-        src: x.pullUrl,
+        src: x.pullUrl
       }));
     }
 
@@ -82,11 +90,11 @@
       variables.id = restream.id;
     }
 
-    if(restream.fileId) {
+    if (restream.fileId) {
       variables.file_id = restream.fileId;
     }
 
-    if(restream.maxFilesInPlaylist) {
+    if (restream.maxFilesInPlaylist) {
       variables.max_files_in_playlist = restream.maxFilesInPlaylist;
     }
 
@@ -139,41 +147,41 @@
 
 <template>
   <div
-    class="uk-modal uk-open"
+    class='uk-modal uk-open'
     use:saveOrCloseByKeys={{ save: submit, close: close }}
   >
-    <div class="uk-modal-dialog uk-modal-body">
-      <h2 class="uk-modal-title">
+    <div class='uk-modal-dialog uk-modal-body'>
+      <h2 class='uk-modal-title'>
         {#if $restreamStore.id}Edit{:else}Add new{/if} input source for re-streaming
       </h2>
       <button
-        class="uk-modal-close-outside"
+        class='uk-modal-close-outside'
         uk-close
-        type="button"
+        type='button'
         on:click={close}
       />
 
       <fieldset>
-        <div class="restream">
+        <div class='restream'>
           <input
-            class="uk-input uk-form-small"
-            type="text"
-            data-testid="add-input-modal:label-input"
+            class='uk-input uk-form-small'
+            type='text'
+            data-testid='add-input-modal:label-input'
             bind:value={$restreamStore.label}
             on:change={onChangeLabel}
-            placeholder="optional label"
+            placeholder='optional label'
           />
           <label
-            >rtmp://{public_host}/<input
-              class="uk-input"
-              type="text"
-              data-testid="add-input-modal:stream-key-input"
-              placeholder="<stream-key>"
-              bind:value={$restreamStore.key}
-              on:change={onChangeRestreamKey}
-            />/primary</label
+          >rtmp://{public_host}/<input
+            class='uk-input'
+            type='text'
+            data-testid='add-input-modal:stream-key-input'
+            placeholder='<stream-key>'
+            bind:value={$restreamStore.key}
+            on:change={onChangeRestreamKey}
+          />/primary</label
           >
-          <div class="uk-alert">
+          <div class='uk-alert'>
             {#if $restreamStore.isPull}
               Server will pull RTMP stream from the address below.
               <br />
@@ -185,41 +193,41 @@
             {/if}
           </div>
         </div>
-        <div class="pull">
+        <div class='pull'>
           <label
-            ><input
-              class="uk-checkbox"
-              type="checkbox"
-              bind:checked={$restreamStore.isPull}
-            /> or pull from</label
+          ><input
+            class='uk-checkbox'
+            type='checkbox'
+            bind:checked={$restreamStore.isPull}
+          /> or pull from</label
           >
           {#if $restreamStore.isPull}
             <input
-              class="uk-input"
-              type="text"
+              class='uk-input'
+              type='text'
               bind:value={$restreamStore.pullUrl}
-              placeholder="rtmp://..."
+              placeholder='rtmp://...'
             />
           {/if}
         </div>
-        <div class="hls">
+        <div class='hls'>
           <label
-            ><input
-              class="uk-checkbox"
-              type="checkbox"
-              bind:checked={$restreamStore.withHls}
-            /> with HLS endpoint</label
+          ><input
+            class='uk-checkbox'
+            type='checkbox'
+            bind:checked={$restreamStore.withHls}
+          /> with HLS endpoint</label
           >
         </div>
 
-        <div class="uk-section uk-section-xsmall backups-section">
+        <div class='uk-section uk-section-xsmall backups-section'>
           <button
-            data-testid="add-output-modal:add-backup"
-            class="uk-button uk-button-primary uk-button-small"
+            data-testid='add-output-modal:add-backup'
+            class='uk-button uk-button-primary uk-button-small'
             on:click={() => addBackup()}
-            >Add backup
+          >Add backup
           </button>
-          <ul class="uk-list uk-margin-left">
+          <ul class='uk-list uk-margin-left'>
             {#each $restreamStore.backups as backup, index}
               <RestreamBackup
                 {backup}
@@ -231,27 +239,36 @@
         </div>
 
         <div class='uk-section uk-section-xsmall'>
-        <input
-          class="uk-input google-api-key"
-          type="text"
-          bind:value={$restreamStore.fileId}
-          placeholder="Google file id"
-        />
-        <input
-          class="uk-input uk-width-1-4 files-limit"
-          type="number"
-          min="2"
-          step="1"
-          bind:value={$restreamStore.maxFilesInPlaylist}
-          placeholder="Files limit"
-        />
-          <div class="uk-alert">Max amount of files in a playlist.</div>
+          <div class='layout-no-wrap'>
+            <input
+              class='uk-input'
+              type='text'
+              bind:value={$restreamStore.fileId}
+              placeholder='Google file id'
+            />
+            <button
+              type='button'
+              class='uk-display-inline-block clear-file-id'
+              uk-close
+              on:click={() => ($restreamStore.fileId = '')}
+            />
+          </div>
+          <div class='uk-alert'>Google file id for file backup.</div>
+          <input
+            class='uk-input uk-width-1-4 files-limit'
+            type='number'
+            min='2'
+            step='1'
+            bind:value={$restreamStore.maxFilesInPlaylist}
+            placeholder='Files limit'
+          />
+          <div class='uk-alert'>Max amount of files in a playlist.</div>
         </div>
       </fieldset>
 
       <button
-        class="uk-button uk-button-primary"
-        data-testid="add-input-modal:confirm"
+        class='uk-button uk-button-primary'
+        data-testid='add-input-modal:confirm'
         disabled={!submitable}
         on:click={submit}
       >
@@ -262,7 +279,7 @@
 
 </template>
 
-<style lang="stylus">
+<style lang='stylus'>
   .uk-modal
     &.uk-open
       display: block
@@ -273,10 +290,6 @@
   fieldset
     border: none
     padding: 0
-
-  .uk-alert
-    font-size: 14px
-    margin: 10px 0
 
   .restream
     .uk-form-small
@@ -299,6 +312,15 @@
   .backups-section
     padding-top: 10px;
     padding-bottom: 0;
+
   .files-limit
     margin-top: 5px;
+
+  .clear-file-id
+    position: relative
+    left: -26px;
+
+  .layout-no-wrap
+    white-space: nowrap
+
 </style>
