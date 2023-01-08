@@ -42,10 +42,14 @@ systemstat = "0.2"
 url = { version = "2.1", features = ["serde"] }
 uuid = { version = "1.1", features = ["serde", "v4"] }
 zeromq = "0.3"
-tsclientlib = "0.2"
-tsproto-packets = "0.1"
 interprocess = { version = "1.2", features = ["tokio_support"] }
 tokio-stream = { version="0.1", features = ["fs"]}
+[dependencies.tsclientlib]
+    git = "https://github.com/ReSpeak/tsclientlib"
+    rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
+[dependencies.tsproto-packets]
+    git = "https://github.com/ReSpeak/tsclientlib"
+    rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
 [dependencies.derive_more]
     version = "0.99"
     features = ["as_ref", "deref", "display", "error", "from"]
