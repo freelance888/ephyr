@@ -139,8 +139,7 @@
         {#if $restreamStore.id}Edit{:else}Add new{/if} input source for re-streaming
       </h2>
       <button
-        class="uk-modal-close-outside"
-        uk-close
+        class="uk-modal-close-outside uk-close"
         type="button"
         on:click={close}
       />
