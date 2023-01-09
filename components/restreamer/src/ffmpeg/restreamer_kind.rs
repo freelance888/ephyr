@@ -4,13 +4,16 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::log;
+use ephyr_log::{log, tracing};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
+use std::{
+    convert::TryInto, os::unix::process::ExitStatusExt, process::Stdio,
+    time::Duration,
+};
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -223,6 +226,13 @@ impl RestreamerKind {
         cmd: &mut Command,
         state: &State,
     ) -> io::Result<()> {
+        if tracing::level_filters::LevelFilter::current()
+            >= tracing::Level::DEBUG
+        {
+            let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
+        } else {
+            let _ = cmd.stderr(Stdio::null());
+        };
         match self {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),

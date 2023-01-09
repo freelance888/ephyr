@@ -11,11 +11,10 @@ use std::{
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
-    process::Stdio,
     sync::Arc,
 };
 
-use ephyr_log::{log, tracing};
+use ephyr_log::log;
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{
@@ -169,14 +168,6 @@ impl MixingRestreamer {
             state.restreams.lock_ref().iter().find_map(|r| {
                 r.outputs.iter().find(|o| o.id == my_id).cloned()
             });
-
-        if tracing::level_filters::LevelFilter::current()
-            >= tracing::Level::DEBUG
-        {
-            let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
-        } else {
-            let _ = cmd.stderr(Stdio::null());
-        }
 
         let orig_volume = output
             .as_ref()
