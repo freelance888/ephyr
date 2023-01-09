@@ -20,6 +20,7 @@
     unused_results
 )]
 pub use tracing::{self, Level};
+pub use tracing_actix_web;
 pub use tracing_log::log;
 use tracing_log::LogTracer;
 use tracing_subscriber::FmtSubscriber;

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use actix_service::Service as _;
 use actix_web::{
-    dev::ServiceRequest, get, middleware, route, web, App, Error, HttpRequest,
+    dev::ServiceRequest, get, route, web, App, Error, HttpRequest,
     HttpResponse, HttpServer,
 };
 use actix_web_httpauth::extractors::{
@@ -11,7 +11,7 @@ use actix_web_httpauth::extractors::{
     AuthExtractor as _, AuthExtractorConfig, AuthenticationError,
 };
 use actix_web_static_files::ResourceFiles;
-use ephyr_log::log;
+use ephyr_log::{log, tracing_actix_web::TracingLogger};
 use futures::{future, FutureExt as _};
 use juniper::http::playground::playground_source;
 use juniper_actix::{graphql_handler, subscriptions::subscriptions_handler};
@@ -85,7 +85,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .app_data(web::Data::new(api::graphql::mix::schema()))
             .app_data(web::Data::new(api::graphql::dashboard::schema()))
             .app_data(web::Data::new(api::graphql::statistics::schema()))
-            .wrap(middleware::Logger::default())
+            .wrap(TracingLogger::default())
             .wrap_fn(|req, srv| match authorize(req) {
                 Ok(req) => srv.call(req).left_future(),
                 Err(e) => future::err(e).right_future(),
