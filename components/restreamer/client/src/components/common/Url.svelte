@@ -3,11 +3,21 @@
 
   export let url;
   export let previewUrl;
+  export let streamInfo;
+  export let isError;
 </script>
 
 <template>
   <div class="url">
     <span class="url-placeholder">{url}</span>
+    {#if streamInfo}
+      <span
+        class="info-icon"
+        class:has-error={isError}
+        uk-icon="icon: info; ratio: 0.7"
+        uk-tooltip={streamInfo}
+      />
+    {/if}
     {#if previewUrl}
       <span class="url-preview"
         >&nbsp;[<a href={previewUrl} target="_blank" rel="noopener noreferrer"
@@ -27,6 +37,7 @@
 
 <style lang="stylus">
   .url
+    align-items: center
     display: inline-flex
     min-width: 20em
 
@@ -35,6 +46,8 @@
         opacity: 1
         vertical-align: baseline
 
+  .info-icon
+    margin-left: 4px
 
   .url-placeholder
     word-break: break-all
@@ -43,8 +56,8 @@
     margin-left: 4px
 
   .url-copy-btn
+    align-self: center
     height: 100%
-    align-self: flex-start
     color: var(--primary-text-color)
     opacity: 0
     text-transform: initial
@@ -53,4 +66,8 @@
     transition: 0.1s ease-in
     &:hover
       color: var(--primary-text-hover-color)
+
+  .has-error
+    color:  var(--danger-color)
+
 </style>

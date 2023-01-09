@@ -1,13 +1,6 @@
 <script lang="js">
-  import { mutation } from 'svelte-apollo';
-
-  import { SetEndpointLabel } from '../../../api/client.graphql';
-
   import Url from '../common/Url.svelte';
-  import { showError } from '../../utils/util';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
-
-  const changeLabelMutation = mutation(SetEndpointLabel);
 
   export let endpoint;
   export let input;
@@ -17,12 +10,9 @@
   export let show_controls;
   export let files;
 
-  let label_component;
-  let label_input;
-  let editing_label = false;
-
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
+
   $: current_file = searchFile($files.data);
   $: isFile = endpoint.kind === 'FILE';
   $: alertDanger = isFile
@@ -30,7 +20,7 @@
     : endpoint.status === 'OFFLINE';
   $: alertWarning = isFile
     ? current_file &&
-      (current_file.state === 'PENDING' || current_file.state === 'DOWNLOADING')
+    (current_file.state === 'PENDING' || current_file.state === 'DOWNLOADING')
     : endpoint.status === 'INITIALIZING';
   $: alertSuccess = isFile
     ? current_file && current_file.state === 'LOCAL'
@@ -44,35 +34,27 @@
     }
   }
 
-  async function editLabel(startEdit) {
-    if (startEdit) {
-      editing_label = true;
-    } else {
-      const variables = {
-        restream_id: restream_id,
-        input_id: input.id,
-        endpoint_id: endpoint.id,
-        label: label_input.value,
-      };
-      try {
-        let result_val = await changeLabelMutation({ variables });
-        if (result_val.data.changeEndpointLabel) {
-          endpoint.label = label_input.value;
-          label_component.value = endpoint.label;
-          editing_label = false;
-        } else {
-          showError('Provided text has invalid characters or is too long.');
-        }
-      } catch (e) {
-        showError(e.message);
-      }
-    }
-  }
 
-  function init_input(label_input) {
-    label_input.value = endpoint.label;
-    label_input.focus();
-  }
+  const formatStreamInfo = (streamStat) => {
+    if (streamStat) {
+      return streamStat.error
+        ? streamStat.error
+        : `<span><strong>${input.key}</strong></span>
+          <br/>
+          <span><strong>video</strong>&#58; ${
+            streamStat.videoCodecName
+          }, </span>
+          <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
+          <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
+          <br/>
+          <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
+          <span>${streamStat.audioSampleRate},</span>
+          <span>${streamStat.audioChannelLayout},</span>
+          <span>channels&#58; ${streamStat.audioChannels}</span>`;
+    }
+
+    return '';
+  };
 </script>
 
 <template>
@@ -86,10 +68,10 @@
     >
       {#if endpoint.kind === 'FILE'}
         <span
-          ><i
-            class="fas fa-file"
-            title="Serves live {endpoint.kind} stream"
-          /></span
+        ><i
+          class="fas fa-file"
+          title="Serves live {endpoint.kind} stream"
+        /></span
         >
       {:else if isFailover || endpoint.kind !== 'RTMP'}
         {#if endpoint.status === 'ONLINE'}
@@ -139,6 +121,8 @@
 
     {#if endpoint.kind === 'FILE' && current_file}
       <Url
+        streamInfo={formatStreamInfo(endpoint.streamStat)}
+        isError={!!endpoint.streamStat?.error}
         url="{current_file.name ? current_file.name : current_file.fileId}
       {current_file.downloadState &&
         current_file.downloadState.currentProgress !==
@@ -151,10 +135,14 @@
           : ''}"
       />
     {:else}
-      <Url url={input_url} />
-      {#if with_label}
-        <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
-      {/if}
+      <Url
+        streamInfo={formatStreamInfo(endpoint.streamStat)}
+        isError={!!endpoint.streamStat?.error}
+        url={input_url}
+      />
+        {#if with_label}
+          <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
+        {/if}
     {/if}
   </div>
 </template>

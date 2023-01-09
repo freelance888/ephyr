@@ -1,4 +1,6 @@
 <script lang="js">
+  import { STREAM_ERROR, STREAM_WARNING } from '../../utils/constants';
+
   export let count;
   export let active;
   export let status;
@@ -29,7 +31,15 @@
       class:initializing={status === 'INITIALIZING'}
       class:unstable={status === 'UNSTABLE'}
     >
-      <span class="circle" />
+      {#if [STREAM_ERROR, STREAM_WARNING].includes(status)}
+        <i
+          class:streams-errors={status === STREAM_ERROR}
+          class:streams-warnings={status === STREAM_WARNING}
+          class="fa fa-info-circle info-icon"
+        />
+      {:else}
+        <span class="circle" />
+      {/if}
       {count}
     </div>
   </div>
@@ -55,4 +65,9 @@
       &:hover
         background-color: #bdbdbd
         cursor: pointer
+
+  .streams-errors
+    color: var(--danger-color)
+  .streams-warnings
+    color: var(--warning-color)
 </style>

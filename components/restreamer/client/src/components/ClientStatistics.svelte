@@ -1,5 +1,5 @@
-<script lang="ts">
-  import { statusesList } from '../constants/statuses';
+<script lang="js">
+  import { statusesList } from '../utils/constants';
   import Confirm from './common/Confirm.svelte';
   import { showError } from '../utils/util';
   import { mutation } from 'svelte-apollo';

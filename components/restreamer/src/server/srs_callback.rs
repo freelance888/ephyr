@@ -1,15 +1,22 @@
 //! Callback HTTP server responding to [SRS] HTTP callbacks.
 //!
 //! [SRS]: https://github.com/ossrs/srs
+use std::panic::AssertUnwindSafe;
+
 use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
+use futures::{FutureExt, TryFutureExt};
+use url::Url;
+
 use ephyr_log::log;
 
 use crate::{
     api::srs::callback,
     cli::{Failure, Opts},
-    state::{Input, InputEndpointKind, InputSrc, State, Status},
+    display_panic,
+    state::{EndpointId, Input, InputEndpointKind, InputSrc, State, Status},
+    stream_probe::stream_probe,
 };
 
 /// Runs HTTP server for exposing [SRS] [HTTP Callback API][1] on `/`
@@ -162,6 +169,16 @@ fn on_start(
         }
 
         endpoint.status = Status::Online;
+
+        let url = InputEndpointKind::get_rtmp_url(
+            &restream.key,
+            &input.key,
+            InputEndpointKind::Rtmp,
+        );
+        if !url.to_string().contains("playback") {
+            endpoint.stream_stat = None;
+            update_stream_info(endpoint.id, url, state.clone());
+        }
     } else {
         // `srs::ClientId` kicks the client when `Drop`ped, so we should be
         // careful here to not accidentally kick the client by creating a
@@ -298,4 +315,19 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
         let _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
     }
     Ok(())
+}
+
+fn update_stream_info(id: EndpointId, url: Url, state: State) {
+    drop(tokio::spawn(
+        AssertUnwindSafe(async move {
+            let result = stream_probe(url).await;
+            state
+                .set_stream_info(id, result)
+                .unwrap_or_else(|e| log::error!("{}", e));
+        })
+        .catch_unwind()
+        .map_err(move |p| {
+            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+        }),
+    ));
 }

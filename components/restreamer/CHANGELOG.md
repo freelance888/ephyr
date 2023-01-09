@@ -12,6 +12,7 @@ All user visible changes to this project will be documented in this file. This p
 - Deploy:
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
 - Option to record audio-only files ([#239]);
+- Display input streams info ([#170], [#266]);
 ### Fixed
 - State disapers after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
@@ -20,6 +21,7 @@ All user visible changes to this project will be documented in this file. This p
   - [SRS] server updated to v4.0-r4 ([#244]);
 
 
+[#170]: /../../issues/170
 [#235]: /../../issues/235
 [#236]: /../../issues/236
     

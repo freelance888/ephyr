@@ -280,6 +280,18 @@ fragment restreamBasic on Restream {
                         status
                         label
                         fileId
+                        streamStat {
+                            audioChannelLayout
+                            audioChannels
+                            audioSampleRate
+                            audioCodecName
+                            videoCodecName
+                            videoRFrameRate
+                            videoHeight
+                            videoWidth
+                            bitRate
+                            error
+                        }
                     }
                     src {
                         ... on RemoteInputSrc {

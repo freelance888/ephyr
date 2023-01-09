@@ -113,6 +113,7 @@ impl Restreamer {
                             // than set `Online` status.
                             time::sleep(Duration::from_secs(10)).await;
                             kind.renew_status(Status::Online, state);
+
                             future::pending::<()>().await;
                             Ok(())
                         };

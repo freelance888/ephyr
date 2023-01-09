@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="js">
   import { createGraphQlClient } from '../utils/util';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -6,8 +6,8 @@
   import ToolbarDashboard from './ToolbarDashboard.svelte';
   import ClientStatistics from './ClientStatistics.svelte';
   import StatusFilter from './common/StatusFilter.svelte';
-  import { statusesList } from '../constants/statuses';
-  import { toggleFilterStatus } from '../utils/statusFilters.util';
+  import { statusesList } from '../utils/constants';
+  import { toggleFilterStatus } from '../utils/filters.util';
 
   const gqlClient = createGraphQlClient(
     '/api-dashboard',
@@ -99,7 +99,7 @@
         <span class="section-label">Filters:</span>
         <div class="uk-grid uk-grid-small">
           <div class="uk-width-1-4@m">
-            <span class="toolbar-label total-inputs-label">
+            <span class="toolbar-label">
               INPUTS:
 
               {#each statusesList as status (status)}
@@ -114,7 +114,7 @@
             </span>
           </div>
           <div class="uk-width-1-4@m">
-            <span class="toolbar-label total-inputs-label">
+            <span class="toolbar-label">
               OUTPUTS:
 
               {#each statusesList as status (status)}
