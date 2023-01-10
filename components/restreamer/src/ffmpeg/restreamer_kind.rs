@@ -10,10 +10,8 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::{
-    convert::TryInto, os::unix::process::ExitStatusExt, process::Stdio,
-    time::Duration,
-};
+use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -229,9 +227,7 @@ impl RestreamerKind {
         if tracing::level_filters::LevelFilter::current()
             >= tracing::Level::DEBUG
         {
-            let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
-        } else {
-            let _ = cmd.stderr(Stdio::null());
+            let _ = cmd.args(["-loglevel", "debug"]);
         };
         match self {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
@@ -284,7 +280,7 @@ impl RestreamerKind {
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
-        let process = cmd.spawn()?;
+        let mut process = cmd.spawn()?;
 
         // To avoid instant resolve on await for `kill_rx`
         let _ = *kill_rx.borrow_and_update();
@@ -308,6 +304,20 @@ impl RestreamerKind {
                 .expect("Failed to kill process");
         });
 
+        let stdout = BufReader::new(process.stdout.take().unwrap());
+        let stderr = BufReader::new(process.stderr.take().unwrap());
+        drop(tokio::spawn(async move {
+            let mut lines = stderr.lines();
+            while let Some(line) = lines.next_line().await.unwrap() {
+                log::error!("{}", line);
+            }
+        }));
+        drop(tokio::spawn(async move {
+            let mut lines = stdout.lines();
+            while let Some(line) = lines.next_line().await.unwrap() {
+                log::debug!("{}", line);
+            }
+        }));
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
