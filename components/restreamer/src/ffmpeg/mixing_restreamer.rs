@@ -630,7 +630,7 @@ fn tune_with_zmq(port: u16, command: ZmqMessage) {
         })
         .catch_unwind()
         .map_err(|p| {
-            log::trace!(
+            log::error!(
                 "Panicked while sending ZeroMQ message: {}",
                 display_panic(&p),
             );
