@@ -14,10 +14,14 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, tracing};
+use ephyr_log::{log, tracing, tracing::span};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
-use tokio::{fs, process::Command};
+use tokio::{
+    fs,
+    io::{AsyncBufReadExt, BufReader},
+    process::Command,
+};
 
 use crate::{api, display_panic, dvr};
 
@@ -35,6 +39,27 @@ pub struct Server {
     ///
     /// [SRS]: https://github.com/ossrs/srs
     _process: Arc<ServerProcess>,
+}
+
+/// Parse SRS log line to extract message
+///
+/// Description of log format [1].
+///
+/// # Examples
+///
+/// ```
+/// let r =
+///     parse_srs_log("[2014-08-06 10:09:34.579][trace][22314][108] Message");
+/// assert_eq!(r, "Message");
+/// ```
+/// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log#log-format
+fn parse_srs_log(line: &str) -> &str {
+    let parsed: Vec<_> = line
+        .rsplit(']')
+        .map(|t| t.trim_start_matches([' ', '[']))
+        .collect();
+    // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
+    parsed[0]
 }
 
 impl Server {
@@ -83,8 +108,8 @@ impl Server {
         let mut cmd = Command::new(bin_path);
         let _ = cmd
             .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .kill_on_drop(true)
             .current_dir(workdir)
             .arg("-c")
@@ -94,13 +119,38 @@ impl Server {
             loop {
                 let cmd = &mut cmd;
                 let _ = AssertUnwindSafe(async move {
-                    let process = cmd.spawn().map_err(|e| {
+                    let span = span!(tracing::Level::INFO, "SRS");
+                    let _enter = span.enter();
+
+                    let mut process = cmd.spawn().map_err(|e| {
                         log::error!("Cannot start SRS server: {e}");
                     })?;
+
+                    let stdout = BufReader::new(process.stdout.take().unwrap());
+                    let stderr = BufReader::new(process.stderr.take().unwrap());
+                    drop(tokio::spawn(async move {
+                        let mut lines = stderr.lines();
+                        while let Some(line) = lines.next_line().await.unwrap()
+                        {
+                            log::error!("{}", parse_srs_log(&line));
+                        }
+                    }));
+                    drop(tokio::spawn(async move {
+                        let mut lines = stdout.lines();
+                        while let Some(line) = lines.next_line().await.unwrap()
+                        {
+                            log::debug!("{}", parse_srs_log(&line));
+                        }
+                    }));
+
                     let out =
                         process.wait_with_output().await.map_err(|e| {
                             log::error!("Failed to observe SRS server: {e}");
                         })?;
+                    log::info!(
+                        "{}",
+                        String::from_utf8_lossy(&out.stdout).to_string()
+                    );
                     log::error!(
                         "SRS server stopped with exit code: {}",
                         out.status,
@@ -254,7 +304,7 @@ pub struct Config {
 /// Severity of [SRS] [server logs][1].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_SrsLog#loglevel
+/// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log
 #[derive(Clone, Copy, Debug, Display, SmartDefault)]
 pub enum LogLevel {
     /// Error level.
