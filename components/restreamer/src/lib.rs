@@ -41,7 +41,7 @@ pub mod stream_probe;
 pub mod teamspeak;
 pub mod types;
 
-use std::{any::Any, mem};
+use std::any::Any;
 
 use ephyr_log::tracing;
 
@@ -65,7 +65,7 @@ pub fn run() -> Result<(), cli::Failure> {
 
     // This guard should be held till the end of the program for the logger
     // to present in global context.
-    mem::forget(ephyr_log::init(cfg.verbose));
+    ephyr_log::init(cfg.verbose);
 
     server::run(cfg)
 }

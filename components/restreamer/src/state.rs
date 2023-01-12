@@ -745,14 +745,13 @@ impl State {
             .fold(HashMap::new(), |mut stat, restream| {
                 let item =
                     restream.input.endpoints.iter().find(|e| e.is_rtmp());
-                match item {
-                    Some(main_input) => {
-                        Self::update_stat(&mut stat, main_input.status);
-                    }
-                    None => log::error!(
+                if let Some(main_input) = item {
+                    Self::update_stat(&mut stat, main_input.status);
+                } else {
+                    log::error!(
                         "Main endpoint not found for {} input",
                         restream.input.id
-                    ),
+                    );
                 };
 
                 stat
