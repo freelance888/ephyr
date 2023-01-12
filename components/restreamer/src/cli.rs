@@ -146,15 +146,15 @@ impl Opts {
         <Self as StructOpt>::from_args()
     }
 
-    /// Parses [`slog::Level`] from the given string.
+    /// Parses [`tracing::Level`] from the given string.
     ///
-    /// This function is required, because [`slog::Level`]'s [`FromStr`]
+    /// This function is required, because [`tracing::Level`]'s [`FromStr`]
     /// implementation returns `()`, which is not [`Display`] as [`StructOpt`]
     /// requires.
     ///
     /// # Errors
     ///
-    /// If [`slog::Level`] failed to parse from the string.
+    /// If [`tracing::Level`] failed to parse from the string.
     ///
     /// [`Display`]: std::fmt::Display
     /// [`FromStr`]: std::str::FromStr

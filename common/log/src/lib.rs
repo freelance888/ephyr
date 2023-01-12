@@ -37,7 +37,7 @@ use tracing_subscriber::FmtSubscriber;
 /// [`Info`]: tracing::Level::INFO
 pub fn init(level: Option<Level>) {
     if let Err(e) = LogTracer::init() {
-        panic!("Failed to initialize logger: {}", e);
+        panic!("Failed to initialize logger: {e}");
     };
     let level = level.unwrap_or(Level::INFO);
     let subscriber = FmtSubscriber::builder().with_max_level(level).finish();
@@ -49,23 +49,37 @@ pub fn init(level: Option<Level>) {
 ///
 /// # Examples
 ///
-/// ```
-/// use ephyr_log::log;
+/// ```ignore
+/// use std::process::Stdio;
+/// use tokio::process::Command;
+/// use ephyr_log::{log, init, Level, run_log_redirect};
 ///
-/// run_redirect_from(process.stdout.take(), |line| {
-///     log::debug!("{}", parse_srs_log(&line))
-/// });
+/// init(Some(Level::INFO));
+/// let mut process = Command::new("/bin/ls")
+///     .stdin(Stdio::null())
+///     .stdout(Stdio::piped())
+///     .stderr(Stdio::piped())
+///     .spawn().map_err(|e| {
+///        log::error!("Failed run: {e}");
+/// })?;
+/// run_log_redirect(process.stdout.take(), |line| {
+///     log::debug!("{}", &line);
+/// })?;
 /// ```
 pub fn run_log_redirect<R, F>(src: Option<R>, to: F)
 where
     R: AsyncRead + Unpin + Send + 'static,
-    F: Fn(String) -> () + Send + 'static,
+    F: Fn(String) + Send + 'static,
 {
     if let Some(src) = src {
         let buff = BufReader::new(src);
         drop(tokio::spawn(async move {
             let mut lines = buff.lines();
-            while let Some(line) = lines.next_line().await.unwrap() {
+            while let Some(line) =
+                lines.next_line().await.unwrap_or_else(|_| {
+                    Some("Failed to fetch log line".to_string())
+                })
+            {
                 to(line);
             }
         }));

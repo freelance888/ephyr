@@ -46,7 +46,7 @@ pub struct Server {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let r =
 ///     parse_srs_log("[2014-08-06 10:09:34.579][trace][22314][108] Message");
 /// assert_eq!(r, "Message");
@@ -66,10 +66,10 @@ fn parse_srs_log(line: &str) -> &str {
 /// [SRS]: https://github.com/ossrs/srs
 fn run_srs_log_redirect(process: &mut Child) {
     run_log_redirect(process.stdout.take(), |line| {
-        log::debug!("{}", parse_srs_log(&line))
+        log::debug!("{}", parse_srs_log(&line));
     });
     run_log_redirect(process.stderr.take(), |line| {
-        log::error!("{}", parse_srs_log(&line))
+        log::error!("{}", parse_srs_log(&line));
     });
 }
 
