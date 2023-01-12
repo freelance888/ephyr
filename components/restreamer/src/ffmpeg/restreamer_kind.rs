@@ -4,15 +4,18 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::{log, tracing};
+use ephyr_log::{log, run_log_redirect, tracing};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
 use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::{io, process::Command, sync::watch};
+use tokio::{
+    io,
+    process::{Child, Command},
+    sync::watch,
+};
 use url::Url;
 use uuid::Uuid;
 
@@ -25,6 +28,14 @@ use crate::{
     },
     state::{self, RestreamKey, State, Status},
 };
+
+/// Allow to redirect logs from [SRS] to tracing debug logs.
+///
+/// [SRS]: https://github.com/ossrs/srs
+fn run_ffmpeg_log_redirect(process: &mut Child) {
+    run_log_redirect(process.stdout.take(), |line| log::debug!("{}", &line));
+    run_log_redirect(process.stderr.take(), |line| log::error!("{}", &line));
+}
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -304,20 +315,8 @@ impl RestreamerKind {
                 .expect("Failed to kill process");
         });
 
-        let stdout = BufReader::new(process.stdout.take().unwrap());
-        let stderr = BufReader::new(process.stderr.take().unwrap());
-        drop(tokio::spawn(async move {
-            let mut lines = stderr.lines();
-            while let Some(line) = lines.next_line().await.unwrap() {
-                log::error!("{}", line);
-            }
-        }));
-        drop(tokio::spawn(async move {
-            let mut lines = stdout.lines();
-            while let Some(line) = lines.next_line().await.unwrap() {
-                log::debug!("{}", line);
-            }
-        }));
+        run_ffmpeg_log_redirect(&mut process);
+
         let out = process.wait_with_output().await?;
         kill_task.abort();
 

@@ -14,13 +14,12 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, tracing, tracing::span};
+use ephyr_log::{log, run_log_redirect, tracing, tracing::span};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{
     fs,
-    io::{AsyncBufReadExt, BufReader},
-    process::Command,
+    process::{Child, Command},
 };
 
 use crate::{api, display_panic, dvr};
@@ -43,7 +42,7 @@ pub struct Server {
 
 /// Parse SRS log line to extract message
 ///
-/// Description of log format [1].
+/// Description of log format[1].
 ///
 /// # Examples
 ///
@@ -60,6 +59,18 @@ fn parse_srs_log(line: &str) -> &str {
         .collect();
     // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
     parsed[0]
+}
+
+/// Allow to redirect logs from [SRS] to tracing debug logs.
+///
+/// [SRS]: https://github.com/ossrs/srs
+fn run_srs_log_redirect(process: &mut Child) {
+    run_log_redirect(process.stdout.take(), |line| {
+        log::debug!("{}", parse_srs_log(&line))
+    });
+    run_log_redirect(process.stderr.take(), |line| {
+        log::error!("{}", parse_srs_log(&line))
+    });
 }
 
 impl Server {
@@ -125,23 +136,7 @@ impl Server {
                     let mut process = cmd.spawn().map_err(|e| {
                         log::error!("Cannot start SRS server: {e}");
                     })?;
-
-                    let stdout = BufReader::new(process.stdout.take().unwrap());
-                    let stderr = BufReader::new(process.stderr.take().unwrap());
-                    drop(tokio::spawn(async move {
-                        let mut lines = stderr.lines();
-                        while let Some(line) = lines.next_line().await.unwrap()
-                        {
-                            log::error!("{}", parse_srs_log(&line));
-                        }
-                    }));
-                    drop(tokio::spawn(async move {
-                        let mut lines = stdout.lines();
-                        while let Some(line) = lines.next_line().await.unwrap()
-                        {
-                            log::debug!("{}", parse_srs_log(&line));
-                        }
-                    }));
+                    run_srs_log_redirect(&mut process);
 
                     let out =
                         process.wait_with_output().await.map_err(|e| {
