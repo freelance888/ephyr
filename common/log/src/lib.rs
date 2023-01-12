@@ -4,7 +4,6 @@
     rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
-    rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code
@@ -19,6 +18,8 @@
     unused_qualifications,
     unused_results
 )]
+
+use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 pub use tracing::{self, Level};
 pub use tracing_actix_web;
 pub use tracing_log::log;
@@ -42,4 +43,33 @@ pub fn init(level: Option<Level>) {
     let subscriber = FmtSubscriber::builder().with_max_level(level).finish();
     tracing::subscriber::set_global_default(subscriber)
         .expect("setting tracing subscriber failed");
+}
+
+/// Allow to redirect logs from process stdout, stderr to tracing log.
+///
+/// # Examples
+///
+/// ```
+/// use ephyr_log::log;
+///
+/// run_redirect_from(process.stdout.take(), |line| {
+///     log::debug!("{}", parse_srs_log(&line))
+/// });
+/// ```
+pub fn run_log_redirect<R, F>(src: Option<R>, to: F)
+where
+    R: AsyncRead + Unpin + Send + 'static,
+    F: Fn(String) -> () + Send + 'static,
+{
+    if let Some(src) = src {
+        let buff = BufReader::new(src);
+        drop(tokio::spawn(async move {
+            let mut lines = buff.lines();
+            while let Some(line) = lines.next_line().await.unwrap() {
+                to(line);
+            }
+        }));
+    } else {
+        log::error!("Failed to redirect stderr to log");
+    }
 }
