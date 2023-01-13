@@ -21,7 +21,8 @@ All user visible changes to this project will be documented in this file. This p
 ### Miscellaneous
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
-  - `slog` replaced with `tracing` ([#284];
+  - `slog` replaced with `tracing` ([#284]);
+  - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]);
 
 
 [#170]: /../../issues/170
