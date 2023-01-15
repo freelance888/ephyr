@@ -16,9 +16,26 @@ use crate::{
 };
 use chrono::Utc;
 use reqwest::{Response, StatusCode};
+use std::ffi::OsString;
 use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
+
+/// Set of file related commands for [`FileManager`]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FileManagerCommand {
+    AddFile(FileCommandParams),
+    RemoveFile(FileCommandParams),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileCommandParams {
+    /// File identity
+    pub file_id: String,
+
+    /// Playlist identity
+    pub playlist_id: Option<String>,
+}
 
 /// Manages file downloads and files in the provided [`State`]
 #[derive(Debug, Default)]
@@ -31,43 +48,11 @@ impl FileManager {
     /// Creates new [`FileManager`] with the provided [`State`]
     #[must_use]
     pub fn new(options: &Opts, state: State) -> Self {
-        let root_path = options.file_root.as_path();
-        drop(std::fs::create_dir_all(root_path));
-        let file_id_list = state.files.lock_mut().pipe_borrow_mut(|files| {
-            let mut list = Vec::new();
-            std::fs::read_dir(root_path)
-                .expect("Cannot read the provided file root directory")
-                .for_each(|file_res| {
-                    if let Ok(file) = file_res {
-                        if let Ok(filename) = file.file_name().into_string() {
-                            files.push(LocalFileInfo {
-                                file_id: filename.clone(),
-                                name: None,
-                                state: FileState::Local,
-                                download_state: None,
-                                error: None,
-                            });
-                            list.push(filename);
-                        };
-                    }
-                });
-            list
-        });
-
-        let api_key_opt = state.settings.lock_mut().google_api_key.clone();
-        if let Some(api_key) = api_key_opt {
-            let state_cpy = state.clone();
-            drop(tokio::spawn(async move {
-                for file_id in file_id_list {
-                    let _ =
-                        Self::update_file_info(&file_id, &api_key, &state_cpy)
-                            .await;
-                }
-            }));
-        }
+        let root_path = options.file_root.clone();
+        drop(std::fs::create_dir_all(root_path.clone()));
 
         Self {
-            file_root_dir: options.file_root.clone(),
+            file_root_dir: root_path,
             state,
         }
     }
@@ -76,8 +61,10 @@ impl FileManager {
     /// [`crate::state::InputEndpoint`] of type
     /// [`crate::state::InputEndpointKind::File`] tries to download it,
     /// if the given ID does not exist in the file list.
-    pub fn check_files(&self, restreams: Iter<'_, Restream>) {
-        restreams.for_each(|restream| {
+    pub fn check_files(&self) {
+        let mut file_ids = vec![];
+        let restreams = self.state.restreams.lock_mut();
+        let _ = restreams.iter().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs
                     .iter()
@@ -90,11 +77,51 @@ impl FileManager {
                             }
                         })
                     })
-                    .for_each(|file_id| self.need_file(file_id, None));
+                    .for_each(|file_id| {
+                        file_ids.push(file_id);
+                    });
             }
-            restream.playlist.queue.iter().for_each(|file| {
-                self.need_file(&file.file_id, Some(file.name.clone()));
-            });
+            // restream.playlist.queue.iter().for_each(|file| {
+            //     self.need_file(&file.file_id, Some(file.name.clone()));
+            // });
+        });
+
+        // Removes not used files from state
+        let mut files = self.state.files.lock_mut();
+        files.retain(|f| {
+            file_ids
+                .clone()
+                .into_iter()
+                .any(|file_id| &f.file_id == file_id)
+        });
+        drop(files);
+
+        // self.sync_with_state();
+
+        // Check if file need to be downloaded
+        file_ids.into_iter().for_each(|file_id| {
+            self.need_file(file_id, None);
+        })
+    }
+
+    /// Sync files on disks with files in state
+    fn sync_with_state(&self) {
+        let files = self.state.files.lock_mut();
+        let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
+            .expect("Cannot read the provided file root directory")
+            .into_iter()
+            .flat_map(|x| x);
+
+        disk_files.for_each(|disk_file| {
+            if !files
+                .iter()
+                .any(|f| OsString::from(&f.file_id) == disk_file.file_name())
+            {
+                let file_path = self.file_root_dir.join(disk_file.file_name());
+                let _ = std::fs::remove_file(file_path).map_err(|err| {
+                    log::error!("Can not delete file. {}", err);
+                });
+            }
         });
     }
 

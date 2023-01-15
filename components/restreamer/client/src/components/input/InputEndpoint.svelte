@@ -15,25 +15,24 @@
 
   $: current_file = searchFile($files.data);
   $: isFile = endpoint.kind === 'FILE';
+
   $: alertDanger = isFile
-    ? current_file && current_file.state === 'ERROR'
+    ? current_file?.state === 'ERROR'
     : endpoint.status === 'OFFLINE';
+
   $: alertWarning = isFile
-    ? current_file &&
-    (current_file.state === 'PENDING' || current_file.state === 'DOWNLOADING')
+    ? (current_file?.state === 'PENDING' || current_file?.state === 'DOWNLOADING')
     : endpoint.status === 'INITIALIZING';
+
   $: alertSuccess = isFile
-    ? current_file && current_file.state === 'LOCAL'
+    ? current_file?.state === 'LOCAL'
     : endpoint.status === 'ONLINE';
 
   function searchFile(all_files) {
-    if (all_files && all_files.files) {
-      return all_files.files.find((val) => val.fileId === endpoint.fileId);
-    } else {
-      return undefined;
-    }
+    return all_files?.files
+      ? all_files.files.find((val) => val.fileId === endpoint.fileId)
+      : undefined;
   }
-
 
   const formatStreamInfo = (streamStat) => {
     if (streamStat) {
