@@ -42,7 +42,7 @@ use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
-use crate::file_manager::{FileCommand, FileManagerCommand};
+use crate::file_manager::FileManagerCommand;
 use crate::{
     broadcaster::DashboardCommand,
     display_panic,

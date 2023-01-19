@@ -12,6 +12,7 @@ use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
 use rand::Rng as _;
+use tap::Tap;
 
 use crate::{
     api::graphql,
@@ -25,6 +26,7 @@ use crate::{
 };
 
 use super::Context;
+use crate::file_manager::FileManagerCommand;
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
     spec::v1::BackupInput,
@@ -181,6 +183,7 @@ impl MutationsRoot {
                     }))
                     .chain(
                         file_id
+                            .clone()
                             .map_or_else(
                                 || vec![],
                                 |id| {
@@ -246,6 +249,10 @@ impl MutationsRoot {
         } else {
             context.state().add_restream(spec).map(Some)
         }
+        .tap(|_| {
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileManagerCommand { file_id })
+        })
         .map_err(|e| {
             graphql::Error::new("DUPLICATE_RESTREAM_KEY")
                 .status(StatusCode::CONFLICT)

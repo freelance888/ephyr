@@ -10,6 +10,7 @@ use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
+use crate::state::{EndpointId, RestreamKey};
 use crate::{
     cli::Opts,
     state::{InputEndpointKind, InputSrc, Restream, State, Status},
@@ -21,20 +22,11 @@ use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
 
-/// Set of file related commands for [`FileManager`]
+/// File identity for assigning to endpoint
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum FileManagerCommand {
-    AddFile(FileCommandParams),
-    RemoveFile(FileCommandParams),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FileCommandParams {
+pub struct FileManagerCommand {
     /// File identity
-    pub file_id: String,
-
-    /// Playlist identity
-    pub playlist_id: Option<String>,
+    pub file_id: Option<String>,
 }
 
 /// Manages file downloads and files in the provided [`State`]
@@ -62,6 +54,8 @@ impl FileManager {
     /// [`crate::state::InputEndpointKind::File`] tries to download it,
     /// if the given ID does not exist in the file list.
     pub fn check_files(&self) {
+        self.state.file_commands.lock_mut().clear();
+
         let mut file_ids = vec![];
         let restreams = self.state.restreams.lock_mut();
         let _ = restreams.iter().for_each(|restream| {
@@ -96,7 +90,7 @@ impl FileManager {
         });
         drop(files);
 
-        // self.sync_with_state();
+        self.sync_with_state();
 
         // Check if file need to be downloaded
         file_ids.into_iter().for_each(|file_id| {
