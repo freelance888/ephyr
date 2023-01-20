@@ -5,6 +5,7 @@
 use super::Context;
 use crate::{
     api::graphql,
+    broadcaster::DashboardCommand,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
@@ -72,6 +73,16 @@ impl MutationsRoot {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }
+    }
+
+    /// Enables all `Output`s for all clients.
+    fn enable_all_outputs_for_clients(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::EnableAllOutputs());
+
+        Ok(Some(true))
     }
 }
 

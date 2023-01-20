@@ -7,13 +7,13 @@ use crate::state::Status;
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 
+use crate::{stream_probe::StreamInfo, types::UNumber};
 use derive_more::{Deref, Display, Into};
 use juniper::{
     GraphQLObject, GraphQLScalar, InputValue, ParseScalarResult,
     ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
-
-use crate::{stream_probe::StreamInfo, types::UNumber};
+use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
 
@@ -167,6 +167,10 @@ pub struct Client {
     /// Statistics for this [`Client`].
     #[serde(skip)]
     pub statistics: Option<ClientStatisticsResponse>,
+
+    /// Whether the client url is protected by base auth
+    #[serde(default)]
+    pub is_protected: bool,
 }
 
 impl Client {
@@ -175,6 +179,7 @@ impl Client {
     pub fn new(client_id: &ClientId) -> Self {
         Self {
             id: client_id.clone(),
+            is_protected: client_id.has_base_auth(),
             statistics: None,
         }
     }
@@ -201,6 +206,16 @@ impl ClientId {
     #[must_use]
     pub fn new(url: Url) -> Self {
         Self(url)
+    }
+    /// Checks whether client id url is base auth url
+    /// # Panics
+    ///
+    #[must_use]
+    pub fn has_base_auth(&self) -> bool {
+        let re = Regex::new(
+    r"^(?P<protocol>.+?//)(?P<username>.+?):(?P<password>.+?)@(?P<address>.+)$")
+            .unwrap();
+        re.is_match(self.0.as_str())
     }
 
     #[allow(clippy::wrong_self_convention)]

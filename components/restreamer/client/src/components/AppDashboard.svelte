@@ -1,6 +1,7 @@
 <script lang="js">
-  import { createGraphQlClient } from '../utils/util';
-  import { setClient, subscribe } from 'svelte-apollo';
+  import Confirm from './common/Confirm.svelte';
+  import {createGraphQlClient, showError} from '../utils/util';
+  import {mutation, setClient, subscribe} from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import { Statistics } from '../../api/dashboard.graphql';
   import ToolbarDashboard from './ToolbarDashboard.svelte';
@@ -8,6 +9,7 @@
   import StatusFilter from './common/StatusFilter.svelte';
   import { statusesList } from '../utils/constants';
   import { toggleFilterStatus } from '../utils/filters.util';
+  import { EnableAllOutputsForClients } from '../../api/dashboard.graphql';
 
   const gqlClient = createGraphQlClient(
     '/api-dashboard',
@@ -18,6 +20,7 @@
 
   let isOnline = false;
   const dashboard = subscribe(Statistics, { errorPolicy: 'all' });
+  const enableAllOutputsForClientMutation = mutation(EnableAllOutputsForClients);
 
   let title = document.title;
   $: document.title = (isOnline ? '' : '🔴  ') + title;
@@ -104,6 +107,15 @@
         )
       : [];
   }
+
+  async function enableAllOutputsOfAllRestreams() {
+    try {
+      await enableAllOutputsForClientMutation();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
 </script>
 
 <template>
@@ -143,7 +155,26 @@
               {/each}
             </span>
           </div>
+          <div class="uk-panel uk-width-auto uk-flex-right">
+            <Confirm let:confirm>
+              <button
+                      class="uk-button uk-button-default"
+                      data-testid="start-all-outputs"
+                      title="Start all outputs of all restreams"
+                      on:click={() => confirm(enableAllOutputsOfAllRestreams)}
+              ><span class="uk-visible@m">Start All</span><span
+                      class="uk-hidden@m">Start</span
+              ></button
+              >
+              <span slot="title">Start all outputs</span>
+              <span slot="description"
+              >This will start all outputs of all restreams.
+            </span>
+              <span slot="confirm">Start</span>
+            </Confirm>
+          </div>
         </div>
+
       </section>
 
       {#each filteredClients() as client}
