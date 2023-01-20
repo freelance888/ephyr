@@ -9,7 +9,9 @@
 
 <template>
   <div class="url">
-    <span class="url-placeholder">{url}</span>
+    {#if url}
+      <span class="url-placeholder">{url}</span>
+    {/if}
     {#if streamInfo}
       <span
         class="info-icon"
@@ -25,13 +27,15 @@
         >]</span
       >
     {/if}
-    <button
-      class="url-copy-btn uk-button uk-button-link uk-margin-small-left"
-      on:click|preventDefault={() => copyToClipboard(url)}
-    >
-      Copy
-      <i class="far fa-copy" />
-    </button>
+    {#if url}
+      <button
+        class="url-copy-btn uk-button uk-button-link uk-margin-small-left"
+        on:click|preventDefault={() => copyToClipboard(url)}
+      >
+        Copy
+        <i class="far fa-copy" />
+      </button>
+    {/if}
   </div>
 </template>
 

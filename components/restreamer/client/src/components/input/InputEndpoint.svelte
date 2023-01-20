@@ -1,6 +1,7 @@
 <script lang="js">
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
+  import Confirm from '../common/Confirm.svelte';
 
   export let endpoint;
   export let input;
@@ -54,6 +55,21 @@
 
     return '';
   };
+
+  const generateFileName = (current_file) => current_file.name ? current_file.name : current_file.fileId;
+
+  const generateFileProgress = (current_file) => {
+    return current_file?.downloadState &&
+      current_file.downloadState.currentProgress !==
+      current_file.downloadState.maxProgress
+        ? (
+            (current_file.downloadState.currentProgress /
+              current_file.downloadState.maxProgress) *
+            100
+          )
+        : 0
+  }
+
 </script>
 
 <template>
@@ -65,7 +81,7 @@
       class:uk-alert-warning={alertWarning}
       class:uk-alert-success={alertSuccess}
     >
-      {#if endpoint.kind === 'FILE'}
+      {#if isFile}
         <span
         ><i
           class="fas fa-file"
@@ -118,20 +134,19 @@
       {/if}
     </div>
 
-    {#if endpoint.kind === 'FILE' && current_file}
+    {#if isFile && current_file}
+      <Confirm let:confirm>
+        <a href="/" class='file-name' on:click|preventDefault={confirm(() => alert('123'))}>
+          { generateFileName(current_file) }
+        </a>
+        <span slot="title">Download file <code>{generateFileName(current_file)}</code></span>
+        <span slot="description">Current file fill be removed and download process will be started</span>
+        <span slot="confirm">Start download</span>
+      </Confirm>
+
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
         isError={!!endpoint.streamStat?.error}
-        url="{current_file.name ? current_file.name : current_file.fileId}
-      {current_file.downloadState &&
-        current_file.downloadState.currentProgress !==
-          current_file.downloadState.maxProgress
-          ? (
-              (current_file.downloadState.currentProgress /
-                current_file.downloadState.maxProgress) *
-              100
-            ).toFixed(2) + '%'
-          : ''}"
       />
     {:else}
       <Url
@@ -144,6 +159,10 @@
         {/if}
     {/if}
   </div>
+  {#if isFile}
+    <progress class="uk-progress" value="{ generateFileProgress(current_file) }" max="100"></progress>
+
+  {/if}
 </template>
 
 <style lang="stylus">
@@ -161,4 +180,12 @@
     .endpoint-status-icon
       flex-shrink: 0
       margin-right: 5px
+
+    .file-name
+      color: var(--primary-text-color);
+
+  .uk-progress
+    height: 3px;
+    margin-bottom: 0
+    margin-top: 0
 </style>
