@@ -12,6 +12,8 @@ use std::{future::Future, panic::AssertUnwindSafe};
 pub enum DashboardCommand {
     /// Command for enabling all restreams' outputs
     EnableAllOutputs(),
+    /// Command for disabling all restreams' outputs
+    DisableAllOutputs(),
 }
 
 /// GraphQL mutation for enabling outputs
@@ -23,6 +25,16 @@ pub enum DashboardCommand {
 )]
 #[derive(Debug)]
 pub(crate) struct EnableAllOutputsOfRestreams;
+
+/// GraphQL mutation for disabling outputs
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "client.graphql.schema.json",
+    query_path = "src/api/graphql/queries/disable_outputs.graphql",
+    response_derives = "Debug"
+)]
+#[derive(Debug)]
+pub(crate) struct DisableAllOutputsOfRestreams;
 
 /// Broadcast [`DashboardCommand`] to clients
 #[derive(Debug, Default)]
@@ -54,8 +66,11 @@ impl Broadcaster {
             .iter()
             .filter(|client| client.is_protected)
             .for_each(|client| {
-                for command in commands.iter(){
-                    self.handle_one_command(&client.id.clone(), &command.clone());
+                for command in commands.iter() {
+                    self.handle_one_command(
+                        &client.id.clone(),
+                        &command.clone(),
+                    );
                 }
             });
     }
@@ -77,6 +92,17 @@ impl Broadcaster {
                     },
                 );
             }
+            DashboardCommand::DisableAllOutputs() => {
+                let client_id = client_id.clone();
+                let state = self.state.clone();
+                Self::try_to_run_command(
+                    client_id.clone(),
+                    state.clone(),
+                    async move {
+                        Self::request_disable_outputs(client_id, state).await
+                    },
+                );
+            }
         }
     }
 
@@ -91,8 +117,7 @@ impl Broadcaster {
             let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
                 let error_message = format!(
                     "Error sending command for client {}. {}",
-                    client_id,
-                    e
+                    client_id, e
                 );
                 log::error!("{}", error_message);
                 Self::save_command_error(client_id, vec![error_message], state);
@@ -133,6 +158,35 @@ impl Broadcaster {
         let response: Response<ResponseData> = res.json().await?;
         log::info!(
             "Enabling outputs on client: {}. Response: {:#?}",
+            client_id,
+            response
+        );
+
+        Self::handle_errors(client_id, state, response.errors)
+    }
+
+    async fn request_disable_outputs(
+        client_id: ClientId,
+        state: State,
+    ) -> anyhow::Result<()> {
+        type Vars = <DisableAllOutputsOfRestreams as GraphQLQuery>::Variables;
+        type ResponseData =
+            <DisableAllOutputsOfRestreams as GraphQLQuery>::ResponseData;
+
+        let request_body = DisableAllOutputsOfRestreams::build_query(Vars {});
+
+        let request = reqwest::Client::builder().build().unwrap();
+
+        let url = format!("{}api", client_id);
+        let res = request
+            .post(url.as_str())
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let response: Response<ResponseData> = res.json().await?;
+        log::info!(
+            "Disabling outputs on client: {}. Response: {:#?}",
             client_id,
             response
         );

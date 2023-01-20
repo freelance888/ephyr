@@ -84,6 +84,16 @@ impl MutationsRoot {
 
         Ok(Some(true))
     }
+
+    /// Disables all `Output`s for all clients.
+    fn disable_all_outputs_for_clients(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::DisableAllOutputs());
+
+        Ok(Some(true))
+    }
 }
 
 /// Root of all [GraphQL subscriptions][1] in the [`Schema`].

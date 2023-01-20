@@ -209,7 +209,6 @@ impl ClientId {
     }
     /// Checks whether client id url is base auth url
     /// # Panics
-    ///
     #[must_use]
     pub fn has_base_auth(&self) -> bool {
         let re = Regex::new(

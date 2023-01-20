@@ -9,7 +9,7 @@
   import StatusFilter from './common/StatusFilter.svelte';
   import { statusesList } from '../utils/constants';
   import { toggleFilterStatus } from '../utils/filters.util';
-  import { EnableAllOutputsForClients } from '../../api/dashboard.graphql';
+  import { EnableAllOutputsForClients, DisableAllOutputsForClients } from '../../api/dashboard.graphql';
 
   const gqlClient = createGraphQlClient(
     '/api-dashboard',
@@ -21,6 +21,7 @@
   let isOnline = false;
   const dashboard = subscribe(Statistics, { errorPolicy: 'all' });
   const enableAllOutputsForClientMutation = mutation(EnableAllOutputsForClients);
+  const disableAllOutputsForClientMutation = mutation(DisableAllOutputsForClients);
 
   let title = document.title;
   $: document.title = (isOnline ? '' : '🔴  ') + title;
@@ -116,6 +117,14 @@
     }
   }
 
+  async function disableAllOutputsOfAllRestreams() {
+    try {
+      await disableAllOutputsForClientMutation();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
 </script>
 
 <template>
@@ -140,7 +149,7 @@
               {/each}
             </span>
           </div>
-          <div class="uk-width-1-4@m">
+          <div class="uk-flex-auto uk-flex-right uk-flex uk-flex-middle">
             <span class="toolbar-label">
               OUTPUTS:
 
@@ -155,25 +164,38 @@
               {/each}
             </span>
           </div>
-          <div class="uk-panel uk-width-auto uk-flex-right">
+          <div class="uk-margin-auto-left">
             <Confirm let:confirm>
               <button
-                      class="uk-button uk-button-default"
-                      data-testid="start-all-outputs"
-                      title="Start all outputs of all restreams"
-                      on:click={() => confirm(enableAllOutputsOfAllRestreams)}
-              ><span class="uk-visible@m">Start All</span><span
-                      class="uk-hidden@m">Start</span
-              ></button
-              >
+                class="uk-button uk-button-default"
+                data-testid="start-all-outputs"
+                title="Start all outputs of all restreams"
+                on:click={() => confirm(enableAllOutputsOfAllRestreams)}
+                ><span>Start All</span>
+              </button>
               <span slot="title">Start all outputs</span>
               <span slot="description"
               >This will start all outputs of all restreams.
             </span>
               <span slot="confirm">Start</span>
             </Confirm>
+
+            <Confirm let:confirm>
+              <button
+                class="uk-button uk-button-default"
+                data-testid="stop-all-outputs"
+                title="Stop all outputs of all restreams"
+                on:click={() => confirm(disableAllOutputsOfAllRestreams)}
+                ><span>Stop All</span>
+              </button>
+              <span slot="title">Stop all outputs</span>
+              <span slot="description"
+              >This will stop all outputs of all restreams.
+              </span>
+              <span slot="confirm">Stop</span>
+            </Confirm>
           </div>
-        </div>
+      </div>
 
       </section>
 
