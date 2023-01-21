@@ -18,6 +18,7 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
+use crate::file_manager::FileId;
 use crate::{
     dvr,
     ffmpeg::{
@@ -135,7 +136,7 @@ impl RestreamerKind {
                                     && e.is_file()
                                     && e.file_id.is_some()
                                     && files.iter().any(|f| {
-                                        e.file_id.as_ref() == Some(&f.file_id)
+                                        e.file_id == f.file_id
                                             && (f.state == FileState::Local)
                                     })
                                 {
@@ -143,7 +144,8 @@ impl RestreamerKind {
                                         file_root.join(
                                             e.file_id
                                                 .as_ref()
-                                                .unwrap_or(&"".to_string()),
+                                                .unwrap_or(&FileId::default())
+                                                .into(),
                                         ),
                                     )
                                     .ok()

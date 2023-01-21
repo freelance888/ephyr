@@ -26,7 +26,7 @@ use crate::{
 };
 
 use super::Context;
-use crate::file_manager::FileManagerCommand;
+use crate::file_manager::{FileId, FileManagerCommand};
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
     spec::v1::BackupInput,
@@ -138,7 +138,7 @@ impl MutationsRoot {
         #[graphql(
             description = "Google drive file ID for failover file endpoint."
         )]
-        file_id: Option<String>,
+        file_id: Option<FileId>,
         #[graphql(description = "Override for global maximum for files in \
                                  playlist")]
         max_files_in_playlist: Option<NumberOfItems>,
@@ -251,7 +251,7 @@ impl MutationsRoot {
         }
         .tap(|_| {
             let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileManagerCommand { file_id })
+            commands.push(FileManagerCommand::NewFileAddedOrRemoved)
         })
         .map_err(|e| {
             graphql::Error::new("DUPLICATE_RESTREAM_KEY")

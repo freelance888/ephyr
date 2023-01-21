@@ -5,6 +5,7 @@
 
 use std::collections::HashSet;
 
+use crate::file_manager::FileId;
 use crate::{serde::is_false, state, state::NumberOfItems};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
@@ -284,7 +285,7 @@ pub struct InputEndpoint {
 
     /// If the endpoint has kind FILE then this contains the file ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file_id: Option<String>,
+    pub file_id: Option<FileId>,
 }
 
 /// Shareable (exportable and importable) specification of a

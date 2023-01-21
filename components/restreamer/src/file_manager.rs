@@ -5,6 +5,7 @@ use std::{
     path::PathBuf,
 };
 
+use derive_more::{Deref, Display, Into};
 use ephyr_log::log;
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
@@ -22,12 +23,29 @@ use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
 
-/// File identity for assigning to endpoint
+/// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FileManagerCommand {
-    /// File identity
-    pub file_id: Option<String>,
+pub enum FileManagerCommand {
+    NewFileAddedOrRemoved,
+    ForceDownloadFile(FileId),
 }
+
+/// Identity of file on `Google Drive`.
+#[derive(
+    Clone,
+    Debug,
+    Deref,
+    Display,
+    Eq,
+    Hash,
+    Into,
+    PartialEq,
+    Default,
+    Serialize,
+    GraphQLScalar,
+)]
+#[graphql(with = Self)]
+pub struct FileId(String);
 
 /// Manages file downloads and files in the provided [`State`]
 #[derive(Debug, Default)]
@@ -121,11 +139,11 @@ impl FileManager {
 
     /// Checks if the provided file ID already exists in the file list,
     /// if not the download of the given file is queued.
-    pub fn need_file(&self, file_id: &str, file_name: Option<String>) {
+    pub fn need_file(&self, file_id: &FileId, file_name: Option<String>) {
         let mut all_files = self.state.files.lock_mut();
-        if !all_files.iter().any(|file| file.file_id == file_id) {
+        if !all_files.iter().any(|file| &file.file_id == file_id) {
             let new_file = LocalFileInfo {
-                file_id: file_id.to_string(),
+                file_id: file_id.clone(),
                 name: None,
                 state: FileState::Pending,
                 download_state: None,
@@ -139,7 +157,7 @@ impl FileManager {
 
     /// Retrieves file info (currently only the file name) from the Google API
     async fn update_file_info<'a>(
-        file_id: &'a str,
+        file_id: &FileId,
         api_key: &'a str,
         state: &'a State,
     ) -> Result<(), &'static str> {
@@ -162,7 +180,7 @@ impl FileManager {
             .files
             .lock_mut()
             .iter_mut()
-            .find(|file| file.file_id == file_id)
+            .find(|file| &file.file_id == file_id)
             .map_or_else(
                 || {
                     log::error!(
@@ -180,10 +198,9 @@ impl FileManager {
     }
 
     /// Spawns a separate process that tries to download given file ID
-    fn download_file(&self, file_id_ref: &str, file_name: Option<String>) {
+    fn download_file(&self, file_id: &FileId, file_name: Option<String>) {
         let root_dir = self.file_root_dir.to_str().unwrap().to_string();
         let state = self.state.clone();
-        let file_id = file_id_ref.to_string();
         drop(tokio::spawn(async move {
             let _ = async {
                 let api_key = state
@@ -212,7 +229,7 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| file.file_id == file_id)
+                        .find(|file| &file.file_id == file_id)
                         .map(|file_info| file_info.name = file_name);
                 }
 
@@ -243,7 +260,7 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| file.file_id == file_id)
+                        .find(|file| &file.file_id == file_id)
                         .ok_or_else(|| {
                             "Could not find file with the \
                              provided file ID"
@@ -278,7 +295,7 @@ impl FileManager {
                     .files
                     .lock_mut()
                     .iter_mut()
-                    .find(|file| file.file_id == file_id)
+                    .find(|file| &file.file_id == file_id)
                     .map_or_else(
                         || log::error!("Could not set the file state to error"),
                         |val| {
@@ -293,7 +310,7 @@ impl FileManager {
     /// Runs the while loop receiving bytes in packets, writes them to file
     /// and tracks progress
     async fn download_and_write_bytes(
-        file_id: &str,
+        file_id: &FileId,
         root_dir: &str,
         response: &mut Response,
         state: &State,
@@ -331,7 +348,7 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| file.file_id == file_id)
+                        .find(|file| &file.file_id == file_id)
                         .ok_or_else(|| {
                             "File is no longer in the required \
                                         files, canceling download."
@@ -356,7 +373,7 @@ impl FileManager {
                 .files
                 .lock_mut()
                 .iter_mut()
-                .find(|file| file.file_id == file_id)
+                .find(|file| &file.file_id == file_id)
                 .ok_or_else(|| {
                     "File is no longer in the required \
                                 files, canceling download."
@@ -412,7 +429,7 @@ impl FileManager {
 )]
 pub struct LocalFileInfo {
     /// ID of the file
-    pub file_id: String,
+    pub file_id: FileId,
 
     /// Name of the file if API call for the name was successful
     pub name: Option<String>,
@@ -431,7 +448,7 @@ pub struct LocalFileInfo {
 impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
     fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
         LocalFileInfo {
-            file_id: file_response.id,
+            file_id: file_response.id.into(),
             name: Some(file_response.name),
             state: FileState::Pending,
             download_state: None,

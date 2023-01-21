@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
+use crate::file_manager::FileId;
 use crate::{
     spec, srs,
     state::{
@@ -36,7 +37,7 @@ pub struct InputEndpoint {
     ///
     /// [`State::files`]: crate::state::State::files
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file_id: Option<String>,
+    pub file_id: Option<FileId>,
 
     /// `Status` of this `InputEndpoint` indicating whether it actually serves a
     /// live stream ready to be consumed by `Output`s and clients.
