@@ -29,6 +29,8 @@
     ? current_file?.state === 'LOCAL'
     : endpoint.status === 'ONLINE';
 
+  $: fileDownloadProgress = getFileDownloadProgress(current_file);
+
   function searchFile(all_files) {
     return all_files?.files
       ? all_files.files.find((val) => val.fileId === endpoint.fileId)
@@ -56,10 +58,10 @@
     return '';
   };
 
-  const generateFileName = (current_file) => current_file.name ? current_file.name : current_file.fileId;
+  const getFileName = (current_file) => current_file.name ? current_file.name : current_file.fileId;
 
-  const generateFileProgress = (current_file) => {
-    return current_file?.downloadState &&
+  const getFileDownloadProgress = (current_file) => {
+    let value = current_file?.downloadState &&
       current_file.downloadState.currentProgress !==
       current_file.downloadState.maxProgress
         ? (
@@ -68,6 +70,8 @@
             100
           )
         : 0
+
+    return value < 0 || value >= 100 ? undefined : value;
   }
 
 </script>
@@ -136,18 +140,28 @@
 
     {#if isFile && current_file}
       <Confirm let:confirm>
-        <a href="/" class='file-name' on:click|preventDefault={confirm(() => alert('123'))}>
-          { generateFileName(current_file) }
-        </a>
-        <span slot="title">Download file <code>{generateFileName(current_file)}</code></span>
+          <div class='uk-flex uk-flex-middle'>
+            <div class='uk-flex uk-flex-column'>
+              <a href="/" class='file-name' on:click|preventDefault={confirm(() => alert('123'))}>
+                { getFileName(current_file) }
+              </a>
+              <div class='uk-flex uk-flex-middle'>
+                {#if fileDownloadProgress}
+                  <progress class="uk-progress" value="{fileDownloadProgress}" max="100"></progress>
+                  <span class='uk-display-inline-block download-percents'>{ fileDownloadProgress.toFixed(0) }</span>%
+                {/if}
+              </div>
+            </div>
+            <Url
+              streamInfo={formatStreamInfo(endpoint.streamStat)}
+              isError={!!endpoint.streamStat?.error}
+            />
+          </div>
+        <span slot="title">Download file <code>{getFileName(current_file)}</code></span>
         <span slot="description">Current file fill be removed and download process will be started</span>
         <span slot="confirm">Start download</span>
       </Confirm>
 
-      <Url
-        streamInfo={formatStreamInfo(endpoint.streamStat)}
-        isError={!!endpoint.streamStat?.error}
-      />
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
@@ -159,10 +173,7 @@
         {/if}
     {/if}
   </div>
-  {#if isFile}
-    <progress class="uk-progress" value="{ generateFileProgress(current_file) }" max="100"></progress>
 
-  {/if}
 </template>
 
 <style lang="stylus">
@@ -182,10 +193,25 @@
       margin-right: 5px
 
     .file-name
-      color: var(--primary-text-color);
+      color: var(--primary-text-color)
 
   .uk-progress
     height: 3px;
     margin-bottom: 0
     margin-top: 0
+    background-color: #fff
+
+  progress::-webkit-progress-value {
+    background: var(--warning-color);
+  }
+
+  progress::-moz-progress-bar {
+    background: var(--warning-color);
+  }
+
+  .download-percents {
+    font-size: smaller
+    margin: 0 4px
+  }
+
 </style>
