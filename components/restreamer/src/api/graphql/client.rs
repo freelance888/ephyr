@@ -27,6 +27,7 @@ use crate::{
 
 use super::Context;
 use crate::file_manager::{FileId, FileManagerCommand};
+use crate::state::{InputSrc, Status};
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
     spec::v1::BackupInput,
@@ -261,6 +262,7 @@ impl MutationsRoot {
         .map(|_| true))
     }
 
+    /// Force download file from Google Drive by it's id
     fn download_file(
         #[graphql(
             description = "ID of the file from `Google Drive` to be downloaded."
@@ -268,6 +270,23 @@ impl MutationsRoot {
         file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
+        let mut restreams = context.state().restreams.lock_mut();
+        restreams.iter_mut().for_each(|restream| {
+            if let Some(InputSrc::Failover(fo)) = &restream.input.src {
+                fo.inputs.clone().iter_mut().for_each(|input| {
+                    input
+                        .clone()
+                        .endpoints
+                        .iter_mut()
+                        .find(|endpoint| {
+                            endpoint.is_file()
+                                && endpoint.file_id == Some(file_id.clone())
+                        })
+                        .and_then(|endpoint| Some(input.disable()));
+                })
+            }
+        });
+
         let mut commands = context.state().file_commands.lock_mut();
         commands.push(FileManagerCommand::ForceDownloadFile(file_id));
 
