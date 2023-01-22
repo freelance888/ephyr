@@ -251,7 +251,7 @@ impl MutationsRoot {
         }
         .tap(|_| {
             let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileManagerCommand::NewFileAddedOrRemoved)
+            commands.push(FileManagerCommand::FileAddedOrRemoved)
         })
         .map_err(|e| {
             graphql::Error::new("DUPLICATE_RESTREAM_KEY")
@@ -259,6 +259,19 @@ impl MutationsRoot {
                 .message(&e)
         })?
         .map(|_| true))
+    }
+
+    fn download_file(
+        #[graphql(
+            description = "ID of the file from `Google Drive` to be downloaded."
+        )]
+        file_id: FileId,
+        context: &Context,
+    ) -> Option<bool> {
+        let mut commands = context.state().file_commands.lock_mut();
+        commands.push(FileManagerCommand::ForceDownloadFile(file_id));
+
+        Some(true)
     }
 
     /// Removes a `Restream` by its `id`.

@@ -81,7 +81,7 @@ mutation SetRestream(
     $id: RestreamId
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
-    $file_id: String
+    $file_id: FileId
     $max_files_in_playlist: NumberOfItems
 ) {
     setRestream(
@@ -94,6 +94,10 @@ mutation SetRestream(
         id: $id
         maxFilesInPlaylist: $max_files_in_playlist
     )
+}
+
+mutation DownloadFile($fileId: FileId!) {
+    downloadFile(fileId: $fileId)
 }
 
 mutation RemoveRestream($id: RestreamId!) {

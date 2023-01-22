@@ -2,6 +2,11 @@
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
   import Confirm from '../common/Confirm.svelte';
+  import { mutation } from 'svelte-apollo';
+  import {
+    DownloadFile
+  } from '../../../api/client.graphql';
+  import { showError } from '../../utils/util';
 
   export let endpoint;
   export let input;
@@ -14,26 +19,36 @@
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  $: current_file = searchFile($files.data);
+  $: currentFile = searchFile($files.data);
   $: isFile = endpoint.kind === 'FILE';
 
   $: alertDanger = isFile
-    ? current_file?.state === 'ERROR'
+    ? currentFile?.state === 'ERROR'
     : endpoint.status === 'OFFLINE';
 
   $: alertWarning = isFile
-    ? (current_file?.state === 'PENDING' || current_file?.state === 'DOWNLOADING')
+    ? (currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING')
     : endpoint.status === 'INITIALIZING';
 
   $: alertSuccess = isFile
-    ? current_file?.state === 'LOCAL'
+    ? currentFile?.state === 'LOCAL'
     : endpoint.status === 'ONLINE';
 
-  $: fileDownloadProgress = getFileDownloadProgress(current_file);
+  $: fileDownloadProgress = getFileDownloadProgress(currentFile);
 
-  function searchFile(all_files) {
-    return all_files?.files
-      ? all_files.files.find((val) => val.fileId === endpoint.fileId)
+  const downloadFileMutation = mutation(DownloadFile);
+
+  async function downloadFile() {
+    try {
+      await downloadFileMutation({ variables: { fileId: currentFile.fileId } });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  const searchFile = (allFiles) => {
+    return allFiles?.files
+      ? allFiles.files.find((val) => val.fileId === endpoint.fileId)
       : undefined;
   }
 
@@ -58,15 +73,15 @@
     return '';
   };
 
-  const getFileName = (current_file) => current_file.name ? current_file.name : current_file.fileId;
+  const getFileName = (currentFile) => currentFile.name ? currentFile.name : currentFile.fileId;
 
-  const getFileDownloadProgress = (current_file) => {
-    let value = current_file?.downloadState &&
-      current_file.downloadState.currentProgress !==
-      current_file.downloadState.maxProgress
+  const getFileDownloadProgress = (currentFile) => {
+    let value = currentFile?.downloadState &&
+      currentFile.downloadState.currentProgress !==
+      currentFile.downloadState.maxProgress
         ? (
-            (current_file.downloadState.currentProgress /
-              current_file.downloadState.maxProgress) *
+            (currentFile.downloadState.currentProgress /
+              currentFile.downloadState.maxProgress) *
             100
           )
         : 0
@@ -138,12 +153,12 @@
       {/if}
     </div>
 
-    {#if isFile && current_file}
+    {#if isFile && currentFile}
       <Confirm let:confirm>
           <div class='uk-flex uk-flex-middle'>
             <div class='uk-flex uk-flex-column'>
-              <a href="/" class='file-name' on:click|preventDefault={confirm(() => alert('123'))}>
-                { getFileName(current_file) }
+              <a href="/" class='file-name' on:click|preventDefault={confirm(() => downloadFile())}>
+                { getFileName(currentFile) }
               </a>
               <div class='uk-flex uk-flex-middle'>
                 {#if fileDownloadProgress}
@@ -157,7 +172,7 @@
               isError={!!endpoint.streamStat?.error}
             />
           </div>
-        <span slot="title">Download file <code>{getFileName(current_file)}</code></span>
+        <span slot="title">Download file <code>{getFileName(currentFile)}</code></span>
         <span slot="description">Current file fill be removed and download process will be started</span>
         <span slot="confirm">Start download</span>
       </Confirm>

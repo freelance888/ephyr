@@ -26,7 +26,7 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=Tr
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileManagerCommand {
-    NewFileAddedOrRemoved,
+    FileAddedOrRemoved,
     ForceDownloadFile(FileId),
 }
 
@@ -66,6 +66,22 @@ impl FileManager {
             file_root_dir: root_path,
             state,
         }
+    }
+
+    pub fn handle_commands(&self) {
+        let commands: Vec<FileManagerCommand> =
+            self.state.file_commands.lock_mut().drain(..).collect();
+
+        commands.iter().for_each(|c| match c {
+            FileManagerCommand::FileAddedOrRemoved => self.check_files(),
+            FileManagerCommand::ForceDownloadFile(file_id) => {
+                let mut files = self.state.files.lock_mut();
+                files.retain(|file| &file.file_id != file_id);
+                drop(files);
+                self.sync_with_state();
+                self.need_file(file_id, None);
+            }
+        })
     }
 
     /// Checks all the [`crate::state::Input`]s and if some has
@@ -123,7 +139,12 @@ impl FileManager {
         let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
             .expect("Cannot read the provided file root directory")
             .into_iter()
-            .flat_map(|x| x);
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| match entry.file_type() {
+                // Returns only files, skips directories
+                Ok(file_type) => file_type.is_file(),
+                _ => false,
+            });
 
         disk_files.for_each(|disk_file| {
             if !files
