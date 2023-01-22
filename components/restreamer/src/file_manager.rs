@@ -42,9 +42,10 @@ pub enum FileManagerCommand {
     PartialEq,
     Default,
     Serialize,
+    Deserialize,
     GraphQLScalar,
 )]
-#[graphql(with = Self)]
+#[graphql(transparent)]
 pub struct FileId(String);
 
 /// Manages file downloads and files in the provided [`State`]
@@ -127,7 +128,7 @@ impl FileManager {
         disk_files.for_each(|disk_file| {
             if !files
                 .iter()
-                .any(|f| OsString::from(&f.file_id) == disk_file.file_name())
+                .any(|f| OsString::from(&f.file_id.0) == disk_file.file_name())
             {
                 let file_path = self.file_root_dir.join(disk_file.file_name());
                 let _ = std::fs::remove_file(file_path).map_err(|err| {
@@ -198,9 +199,10 @@ impl FileManager {
     }
 
     /// Spawns a separate process that tries to download given file ID
-    fn download_file(&self, file_id: &FileId, file_name: Option<String>) {
+    fn download_file(&self, id: &FileId, file_name: Option<String>) {
         let root_dir = self.file_root_dir.to_str().unwrap().to_string();
         let state = self.state.clone();
+        let file_id = id.clone();
         drop(tokio::spawn(async move {
             let _ = async {
                 let api_key = state
@@ -229,7 +231,7 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| &file.file_id == file_id)
+                        .find(|file| file.file_id == file_id)
                         .map(|file_info| file_info.name = file_name);
                 }
 
@@ -260,7 +262,7 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| &file.file_id == file_id)
+                        .find(|file| file.file_id == file_id)
                         .ok_or_else(|| {
                             "Could not find file with the \
                              provided file ID"
@@ -295,7 +297,7 @@ impl FileManager {
                     .files
                     .lock_mut()
                     .iter_mut()
-                    .find(|file| &file.file_id == file_id)
+                    .find(|file| file.file_id == file_id)
                     .map_or_else(
                         || log::error!("Could not set the file state to error"),
                         |val| {
@@ -448,7 +450,7 @@ pub struct LocalFileInfo {
 impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
     fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
         LocalFileInfo {
-            file_id: file_response.id.into(),
+            file_id: FileId(file_response.id),
             name: Some(file_response.name),
             state: FileState::Pending,
             download_state: None,

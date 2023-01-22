@@ -136,7 +136,7 @@ impl RestreamerKind {
                                     && e.is_file()
                                     && e.file_id.is_some()
                                     && files.iter().any(|f| {
-                                        e.file_id == f.file_id
+                                        e.file_id == Some(f.file_id.clone())
                                             && (f.state == FileState::Local)
                                     })
                                 {
@@ -145,7 +145,7 @@ impl RestreamerKind {
                                             e.file_id
                                                 .as_ref()
                                                 .unwrap_or(&FileId::default())
-                                                .into(),
+                                                .to_string(),
                                         ),
                                     )
                                     .ok()
