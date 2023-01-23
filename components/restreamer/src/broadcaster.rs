@@ -156,7 +156,7 @@ impl Broadcaster {
 
         let request = reqwest::Client::builder().build().unwrap();
 
-        let url = format!("{}api", client_id);
+        let url = format!("{client_id}api");
         let res = request
             .post(url.as_str())
             .json(&request_body)
@@ -186,7 +186,7 @@ impl Broadcaster {
 
         let request = reqwest::Client::builder().build().unwrap();
 
-        let url = format!("{}api", client_id);
+        let url = format!("{client_id}api");
         let res = request
             .post(url.as_str())
             .json(&request_body)
