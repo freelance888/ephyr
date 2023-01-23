@@ -1,7 +1,7 @@
 <script lang="js">
   import Confirm from './common/Confirm.svelte';
-  import {createGraphQlClient, showError} from '../utils/util';
-  import {mutation, setClient, subscribe} from 'svelte-apollo';
+  import { createGraphQlClient, showError } from '../utils/util';
+  import { mutation, setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import { Statistics } from '../../api/dashboard.graphql';
   import ToolbarDashboard from './ToolbarDashboard.svelte';
@@ -9,7 +9,10 @@
   import StatusFilter from './common/StatusFilter.svelte';
   import { statusesList } from '../utils/constants';
   import { toggleFilterStatus } from '../utils/filters.util';
-  import { EnableAllOutputsForClients, DisableAllOutputsForClients } from '../../api/dashboard.graphql';
+  import {
+    EnableAllOutputsForClients,
+    DisableAllOutputsForClients,
+  } from '../../api/dashboard.graphql';
 
   const gqlClient = createGraphQlClient(
     '/api-dashboard',
@@ -20,8 +23,12 @@
 
   let isOnline = false;
   const dashboard = subscribe(Statistics, { errorPolicy: 'all' });
-  const enableAllOutputsForClientMutation = mutation(EnableAllOutputsForClients);
-  const disableAllOutputsForClientMutation = mutation(DisableAllOutputsForClients);
+  const enableAllOutputsForClientMutation = mutation(
+    EnableAllOutputsForClients
+  );
+  const disableAllOutputsForClientMutation = mutation(
+    DisableAllOutputsForClients
+  );
 
   let title = document.title;
   $: document.title = (isOnline ? '' : '🔴  ') + title;
@@ -124,7 +131,6 @@
       showError(e.message);
     }
   }
-
 </script>
 
 <template>
@@ -175,8 +181,8 @@
               </button>
               <span slot="title">Start all outputs</span>
               <span slot="description"
-              >This will start all outputs of all restreams.
-            </span>
+                >This will start all outputs of all restreams.
+              </span>
               <span slot="confirm">Start</span>
             </Confirm>
 
@@ -190,13 +196,12 @@
               </button>
               <span slot="title">Stop all outputs</span>
               <span slot="description"
-              >This will stop all outputs of all restreams.
+                >This will stop all outputs of all restreams.
               </span>
               <span slot="confirm">Stop</span>
             </Confirm>
           </div>
-      </div>
-
+        </div>
       </section>
 
       {#each filteredClients() as client}

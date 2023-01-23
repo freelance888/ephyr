@@ -1,6 +1,10 @@
 //! Broadcaster for dashboard commands
 
-use crate::{display_panic, state::ClientId, State};
+use crate::{
+    display_panic,
+    state::{ClientId, ClientStatisticsResponse},
+    State,
+};
 use ephyr_log::log;
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
@@ -66,7 +70,7 @@ impl Broadcaster {
             .iter()
             .filter(|client| client.is_protected)
             .for_each(|client| {
-                for command in commands.iter() {
+                for command in &commands {
                     self.handle_one_command(
                         &client.id.clone(),
                         &command.clone(),
@@ -120,7 +124,11 @@ impl Broadcaster {
                     client_id, e
                 );
                 log::error!("{}", error_message);
-                Self::save_command_error(client_id, vec![error_message], state);
+                Self::save_command_error(
+                    &client_id,
+                    vec![error_message],
+                    &state,
+                );
             }))
             .catch_unwind()
             .await
@@ -162,7 +170,8 @@ impl Broadcaster {
             response
         );
 
-        Self::handle_errors(client_id, state, response.errors)
+        Self::handle_errors(&client_id, &state, response.errors);
+        Ok(())
     }
 
     async fn request_disable_outputs(
@@ -191,14 +200,15 @@ impl Broadcaster {
             response
         );
 
-        Self::handle_errors(client_id, state, response.errors)
+        Self::handle_errors(&client_id, &state, response.errors);
+        Ok(())
     }
 
     fn handle_errors(
-        client_id: ClientId,
-        state: State,
+        client_id: &ClientId,
+        state: &State,
         errors: Option<Vec<graphql_client::Error>>,
-    ) -> anyhow::Result<()> {
+    ) {
         //  Consider better error handling with ability to constant
         //  displaying error on dashboard
         if errors.is_some() {
@@ -210,28 +220,20 @@ impl Broadcaster {
 
             Self::save_command_error(client_id, response_errors, state);
         }
-
-        Ok(())
     }
 
     /// Saves error in [`State`] for specific [`Client`]
     fn save_command_error(
-        client_id: ClientId,
-        _error_messages: Vec<String>,
-        state: State,
+        client_id: &ClientId,
+        error_messages: Vec<String>,
+        state: &State,
     ) {
         let mut clients = state.clients.lock_mut();
-        let _client = match clients.iter_mut().find(|r| r.id == client_id) {
-            Some(_c) => {
-                // Save error to separate state
-                //command_errors on client, optional with none
-                // when initializing client
-                // client.statistics = Some(ClientStatisticsResponse {
-                //     data: None,
-                //     errors: Some(error_messages),
-                // });
-            }
-            None => return,
+        if let Some(c) = clients.iter_mut().find(|r| &r.id == client_id) {
+            c.statistics = Some(ClientStatisticsResponse {
+                data: None,
+                errors: Some(error_messages),
+            });
         };
     }
 }
