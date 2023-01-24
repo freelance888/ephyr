@@ -25,7 +25,6 @@ use crate::client_stat::statistics_query::{
 };
 
 use crate::state::ServerInfo;
-use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 

@@ -13,6 +13,7 @@ use std::panic::AssertUnwindSafe;
 pub enum DashboardCommand {
     /// Command for start playing file
     PlayFile(PlayFileCommand),
+    /// Command for stop playing file
     StopPlaying(StopPlayingCommand),
 }
 
@@ -244,12 +245,12 @@ impl Broadcaster {
     ///
     fn save_command_error(
         client_id: ClientId,
-        error_messages: Vec<String>,
+        _error_messages: Vec<String>,
         state: State,
     ) {
         let mut clients = state.clients.lock_mut();
-        let client = match clients.iter_mut().find(|r| r.id == client_id) {
-            Some(c) => {
+        let _ = match clients.iter_mut().find(|r| r.id == client_id) {
+            Some(_) => {
                 // Save error to separate state
                 // client.statistics = Some(ClientStatisticsResponse {
                 //     data: None,

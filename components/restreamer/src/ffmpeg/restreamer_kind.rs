@@ -197,7 +197,7 @@ impl RestreamerKind {
     #[must_use]
     pub fn from_playlist(
         playlist: &state::Playlist,
-        restream_key: &state::RestreamKey,
+        restream_key: &RestreamKey,
         input_key: &state::InputKey,
         file_root: &Path,
     ) -> Option<Self> {

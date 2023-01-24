@@ -11,22 +11,23 @@ use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
-use crate::state::{EndpointId, RestreamKey};
 use crate::{
     cli::Opts,
-    state::{InputEndpointKind, InputSrc, Restream, State, Status},
+    state::{InputEndpointKind, InputSrc, State, Status},
 };
 use chrono::Utc;
 use reqwest::{Response, StatusCode};
 use std::ffi::OsString;
-use std::{borrow::BorrowMut, result::Result::Err, slice::Iter};
+use std::{borrow::BorrowMut, result::Result::Err};
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
 
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileManagerCommand {
+    /// Notifies that file backup was added/removed to/from [`Restream`]
     FileAddedOrRemoved,
+    /// Request for redo download file from Google Drive with specific [`FileId`]
     ForceDownloadFile(FileId),
 }
 
@@ -68,6 +69,7 @@ impl FileManager {
         }
     }
 
+    /// Command processing
     pub fn handle_commands(&self) {
         let commands: Vec<FileManagerCommand> =
             self.state.file_commands.lock_mut().drain(..).collect();

@@ -80,7 +80,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let file_manager = FileManager::new(&cfg, state.clone());
     file_manager.check_files();
-    State::on_change("file_manager", &state.file_commands, move |files| {
+    State::on_change("file_manager", &state.file_commands, move |_| {
         file_manager.handle_commands();
         future::ready(())
     });

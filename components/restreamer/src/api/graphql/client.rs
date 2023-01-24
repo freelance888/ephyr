@@ -27,7 +27,7 @@ use crate::{
 
 use super::Context;
 use crate::file_manager::{FileId, FileManagerCommand};
-use crate::state::{InputSrc, Status};
+use crate::state::InputSrc;
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
     spec::v1::BackupInput,
@@ -274,7 +274,7 @@ impl MutationsRoot {
         restreams.iter_mut().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs.clone().iter_mut().for_each(|input| {
-                    input
+                    let _ = input
                         .clone()
                         .endpoints
                         .iter_mut()
@@ -282,7 +282,7 @@ impl MutationsRoot {
                             endpoint.is_file()
                                 && endpoint.file_id == Some(file_id.clone())
                         })
-                        .and_then(|endpoint| Some(input.disable()));
+                        .and_then(|_| Some(input.disable()));
                 })
             }
         });
