@@ -52,7 +52,12 @@ pub mod public_dashboard_dir {
 }
 
 pub mod public_full_stream_dir {
-    #![allow(clippy::must_use_candidate, unused_results)]
+    #![allow(
+        clippy::must_use_candidate,
+        unused_results,
+        unused_imports,
+        unused_variables
+    )]
     #![doc(hidden)]
 
     include!(concat!(env!("OUT_DIR"), "/generated_full_stream.rs"));
