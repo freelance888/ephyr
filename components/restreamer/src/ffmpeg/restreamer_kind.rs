@@ -18,7 +18,6 @@ use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
-use crate::file_manager::FileId;
 use crate::{
     dvr,
     ffmpeg::{
@@ -26,7 +25,7 @@ use crate::{
         mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    file_manager::{FileState, LocalFileInfo},
+    file_manager::{FileId, FileState, LocalFileInfo},
     state::{self, RestreamKey, State, Status},
 };
 

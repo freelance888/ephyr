@@ -17,17 +17,20 @@ use crate::{
 };
 use chrono::Utc;
 use reqwest::{Response, StatusCode};
-use std::ffi::OsString;
-use std::{borrow::BorrowMut, result::Result::Err};
+use std::{borrow::BorrowMut, ffi::OsString, result::Result::Err};
 
-const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=True&includeItemsFromAllDrives=True&includeTeamDriveItems=True";
+const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
+&supportsTeamDrives=True\
+&includeItemsFromAllDrives=True\
+&includeTeamDriveItems=True";
 
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileCommand {
     /// Notifies that file backup was added/removed to/from [`Restream`]
     FileAddedOrRemoved,
-    /// Request for redo download file from Google Drive with specific [`FileId`]
+    /// Request for redo download file from Google Drive with
+    /// specific [`FileId`]
     ForceDownloadFile(FileId),
 }
 

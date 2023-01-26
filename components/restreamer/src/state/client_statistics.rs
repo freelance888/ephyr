@@ -213,7 +213,13 @@ impl ClientId {
     /// # Panics
     #[must_use]
     pub fn has_base_auth(&self) -> bool {
-        let re = Regex::new(r"^(?P<protocol>.+?\\)(?P<username>.+?):(?P<password>.+?)@(?P<address>.+)$").unwrap();
+        let re = Regex::new(
+            r"^(?P<protocol>.+?\\)
+(?P<username>.+?):
+(?P<password>.+?)@
+(?P<address>.+)$",
+        )
+        .unwrap();
         re.is_match(self.0.as_str())
     }
 

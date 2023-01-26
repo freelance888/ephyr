@@ -42,10 +42,9 @@ use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
-use crate::file_manager::FileCommand;
 use crate::{
     display_panic,
-    file_manager::{LocalFileInfo, PlaylistFileInfo},
+    file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
     spec,
     state::client_statistics::StreamStatistics,
     stream_probe::StreamInfo,

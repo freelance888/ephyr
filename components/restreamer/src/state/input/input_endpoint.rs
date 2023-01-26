@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
 
-use crate::file_manager::FileId;
 use crate::{
+    file_manager::FileId,
     spec, srs,
     state::{
         client_statistics::StreamStatistics, InputKey, Label, RestreamKey,

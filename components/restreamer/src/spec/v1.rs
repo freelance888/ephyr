@@ -5,8 +5,9 @@
 
 use std::collections::HashSet;
 
-use crate::file_manager::FileId;
-use crate::{serde::is_false, state, state::NumberOfItems};
+use crate::{
+    file_manager::FileId, serde::is_false, state, state::NumberOfItems,
+};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
