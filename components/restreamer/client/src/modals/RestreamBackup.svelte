@@ -42,7 +42,7 @@
     on:change={onPullUrlChanged}
     placeholder="rtmp://..."
   />
-  <button class="uk-icon uk-close" uk-close on:click={removeFn} />
+  <button class="uk-icon uk-close" on:click={removeFn} />
 </li>
 
 <style lang="stylus">
