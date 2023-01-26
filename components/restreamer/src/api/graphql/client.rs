@@ -26,7 +26,7 @@ use crate::{
 };
 
 use super::Context;
-use crate::file_manager::{FileId, FileManagerCommand};
+use crate::file_manager::{FileCommand, FileId};
 use crate::state::InputSrc;
 use crate::{
     file_manager::{get_video_list_from_gdrive_folder, LocalFileInfo},
@@ -122,14 +122,14 @@ impl MutationsRoot {
     ///
     /// Returns `null` if a `Restream` with the given `id` doesn't exist,
     /// otherwise always returns `true`.
+    #[allow(clippy::too_many_lines)]
     #[allow(clippy::too_many_arguments)]
     fn set_restream(
         #[graphql(description = "Unique key to set the `Restream` with.")]
         key: RestreamKey,
         #[graphql(description = "Optional label to set the `Restream` with.")]
         label: Option<Label>,
-        #[graphql(description = "URL to pull a live stream from.\
-                           \n\n\
+        #[graphql(description = "URL to pull a live stream from.
                            If not specified then `Restream` will await for a \
                            live stream being pushed to its endpoint.")]
         src: Option<InputSrcUrl>,
@@ -145,8 +145,7 @@ impl MutationsRoot {
         max_files_in_playlist: Option<NumberOfItems>,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
-                           additional endpoint for serving a live stream via \
-                           HLS.",
+            additional endpoint for serving a live stream via HLS.",
             default = false
         )]
         with_hls: bool,
@@ -184,26 +183,19 @@ impl MutationsRoot {
                     }))
                     .chain(
                         file_id
-                            .clone()
-                            .map_or_else(
-                                || vec![],
-                                |id| {
-                                    vec![spec::v1::Input {
-                                        id: None,
-                                        key: InputKey::new("file_backup")
-                                            .unwrap(),
-                                        endpoints: vec![
-                                            spec::v1::InputEndpoint {
-                                                kind: InputEndpointKind::File,
-                                                label: None,
-                                                file_id: Some(id),
-                                            },
-                                        ],
-                                        src: None,
-                                        enabled: true,
-                                    }]
-                                },
-                            )
+                            .map_or_else(Vec::new, |id| {
+                                vec![spec::v1::Input {
+                                    id: None,
+                                    key: InputKey::new("file_backup").unwrap(),
+                                    endpoints: vec![spec::v1::InputEndpoint {
+                                        kind: InputEndpointKind::File,
+                                        label: None,
+                                        file_id: Some(id),
+                                    }],
+                                    src: None,
+                                    enabled: true,
+                                }]
+                            })
                             .into_iter(),
                     )
                     .collect(),
@@ -252,7 +244,7 @@ impl MutationsRoot {
         }
         .tap(|_| {
             let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileManagerCommand::FileAddedOrRemoved)
+            commands.push(FileCommand::FileAddedOrRemoved);
         })
         .map_err(|e| {
             graphql::Error::new("DUPLICATE_RESTREAM_KEY")
@@ -282,13 +274,13 @@ impl MutationsRoot {
                             endpoint.is_file()
                                 && endpoint.file_id == Some(file_id.clone())
                         })
-                        .and_then(|_| Some(input.disable()));
-                })
+                        .map(|_| input.disable());
+                });
             }
         });
 
         let mut commands = context.state().file_commands.lock_mut();
-        commands.push(FileManagerCommand::ForceDownloadFile(file_id));
+        commands.push(FileCommand::ForceDownloadFile(file_id));
 
         Some(true)
     }

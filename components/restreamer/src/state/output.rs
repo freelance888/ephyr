@@ -259,7 +259,7 @@ impl OutputDstUrl {
 
         // Get the restream key
         let segment = self.0.path_segments()?.next()?;
-        let path_match = segment == format!("{}", key);
+        let path_match = segment == format!("{key}");
 
         Some(match_host && path_match)
     }

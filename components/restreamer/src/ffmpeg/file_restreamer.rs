@@ -49,41 +49,41 @@ impl FileRestreamer {
         cmd: &mut Command,
         repeat: bool,
     ) -> io::Result<()> {
-        let _ = cmd.stderr(Stdio::inherit()).args(&["-loglevel", "debug"]);
+        let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         match self.from_url.scheme() {
             "file" => {
                 let _ = cmd.arg("-re");
                 if repeat {
-                    let _ = cmd.args(&["-stream_loop", "-1"]);
+                    let _ = cmd.args(["-stream_loop", "-1"]);
                 }
             }
 
             _ => unimplemented!(),
         };
-        let _ = cmd.args(&["-i", self.from_url.as_str()]);
+        let _ = cmd.args(["-i", self.from_url.as_str()]);
 
         let _ = match self.to_url.scheme() {
             "file"
                 if Path::new(self.to_url.path()).extension()
                     == Some("flv".as_ref()) =>
             {
-                cmd.args(&["-c", "copy"])
+                cmd.args(["-c", "copy"])
                     .arg(dvr::new_file_path(&self.to_url).await?)
             }
 
             "icecast" => cmd
-                .args(&["-c:a", "libmp3lame", "-b:a", "64k"])
-                .args(&["-f", "mp3", "-content_type", "audio/mpeg"])
+                .args(["-c:a", "libmp3lame", "-b:a", "64k"])
+                .args(["-f", "mp3", "-content_type", "audio/mpeg"])
                 .arg(self.to_url.as_str()),
 
             "rtmp" | "rtmps" => cmd
-                .args(&["-c", "copy"])
-                .args(&["-f", "flv"])
+                .args(["-c", "copy"])
+                .args(["-f", "flv"])
                 .arg(self.to_url.as_str()),
 
             "srt" => cmd
-                .args(&["-c", "copy"])
-                .args(&["-strict", "-2", "-y", "-f", "mpegts"])
+                .args(["-c", "copy"])
+                .args(["-strict", "-2", "-y", "-f", "mpegts"])
                 .arg(self.to_url.as_str()),
 
             _ => unimplemented!(),

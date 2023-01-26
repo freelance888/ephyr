@@ -9,7 +9,6 @@ use juniper::{graphql_object, graphql_subscription, RootNode};
 
 use crate::{
     api::graphql,
-    broadcaster::{DashboardCommand, PlayFileCommand},
     state::{Client, ClientId},
 };
 
@@ -75,17 +74,6 @@ impl MutationsRoot {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }
-    }
-
-    /// Broadcast play file command to every [`Client`]
-    fn play_file(
-        #[graphql(description = "file identity")] file_id: String,
-        context: &Context,
-    ) -> Result<Option<bool>, graphql::Error> {
-        let mut commands = context.state().dashboard_commands.lock_mut();
-        commands.push(DashboardCommand::PlayFile(PlayFileCommand { file_id }));
-
-        Ok(Some(true))
     }
 }
 

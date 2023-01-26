@@ -196,7 +196,7 @@ impl RestreamersPool {
         let process = self
             .pool
             .remove(&id)
-            .and_then(|mut p| (!p.kind.needs_restart(&new_kind)).then(|| p))
+            .and_then(|mut p| (!p.kind.needs_restart(&new_kind)).then_some(p))
             .unwrap_or_else(|| {
                 Restreamer::run(
                     self.ffmpeg_path.clone(),

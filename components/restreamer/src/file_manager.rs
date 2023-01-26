@@ -24,7 +24,7 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True&supportsTeamDrives=Tr
 
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum FileManagerCommand {
+pub enum FileCommand {
     /// Notifies that file backup was added/removed to/from [`Restream`]
     FileAddedOrRemoved,
     /// Request for redo download file from Google Drive with specific [`FileId`]
@@ -71,19 +71,19 @@ impl FileManager {
 
     /// Command processing
     pub fn handle_commands(&self) {
-        let commands: Vec<FileManagerCommand> =
+        let commands: Vec<FileCommand> =
             self.state.file_commands.lock_mut().drain(..).collect();
 
         commands.iter().for_each(|c| match c {
-            FileManagerCommand::FileAddedOrRemoved => self.check_files(),
-            FileManagerCommand::ForceDownloadFile(file_id) => {
+            FileCommand::FileAddedOrRemoved => self.check_files(),
+            FileCommand::ForceDownloadFile(file_id) => {
                 let mut files = self.state.files.lock_mut();
                 files.retain(|file| &file.file_id != file_id);
                 drop(files);
                 self.sync_with_state();
                 self.need_file(file_id, None);
             }
-        })
+        });
     }
 
     /// Checks all the [`crate::state::Input`]s and if some has
@@ -95,7 +95,7 @@ impl FileManager {
 
         let mut file_ids = vec![];
         let restreams = self.state.restreams.lock_mut();
-        let _ = restreams.iter().for_each(|restream| {
+        restreams.iter().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs
                     .iter()
@@ -130,9 +130,9 @@ impl FileManager {
         self.sync_with_state();
 
         // Check if file need to be downloaded
-        file_ids.into_iter().for_each(|file_id| {
+        for file_id in file_ids {
             self.need_file(file_id, None);
-        })
+        }
     }
 
     /// Sync files on disks with files in state
@@ -141,7 +141,7 @@ impl FileManager {
         let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
             .expect("Cannot read the provided file root directory")
             .into_iter()
-            .filter_map(|entry| entry.ok())
+            .filter_map(Result::ok)
             .filter(|entry| match entry.file_type() {
                 // Returns only files, skips directories
                 Ok(file_type) => file_type.is_file(),
@@ -345,7 +345,7 @@ impl FileManager {
         if let Ok(file) = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
-            .open(format!("{}/{}", root_dir, &file_id))
+            .open(format!("{root_dir}/{}", &file_id))
         {
             let mut writer = BufWriter::new(file);
             let mut last_update = Utc::now();
@@ -431,7 +431,7 @@ impl FileManager {
                                         .file_id
                                         .as_ref()
                                         .unwrap()
-                                        .eq(&file_id)
+                                        .eq(file_id)
                             })
                             .for_each(|endpoint| {
                                 endpoint.status = Status::Online;
