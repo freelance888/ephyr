@@ -1530,7 +1530,7 @@
               },
               {
                 "name": "src",
-                "description": "URL to pull a live stream from.\n\nIf not specified then `Restream` will await for a live stream being pushed to its endpoint.",
+                "description": "URL to pull a live stream from.\n                           If not specified then `Restream` will await for a live stream being pushed to its endpoint.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "InputSrcUrl",
@@ -1611,7 +1611,7 @@
           },
           {
             "name": "downloadFile",
-            "description": null,
+            "description": "Force download file from Google Drive by it's id",
             "args": [
               {
                 "name": "fileId",
