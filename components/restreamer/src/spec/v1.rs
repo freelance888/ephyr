@@ -58,17 +58,17 @@ pub struct Settings {
     pub title: Option<String>,
 
     /// Whether do we need to confirm deletion of inputs and outputs
-    /// If `true` we should confirm deletion, `false` - do not confirm
+    /// If `true` we should confirm deletion, `false` - do not confirm.
     pub delete_confirmation: Option<bool>,
 
     /// Whether do we need to confirm enabling/disabling of inputs \
-    /// or outputs
+    /// or outputs.
     pub enable_confirmation: Option<bool>,
 
-    /// Google API key for file playback and downloading
+    /// Google API key for file playback and downloading.
     pub google_api_key: Option<String>,
 
-    /// Max number of files allowed in [Restream]'s playlist
+    /// Max number of files allowed in [Restream]'s playlist.
     pub max_files_in_playlist: Option<NumberOfItems>,
 }
 
