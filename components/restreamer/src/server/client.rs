@@ -308,16 +308,13 @@ fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         route.starts_with(MIX_ROUTE) || route.starts_with(MIX_ROUTE_API);
     let settings = req.app_data::<State>().unwrap().settings.get_cloned();
 
-    let hash = if is_mix_auth {
+    let maybe_hash = if is_mix_auth {
         settings.password_output_hash
     } else {
         settings.password_hash
     };
 
-    let hash = match hash {
-        Some(h) => h,
-        None => return Ok(req),
-    };
+    let Some(hash) = maybe_hash else { return Ok(req) };
 
     let err = || {
         AuthenticationError::new(

@@ -218,8 +218,7 @@ impl RestreamerKind {
             });
 
         let to_url = Url::parse(&format!(
-            "rtmp://127.0.0.1:1935/{}/{}",
-            restream_key, input_key,
+            "rtmp://127.0.0.1:1935/{restream_key}/{input_key}",
         ))
         .map_err(|e| log::error!("Failed to parse `to_url`: {}", e));
 

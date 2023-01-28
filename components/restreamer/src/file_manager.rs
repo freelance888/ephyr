@@ -27,7 +27,7 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileCommand {
-    /// Notifies that file backup was added/removed to/from [`Restream`]
+    /// Notifies that file backup was added/removed to/from restream
     FileAddedOrRemoved,
     /// Request for redo download file from Google Drive with
     /// specific [`FileId`]
@@ -190,9 +190,8 @@ impl FileManager {
     ) -> Result<(), &'static str> {
         let filename = reqwest::get(
             format!(
-                "https://www.googleapis.com/drive/v3/files/{}?fields=name&\
-                 key={}&{}",
-                file_id, api_key, GDRIVE_PUBLIC_PARAMS
+                "https://www.googleapis.com/drive/v3/files/{file_id}?
+                fields=name&key={api_key}&{GDRIVE_PUBLIC_PARAMS}"
             )
             .as_str(),
         )
@@ -265,9 +264,9 @@ impl FileManager {
                 if let Ok(mut response) = client
                     .get(
                         format!(
-                            "https://www.googleapis.com/drive/v3/files/{}?\
-                             alt=media&key={}&{}",
-                            file_id, api_key, GDRIVE_PUBLIC_PARAMS
+                            "https://www.googleapis.com/drive/v3/files/\
+                            {file_id}?alt=media&key={api_key}\
+                            &{GDRIVE_PUBLIC_PARAMS}"
                         )
                         .as_str(),
                     )
@@ -644,9 +643,9 @@ pub(crate) mod api_response {
             let dir_content = reqwest::get(
                 format!(
                     "https://www.googleapis.com/drive/v3/files?\
-                     key={}&q='{}'%20in%20parents&\
-                     fields=files/id,files/name,files/mimeType&{}",
-                    api_key, dir_id, GDRIVE_PUBLIC_PARAMS
+                     key={api_key}&q='{dir_id}'%20in%20parents&\
+                     fields=files/id,files/name,files/mimeType&\
+                     {GDRIVE_PUBLIC_PARAMS}",
                 )
                 .as_str(),
             )

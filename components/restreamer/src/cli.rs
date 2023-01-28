@@ -26,7 +26,7 @@ pub struct Opts {
     pub client_http_ip: IpAddr,
 
     /// Port for the server to listen client HTTP requests on.
-    #[structopt(
+    #[structopt(e
         long,
         env = "EPHYR_RESTREAMER_CLIENT_HTTP_PORT",
         default_value = "80",
