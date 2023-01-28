@@ -41,7 +41,9 @@ export class RestreamModel {
         pullUrl = value.input.src.inputs[0].src.url;
       }
 
-      const fileBackup = value.input.src.inputs?.find(x => x.key === 'file_backup');
+      const fileBackup = value.input.src.inputs?.find(
+        (x) => x.key === 'file_backup'
+      );
       if (fileBackup) {
         this.fileId = fileBackup.endpoints[0].fileId;
         value.input.src.inputs = without(value.input.src.inputs, fileBackup);

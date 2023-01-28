@@ -115,8 +115,8 @@
     return status === STREAM_WARNING
       ? 'Inputs with inconsistencies in streams params'
       : status === STREAM_ERROR
-        ? 'Inputs with errors on getting streams params'
-        : '';
+      ? 'Inputs with errors on getting streams params'
+      : '';
   };
 
   const storeSearchTextInQueryParams = () => {

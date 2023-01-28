@@ -3,9 +3,7 @@
   import InputEndpointLabel from './InputEndpointLabel.svelte';
   import Confirm from '../common/Confirm.svelte';
   import { mutation } from 'svelte-apollo';
-  import {
-    DownloadFile
-  } from '../../../api/client.graphql';
+  import { DownloadFile } from '../../../api/client.graphql';
   import { showError } from '../../utils/util';
 
   export let endpoint;
@@ -27,7 +25,7 @@
     : endpoint.status === 'OFFLINE';
 
   $: alertWarning = isFile
-    ? (currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING')
+    ? currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING'
     : endpoint.status === 'INITIALIZING';
 
   $: alertSuccess = isFile
@@ -50,7 +48,7 @@
     return allFiles?.files
       ? allFiles.files.find((val) => val.fileId === endpoint.fileId)
       : undefined;
-  }
+  };
 
   const formatStreamInfo = (streamStat) => {
     if (streamStat) {
@@ -73,22 +71,21 @@
     return '';
   };
 
-  const getFileName = (currentFile) => currentFile.name ? currentFile.name : currentFile.fileId;
+  const getFileName = (currentFile) =>
+    currentFile.name ? currentFile.name : currentFile.fileId;
 
   const getFileDownloadProgress = (currentFile) => {
-    let value = currentFile?.downloadState &&
+    let value =
+      currentFile?.downloadState &&
       currentFile.downloadState.currentProgress !==
-      currentFile.downloadState.maxProgress
-        ? (
-            (currentFile.downloadState.currentProgress /
-              currentFile.downloadState.maxProgress) *
-            100
-          )
-        : 0
+        currentFile.downloadState.maxProgress
+        ? (currentFile.downloadState.currentProgress /
+            currentFile.downloadState.maxProgress) *
+          100
+        : 0;
 
     return value < 0 || value >= 100 ? undefined : value;
-  }
-
+  };
 </script>
 
 <template>
@@ -102,10 +99,10 @@
     >
       {#if isFile}
         <span
-        ><i
-          class="fas fa-file"
-          title="Serves live {endpoint.kind} stream"
-        /></span
+          ><i
+            class="fas fa-file"
+            title="Serves live {endpoint.kind} stream"
+          /></span
         >
       {:else if isFailover || endpoint.kind !== 'RTMP'}
         {#if endpoint.status === 'ONLINE'}
@@ -155,40 +152,52 @@
 
     {#if isFile && currentFile}
       <Confirm let:confirm>
-          <div class='uk-flex uk-flex-middle'>
-            <div class='uk-flex uk-flex-column'>
-              <a href="/" class='file-name' on:click|preventDefault={confirm(() => downloadFile())}>
-                { getFileName(currentFile) }
-              </a>
-              <div class='uk-flex uk-flex-middle'>
-                {#if fileDownloadProgress}
-                  <progress class="uk-progress" value="{fileDownloadProgress}" max="100"></progress>
-                  <span class='uk-display-inline-block download-percents'>{ fileDownloadProgress.toFixed(0) }</span>%
-                {/if}
-              </div>
+        <div class="uk-flex uk-flex-middle">
+          <div class="uk-flex uk-flex-column">
+            <a
+              href="/"
+              class="file-name"
+              on:click|preventDefault={confirm(() => downloadFile())}
+            >
+              {getFileName(currentFile)}
+            </a>
+            <div class="uk-flex uk-flex-middle">
+              {#if fileDownloadProgress}
+                <progress
+                  class="uk-progress"
+                  value={fileDownloadProgress}
+                  max="100"
+                />
+                <span class="uk-display-inline-block download-percents"
+                  >{fileDownloadProgress.toFixed(0)}</span
+                >%
+              {/if}
             </div>
-            <Url
-              streamInfo={formatStreamInfo(endpoint.streamStat)}
-              isError={!!endpoint.streamStat?.error}
-            />
           </div>
-        <span slot="title">Download file <code>{getFileName(currentFile)}</code></span>
-        <span slot="description">Current file fill be removed and download process will be started</span>
+          <Url
+            streamInfo={formatStreamInfo(endpoint.streamStat)}
+            isError={!!endpoint.streamStat?.error}
+          />
+        </div>
+        <span slot="title"
+          >Download file <code>{getFileName(currentFile)}</code></span
+        >
+        <span slot="description"
+          >Current file fill be removed and download process will be started</span
+        >
         <span slot="confirm">Start download</span>
       </Confirm>
-
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
         isError={!!endpoint.streamStat?.error}
         url={input_url}
       />
-        {#if with_label}
-          <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
-        {/if}
+      {#if with_label}
+        <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
+      {/if}
     {/if}
   </div>
-
 </template>
 
 <style lang="stylus">

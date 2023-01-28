@@ -29,10 +29,15 @@
 <template>
   <section class="uk-section uk-section-muted toolbar">
     <span class="section-label">
-      <span class="client-info {client.isProtected ? 'is-protected' : 'not-protected'}"
-            title="{client.isProtected ? '' : 'This client is not protected by password so that will not receive any commands'}"
-            uk-icon="icon: {client.isProtected ? 'lock' : 'warning'}">
-      </span>
+      <span
+        class="client-info {client.isProtected
+          ? 'is-protected'
+          : 'not-protected'}"
+        title={client.isProtected
+          ? ''
+          : 'This client is not protected by password so that will not receive any commands'}
+        uk-icon="icon: {client.isProtected ? 'lock' : 'warning'}"
+      />
       <a href={client.id}>{clientTitle ? clientTitle : client.id}</a></span
     >
     <Confirm let:confirm>
