@@ -62,11 +62,6 @@ pub fn run() -> Result<(), cli::Failure> {
             None
         }
     });
-
-    // This guard should be held till the end of the program for the logger
-    // to present in global context.
-    ephyr_log::init(cfg.verbose);
-
     server::run(cfg)
 }
 

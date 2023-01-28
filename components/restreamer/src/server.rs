@@ -26,6 +26,8 @@ use crate::{
 /// [`HttpServer`]: actix_web::HttpServer
 #[actix_web::main]
 pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
+    ephyr_log::init(cfg.verbose);
+
     if cfg.public_host.is_none() {
         cfg.public_host = Some(
             detect_public_ip()
