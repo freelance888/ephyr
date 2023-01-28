@@ -48,20 +48,17 @@ fn build_full_stream(out_dir: &str) -> std::io::Result<()> {
 fn main() -> std::io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
 
-    // It's enough to run `yarn dev` in debug mode
-    if !cfg!(debug_assertions) {
-        NpmBuild::new("./client")
-            .executable("yarn")
-            .install()?
-            .run(if cfg!(debug_assertions) {
-                "build:dev"
-            } else {
-                "build:prod"
-            })?
-            .target("./client/public")
-            .to_resource_dir()
-            .build()?;
-    }
+    NpmBuild::new("./client")
+        .executable("yarn")
+        .install()?
+        .run(if cfg!(debug_assertions) {
+            "build:dev"
+        } else {
+            "build:prod"
+        })?
+        .target("./client/public")
+        .to_resource_dir()
+        .build()?;
 
     build_root(&out_dir)?;
     build_mix(&out_dir)?;
