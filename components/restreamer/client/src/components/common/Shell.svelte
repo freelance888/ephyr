@@ -191,4 +191,10 @@
   .uk-tooltip
     max-width: 400px
 
+  .has-error
+    color:  var(--danger-color)
+
+  .has-warning
+    color: var(--warning-color)
+
 </style>

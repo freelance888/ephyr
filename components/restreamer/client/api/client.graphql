@@ -27,11 +27,12 @@ subscription Files {
     files {
         fileId
         name
+        state
+        error
         downloadState {
             maxProgress
             currentProgress
         }
-        state
     }
 }
 

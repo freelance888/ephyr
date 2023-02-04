@@ -407,11 +407,4 @@
     .info-icon
       font-size: 16px
 
-    .has-error
-      color: var(--danger-color)
-
-    .has-warning
-      color: var(--warning-color)
-
-
 </style>

@@ -21,7 +21,7 @@
   $: isFile = endpoint.kind === 'FILE';
 
   $: alertDanger = isFile
-    ? currentFile?.state === 'ERROR'
+    ? isFileError
     : endpoint.status === 'OFFLINE';
 
   $: alertWarning = isFile
@@ -33,6 +33,14 @@
     : endpoint.status === 'ONLINE';
 
   $: fileDownloadProgress = getFileDownloadProgress(currentFile);
+
+  $: isFileError = currentFile?.state === 'DOWNLOAD_ERROR';
+
+  $: fileErrorMessage = currentFile?.error;
+
+  $: {
+    console.log("CURRENT FILE:", currentFile);
+  }
 
   const downloadFileMutation = mutation(DownloadFile);
 
@@ -154,13 +162,24 @@
       <Confirm let:confirm>
         <div class="uk-flex uk-flex-middle">
           <div class="uk-flex uk-flex-column">
-            <a
-              href="/"
-              class="file-name"
-              on:click|preventDefault={confirm(() => downloadFile())}
-            >
-              {getFileName(currentFile)}
-            </a>
+            <div class='uk-flex uk-flex-middle'>
+              <a
+                href="/"
+                class="file-name "
+                on:click|preventDefault={confirm(() => downloadFile())}
+              >
+                {getFileName(currentFile)}
+
+              </a>
+              {#if isFileError}
+                  <span
+                    class="info-icon has-error"
+                    uk-icon="icon: info; ratio: 0.7"
+                    uk-tooltip={fileErrorMessage}
+                  />
+              {/if}
+            </div>
+
             <div class="uk-flex uk-flex-middle">
               {#if fileDownloadProgress}
                 <progress
@@ -218,6 +237,7 @@
 
     .file-name
       color: var(--primary-text-color)
+      padding-right: 6px
 
   .uk-progress
     height: 3px;

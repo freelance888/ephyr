@@ -71,7 +71,4 @@
     &:hover
       color: var(--primary-text-hover-color)
 
-  .has-error
-    color:  var(--danger-color)
-
 </style>
