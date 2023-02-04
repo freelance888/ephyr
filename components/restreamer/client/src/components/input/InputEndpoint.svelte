@@ -38,10 +38,6 @@
 
   $: fileErrorMessage = currentFile?.error;
 
-  $: {
-    console.log("CURRENT FILE:", currentFile);
-  }
-
   const downloadFileMutation = mutation(DownloadFile);
 
   async function downloadFile() {

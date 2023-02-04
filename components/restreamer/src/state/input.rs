@@ -94,7 +94,10 @@ impl Input {
             if let Some(mut old) = olds
                 .iter()
                 .enumerate()
-                .find_map(|(n, o)| (o.kind == new.kind).then_some(n))
+                .find_map(|(n, o)| {
+                    (o.kind == new.kind && o.kind != InputEndpointKind::File)
+                        .then_some(n)
+                })
                 .map(|n| olds.swap_remove(n))
             {
                 old.apply(new);
