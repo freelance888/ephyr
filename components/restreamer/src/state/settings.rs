@@ -1,11 +1,6 @@
 //! Server's settings.
-use crate::spec;
-use juniper::{
-    GraphQLScalar, InputValue, ParseScalarResult, ParseScalarValue,
-    ScalarToken, ScalarValue, Value,
-};
+use crate::{spec, types::UNumber};
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 
 /// Server's settings.
 ///
@@ -39,7 +34,7 @@ pub struct Settings {
     /// Max number of files allowed in [`Restream`]'s playlist
     ///
     /// [`Restream`]: crate::state::Restream
-    pub max_files_in_playlist: Option<NumberOfItems>,
+    pub max_files_in_playlist: Option<UNumber>,
 }
 
 impl Settings {
@@ -78,46 +73,5 @@ impl Default for Settings {
             google_api_key: None,
             max_files_in_playlist: None,
         }
-    }
-}
-
-/// Represents number of something with GraphQL support.
-#[derive(
-    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, GraphQLScalar,
-)]
-#[graphql(with = Self)]
-pub struct NumberOfItems(u16);
-
-impl TryFrom<i32> for NumberOfItems {
-    type Error = std::num::TryFromIntError;
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        u16::try_from(value).map(Self)
-    }
-}
-
-impl NumberOfItems {
-    #[allow(clippy::wrong_self_convention, clippy::trivially_copy_pass_by_ref)]
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        Value::scalar(i32::from(self.0))
-    }
-
-    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-    where
-        S: ScalarValue,
-    {
-        v.as_scalar()
-            .and_then(ScalarValue::as_int)
-            .map(NumberOfItems::try_from)
-            .and_then(Result::ok)
-            .ok_or_else(|| {
-                "Could not parse NumberOfItems(U16) from input".to_string()
-            })
-    }
-
-    fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>
-    where
-        S: ScalarValue,
-    {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }

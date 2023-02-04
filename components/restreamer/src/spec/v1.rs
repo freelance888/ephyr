@@ -5,9 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::{
-    file_manager::FileId, serde::is_false, state, state::NumberOfItems,
-};
+use crate::{file_manager::FileId, serde::is_false, state, types::UNumber};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
@@ -68,7 +66,7 @@ pub struct Settings {
     pub google_api_key: Option<String>,
 
     /// Max number of files allowed in [Restream]'s playlist.
-    pub max_files_in_playlist: Option<NumberOfItems>,
+    pub max_files_in_playlist: Option<UNumber>,
 }
 
 /// Shareable (exportable and importable) specification of a
@@ -90,7 +88,7 @@ pub struct Restream {
     pub input: Input,
 
     /// Max number of files allowed in [Restream]'s playlist
-    pub max_files_in_playlist: Option<NumberOfItems>,
+    pub max_files_in_playlist: Option<UNumber>,
 
     /// [`Output`]s that a live stream is re-streamed to.
     #[serde(

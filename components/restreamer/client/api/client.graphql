@@ -83,7 +83,7 @@ mutation SetRestream(
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
     $file_id: FileId
-    $max_files_in_playlist: NumberOfItems
+    $max_files_in_playlist: UNumber
 ) {
     setRestream(
         key: $key
@@ -245,7 +245,7 @@ mutation SetSettings(
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
     $googleApiKey: String
-    $maxFilesInPlaylist: NumberOfItems
+    $maxFilesInPlaylist: UNumber
 ) {
     setSettings(
         title: $title

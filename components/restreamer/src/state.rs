@@ -23,7 +23,7 @@ pub use self::{
         Volume, VolumeLevel,
     },
     restream::{Restream, RestreamId, RestreamKey},
-    settings::{NumberOfItems, Settings},
+    settings::Settings,
 };
 
 use std::{future::Future, mem, panic::AssertUnwindSafe, path::Path};

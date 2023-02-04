@@ -11,7 +11,8 @@ use uuid::Uuid;
 
 use crate::{
     spec,
-    state::{Input, Label, NumberOfItems, Output, Playlist, PlaylistId},
+    state::{Input, Label, Output, Playlist, PlaylistId},
+    types::UNumber,
 };
 
 /// Re-stream of a live stream from one `Input` to many `Output`s.
@@ -36,7 +37,7 @@ pub struct Restream {
     pub playlist: Playlist,
 
     /// Max number of files allowed in a playlist
-    pub max_files_in_playlist: Option<NumberOfItems>,
+    pub max_files_in_playlist: Option<UNumber>,
 
     /// `Input` that a live stream is received from.
     pub input: Input,

@@ -31,7 +31,8 @@ use crate::{
         get_video_list_from_gdrive_folder, FileCommand, FileId, LocalFileInfo,
     },
     spec::v1::BackupInput,
-    state::{EndpointId, NumberOfItems, ServerInfo, VolumeLevel},
+    state::{EndpointId, ServerInfo, VolumeLevel},
+    types::UNumber,
 };
 use url::Url;
 
@@ -142,7 +143,7 @@ impl MutationsRoot {
         file_id: Option<FileId>,
         #[graphql(description = "Override for global maximum for files in \
                                  playlist")]
-        max_files_in_playlist: Option<NumberOfItems>,
+        max_files_in_playlist: Option<UNumber>,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
             additional endpoint for serving a live stream via HLS.",
@@ -1027,7 +1028,7 @@ impl MutationsRoot {
         #[graphql(description = "Google API key for google drive access")]
         google_api_key: Option<String>,
         #[graphql(description = "Maximum number of files in playlist")]
-        max_files_in_playlist: Option<NumberOfItems>,
+        max_files_in_playlist: Option<UNumber>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -1296,7 +1297,7 @@ pub struct Info {
     /// Max number of files allowed in [Restream]'s playlist
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
-    pub max_files_in_playlist: Option<NumberOfItems>,
+    pub max_files_in_playlist: Option<UNumber>,
 }
 
 /// Restream with its source output if it has any
