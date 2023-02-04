@@ -154,7 +154,14 @@ impl MutationsRoot {
         id: Option<RestreamId>,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        let (input_key, input_src) = if let Some(backups) = backup_inputs {
+        let backups = match backup_inputs.clone() {
+            None => Vec::new(),
+            Some(b) => b,
+        };
+
+        let (input_key, input_src) = if backup_inputs.is_some()
+            || file_id.is_some()
+        {
             (
                 InputKey::new("playback").unwrap(),
                 Some(spec::v1::InputSrc::FailoverInputs(

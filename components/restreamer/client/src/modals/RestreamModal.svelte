@@ -1,7 +1,11 @@
 <script lang="js">
   import { onDestroy } from 'svelte';
-  import { mutation } from 'svelte-apollo';
-  import { SetRestream } from '../../api/client.js';
+  import { mutation, subscribe } from 'svelte-apollo';
+  import {
+    SetRestream,
+    Info,
+  } from '../../api/client.graphql';
+
   import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
@@ -10,15 +14,17 @@
   import isEqual from 'lodash/isEqual';
   import RestreamBackup from './RestreamBackup.svelte';
 
+  const info = subscribe(Info, { errorPolicy: 'all' });
   const setRestreamMutation = mutation(SetRestream);
 
   export let visible = false;
   export let public_host = 'localhost';
-
   export let restream = new RestreamModel();
-  let previous = cloneDeep(restream);
 
+  let previous = cloneDeep(restream);
   let restreamStore = writable(restream);
+
+  $: hasApiKey = $info.data?.info?.googleApiKey;
 
   let submitable = false;
   onDestroy(
@@ -244,7 +250,8 @@
               class="uk-input"
               type="text"
               bind:value={$restreamStore.fileId}
-              placeholder="Google file id"
+              disabled={!hasApiKey}
+              placeholder="Google File ID"
             />
             <button
               type="button"
@@ -253,7 +260,10 @@
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
-          <div class="uk-alert">Google file id for file backup.</div>
+          <div
+            class="uk-alert"
+            class:uk-alert-danger={!hasApiKey}
+          >{hasApiKey ? 'Google file id for file backup.' : 'Please specify Google Api Key in `Settings` before setting File ID'} </div>
           <input
             class="uk-input uk-width-1-4 files-limit"
             type="number"
