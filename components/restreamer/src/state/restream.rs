@@ -2,7 +2,7 @@ use std::{borrow::Cow, mem};
 
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
-use juniper::{GraphQLObject, GraphQLScalar};
+use juniper::{ GraphQLObject, GraphQLScalar, InputValue, ScalarValue,};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
@@ -162,7 +162,7 @@ impl RestreamId {
     Serialize,
     GraphQLScalar,
 )]
-#[graphql(transparent)]
+#[graphql(from_input_with = Self::from_input, transparent)]
 pub struct RestreamKey(String);
 
 impl RestreamKey {
@@ -175,6 +175,21 @@ impl RestreamKey {
         let val = val.into();
         (!val.is_empty() && REGEX.is_match(&val))
             .then(|| Self(val.into_owned()))
+    }
+
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+        where
+            S: ScalarValue,
+    {
+        let s = v
+            .as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(Self::new);
+
+        match s {
+            None => Err(format!("Expected `String` or `Int`, found: {v}")),
+            Some(e) => Ok(e),
+        }
     }
 }
 
