@@ -2,7 +2,7 @@ use std::{borrow::Cow, mem};
 
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
-use juniper::{ GraphQLObject, GraphQLScalar, InputValue, ScalarValue,};
+use juniper::{GraphQLObject, GraphQLScalar, InputValue, ScalarValue};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
@@ -178,8 +178,8 @@ impl RestreamKey {
     }
 
     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
-        where
-            S: ScalarValue,
+    where
+        S: ScalarValue,
     {
         let s = v
             .as_scalar()
