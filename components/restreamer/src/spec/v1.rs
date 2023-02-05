@@ -34,8 +34,7 @@ impl Spec {
             for r in &restreams {
                 if let Some(key) = unique.replace(&r.key) {
                     return Err(D::Error::custom(format!(
-                        "Duplicate Restream.key in Spec.restreams: {}",
-                        key,
+                        "Duplicate Restream.key in Spec.restreams: {key}"
                     )));
                 }
             }
@@ -103,8 +102,7 @@ impl Restream {
             for o in &outputs {
                 if let Some(dst) = unique.replace(&o.dst) {
                     return Err(D::Error::custom(format!(
-                        "Duplicate Output.dst in Restream.outputs: {}",
-                        dst,
+                        "Duplicate Output.dst in Restream.outputs: {dst}",
                     )));
                 }
             }
@@ -192,8 +190,7 @@ impl<'de> Deserialize<'de> for Input {
         for e in &raw.endpoints {
             if let Some(kind) = unique_endpoints.replace(e.kind) {
                 return Err(D::Error::custom(format!(
-                    "Duplicate InputEndpoint.kind in Input.endpoints: {}",
-                    kind,
+                    "Duplicate InputEndpoint.kind in Input.endpoints: {kind}",
                 )));
             }
         }
@@ -214,8 +211,8 @@ impl<'de> Deserialize<'de> for Input {
                     InputSrc::RemoteUrl(url) => {
                         if let Some(url) = unique_urls.replace(url) {
                             return Err(format!(
-                                "Duplicate RemoteInputSrc.url in Input.src: {}",
-                                url,
+                                "Duplicate RemoteInputSrc.url in Input.src: \
+                                {url}"
                             ));
                         }
                     }
@@ -223,8 +220,7 @@ impl<'de> Deserialize<'de> for Input {
                         for i in inputs {
                             if let Some(key) = unique_keys.replace(&i.key) {
                                 return Err(format!(
-                                    "Duplicate Input.key in Input.srcs: {}",
-                                    key,
+                                    "Duplicate Input.key in Input.srcs: {key}"
                                 ));
                             }
                             if let Some(s) = i.src.as_ref() {
@@ -336,8 +332,7 @@ impl Output {
             for m in &mixins {
                 if let Some(src) = unique.replace(&m.src) {
                     return Err(D::Error::custom(format!(
-                        "Duplicate Mixin.src in Output.mixins: {}",
-                        src,
+                        "Duplicate Mixin.src in Output.mixins: {src}"
                     )));
                 }
                 if m.src.scheme() == "ts" {
