@@ -20,9 +20,7 @@
   $: currentFile = searchFile($files.data);
   $: isFile = endpoint.kind === 'FILE';
 
-  $: alertDanger = isFile
-    ? isFileError
-    : endpoint.status === 'OFFLINE';
+  $: alertDanger = isFile ? isFileError : endpoint.status === 'OFFLINE';
 
   $: alertWarning = isFile
     ? currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING'
@@ -158,21 +156,20 @@
       <Confirm let:confirm>
         <div class="uk-flex uk-flex-middle">
           <div class="uk-flex uk-flex-column">
-            <div class='uk-flex uk-flex-middle'>
+            <div class="uk-flex uk-flex-middle">
               <a
                 href="/"
                 class="file-name "
                 on:click|preventDefault={confirm(() => downloadFile())}
               >
                 {getFileName(currentFile)}
-
               </a>
               {#if isFileError}
-                  <span
-                    class="info-icon has-error"
-                    uk-icon="icon: info; ratio: 0.7"
-                    uk-tooltip={fileErrorMessage}
-                  />
+                <span
+                  class="info-icon has-error"
+                  uk-icon="icon: info; ratio: 0.7"
+                  uk-tooltip={fileErrorMessage}
+                />
               {/if}
             </div>
 

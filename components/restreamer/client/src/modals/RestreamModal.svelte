@@ -1,10 +1,7 @@
 <script lang="js">
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
-  import {
-    SetRestream,
-    Info,
-  } from '../../api/client.graphql';
+  import { SetRestream, Info } from '../../api/client.graphql';
 
   import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
@@ -260,10 +257,11 @@
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
-          <div
-            class="uk-alert"
-            class:uk-alert-danger={!hasApiKey}
-          >{hasApiKey ? 'Google file id for file backup.' : 'Please specify Google Api Key in `Settings` before setting File ID'} </div>
+          <div class="uk-alert" class:uk-alert-danger={!hasApiKey}>
+            {hasApiKey
+              ? 'Google file id for file backup.'
+              : 'Please specify Google Api Key in `Settings` before setting File ID'}
+          </div>
           <input
             class="uk-input uk-width-1-4 files-limit"
             type="number"
