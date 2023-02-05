@@ -49,7 +49,7 @@ impl MutationsRoot {
     /// Returns [`graphql::Error`] if there is already [`Client`] in this
     /// [`State`].
     fn add_client(
-        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
+        #[graphql(description = "Url of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().add_client(&client_id) {
@@ -65,7 +65,7 @@ impl MutationsRoot {
     /// Returns [`None`] if there is no [`Client`] in this
     /// [`State`].
     fn remove_client(
-        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
+        #[graphql(description = "Url of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().remove_client(&client_id) {
