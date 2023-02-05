@@ -275,22 +275,17 @@ impl StreamStatistics {
         match result {
             Err(e) => Self::create_error_instance(&e),
             Ok(info) => {
-                let audio_stream = match info.find_stream("audio") {
-                    Some(audio) => audio,
-                    None => {
-                        return Self::create_error_instance(&anyhow!(
-                            "Can't find 'audio' stream"
-                        ))
-                    }
+                let Some(audio_stream) = info.find_stream("audio")
+                else {
+                    return Self::create_error_instance(&anyhow!(
+                        "Can't find 'audio' stream"
+                    ))
                 };
-
-                let video_stream = match info.find_stream("video") {
-                    Some(video) => video,
-                    None => {
-                        return Self::create_error_instance(&anyhow!(
-                            "Can't find 'video' stream"
-                        ))
-                    }
+                let Some(video_stream) = info.find_stream("video")
+                else {
+                    return Self::create_error_instance(&anyhow!(
+                        "Can't find 'video' stream"
+                    ))
                 };
 
                 Self {

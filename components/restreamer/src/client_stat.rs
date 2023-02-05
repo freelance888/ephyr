@@ -157,8 +157,8 @@ impl ClientJob {
                         }
                         .unwrap_or_else(|e| {
                             let error_message = format!(
-                                "Error retrieving data for client {}. {}",
-                                client_id, e
+                                "Error retrieving data for client {client_id}. \
+                                {e}"
                             );
 
                             log::error!("{}", error_message);
@@ -229,9 +229,11 @@ impl ClientJob {
         state: &State,
     ) {
         let mut clients = state.clients.lock_mut();
-        let client = match clients.iter_mut().find(|r| r.id == *client_id) {
-            Some(c) => c,
-            None => panic!("Client with id = {} was not found", client_id),
+        let Some(client) = clients
+            .iter_mut()
+            .find(|r| r.id == *client_id)
+        else {
+            panic!("Client with id = {} was not found", client_id)
         };
 
         client.statistics = Some(ClientStatisticsResponse {
@@ -253,9 +255,11 @@ impl ClientJob {
             .collect();
 
         let mut clients = state.clients.lock_mut();
-        let client = match clients.iter_mut().find(|r| r.id == *client_id) {
-            Some(c) => c,
-            None => panic!("Client with id = {} was not found", client_id),
+        let Some(client) = clients
+            .iter_mut()
+            .find(|r| r.id == *client_id)
+        else {
+            panic!("Client with id = {} was not found", client_id)
         };
 
         client.statistics = match response.data {

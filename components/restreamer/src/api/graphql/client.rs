@@ -381,8 +381,7 @@ impl MutationsRoot {
                     return Err(graphql::Error::new("DUPLICATE_MIXIN_URL")
                         .status(StatusCode::BAD_REQUEST)
                         .message(&format!(
-                            "Duplicate Output.mixin.src: {}",
-                            dup,
+                            "Duplicate Output.mixin.src: {dup}",
                         )));
                 }
             }
