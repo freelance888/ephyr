@@ -296,10 +296,7 @@ fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         settings.password_hash
     };
 
-    let hash = match hash {
-        Some(h) => h,
-        None => return Ok(req),
-    };
+    let Some(hash) = hash else { return Ok(req) };
 
     let err = || {
         AuthenticationError::new(
