@@ -72,7 +72,7 @@ impl Broadcaster {
             .for_each(|client| {
                 for command in &commands {
                     self.handle_one_command(
-                        &client.id.clone(),
+                        client.id.clone(),
                         &command.clone(),
                     );
                 }
@@ -81,12 +81,11 @@ impl Broadcaster {
 
     fn handle_one_command(
         &mut self,
-        client_id: &ClientId,
+        client_id: ClientId,
         command: &DashboardCommand,
     ) {
         match command {
             DashboardCommand::EnableAllOutputs() => {
-                let client_id = client_id.clone();
                 let state = self.state.clone();
                 Self::try_to_run_command(
                     client_id.clone(),
@@ -97,7 +96,6 @@ impl Broadcaster {
                 );
             }
             DashboardCommand::DisableAllOutputs() => {
-                let client_id = client_id.clone();
                 let state = self.state.clone();
                 Self::try_to_run_command(
                     client_id.clone(),
@@ -120,8 +118,7 @@ impl Broadcaster {
         drop(tokio::spawn(async move {
             let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
                 let error_message = format!(
-                    "Error sending command for client {}. {}",
-                    client_id, e
+                    "Error sending command for client {client_id}. {e}"
                 );
                 log::error!("{}", error_message);
                 Self::save_command_error(
