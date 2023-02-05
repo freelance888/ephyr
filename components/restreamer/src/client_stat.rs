@@ -157,8 +157,8 @@ impl ClientJob {
                         }
                         .unwrap_or_else(|e| {
                             let error_message = format!(
-                                "Error retrieving data for client {}. {}",
-                                client_id, e
+                                "Error retrieving data for client {client_id}. \
+                                {e}"
                             );
 
                             log::error!("{}", error_message);
