@@ -24,12 +24,16 @@ use std::borrow::Cow;
 #[graphql(from_input_with = Self::from_input, transparent)]
 pub struct Label(String);
 
+const MAX_LABEL_LENGTH: usize = 70;
+
 impl Label {
     /// Creates a new [`Label`] if the given value meets its invariants.
     #[must_use]
     pub fn new<'s, S: Into<Cow<'s, str>>>(val: S) -> Option<Self> {
-        static REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"^[^,\n\t\r\f\v]{1,70}$").unwrap());
+        static REGEX: Lazy<Regex> = Lazy::new(|| {
+            Regex::new(&format!(r"^[^,\n\t\r\f\v]{{1,{MAX_LABEL_LENGTH}}}$"))
+                .unwrap()
+        });
 
         let val = val.into();
         (!val.is_empty() && REGEX.is_match(&val))
@@ -46,7 +50,10 @@ impl Label {
             .and_then(Self::new);
 
         match s {
-            None => Err(format!("Expected `String` or `Int`, found: {v}")),
+            None => Err(format!(
+                "Some characters are invalid \
+                or length is more then {MAX_LABEL_LENGTH} in: {v}"
+            )),
             Some(e) => Ok(e),
         }
     }
