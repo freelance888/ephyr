@@ -273,12 +273,16 @@ impl InputId {
 #[graphql(transparent)]
 pub struct InputKey(String);
 
+const MAX_INPUT_KEY_LENGTH: usize = 20;
+
 impl InputKey {
     /// Creates a new [`InputKey`] if the given value meets its invariants.
     #[must_use]
     pub fn new<'s, S: Into<Cow<'s, str>>>(val: S) -> Option<Self> {
-        static REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new("^[a-z0-9_-]{1,50}$").unwrap());
+        static REGEX: Lazy<Regex> = Lazy::new(|| {
+            Regex::new(&format!(r"^[a-z0-9_-]{{1,{MAX_INPUT_KEY_LENGTH}}}$"))
+                .unwrap()
+        });
 
         let val = val.into();
         (!val.is_empty() && REGEX.is_match(&val))

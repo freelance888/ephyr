@@ -2,7 +2,7 @@ use std::{borrow::Cow, mem};
 
 use anyhow::anyhow;
 use derive_more::{Deref, Display, From, Into};
-use juniper::{GraphQLObject, GraphQLScalar};
+use juniper::{GraphQLObject, GraphQLScalar, InputValue, ScalarValue};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
@@ -162,19 +162,41 @@ impl RestreamId {
     Serialize,
     GraphQLScalar,
 )]
-#[graphql(transparent)]
+#[graphql(from_input_with = Self::from_input, transparent)]
 pub struct RestreamKey(String);
+
+const MAX_RESTREAM_KEY_LENGTH: usize = 20;
 
 impl RestreamKey {
     /// Creates a new [`RestreamKey`] if the given value meets its invariants.
     #[must_use]
     pub fn new<'s, S: Into<Cow<'s, str>>>(val: S) -> Option<Self> {
-        static REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new("^[a-z0-9_-]{1,20}$").unwrap());
+        static REGEX: Lazy<Regex> = Lazy::new(|| {
+            Regex::new(&format!(r"^[a-z0-9_-]{{1,{MAX_RESTREAM_KEY_LENGTH}}}$"))
+                .unwrap()
+        });
 
         let val = val.into();
         (!val.is_empty() && REGEX.is_match(&val))
             .then(|| Self(val.into_owned()))
+    }
+
+    fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
+    where
+        S: ScalarValue,
+    {
+        let s = v
+            .as_scalar()
+            .and_then(ScalarValue::as_str)
+            .and_then(Self::new);
+
+        match s {
+            None => Err(format!(
+                "Some characters are invalid \
+                    or length is more then {MAX_RESTREAM_KEY_LENGTH} in: {v}"
+            )),
+            Some(e) => Ok(e),
+        }
     }
 }
 
