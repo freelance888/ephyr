@@ -65,6 +65,12 @@ const config: webpack.Configuration = {
             compilerOptions: {
               dev: !is_prod,
             },
+            onwarn: (warning, handler) => {
+              if (warning.code.startsWith('a11y')) return;
+
+              // Handle all other warnings normally
+              handler(warning);
+            },
           },
         },
       },

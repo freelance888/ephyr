@@ -3,6 +3,7 @@
   import Icons from 'uikit/dist/js/uikit-icons';
   import { showError } from '../../utils/util';
   import ServerInfo from './ServerInfo.svelte';
+  import { Split } from '@geoffcox/svelte-splitter/src/index';
 
   UIkit.use(Icons);
 
@@ -14,49 +15,54 @@
 </script>
 
 <template>
-  <div class="page uk-flex uk-flex-column">
-    <header class="uk-container">
-      <div class="uk-grid uk-grid-small" uk-grid>
-        <a
-          href="https://creativesociety.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="logo uk-flex"
-          title="Join us on creativesociety.com"
-        >
-          <img src="logo.jpg" alt="Logo" />
-          <h3>Creative Society</h3>
-          <small>Ephyr re-streamer {process.env.VERSION}</small>
-        </a>
-        {#if !isLoading}
-          <ServerInfo {serverInfo} />
-        {/if}
-        <div class="uk-margin-auto-left">
-          {#if canRenderToolbar}
-            <slot name="toolbar" />
+  <Split horizontal style='max-height: 100vh'>
+    <div slot="primary">
+      <div class="page uk-flex uk-flex-column">
+        <header class="uk-container">
+          <div class="uk-grid uk-grid-small" uk-grid>
+            <a
+              href="https://creativesociety.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="logo uk-flex"
+              title="Join us on creativesociety.com"
+            >
+              <img src="logo.jpg" alt="Logo" />
+              <h3>Creative Society</h3>
+              <small>Ephyr re-streamer {process.env.VERSION}</small>
+            </a>
+            {#if !isLoading}
+              <ServerInfo {serverInfo} />
+            {/if}
+            <div class="uk-margin-auto-left">
+              {#if canRenderToolbar}
+                <slot name="toolbar" />
+              {/if}
+              {#if error}
+                {showError(error.message) || ''}
+              {/if}
+            </div>
+          </div>
+        </header>
+
+        <main class="uk-container uk-flex-1">
+          {#if isLoading}
+            <div class="uk-alert uk-alert-warning loading">Loading...</div>
+          {:else if canRenderMainComponent}
+            <slot name="main" />
           {/if}
-          {#if error}
-            {showError(error.message) || ''}
-          {/if}
-        </div>
+        </main>
+
+        <footer class="uk-container">
+          Developed for people with ❤ by
+          <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
+            >AllatRa IT</a
+          >
+        </footer>
       </div>
-    </header>
-
-    <main class="uk-container uk-flex-1">
-      {#if isLoading}
-        <div class="uk-alert uk-alert-warning loading">Loading...</div>
-      {:else if canRenderMainComponent}
-        <slot name="main" />
-      {/if}
-    </main>
-
-    <footer class="uk-container">
-      Developed for people with ❤ by
-      <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
-        >AllatRa IT</a
-      >
-    </footer>
-  </div>
+    </div>
+    <div slot="secondary">Console</div>
+  </Split>
 </template>
 
 <style lang="stylus" global>
@@ -99,6 +105,11 @@
     max-width: auto !important
     width: calc(100% - 68px)
     min-width: 320px
+
+  .split.horizontal
+    max-height: 100vh !important;
+  .primary
+    overflow-y: scroll !important;
 
   header
     padding: 10px

@@ -33,6 +33,13 @@ impl Drop for DroppableAbortHandle {
 )]
 pub struct UNumber(u16);
 
+impl TryFrom<i32> for UNumber {
+    type Error = std::num::TryFromIntError;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        u16::try_from(value).map(Self)
+    }
+}
+
 #[allow(clippy::trivially_copy_pass_by_ref)]
 #[allow(clippy::wrong_self_convention)]
 impl UNumber {
@@ -43,21 +50,18 @@ impl UNumber {
     }
 
     fn to_output<S: ScalarValue>(&self) -> juniper::Value<S> {
-        juniper::Value::scalar(self.0.to_owned().to_string())
+        juniper::Value::scalar(i32::from(self.0))
     }
 
     fn from_input<S>(v: &InputValue<S>) -> Result<Self, String>
     where
         S: ScalarValue,
     {
-        let v = v
-            .as_scalar()
+        v.as_scalar()
             .and_then(ScalarValue::as_int)
-            .and_then(|v| u16::try_from(v).ok());
-        match v {
-            Some(n) => Ok(UNumber::new(n)),
-            _ => Err("Error converting UNumber(u16) from i32".to_string()),
-        }
+            .map(UNumber::try_from)
+            .and_then(Result::ok)
+            .ok_or_else(|| "Error converting UNumber(u16) from i32".to_string())
     }
 
     fn parse_token<S>(value: ScalarToken<'_>) -> ParseScalarResult<S>

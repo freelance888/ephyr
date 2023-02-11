@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@apollo/client": "~3.7",
+    "@geoffcox/svelte-splitter": "^1.0.1",
     "clipboard-copy": "^4.0",
     "graphql": "^16.5",
     "subscriptions-transport-ws": "^0.11",

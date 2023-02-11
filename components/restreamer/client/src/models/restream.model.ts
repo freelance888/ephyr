@@ -62,7 +62,7 @@ export class RestreamModel {
     this.isPull = !!pullUrl;
     this.pullUrl = sanitizeUrl(pullUrl ?? '');
     this.withHls = withHls;
-    this.maxFilesInPlaylist = value.max_files_in_playlist ?? '';
+    this.maxFilesInPlaylist = value.maxFilesInPlaylist ?? '';
   }
 
   removeBackup(index: number): void {

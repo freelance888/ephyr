@@ -95,7 +95,6 @@
 </script>
 
 <template>
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="playlist">
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
