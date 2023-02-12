@@ -15,7 +15,10 @@
   export let serverInfo;
 
   const onToggleConsole = (event) => {
-    console.log(event.detail)
+    const primaryPaneHeight = event.detail ? '70%' : '100%';
+
+    let primary = document.querySelector(".split.horizontal");
+    primary.style.setProperty("--primary-size", primaryPaneHeight);
   }
 
 </script>

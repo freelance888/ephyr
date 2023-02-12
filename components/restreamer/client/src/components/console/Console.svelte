@@ -4,16 +4,19 @@
 
  let items = [
   {
-   type: 'error',
-   message: 'Can\'t create vertical or horizontal splits you only need the Split component.'
+    type: 'error',
+    message: 'Can\'t create vertical or horizontal splits you only need the Split component.',
+    source: ''
   },
   {
-   type: 'warning',
-   message: 'The default creates a left(50%) | right(50%) split, no minimum pane sizes, and renders the default splitter.'
+    type: 'warning',
+    message: 'The default creates a left(50%) | right(50%) split, no minimum pane sizes, and renders the default splitter.',
+    source: ''
   },
   {
-   type: 'info',
-   message: 'The Switcher component consists of a number of toggles and their related content items. Add the uk-switcher attribute to a list element which contains the toggles. Add the .uk-switcher class to the element containing the content items.'
+    type: 'info',
+    message: 'The Switcher component consists of a number of toggles and their related content items. Add the uk-switcher attribute to a list element which contains the toggles. Add the .uk-switcher class to the element containing the content items.',
+    source: ''
   },
  ]
 
@@ -29,8 +32,10 @@
 <template>
  <section>
   <div class='console-toolbar uk-flex' on:click={dispatchToggleConsole}>
-    <span class='console-btn'>Console</span>
-    <a class='clear-btn uk-margin-auto-left'>Clear ({items.length})</a>
+    <span class='console-title'>Console</span>
+    {#if items.length}
+      <a class='clear-btn uk-margin-auto-left'>Clear ({items.length})</a>
+    {/if}
   </div>
 
   <ul class="messages-container uk-list uk-list-divider uk-list-collapse">
@@ -49,14 +54,15 @@
 <style lang="stylus">
 
  section
-   padding: 8px 16px 16px 16px
+   padding: 0 16px 16px 16px
 
  .console-toolbar
+  padding: 8px 0
   cursor: pointer
 
  .messages-container
-  margin-top: 8px;
+  margin-top: 0;
 
- .console-btn
+ .console-title
   font-weight: bold
 </style>
