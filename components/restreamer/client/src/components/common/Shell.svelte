@@ -4,6 +4,7 @@
   import { showError } from '../../utils/util';
   import ServerInfo from './ServerInfo.svelte';
   import { Split } from '@geoffcox/svelte-splitter/src/index';
+  import Console from '../console/Console.svelte';
 
   UIkit.use(Icons);
 
@@ -15,9 +16,8 @@
 </script>
 
 <template>
-  <Split horizontal style='max-height: 100vh'>
-    <div slot="primary">
-      <div class="page uk-flex uk-flex-column">
+  <Split horizontal>
+    <div slot="primary" class="page uk-flex uk-flex-column">
         <header class="uk-container">
           <div class="uk-grid uk-grid-small" uk-grid>
             <a
@@ -60,9 +60,8 @@
           >
         </footer>
       </div>
-    </div>
-    <div slot="secondary">Console</div>
-  </Split>
+    <Console slot="secondary" />
+</Split>
 </template>
 
 <style lang="stylus" global>
