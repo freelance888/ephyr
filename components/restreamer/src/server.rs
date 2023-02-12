@@ -11,6 +11,7 @@ use futures::future;
 use tokio::{fs, time};
 
 use crate::{
+    broadcaster::Broadcaster,
     cli::{Failure, Opts},
     client_stat, dvr, ffmpeg,
     file_manager::FileManager,
@@ -89,6 +90,16 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         client_jobs.start_statistics_loop(&clients);
         future::ready(())
     });
+
+    let mut broadcaster = Broadcaster::new(state.clone());
+    State::on_change(
+        "execute_dashboard_command",
+        &state.dashboard_commands,
+        move |_| {
+            broadcaster.handle_commands();
+            future::ready(())
+        },
+    );
 
     future::try_join3(
         self::client::run(&cfg, state.clone()),

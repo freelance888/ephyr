@@ -43,6 +43,7 @@ use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
+    broadcaster::DashboardCommand,
     display_panic,
     file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
     spec,
@@ -69,6 +70,10 @@ pub struct State {
 
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
+
+    /// Commands for broadcasting to all [`Client`]s or specific [`Client`]
+    #[serde(skip)]
+    pub dashboard_commands: Mutable<Vec<DashboardCommand>>,
 
     ///
     #[serde(skip)]

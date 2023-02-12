@@ -36,3 +36,11 @@ mutation AddClient($client_id: ClientId!) {
 mutation RemoveClient($client_id: ClientId!) {
     removeClient(clientId: $client_id)
 }
+
+mutation EnableAllOutputsForClients {
+    enableAllOutputsForClients
+}
+
+mutation DisableAllOutputsForClients {
+    disableAllOutputsForClients
+}

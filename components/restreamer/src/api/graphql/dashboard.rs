@@ -2,17 +2,16 @@
 //!
 //! [GraphQL]: https://graphql.com
 
+use super::Context;
+use crate::{
+    api::graphql,
+    broadcaster::DashboardCommand,
+    state::{Client, ClientId},
+};
 use actix_web::http::StatusCode;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt;
 use juniper::{graphql_object, graphql_subscription, RootNode};
-
-use crate::{
-    api::graphql,
-    state::{Client, ClientId},
-};
-
-use super::Context;
 
 /// Schema of `Dashboard` app.
 pub type Schema =
@@ -51,7 +50,7 @@ impl MutationsRoot {
     /// Returns [`graphql::Error`] if there is already [`Client`] in this
     /// [`State`].
     fn add_client(
-        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
+        #[graphql(description = "Url of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().add_client(&client_id) {
@@ -67,13 +66,33 @@ impl MutationsRoot {
     /// Returns [`None`] if there is no [`Client`] in this
     /// [`State`].
     fn remove_client(
-        #[graphql(description = "Ulr of remote client")] client_id: ClientId,
+        #[graphql(description = "Url of remote client")] client_id: ClientId,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().remove_client(&client_id) {
             Some(_) => Ok(Some(true)),
             None => Ok(None),
         }
+    }
+
+    /// Enables all `Output`s for all clients.
+    fn enable_all_outputs_for_clients(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::EnableAllOutputs());
+
+        Ok(Some(true))
+    }
+
+    /// Disables all `Output`s for all clients.
+    fn disable_all_outputs_for_clients(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::DisableAllOutputs());
+
+        Ok(Some(true))
     }
 }
 

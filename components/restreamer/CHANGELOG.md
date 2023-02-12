@@ -13,9 +13,11 @@ All user visible changes to this project will be documented in this file. This p
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
 - Option to record audio-only files ([#239]);
 - Display input streams info ([#170], [#266]);
+- "Start All" / "Stop All" buttons on dashboard ([#296]);
 ### Fixed
 - State disapers after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
+- Inconsistency in Restreamer - key and label validation ([#253], [#302]);
 ### Miscellaneous
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
@@ -24,10 +26,14 @@ All user visible changes to this project will be documented in this file. This p
 [#170]: /../../issues/170
 [#235]: /../../issues/235
 [#236]: /../../issues/236
-    
+[#253]: /../../issues/253
+
 [#239]: /../../pull/244
 [#244]: /../../pull/244
+[#266]: /../../pull/266
 [#267]: /../../pull/267
+[#296]: /../../pull/296
+[#302]: /../../pull/302
 
 
 

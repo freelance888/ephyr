@@ -5,7 +5,7 @@
 //! [`Output`]: crate::state::Output
 use crate::state::Status;
 use anyhow::anyhow;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 use derive_more::{Deref, Display, Into};
 use juniper::{
@@ -165,13 +165,13 @@ pub struct Client {
     /// Unique id of client. Url of the host.
     pub id: ClientId,
 
-    /// Whether the client url is protected by base auth
-    #[serde(default)]
-    pub is_protected: bool,
-
     /// Statistics for this [`Client`].
     #[serde(skip)]
     pub statistics: Option<ClientStatisticsResponse>,
+
+    /// Whether the client url is protected by base auth
+    #[serde(default)]
+    pub is_protected: bool,
 }
 
 impl Client {
@@ -208,18 +208,13 @@ impl ClientId {
     pub fn new(url: Url) -> Self {
         Self(url)
     }
-
-    /// Checks whether client id url is base auth ulr
+    /// Checks whether client id url is base auth url
     /// # Panics
     #[must_use]
     pub fn has_base_auth(&self) -> bool {
         let re = Regex::new(
-            r"^(?P<protocol>.+?\\)
-(?P<username>.+?):
-(?P<password>.+?)@
-(?P<address>.+)$",
-        )
-        .unwrap();
+    r"^(?P<protocol>.+?//)(?P<username>.+?):(?P<password>.+?)@(?P<address>.+)$")
+            .unwrap();
         re.is_match(self.0.as_str())
     }
 
