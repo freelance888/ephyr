@@ -13,10 +13,15 @@
   export let canRenderMainComponent;
   export let error;
   export let serverInfo;
+
+  const onToggleConsole = (event) => {
+    console.log(event.detail)
+  }
+
 </script>
 
 <template>
-  <Split horizontal>
+  <Split horizontal initialPrimarySize='100%' minSecondarySize='46px'>
     <div slot="primary" class="page uk-flex uk-flex-column">
         <header class="uk-container">
           <div class="uk-grid uk-grid-small" uk-grid>
@@ -60,7 +65,7 @@
           >
         </footer>
       </div>
-    <Console slot="secondary" />
+    <Console slot="secondary" on:toggleConsole={onToggleConsole} />
 </Split>
 </template>
 
@@ -93,7 +98,7 @@
     color: var(--secondary-warning-color)
 
   .page
-    min-height: 100vh;
+    min-height: calc(100vh - 60px);
 
   h2, h3
     color: var(--primary-text-color)
@@ -108,7 +113,7 @@
   .split.horizontal
     max-height: 100vh !important;
   .primary
-    overflow-y: scroll !important;
+    overflow-y: auto !important;
 
   header
     padding: 10px
