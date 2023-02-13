@@ -62,7 +62,7 @@ impl Broadcaster {
 
         let state = self.state.clone();
 
-        // We send command only clients protected by password,
+        // We send commands only to clients protected by password,
         // i.e having base auth url
         state
             .clients

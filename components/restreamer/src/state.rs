@@ -44,6 +44,7 @@ use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
     broadcaster::DashboardCommand,
+    console_log::ClientMessage,
     display_panic,
     file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
     spec,
@@ -71,16 +72,20 @@ pub struct State {
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 
+    /// List of the files that are used as sources of video
+    pub files: Mutable<Vec<LocalFileInfo>>,
+
     /// Commands for broadcasting to all [`Client`]s or specific [`Client`]
     #[serde(skip)]
     pub dashboard_commands: Mutable<Vec<DashboardCommand>>,
 
-    ///
+    /// Commands for files' manipulations
     #[serde(skip)]
     pub file_commands: Mutable<Vec<FileCommand>>,
 
-    /// List of the files that are used as sources of video
-    pub files: Mutable<Vec<LocalFileInfo>>,
+    /// Errors and other messages visible in UI console
+    #[serde(skip)]
+    pub client_messages: Mutable<Vec<ClientMessage>>,
 }
 
 impl State {

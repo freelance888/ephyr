@@ -5,7 +5,7 @@
 //! [`Output`]: crate::state::Output
 use crate::state::Status;
 use anyhow::anyhow;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 use derive_more::{Deref, Display, Into};
 use juniper::{

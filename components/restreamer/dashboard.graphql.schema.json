@@ -1023,22 +1023,6 @@
             "deprecationReason": null
           },
           {
-            "name": "isProtected",
-            "description": "Whether the client url is protected by base auth",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
             "name": "statistics",
             "description": "Statistics for this [`Client`].",
             "args": [],

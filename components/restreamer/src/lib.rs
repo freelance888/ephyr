@@ -30,6 +30,7 @@ pub mod api;
 pub mod broadcaster;
 pub mod cli;
 pub mod client_stat;
+pub mod console_log;
 pub mod dvr;
 pub mod ffmpeg;
 pub mod file_manager;
