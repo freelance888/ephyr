@@ -1,4 +1,9 @@
 <script lang="js">
+import { subscribe } from 'svelte-apollo';
+import { ConsoleLog } from '../../../api/dashboard.graphql';
+
+  const consoleLog = subscribe(ConsoleLog, { errorPolicy: 'all' });
+
   import { createEventDispatcher } from 'svelte'
   const dispatch = createEventDispatcher()
 
@@ -19,6 +24,10 @@
     source: ''
   },
  ]
+
+$: {
+    console.log($consoleLog.data?.consoleLog);
+}
 
   let isOpen = false;
 

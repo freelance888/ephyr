@@ -1,6 +1,7 @@
 //! Broadcaster for dashboard commands
 
 use crate::{
+    console_logger::{ClientMessageKind, ConsoleLogger},
     display_panic,
     state::{ClientId, ClientStatisticsResponse},
     State,
@@ -225,12 +226,9 @@ impl Broadcaster {
         error_messages: Vec<String>,
         state: &State,
     ) {
-        let mut clients = state.clients.lock_mut();
-        if let Some(c) = clients.iter_mut().find(|r| &r.id == client_id) {
-            c.statistics = Some(ClientStatisticsResponse {
-                data: None,
-                errors: Some(error_messages),
-            });
-        };
+        let err_message =
+            format!("{}: {}", client_id, error_messages.join(", "));
+        ConsoleLogger::new(state.clone())
+            .log_message(err_message, ClientMessageKind::Err)
     }
 }

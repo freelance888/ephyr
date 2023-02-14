@@ -29,6 +29,13 @@ subscription Statistics {
     }
 }
 
+subscription ConsoleLog {
+    consoleLog {
+        kind
+        message
+    }
+}
+
 mutation AddClient($client_id: ClientId!) {
     addClient(clientId: $client_id)
 }

@@ -6,6 +6,7 @@ use super::Context;
 use crate::{
     api::graphql,
     broadcaster::DashboardCommand,
+    console_logger::ClientMessage,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
@@ -108,6 +109,19 @@ impl SubscriptionsRoot {
         context
             .state()
             .clients
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of `console_log` messages.
+    async fn console_log(
+        context: &Context,
+    ) -> BoxStream<'static, Vec<ClientMessage>> {
+        context
+            .state()
+            .console_log
             .signal_cloned()
             .dedupe_cloned()
             .to_stream()
