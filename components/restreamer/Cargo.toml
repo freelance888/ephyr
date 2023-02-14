@@ -51,7 +51,7 @@ tokio-stream = { version="0.1", features = ["fs"]}
     features = ["as_ref", "deref", "display", "error", "from"]
     default-features = false
 [dependencies.tokio]
-    version = "1.23"
+    version = "1.24"
     features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
     git="https://github.com/graphql-rust/juniper"
