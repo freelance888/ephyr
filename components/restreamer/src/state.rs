@@ -44,7 +44,7 @@ use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
     broadcaster::DashboardCommand,
-    console_logger::ClientMessage,
+    console_logger::ConsoleMessage,
     display_panic,
     file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
     spec,
@@ -84,8 +84,7 @@ pub struct State {
     pub file_commands: Mutable<Vec<FileCommand>>,
 
     /// Errors and other messages visible in UI console
-    #[serde(skip)]
-    pub console_log: Mutable<Vec<ClientMessage>>,
+    pub console_log: Mutable<Vec<ConsoleMessage>>,
 }
 
 impl State {

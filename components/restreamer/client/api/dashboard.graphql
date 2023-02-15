@@ -37,6 +37,10 @@ subscription ConsoleLog {
     }
 }
 
+mutation ConsoleClear {
+    consoleClear
+}
+
 mutation AddClient($client_id: ClientId!) {
     addClient(clientId: $client_id)
 }

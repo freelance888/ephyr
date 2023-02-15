@@ -1,34 +1,40 @@
+//! Logger for messages displaying in UI console
+
 use crate::State;
 use juniper::{GraphQLEnum, GraphQLObject};
 use serde::{Deserialize, Serialize};
 
-///
-#[derive(Clone, Debug, PartialEq, Eq, GraphQLEnum)]
-pub enum ClientMessageKind {
+/// Type of message
+#[derive(Debug, Clone, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq)]
+pub enum ConsoleMessageKind {
     Err,
     Warning,
     Info,
 }
 
-///
-#[derive(Clone, Debug, PartialEq, Eq, GraphQLEnum)]
-pub enum ClientMessageSource {
+/// Source of message
+#[derive(Debug, Clone, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq)]
+pub enum ConsoleMessageSource {
     Dashboard,
     Client,
     Mix,
     Statistics,
 }
 
-///
-#[derive(Clone, Debug, Eq, GraphQLObject, PartialEq)]
-pub struct ClientMessage {
-    pub kind: ClientMessageKind,
+/// Message for console
+#[derive(
+    Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
+)]
+pub struct ConsoleMessage {
+    pub kind: ConsoleMessageKind,
     pub message: String,
-    pub source: ClientMessageSource,
+    pub source: ConsoleMessageSource,
 }
 
+/// Add errors, messages, warnings to client's console
 #[derive(Debug)]
 pub struct ConsoleLogger {
+    /// Reference to [`State`]
     pub state: State,
 }
 
@@ -39,14 +45,15 @@ impl ConsoleLogger {
         Self { state }
     }
 
+    /// Add message to console
     pub fn log_message(
         &self,
         message: String,
-        kind: ClientMessageKind,
-        source: ClientMessageSource,
+        kind: ConsoleMessageKind,
+        source: ConsoleMessageSource,
     ) {
         let mut console_log = self.state.console_log.lock_mut();
-        console_log.push(ClientMessage {
+        console_log.push(ConsoleMessage {
             message,
             kind,
             source,

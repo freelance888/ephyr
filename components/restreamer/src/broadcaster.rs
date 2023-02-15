@@ -1,9 +1,9 @@
 //! Broadcaster for dashboard commands
 
 use crate::{
-    console_logger::{ClientMessageKind, ClientMessageSource, ConsoleLogger},
+    console_logger::{ConsoleLogger, ConsoleMessageKind, ConsoleMessageSource},
     display_panic,
-    state::{ClientId, ClientStatisticsResponse},
+    state::ClientId,
     State,
 };
 use ephyr_log::log;
@@ -230,8 +230,8 @@ impl Broadcaster {
             format!("{}: {}", client_id, error_messages.join(", "));
         ConsoleLogger::new(state.clone()).log_message(
             err_message,
-            ClientMessageKind::Err,
-            ClientMessageSource::Dashboard,
+            ConsoleMessageKind::Err,
+            ConsoleMessageSource::Dashboard,
         )
     }
 }

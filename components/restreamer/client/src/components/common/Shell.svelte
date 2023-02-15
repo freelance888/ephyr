@@ -4,7 +4,7 @@
   import { showError } from '../../utils/util';
   import ServerInfo from './ServerInfo.svelte';
   import { Split } from '@geoffcox/svelte-splitter/src/index';
-  import Console from '../console/Console.svelte';
+  import Console from '../Console.svelte';
 
   UIkit.use(Icons);
 
