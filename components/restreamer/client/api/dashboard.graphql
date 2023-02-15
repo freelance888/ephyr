@@ -33,6 +33,7 @@ subscription ConsoleLog {
     consoleLog {
         kind
         message
+        source
     }
 }
 

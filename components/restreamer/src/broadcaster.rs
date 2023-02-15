@@ -1,7 +1,7 @@
 //! Broadcaster for dashboard commands
 
 use crate::{
-    console_logger::{ClientMessageKind, ConsoleLogger},
+    console_logger::{ClientMessageKind, ClientMessageSource, ConsoleLogger},
     display_panic,
     state::{ClientId, ClientStatisticsResponse},
     State,
@@ -69,7 +69,7 @@ impl Broadcaster {
             .clients
             .lock_mut()
             .iter()
-            .filter(|client| client.is_protected)
+            //.filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
                     self.handle_one_command(
@@ -228,7 +228,10 @@ impl Broadcaster {
     ) {
         let err_message =
             format!("{}: {}", client_id, error_messages.join(", "));
-        ConsoleLogger::new(state.clone())
-            .log_message(err_message, ClientMessageKind::Err)
+        ConsoleLogger::new(state.clone()).log_message(
+            err_message,
+            ClientMessageKind::Err,
+            ClientMessageSource::Dashboard,
+        )
     }
 }

@@ -24,7 +24,7 @@
 </script>
 
 <template>
-  <Split horizontal initialPrimarySize='100%' minSecondarySize='46px'>
+  <Split horizontal initialPrimarySize='100%' minSecondarySize='40px'>
     <div slot="primary" class="page uk-flex uk-flex-column">
         <header class="uk-container">
           <div class="uk-grid uk-grid-small" uk-grid>
