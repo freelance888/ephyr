@@ -1,4 +1,4 @@
-<script lang='js'>
+<script lang="js">
   import { mutation, subscribe } from 'svelte-apollo';
   import { ConsoleLog } from '../../api/dashboard.graphql';
   import { ConsoleClear } from '../../api/dashboard.graphql';
@@ -25,38 +25,40 @@
     } catch (e) {
       showError(e.message);
     }
-  }
-
+  };
 </script>
 
 <template>
   <section>
-    <div class='console-toolbar uk-flex uk-flex-middle'>
-      <span class='console-title' on:click={dispatchToggleConsole}>Console</span>
+    <div class="console-toolbar uk-flex uk-flex-middle">
+      <span class="console-title" on:click={dispatchToggleConsole}>Console</span
+      >
       {#if items.length}
-        <a class='clear-btn uk-margin-auto-left' on:click={clearConsole}>Clear ({items.length})</a>
+        <a class="clear-btn uk-margin-auto-left" on:click={clearConsole}
+          >Clear ({items.length})</a
+        >
       {/if}
     </div>
 
-    <ul class='messages-container uk-list uk-list-divider'>
+    <ul class="messages-container uk-list uk-list-divider">
       {#each items as item}
         <li
           class:uk-text-danger={item.kind === 'ERR'}
           class:uk-text-warning={item.kind === 'WARNING'}
         >
-       <span class='source'>
-         { item.source }
-       </span>
+          <span class="source">
+            {item.source}
+          </span>
           <span>
-        { item.message }
-       </span>
+            {item.message}
+          </span>
         </li>
       {/each}
     </ul>
   </section>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
 
   section
     height: 100%
@@ -74,7 +76,6 @@
     font-weight: bold
     flex: 1
 
-
   .source
     padding: 4px
     background: #999
@@ -82,6 +83,5 @@
     border-radius: 4px
     font-size: smaller
     font-weight: bold
-
 
 </style>

@@ -17,59 +17,58 @@
   const onToggleConsole = (event) => {
     const primaryPaneHeight = event.detail ? '70%' : '100%';
 
-    let primary = document.querySelector(".split.horizontal");
-    primary.style.setProperty("--primary-size", primaryPaneHeight);
-  }
-
+    let primary = document.querySelector('.split.horizontal');
+    primary.style.setProperty('--primary-size', primaryPaneHeight);
+  };
 </script>
 
 <template>
-  <Split horizontal initialPrimarySize='100%' minSecondarySize='40px'>
+  <Split horizontal initialPrimarySize="100%" minSecondarySize="40px">
     <div slot="primary" class="page uk-flex uk-flex-column">
-        <header class="uk-container">
-          <div class="uk-grid uk-grid-small" uk-grid>
-            <a
-              href="https://creativesociety.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="logo uk-flex"
-              title="Join us on creativesociety.com"
-            >
-              <img src="logo.jpg" alt="Logo" />
-              <h3>Creative Society</h3>
-              <small>Ephyr re-streamer {process.env.VERSION}</small>
-            </a>
-            {#if !isLoading}
-              <ServerInfo {serverInfo} />
-            {/if}
-            <div class="uk-margin-auto-left">
-              {#if canRenderToolbar}
-                <slot name="toolbar" />
-              {/if}
-              {#if error}
-                {showError(error.message) || ''}
-              {/if}
-            </div>
-          </div>
-        </header>
-
-        <main class="uk-container uk-flex-1">
-          {#if isLoading}
-            <div class="uk-alert uk-alert-warning loading">Loading...</div>
-          {:else if canRenderMainComponent}
-            <slot name="main" />
-          {/if}
-        </main>
-
-        <footer class="uk-container">
-          Developed for people with ❤ by
-          <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
-            >AllatRa IT</a
+      <header class="uk-container">
+        <div class="uk-grid uk-grid-small" uk-grid>
+          <a
+            href="https://creativesociety.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="logo uk-flex"
+            title="Join us on creativesociety.com"
           >
-        </footer>
-      </div>
+            <img src="logo.jpg" alt="Logo" />
+            <h3>Creative Society</h3>
+            <small>Ephyr re-streamer {process.env.VERSION}</small>
+          </a>
+          {#if !isLoading}
+            <ServerInfo {serverInfo} />
+          {/if}
+          <div class="uk-margin-auto-left">
+            {#if canRenderToolbar}
+              <slot name="toolbar" />
+            {/if}
+            {#if error}
+              {showError(error.message) || ''}
+            {/if}
+          </div>
+        </div>
+      </header>
+
+      <main class="uk-container uk-flex-1">
+        {#if isLoading}
+          <div class="uk-alert uk-alert-warning loading">Loading...</div>
+        {:else if canRenderMainComponent}
+          <slot name="main" />
+        {/if}
+      </main>
+
+      <footer class="uk-container">
+        Developed for people with ❤ by
+        <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
+          >AllatRa IT</a
+        >
+      </footer>
+    </div>
     <Console slot="secondary" on:toggleConsole={onToggleConsole} />
-</Split>
+  </Split>
 </template>
 
 <style lang="stylus" global>
