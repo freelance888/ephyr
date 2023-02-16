@@ -69,7 +69,7 @@ impl Broadcaster {
             .clients
             .lock_mut()
             .iter()
-            //.filter(|client| client.is_protected)
+            .filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
                     self.handle_one_command(
@@ -122,11 +122,7 @@ impl Broadcaster {
                     "Error sending command for client {client_id}. {e}"
                 );
                 log::error!("{}", error_message);
-                Self::save_command_error(
-                    &client_id,
-                    vec![error_message],
-                    &state,
-                );
+                Self::save_command_error(&client_id, &[error_message], &state);
             }))
             .catch_unwind()
             .await
@@ -216,14 +212,14 @@ impl Broadcaster {
                 .map(|e| e.message)
                 .collect();
 
-            Self::save_command_error(client_id, response_errors, state);
+            Self::save_command_error(client_id, &response_errors, state);
         }
     }
 
     /// Saves error in [`State`] for specific [`Client`]
     fn save_command_error(
         client_id: &ClientId,
-        error_messages: Vec<String>,
+        error_messages: &[String],
         state: &State,
     ) {
         let err_message =
@@ -232,6 +228,6 @@ impl Broadcaster {
             err_message,
             ConsoleMessageKind::Err,
             ConsoleMessageSource::Dashboard,
-        )
+        );
     }
 }

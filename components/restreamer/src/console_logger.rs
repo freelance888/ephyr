@@ -7,17 +7,22 @@ use serde::{Deserialize, Serialize};
 /// Type of message
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq)]
 pub enum ConsoleMessageKind {
+    /// Indicates error message
     Err,
+    /// Indicates warning message
     Warning,
+    /// Indicates informational message
     Info,
 }
 
-/// Source of message
+/// The source of message
 #[derive(Debug, Clone, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq)]
 pub enum ConsoleMessageSource {
+    /// Message came from Dashboard app
     Dashboard,
+    /// Message came from Client app
     Client,
-    Mix,
+    /// Message came from statistics subsystem
     Statistics,
 }
 
@@ -26,12 +31,15 @@ pub enum ConsoleMessageSource {
     Debug, Clone, Serialize, Deserialize, GraphQLObject, PartialEq, Eq,
 )]
 pub struct ConsoleMessage {
+    /// Kind of message: Error, Warning, Info
     pub kind: ConsoleMessageKind,
+    /// Message itself
     pub message: String,
+    /// Source of message, i.e. what subsystem or app sent it
     pub source: ConsoleMessageSource,
 }
 
-/// Add errors, messages, warnings to client's console
+/// Manages publishing messages into messages list
 #[derive(Debug)]
 pub struct ConsoleLogger {
     /// Reference to [`State`]
@@ -39,13 +47,15 @@ pub struct ConsoleLogger {
 }
 
 impl ConsoleLogger {
+    /// Creates new instance of [`ConsoleLogger`]
     #[inline]
     #[must_use]
     pub fn new(state: State) -> Self {
         Self { state }
     }
 
-    /// Add message to console
+    /// Add message with specific [`ConsoleMessageKind`] from
+    /// specific [`ConsoleMessageSource`]
     pub fn log_message(
         &self,
         message: String,
@@ -54,9 +64,9 @@ impl ConsoleLogger {
     ) {
         let mut console_log = self.state.console_log.lock_mut();
         console_log.push(ConsoleMessage {
-            message,
             kind,
+            message,
             source,
-        })
+        });
     }
 }
