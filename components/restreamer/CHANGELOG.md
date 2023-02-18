@@ -14,6 +14,11 @@ All user visible changes to this project will be documented in this file. This p
 - Option to record audio-only files ([#239]);
 - Display input streams info ([#170], [#266]);
 - "Start All" / "Stop All" buttons on dashboard ([#296]);
+- Add display of last sent Command\Error onto Dashboard ([#220])
+- Display file name in backup file endpoint ([#175])
+- Add Google Drive API key to Ephyr server ([#168])
+- Video playback for file Input ([#166])
+- Add indication if password is added to the server into Dashboard ([#162])
 ### Fixed
 - State disapers after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);

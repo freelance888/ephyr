@@ -141,6 +141,7 @@
             >
             <span slot="description" />
             <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
               class="item-name uk-height-1-1 uk-width-1-1"
               class:is-playing={item.isPlaying}

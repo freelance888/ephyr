@@ -12,9 +12,9 @@
 
   $: items = $consoleLog.data?.consoleLog ?? [];
 
-  $: errorCount = items.filter(x => x.kind === 'ERR').length;
-  $: warningCount = items.filter(x => x.kind === 'WARNING').length;
-  $: infoCount = items.filter(x => x.kind === 'INFO').length;
+  $: errorCount = items.filter((x) => x.kind === 'ERR').length;
+  $: warningCount = items.filter((x) => x.kind === 'WARNING').length;
+  $: infoCount = items.filter((x) => x.kind === 'INFO').length;
 
   let isOpen = false;
   const dispatchToggleConsole = () => {
@@ -34,28 +34,32 @@
 <template>
   <section>
     <div class="console-toolbar uk-flex uk-flex-middle">
-      <span class="console-title" on:click={dispatchToggleConsole}>Console</span>
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <span class="console-title" on:click={dispatchToggleConsole}>Console</span
+      >
       {#if errorCount}
-        <span class='console-icon' title='Number of errors'>
-          <i class="fa fa-exclamation-triangle console-error"></i>{errorCount}
+        <span class="console-icon" title="Number of errors">
+          <i class="fa fa-exclamation-triangle console-error" />{errorCount}
         </span>
       {/if}
 
       {#if warningCount}
-        <span class='console-icon' title='Number of warning messages'>
-          <i class="fa fa-exclamation-triangle console-warning"></i>{warningCount}
+        <span class="console-icon" title="Number of warning messages">
+          <i class="fa fa-exclamation-triangle console-warning" />{warningCount}
         </span>
       {/if}
 
       {#if infoCount}
-        <span class='console-icon' title='Number of info messages'>
-          <i class="fa fa-exclamation-triangle"></i>{infoCount}
+        <span class="console-icon" title="Number of info messages">
+          <i class="fa fa-exclamation-triangle" />{infoCount}
         </span>
       {/if}
 
       {#if items.length}
-        <a class="uk-display-inline-block uk-margin-left" on:click={clearConsole}
-          >Clear ({items.length})</a
+        <a
+          href="/"
+          class="uk-display-inline-block uk-margin-left"
+          on:click={clearConsole}>Clear ({items.length})</a
         >
       {/if}
     </div>
