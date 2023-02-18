@@ -4,18 +4,14 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::{log, run_log_redirect, tracing};
+use ephyr_log::{log, tracing, ChildCapture, ParsedMsg};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
 use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
-use tokio::{
-    io,
-    process::{Child, Command},
-    sync::watch,
-};
+use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
 
@@ -29,12 +25,19 @@ use crate::{
     state::{self, RestreamKey, State, Status},
 };
 
-/// Allow to redirect logs from [SRS] to tracing debug logs.
+/// Parse [FFmpeg] log line.
 ///
-/// [SRS]: https://github.com/ossrs/srs
-fn run_ffmpeg_log_redirect(process: &mut Child) {
-    run_log_redirect(process.stdout.take(), |line| log::debug!("{}", &line));
-    run_log_redirect(process.stderr.take(), |line| log::error!("{}", &line));
+/// [FFmpeg]: https://ffmpeg.org
+fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
+    let parsed: Vec<_> = line
+        .rsplit(']')
+        .map(|t| t.trim_start_matches([' ', '[']))
+        .collect();
+    // parsed contains data: (msg, level_log)
+    ParsedMsg {
+        message: parsed[0],
+        level: parsed[1],
+    }
 }
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
@@ -218,6 +221,29 @@ impl RestreamerKind {
         }
     }
 
+    fn setup_logger(cmd: &mut Command) {
+        let loglevel_prefix = "repeat+level";
+        let _ = match tracing::level_filters::LevelFilter::current()
+            .into_level()
+        {
+            Some(tracing::Level::DEBUG | tracing::Level::TRACE) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}+verbose"),
+            ]),
+            Some(tracing::Level::INFO) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}+info"),
+            ]),
+            Some(tracing::Level::WARN) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}++warning"),
+            ]),
+            _ => cmd,
+        };
+    }
     /// Properly setups the given [FFmpeg] [`Command`] before running it.
     ///
     /// The specified [`State`] may be used to retrieve up-to-date parameters,
@@ -235,16 +261,14 @@ impl RestreamerKind {
         cmd: &mut Command,
         state: &State,
     ) -> io::Result<()> {
-        if tracing::level_filters::LevelFilter::current()
-            >= tracing::Level::DEBUG
-        {
-            let _ = cmd.args(["-loglevel", "debug"]);
-        };
+        Self::setup_logger(cmd);
         match self {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),
             Self::Mixing(m) => m.setup_ffmpeg(cmd, state).await?,
         };
+        log::debug!("FFmpeg CMD: {:?}", &cmd);
+
         Ok(())
     }
 
@@ -315,8 +339,7 @@ impl RestreamerKind {
                 .expect("Failed to kill process");
         });
 
-        run_ffmpeg_log_redirect(&mut process);
-
+        process.capture_logs(parse_ffmpeg_log_line);
         let out = process.wait_with_output().await?;
         kill_task.abort();
 

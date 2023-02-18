@@ -14,13 +14,10 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, run_log_redirect, tracing, tracing::span};
+use ephyr_log::{log, tracing, ChildCapture, ParsedMsg};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
-use tokio::{
-    fs,
-    process::{Child, Command},
-};
+use tokio::{fs, process::Command};
 
 use crate::{api, display_panic, dvr};
 
@@ -40,7 +37,7 @@ pub struct Server {
     _process: Arc<ServerProcess>,
 }
 
-/// Parse SRS log line to extract message
+/// Parse [SRS] log line to extract message
 ///
 /// Description of log format[1].
 ///
@@ -51,26 +48,18 @@ pub struct Server {
 ///     parse_srs_log("[2014-08-06 10:09:34.579][trace][22314][108] Message");
 /// assert_eq!(r, "Message");
 /// ```
+/// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log#log-format
-fn parse_srs_log(line: &str) -> &str {
+fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
     let parsed: Vec<_> = line
         .rsplit(']')
         .map(|t| t.trim_start_matches([' ', '[']))
         .collect();
     // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
-    parsed[0]
-}
-
-/// Allow to redirect logs from [SRS] to tracing debug logs.
-///
-/// [SRS]: https://github.com/ossrs/srs
-fn run_srs_log_redirect(process: &mut Child) {
-    run_log_redirect(process.stdout.take(), |line| {
-        log::debug!("{}", parse_srs_log(&line));
-    });
-    run_log_redirect(process.stderr.take(), |line| {
-        log::error!("{}", parse_srs_log(&line));
-    });
+    ParsedMsg {
+        message: parsed[0],
+        level: parsed[3],
+    }
 }
 
 impl Server {
@@ -130,13 +119,10 @@ impl Server {
             loop {
                 let cmd = &mut cmd;
                 let _ = AssertUnwindSafe(async move {
-                    let span = span!(tracing::Level::INFO, "SRS");
-                    let _enter = span.enter();
-
                     let mut process = cmd.spawn().map_err(|e| {
                         log::error!("Cannot start SRS server: {e}");
                     })?;
-                    run_srs_log_redirect(&mut process);
+                    process.capture_logs(parse_srs_log_line);
 
                     let out =
                         process.wait_with_output().await.map_err(|e| {

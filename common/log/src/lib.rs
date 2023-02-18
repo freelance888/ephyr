@@ -18,11 +18,14 @@
     unused_qualifications,
     unused_results
 )]
+
+mod capture_logs;
+pub use capture_logs::{ChildCapture, ParsedMsg};
 pub use tracing::{self, Level};
 pub use tracing_actix_web;
+pub use tracing_futures::Instrument;
 pub use tracing_log::log;
 
-use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tracing_log::LogTracer;
 use tracing_subscriber::FmtSubscriber;
 
@@ -45,47 +48,4 @@ pub fn init(level: Option<Level>) {
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("setting tracing subscriber failed");
-}
-
-/// Allow to redirect logs from process stdout, stderr to tracing log.
-///
-/// # Examples
-///
-/// ```ignore
-/// use std::process::Stdio;
-/// use tokio::process::Command;
-/// use ephyr_log::{log, init, Level, run_log_redirect};
-///
-/// init(Some(Level::INFO));
-/// let mut process = Command::new("/bin/ls")
-///     .stdin(Stdio::null())
-///     .stdout(Stdio::piped())
-///     .stderr(Stdio::piped())
-///     .spawn().map_err(|e| {
-///        log::error!("Failed run: {e}");
-/// })?;
-/// run_log_redirect(process.stdout.take(), |line| {
-///     log::debug!("{}", &line);
-/// })?;
-/// ```
-pub fn run_log_redirect<R, F>(src: Option<R>, to: F)
-where
-    R: AsyncRead + Unpin + Send + 'static,
-    F: Fn(String) + Send + 'static,
-{
-    if let Some(src) = src {
-        let buff = BufReader::new(src);
-        drop(tokio::spawn(async move {
-            let mut lines = buff.lines();
-            while let Some(line) =
-                lines.next_line().await.unwrap_or_else(|_| {
-                    Some("Failed to fetch log line".to_string())
-                })
-            {
-                to(line);
-            }
-        }));
-    } else {
-        log::error!("Failed to redirect stderr to log");
-    }
 }

@@ -3,13 +3,12 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use chrono::{DateTime, Utc};
-use ephyr_log::{log, tracing};
+use ephyr_log::log;
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use std::{
     panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
 };
 use tokio::{process::Command, sync::watch, time};
-use uuid::Uuid;
 
 use crate::{
     display_panic,
@@ -77,14 +76,6 @@ impl Restreamer {
         let (spawner, abort_if_hanged) = future::abortable(async move {
             let kill_rx_for_loop = kill_rx.clone();
             loop {
-                let span = tracing::span!(
-                    tracing::Level::INFO,
-                    "Restreamer",
-                    id = &kind_for_spawn.id::<Uuid>().to_string(),
-                    src_url = &kind_for_spawn.src_url().path().to_string(),
-                    to_url = &kind_for_spawn.to_url().path().to_string()
-                );
-                let _enter = span.enter();
                 let (kind, state) = (&kind_for_spawn, &state);
                 let mut cmd = Command::new(ffmpeg_path.as_ref());
                 let kill_rx_for_ffmpeg = kill_rx.clone();

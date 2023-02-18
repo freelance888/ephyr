@@ -337,7 +337,6 @@ impl MixingRestreamer {
 
             _ => unimplemented!(),
         };
-        log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
 

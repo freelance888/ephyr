@@ -203,7 +203,7 @@ impl ClientJob {
         type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
         type ResponseData = <StatisticsQuery as GraphQLQuery>::ResponseData;
 
-        log::info!("Getting statistics from client: {}", client_id);
+        log::debug!("Getting statistics from client: {}", client_id);
 
         let request_body = StatisticsQuery::build_query(Vars {});
         let request = reqwest::Client::builder()
