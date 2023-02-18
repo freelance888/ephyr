@@ -6,3 +6,5 @@
 
 /mix.spec.json
 /state.vod-meta.json
+./sources
+.env
