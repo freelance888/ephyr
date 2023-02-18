@@ -53,7 +53,6 @@
   export let hidden = false;
   export let files;
   export let isFullView = false;
-  export let parentOutputId;
 
   let outputMutations = {
     DisableOutput,
@@ -216,16 +215,6 @@
     {/if}
 
     <div class="uk-float-right uk-flex uk-flex-column uk-flex-bottom">
-      <a
-        href={getFullStreamUrl(value.id, parentOutputId)}
-        hidden={isFullView || !parentOutputId}
-        target="_blank"
-        rel="noreferrer"
-        class="uk-text-uppercase uk-text-small"
-        title="Open Full Stream Page"
-      >
-        Full view
-      </a>
       <div class="uk-flex">
         <span
           class="item-icon uk-icon uk-margin-right"

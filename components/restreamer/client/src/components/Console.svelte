@@ -2,16 +2,19 @@
   import { mutation, subscribe } from 'svelte-apollo';
   import { ConsoleLog } from '../../api/dashboard.graphql';
   import { ConsoleClear } from '../../api/dashboard.graphql';
+  import { createEventDispatcher } from 'svelte';
+  import { showError } from '../utils/util';
 
   const consoleLog = subscribe(ConsoleLog, { errorPolicy: 'all' });
   const consoleClear = mutation(ConsoleClear, { errorPolicy: 'all' });
 
-  import { createEventDispatcher } from 'svelte';
-  import { showError } from '../utils/util';
-
   const dispatch = createEventDispatcher();
 
   $: items = $consoleLog.data?.consoleLog ?? [];
+
+  $: errorCount = items.filter(x => x.kind === 'ERR').length;
+  $: warningCount = items.filter(x => x.kind === 'WARNING').length;
+  $: infoCount = items.filter(x => x.kind === 'INFO').length;
 
   let isOpen = false;
   const dispatchToggleConsole = () => {
@@ -31,16 +34,33 @@
 <template>
   <section>
     <div class="console-toolbar uk-flex uk-flex-middle">
-      <span class="console-title" on:click={dispatchToggleConsole}>Console</span
-      >
+      <span class="console-title" on:click={dispatchToggleConsole}>Console</span>
+      {#if errorCount}
+        <span class='console-icon' title='Number of errors'>
+          <i class="fa fa-exclamation-triangle console-error"></i>{errorCount}
+        </span>
+      {/if}
+
+      {#if warningCount}
+        <span class='console-icon' title='Number of warning messages'>
+          <i class="fa fa-exclamation-triangle console-warning"></i>{warningCount}
+        </span>
+      {/if}
+
+      {#if infoCount}
+        <span class='console-icon' title='Number of info messages'>
+          <i class="fa fa-exclamation-triangle"></i>{infoCount}
+        </span>
+      {/if}
+
       {#if items.length}
-        <a class="clear-btn uk-margin-auto-left" on:click={clearConsole}
+        <a class="uk-display-inline-block uk-margin-left" on:click={clearConsole}
           >Clear ({items.length})</a
         >
       {/if}
     </div>
 
-    <ul class="messages-container uk-list uk-list-divider">
+    <ul class="messages-container uk-list uk-list-divider uk-list-collapse">
       {#each items as item}
         <li
           class:uk-text-danger={item.kind === 'ERR'}
@@ -63,12 +83,13 @@
   section
     height: 100%
     padding: 0 16px 16px 16px
-    font-size: 15px
+    font-size: smaller
 
   .messages-container
     height: calc(100% - 50px)
     margin-top: 8px
     overflow-y: auto
+
 
   .console-title
     padding: 6px 0
@@ -83,5 +104,17 @@
     border-radius: 4px
     font-size: smaller
     font-weight: bold
+
+  .console-icon
+    padding: 8px
+
+  .fa-exclamation-triangle
+    display: inline-block
+    margin-right: 4px
+
+  .console-error
+    color: var(--danger-color)
+  .console-warning
+    color: var(--warning-color)
 
 </style>

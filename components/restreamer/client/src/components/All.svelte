@@ -59,38 +59,6 @@
     );
   }
 
-  $: parentOutputIdMap = new Map(
-    $state.data.allRestreams
-      .map((x) => {
-        const outputId = getCorrespondingParentOutputWithMixId(
-          x,
-          $state.data.allRestreams
-        );
-        return outputId ? { restreamId: x.id, outputId } : undefined;
-      })
-      .filter(Boolean)
-      .map((x) => [x.restreamId, x.outputId])
-  );
-
-  const getCorrespondingParentOutputWithMixId = (restream, allReStreams) => {
-    const hasCorrespondingEndpoint = (url) => {
-      return !!restream.input.src?.inputs?.find((e) => url.endsWith(e.key));
-    };
-
-    const outputs = allReStreams
-      .filter((x) => x.id !== restream.id)
-      .flatMap((x) => x.outputs)
-      .filter(
-        (x) =>
-          hasCorrespondingEndpoint(x.dst) &&
-          Array.isArray(x.mixins) &&
-          x.mixins.length > 0
-      )
-      .map((x) => x.id);
-
-    return outputs ? outputs[0] : undefined;
-  };
-
   const isReStreamVisible = (restream) => {
     const hasInputFilter = globalInputsFilters.includes(
       restream.input.endpoints[0].status
@@ -375,7 +343,6 @@
   {#each allReStreams as restream}
     <Restream
       public_host={$info.data.info.publicHost}
-      parentOutputId={parentOutputIdMap.get(restream.id)}
       value={restream}
       hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
       {globalOutputsFilters}
