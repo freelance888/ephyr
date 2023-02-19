@@ -13,12 +13,12 @@ All user visible changes to this project will be documented in this file. This p
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
 - Option to record audio-only files ([#239]);
 - Display input streams info ([#170], [#266]);
-- "Start All" / "Stop All" buttons on dashboard ([#296]);
-- Add display of last sent Command\Error onto Dashboard ([#220])
-- Display file name in backup file endpoint ([#175])
-- Add Google Drive API key to Ephyr server ([#168])
-- Video playback for file Input ([#166])
-- Add indication if password is added to the server into Dashboard ([#162])
+- "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
+- Add display of last sent Command\Error onto Dashboard ([#220], [#297])
+- Display file name in backup file endpoint ([#175], [#297])
+- Add Google Drive API key to Ephyr server ([#168], [#297])
+- Video playback for file Input ([#166], [#297])
+- Add indication if password is added to the server into Dashboard ([#162], [#297])
 ### Fixed
 - State disapers after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
@@ -27,18 +27,26 @@ All user visible changes to this project will be documented in this file. This p
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
 
-
+[#162]: /../../issues/162
+[#166]: /../../issues/166
+[#168]: /../../issues/168
 [#170]: /../../issues/170
+[#175]: /../../issues/175
+[#220]: /../../issues/220
 [#235]: /../../issues/235
 [#236]: /../../issues/236
+[#241]: /../../issues/241
 [#253]: /../../issues/253
 
-[#239]: /../../pull/244
+[#239]: /../../pull/239
 [#244]: /../../pull/244
 [#266]: /../../pull/266
 [#267]: /../../pull/267
 [#296]: /../../pull/296
+[#297]: /../../pull/297
 [#302]: /../../pull/302
+
+
 
 
 
