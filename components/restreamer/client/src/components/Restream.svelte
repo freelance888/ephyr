@@ -214,7 +214,7 @@
       </span>
     {/if}
 
-    <div class="uk-float-right uk-flex uk-flex-column uk-flex-bottom">
+    <div class="uk-float-right uk-flex uk-flex-bottom">
       <div class="uk-flex">
         <span
           class="item-icon uk-icon uk-margin-right"
@@ -340,13 +340,14 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import
+      .uk-close, .edit-input, .export-import, .uk-button-small
         opacity: 1
 
     .uk-button-small
-      float: right
+      margin-left: 16px
       font-size: 0.7rem
-      margin-top: 8px
+      margin-top: -2px
+      opacity: 0
       transition: opacity .3s ease
 
     .edit-input, .export-import, .uk-close

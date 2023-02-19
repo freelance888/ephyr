@@ -82,6 +82,10 @@
     --secondary-warning-color: #7a5128
   }
 
+  html,
+  body
+    height: 100%
+
   .circle
     background-color: currentColor
     border-radius: 50%
