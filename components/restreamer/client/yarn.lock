@@ -75,6 +75,11 @@
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.7.tgz#1d572bfbbe14b7704e0ba0f39b74815b84870d70"
   integrity sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==
 
+"@geoffcox/svelte-splitter@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@geoffcox/svelte-splitter/-/svelte-splitter-1.0.1.tgz#07d05fa89d51b9269616463e322ee79148cdbc58"
+  integrity sha512-iWDNDnuNhsB6tKMGqjXStRhytALlB+/KBQ82T4xSjDndQsrN0CKspdMiu21RUj0AQoDxv3yzAqgp3bwEnF5SCQ==
+
 "@graphql-typed-document-node/core@^3.1.1":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.1.1.tgz#076d78ce99822258cf813ecc1e7fa460fa74d052"
@@ -3579,6 +3584,11 @@ svelte-dev-helper@^1.1.9:
   version "1.1.9"
   resolved "https://registry.yarnpkg.com/svelte-dev-helper/-/svelte-dev-helper-1.1.9.tgz#7d187db5c6cdbbd64d75a32f91b8998bde3273c3"
   integrity sha512-oU+Xv7Dl4kRU2kdFjsoPLfJfnt5hUhsFUZtuzI3Ku/f2iAFZqBoEuXOqK3N9ngD4dxQOmN4OKWPHVi3NeAeAfQ==
+
+svelte-dnd-action@^0.8.9:
+  version "0.8.9"
+  resolved "https://registry.yarnpkg.com/svelte-dnd-action/-/svelte-dnd-action-0.8.9.tgz#90fa211057a5d9e832d5521511f9c1b87242d2ae"
+  integrity sha512-4WaLRvERr2JoX6Lh9GnlEZRzFF5eY3h2q0n5+lS4/+nqqQjTIpCwTrncMf9tJNa+M4AGy43I5aq5F+Ohl/nxLg==
 
 svelte-hmr@^0.14.2:
   version "0.14.12"

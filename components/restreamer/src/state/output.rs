@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::{
     serde::is_false,
     spec,
-    state::{Label, Status},
+    state::{Label, RestreamKey, Status},
 };
 
 /// Downstream destination that a `Restream` re-streams a live stream to.
@@ -241,6 +241,27 @@ impl OutputDstUrl {
             }
             _ => false,
         }
+    }
+
+    /// Check if [`Restream`] key belong to restream
+    ///
+    /// [`Restream`]: crate::state::Restream
+    #[must_use]
+    pub fn is_address_of_restream(
+        &self,
+        key: &RestreamKey,
+        public_host: &str,
+    ) -> Option<bool> {
+        let host = self.0.host_str()?;
+        let match_host = (host == "localhost")
+            || (host == "127.0.0.1")
+            || (host == public_host);
+
+        // Get the restream key
+        let segment = self.0.path_segments()?.next()?;
+        let path_match = segment == format!("{key}");
+
+        Some(match_host && path_match)
     }
 }
 

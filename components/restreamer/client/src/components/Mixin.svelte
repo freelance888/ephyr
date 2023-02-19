@@ -143,6 +143,5 @@
       height: 10px
       width: 10px
       padding: 0
-      margin-top: -2px
       text-align: right
 </style>

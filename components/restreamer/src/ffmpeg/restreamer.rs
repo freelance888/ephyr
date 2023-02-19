@@ -150,7 +150,17 @@ impl Restreamer {
 
                 if *kill_rx_for_loop.borrow() == RestreamerStatus::Finished {
                     break;
-                }
+                };
+
+                if let RestreamerKind::File(_) = kind {
+                    let _ = state
+                        .restreams
+                        .lock_mut()
+                        .iter_mut()
+                        .find(|r| r.playlist.id == kind.id())
+                        .map(|r| r.playlist.currently_playing_file = None);
+                    break;
+                };
 
                 time::sleep(Duration::from_secs(2)).await;
             }

@@ -29,7 +29,7 @@
     use:saveOrCloseByKeys={{ save: submit_change, close: close }}
   >
     <div class="uk-modal-dialog uk-modal-body">
-      <h2 class="uk-modal-title">Change settings</h2>
+      <h2 class="uk-modal-title">Settings</h2>
       <button
         class="uk-modal-close-outside"
         uk-close
@@ -42,30 +42,42 @@
           Title for the server. This title is visible in current tab of the
           browser
         </div>
-        <label
+        <label class="uk-display-block"
           ><input
             class="uk-checkbox"
             bind:checked={info.deleteConfirmation}
             type="checkbox"
           /> Confirm deletion</label
         >
-        <div class="uk-alert">
-          Whether do we need to confirm deletion of inputs and outputs
-        </div>
-        <label
+        <label class="uk-display-block"
           ><input
             class="uk-checkbox"
             bind:checked={info.enableConfirmation}
             type="checkbox"
           /> Confirm enabling/disabling</label
         >
+        <input
+          class="uk-input google-api-key"
+          bind:value={info.googleApiKey}
+          placeholder="Google API key"
+        />
         <div class="uk-alert">
-          Whether do we need to confirm enabling/disabling of inputs or outputs
+          Google API key for downloading video and audio files. It is necessary
+          for file inputs.
         </div>
+        <input
+          class="uk-input uk-width-1-4"
+          type="number"
+          min="2"
+          step="1"
+          bind:value={info.maxFilesInPlaylist}
+          placeholder="Files limit"
+        />
+        <div class="uk-alert">Max amount of files in a playlist.</div>
       </fieldset>
 
       <button class="uk-button uk-button-primary" on:click={submit_change}
-        >Change</button
+        >Confirm</button
       >
     </div>
   </div>
@@ -82,6 +94,7 @@
     .settings-form
       border: none
 
-      & >.uk-alert
-        margin-top: 5px !important;
+    .google-api-key
+      margin-top: 5px;
+
 </style>

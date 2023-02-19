@@ -5,7 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::{serde::is_false, state};
+use crate::{file_manager::FileId, serde::is_false, state, types::UNumber};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
@@ -34,7 +34,7 @@ impl Spec {
             for r in &restreams {
                 if let Some(key) = unique.replace(&r.key) {
                     return Err(D::Error::custom(format!(
-                        "Duplicate Restream.key in Spec.restreams: {key}"
+                        "Duplicate Restream.key in Spec.restreams: {key}",
                     )));
                 }
             }
@@ -55,12 +55,18 @@ pub struct Settings {
     pub title: Option<String>,
 
     /// Whether do we need to confirm deletion of inputs and outputs
-    /// If `true` we should confirm deletion, `false` - do not confirm
+    /// If `true` we should confirm deletion, `false` - do not confirm.
     pub delete_confirmation: Option<bool>,
 
     /// Whether do we need to confirm enabling/disabling of inputs \
-    /// or outputs
+    /// or outputs.
     pub enable_confirmation: Option<bool>,
+
+    /// Google API key for file playback and downloading.
+    pub google_api_key: Option<String>,
+
+    /// Max number of files allowed in [Restream]'s playlist.
+    pub max_files_in_playlist: Option<UNumber>,
 }
 
 /// Shareable (exportable and importable) specification of a
@@ -80,6 +86,9 @@ pub struct Restream {
 
     /// [`Input`] that a live stream is received from.
     pub input: Input,
+
+    /// Max number of files allowed in [Restream]'s playlist
+    pub max_files_in_playlist: Option<UNumber>,
 
     /// [`Output`]s that a live stream is re-streamed to.
     #[serde(
@@ -102,7 +111,7 @@ impl Restream {
             for o in &outputs {
                 if let Some(dst) = unique.replace(&o.dst) {
                     return Err(D::Error::custom(format!(
-                        "Duplicate Output.dst in Restream.outputs: {dst}",
+                        "Duplicate Output.dst in Restream.outputs: {dst}"
                     )));
                 }
             }
@@ -152,11 +161,13 @@ impl Input {
         let mut endpoints = vec![InputEndpoint {
             kind: state::InputEndpointKind::Rtmp,
             label: None,
+            file_id: None,
         }];
         if with_hls {
             endpoints.push(InputEndpoint {
                 kind: state::InputEndpointKind::Hls,
                 label: None,
+                file_id: None,
             });
         }
 
@@ -190,14 +201,17 @@ impl<'de> Deserialize<'de> for Input {
         for e in &raw.endpoints {
             if let Some(kind) = unique_endpoints.replace(e.kind) {
                 return Err(D::Error::custom(format!(
-                    "Duplicate InputEndpoint.kind in Input.endpoints: {kind}",
+                    "Duplicate InputEndpoint.kind in Input.endpoints: {kind}"
                 )));
             }
         }
-        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp) {
+        if !unique_endpoints.contains(&state::InputEndpointKind::Rtmp)
+            && !unique_endpoints.contains(&state::InputEndpointKind::File)
+        {
             return Err(D::Error::custom(format!(
-                "Input.endpoints should contain at least one {} endpoint",
+                "Input.endpoints should contain at least one {} or {} endpoint",
                 state::InputEndpointKind::Rtmp,
+                state::InputEndpointKind::File,
             )));
         }
 
@@ -263,6 +277,10 @@ pub struct InputEndpoint {
     /// Label for this input
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<state::Label>,
+
+    /// If the endpoint has kind FILE then this contains the file ID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<FileId>,
 }
 
 /// Shareable (exportable and importable) specification of a

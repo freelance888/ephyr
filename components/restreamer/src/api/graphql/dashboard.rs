@@ -6,6 +6,7 @@ use super::Context;
 use crate::{
     api::graphql,
     broadcaster::DashboardCommand,
+    console_logger::ConsoleMessage,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
@@ -75,6 +76,16 @@ impl MutationsRoot {
         }
     }
 
+    /// Remove all messages from console
+    fn console_clear(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut console_log = context.state().console_log.lock_mut();
+        console_log.clear();
+
+        Ok(Some(true))
+    }
+
     /// Enables all `Output`s for all clients.
     fn enable_all_outputs_for_clients(
         context: &Context,
@@ -108,6 +119,19 @@ impl SubscriptionsRoot {
         context
             .state()
             .clients
+            .signal_cloned()
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of `console_log` messages.
+    async fn console_log(
+        context: &Context,
+    ) -> BoxStream<'static, Vec<ConsoleMessage>> {
+        context
+            .state()
+            .console_log
             .signal_cloned()
             .dedupe_cloned()
             .to_stream()

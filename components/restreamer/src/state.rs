@@ -29,6 +29,7 @@ pub use self::{
 use std::{future::Future, mem, panic::AssertUnwindSafe, path::Path};
 
 use anyhow::anyhow;
+use derive_more::{Display, From, Into};
 use ephyr_log::log;
 use futures::{
     future::TryFutureExt as _,
@@ -36,16 +37,23 @@ use futures::{
     stream::{StreamExt as _, TryStreamExt as _},
 };
 use futures_signals::signal::{Mutable, SignalExt as _};
-use juniper::GraphQLEnum;
+use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar};
 use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
 use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
-    broadcaster::DashboardCommand, display_panic, spec,
-    state::client_statistics::StreamStatistics, stream_probe::StreamInfo, Spec,
+    broadcaster::DashboardCommand,
+    console_logger::ConsoleMessage,
+    display_panic,
+    file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
+    spec,
+    state::client_statistics::StreamStatistics,
+    stream_probe::StreamInfo,
+    Spec,
 };
 use std::collections::HashMap;
+use uuid::Uuid;
 
 /// Reactive application's state.
 ///
@@ -64,9 +72,19 @@ pub struct State {
     /// Global [`ServerInfo`] of the server
     pub server_info: Mutable<ServerInfo>,
 
+    /// List of the files that are used as sources of video
+    pub files: Mutable<Vec<LocalFileInfo>>,
+
     /// Commands for broadcasting to all [`Client`]s or specific [`Client`]
     #[serde(skip)]
     pub dashboard_commands: Mutable<Vec<DashboardCommand>>,
+
+    /// Commands for files' manipulations
+    #[serde(skip)]
+    pub file_commands: Mutable<Vec<FileCommand>>,
+
+    /// Errors and other messages visible in UI console
+    pub console_log: Mutable<Vec<ConsoleMessage>>,
 }
 
 impl State {
@@ -845,6 +863,57 @@ impl State {
                 o.enabled = enabled;
                 true
             })
+    }
+}
+
+/// ID of a `Playlist`.
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Display,
+    Eq,
+    From,
+    GraphQLScalar,
+    Into,
+    PartialEq,
+    Serialize,
+)]
+#[graphql(transparent)]
+pub struct PlaylistId(Uuid);
+
+impl PlaylistId {
+    /// Generates a new random [`InputId`].
+    #[inline]
+    #[must_use]
+    pub fn random() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+/// Video playlist for each restream as an alternative to stream input
+#[derive(
+    Clone, Debug, Deserialize, Eq, GraphQLObject, PartialEq, Serialize,
+)]
+pub struct Playlist {
+    /// Unique ID of this playlist
+    pub id: PlaylistId,
+
+    /// List of video files in this playlist
+    pub queue: Vec<PlaylistFileInfo>,
+
+    /// Currently playing file.
+    /// Setting this value to `Some(...)` will override current restreamer input
+    /// and this file will be streamed instead.
+    pub currently_playing_file: Option<PlaylistFileInfo>,
+}
+
+impl Playlist {
+    /// Apply new playlist to this one
+    pub fn apply(&mut self, queue: Vec<PlaylistFileInfo>) {
+        self.queue = queue;
+        self.currently_playing_file = None;
     }
 }
 

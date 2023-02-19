@@ -33,6 +33,7 @@
 
   export let state;
   export let info;
+  export let files;
 
   let searchInInputs = true;
   let searchInOutputs = true;
@@ -47,6 +48,7 @@
 
   $: globalInputsFilters = [];
   $: globalOutputsFilters = [];
+  $: hasActiveFilters = globalInputsFilters.length;
 
   $: {
     allReStreams = getFilteredRestreams(
@@ -344,6 +346,7 @@
       value={restream}
       hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
       {globalOutputsFilters}
+      {files}
     />
   {:else}
     <div

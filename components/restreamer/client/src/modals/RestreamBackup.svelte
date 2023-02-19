@@ -1,13 +1,12 @@
-<script lang="ts">
-  import type { BackupModel } from '../models/restream.model';
+<script lang="js">
   import { sanitizeUrl } from '../utils/util';
 
-  export let removeFn: () => void;
-  export let onChangeFn: () => void;
+  export let removeFn;
+  export let onChangeFn;
 
-  export let backup: BackupModel;
+  export let backup;
 
-  const onIsPullChanged = (): void => {
+  const onIsPullChanged = () => {
     if (!backup.isPull) {
       backup.pullUrl = null;
     }
@@ -15,7 +14,7 @@
     onChangeFn();
   };
 
-  const onPullUrlChanged = (): void => {
+  const onPullUrlChanged = () => {
     if (backup.pullUrl !== null) {
       backup.pullUrl = sanitizeUrl(backup.pullUrl);
     }
@@ -24,7 +23,7 @@
   };
 </script>
 
-<li class="uk-form-small uk-flex uk-flex-between backup-item">
+<li class="uk-form-small uk-flex uk-flex-between uk-flex-middle backup-item">
   <span class="key-label">{backup.key}</span>
   <label>
     <input
@@ -42,7 +41,7 @@
     on:change={onPullUrlChanged}
     placeholder="rtmp://..."
   />
-  <button class="uk-icon uk-close" on:click={removeFn} />
+  <button class="uk-icon uk-close" uk-close on:click={removeFn} />
 </li>
 
 <style lang="stylus">

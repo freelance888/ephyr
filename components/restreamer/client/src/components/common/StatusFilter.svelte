@@ -70,4 +70,5 @@
     color: var(--danger-color)
   .streams-warnings
     color: var(--warning-color)
+
 </style>

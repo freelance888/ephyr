@@ -10,7 +10,10 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
-use std::{convert::TryInto, os::unix::process::ExitStatusExt, time::Duration};
+use std::{
+    convert::TryInto, os::unix::process::ExitStatusExt, path::Path,
+    time::Duration,
+};
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -18,10 +21,11 @@ use uuid::Uuid;
 use crate::{
     dvr,
     ffmpeg::{
-        copy_restreamer::CopyRestreamer, mixing_restreamer::MixingRestreamer,
-        restreamer::RestreamerStatus,
+        copy_restreamer::CopyRestreamer, file_restreamer::FileRestreamer,
+        mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
+    file_manager::{FileId, FileState, LocalFileInfo},
     state::{self, RestreamKey, State, Status},
 };
 
@@ -59,6 +63,10 @@ pub enum RestreamerKind {
     /// Mixing a live stream from one URL endpoint with additional live streams
     /// and re-streaming the result to another endpoint.
     Mixing(MixingRestreamer),
+
+    /// Sourcing a video and audio from local file and streaming it to input
+    /// endpoint.
+    File(FileRestreamer),
 }
 
 impl RestreamerKind {
@@ -72,6 +80,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.id.into(),
             Self::Transcoding(c) => c.id.into(),
             Self::Mixing(m) => m.id.into(),
+            Self::File(m) => m.id.into(),
         }
     }
 
@@ -85,6 +94,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.to_url.clone(),
             Self::Transcoding(t) => t.to_url.clone(),
             Self::Mixing(m) => m.to_url.clone(),
+            Self::File(f) => f.to_url.clone(),
         }
     }
 
@@ -98,6 +108,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.from_url.clone(),
             Self::Transcoding(t) => t.from_url.clone(),
             Self::Mixing(m) => m.from_url.clone(),
+            Self::File(f) => f.from_url.clone(),
         }
     }
 
@@ -113,6 +124,9 @@ impl RestreamerKind {
         input: &state::Input,
         endpoint: &state::InputEndpoint,
         key: &RestreamKey,
+        is_playing_playlist: bool,
+        files: &[LocalFileInfo],
+        file_root: &Path,
     ) -> Option<Self> {
         if !input.enabled {
             return None;
@@ -120,6 +134,9 @@ impl RestreamerKind {
 
         Some(match endpoint.kind {
             state::InputEndpointKind::Rtmp => {
+                if is_playing_playlist {
+                    return None;
+                }
                 let from_url = match input.src.as_ref()? {
                     state::InputSrc::Remote(remote) => {
                         remote.url.clone().into()
@@ -127,8 +144,28 @@ impl RestreamerKind {
                     state::InputSrc::Failover(s) => {
                         s.inputs.iter().find_map(|i| {
                             i.endpoints.iter().find_map(|e| {
-                                (e.is_rtmp() && e.status == Status::Online)
-                                    .then(|| e.kind.rtmp_url(key, &i.key))
+                                if e.is_rtmp() && e.status == Status::Online {
+                                    Some(e.kind.rtmp_url(key, &i.key))
+                                } else if i.enabled
+                                    && e.is_file()
+                                    && e.file_id.is_some()
+                                    && files.iter().any(|f| {
+                                        e.file_id == Some(f.file_id.clone())
+                                            && (f.state == FileState::Local)
+                                    })
+                                {
+                                    url::Url::from_file_path(
+                                        file_root.join(
+                                            e.file_id
+                                                .as_ref()
+                                                .unwrap_or(&FileId::default())
+                                                .to_string(),
+                                        ),
+                                    )
+                                    .ok()
+                                } else {
+                                    None
+                                }
                             })
                         })?
                     }
@@ -157,7 +194,57 @@ impl RestreamerKind {
                 }
                 .into()
             }
+
+            state::InputEndpointKind::File => {
+                return None;
+            }
         })
+    }
+
+    /// Creates a new [FFmpeg] process streaming a file from playlist to
+    /// [`state::Input`] endpoint.
+    ///
+    /// Returns [`None`] if a [FFmpeg] re-streaming process cannot not be
+    /// created for the given [`state::Playlist`].
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
+    #[must_use]
+    pub fn from_playlist(
+        playlist: &state::Playlist,
+        restream_key: &RestreamKey,
+        input_key: &state::InputKey,
+        file_root: &Path,
+    ) -> Option<Self> {
+        let from_url =
+            playlist.currently_playing_file.as_ref().and_then(|file| {
+                if let Ok(from_url) = Url::from_file_path(
+                    file_root.join(&file.file_id),
+                )
+                .map_err(|_| {
+                    log::error!(
+                        "Failed to parse `from_url` from file_id {}",
+                        &file.file_id
+                    );
+                }) {
+                    Some(from_url)
+                } else {
+                    None
+                }
+            });
+
+        let to_url = Url::parse(&format!(
+            "rtmp://127.0.0.1:1935/{restream_key}/{input_key}",
+        ))
+        .map_err(|e| log::error!("Failed to parse `to_url`: {}", e));
+
+        match (from_url, to_url) {
+            (Some(from_url), Ok(to_url)) => Some(Self::File(FileRestreamer {
+                id: playlist.id.into(),
+                from_url,
+                to_url,
+            })),
+            _ => None,
+        }
     }
 
     /// Creates a new [FFmpeg] process re-streaming a live stream from a
@@ -217,6 +304,7 @@ impl RestreamerKind {
                 old.needs_restart(new)
             }
             (Self::Mixing(old), Self::Mixing(new)) => old.needs_restart(new),
+            (Self::File(old), Self::File(new)) => old.needs_restart(new),
             _ => true,
         }
     }
@@ -266,6 +354,7 @@ impl RestreamerKind {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),
             Self::Mixing(m) => m.setup_ffmpeg(cmd, state).await?,
+            Self::File(m) => m.setup_ffmpeg(cmd, false).await?,
         };
         log::debug!("FFmpeg CMD: {:?}", &cmd);
 
@@ -345,6 +434,8 @@ impl RestreamerKind {
 
         let status_code = out.status.code();
         let signal_code = out.status.signal();
+        // if the process exited because of SIGTERM signal (exit code 255)
+        // or exited with 0
         if out.status.success()
             || status_code.and_then(|v| (v == 255).then_some(())).is_some()
             || signal_code.and_then(|v| (v == 15).then_some(())).is_some()

@@ -54,11 +54,11 @@
         </section>
       {:else}
         <section class="uk-section uk-section-muted single-output">
-          <Output {restream_id} value={output} {mutations} />
+          <Output {restream_id} value={output} {mutations} isReadOnly="true" />
         </section>
         {#if isYoutubeVideo(output.previewUrl)}
           <section class="uk-section uk-section-muted video-player">
-            <YoutubePlayer {restream_id} preview_url={output.previewUrl} />
+            <YoutubePlayer preview_url={output.previewUrl} />
           </section>
         {/if}
       {/if}
@@ -75,8 +75,8 @@
     padding: 20px
 
   .single-output
-    margin-top: 20px
-    padding: 10px 20px 20px 20px
+    margin-top: 16px
+    padding: 10px 16px 16px 16px
 
     :global(.volume input)
       width: 90% !important

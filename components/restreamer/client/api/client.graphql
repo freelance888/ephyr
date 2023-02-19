@@ -6,6 +6,8 @@ subscription Info {
         enableConfirmation
         passwordHash
         passwordOutputHash
+        googleApiKey
+        maxFilesInPlaylist
     }
 }
 
@@ -21,80 +23,38 @@ subscription ServerInfo {
     }
 }
 
+subscription Files {
+    files {
+        fileId
+        name
+        state
+        error
+        downloadState {
+            maxProgress
+            currentProgress
+        }
+    }
+}
+
 subscription State {
     allRestreams {
-        id
-        key
-        label
-        input {
-            id
-            key
-            endpoints {
-                id
-                kind
-                status
-                label
-            }
-            src {
-                ... on RemoteInputSrc {
-                    url
-                    label
-                }
-                ... on FailoverInputSrc {
-                    inputs {
-                        id
-                        key
-                        endpoints {
-                            id
-                            kind
-                            status
-                            label
-                            streamStat {
-                                audioChannelLayout
-                                audioChannels
-                                audioSampleRate
-                                audioCodecName
-                                videoCodecName
-                                videoRFrameRate
-                                videoHeight
-                                videoWidth
-                                bitRate
-                                error
-                            }
-                        }
-                        src {
-                            ... on RemoteInputSrc {
-                                url
-                                label
-                            }
-                        }
-                        enabled
-                    }
-                }
-            }
-            enabled
+        ...restreamBasic
+        ...restreamPlaylist
+    }
+}
+
+subscription TranslationRestream($id: RestreamId!) {
+    restream(id: $id) {
+        restream {
+            ...restreamBasic
+            ...restreamPlaylist
         }
-        outputs {
-            id
-            dst
-            label
-            previewUrl
-            volume {
-                level
-                muted
-            }
-            mixins {
+        parent {
+            restream {
                 id
-                src
-                volume {
-                    level
-                    muted
-                }
-                delay
-                sidechain
+                ...restreamOutputs
             }
-            enabled
-            status
+            outputId
         }
     }
 }
@@ -122,19 +82,43 @@ mutation SetRestream(
     $id: RestreamId
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
+    $file_id: FileId
+    $max_files_in_playlist: UNumber
 ) {
     setRestream(
         key: $key
         src: $url
         label: $label
         backupInputs: $backup_inputs
+        fileId: $file_id
         withHls: $with_hls
         id: $id
+        maxFilesInPlaylist: $max_files_in_playlist
     )
+}
+
+mutation DownloadFile($fileId: FileId!) {
+    downloadFile(fileId: $fileId)
 }
 
 mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
+}
+
+mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [String!]!) {
+    setPlaylist(restreamId: $restreamId, playlist: $fileIds)
+}
+
+mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: String!) {
+    playFileFromPlaylist(restreamId: $restreamId, fileId: $file_id)
+}
+
+mutation StopPlayingFileFromPlaylist($restreamId: RestreamId!) {
+    stopPlayingFileFromPlaylist(restreamId: $restreamId)
+}
+
+mutation GetPlaylistFromGdrive($id: RestreamId!, $folder_id: String!) {
+    getPlaylistFromGdrive(restreamId: $id, folderId: $folder_id)
 }
 
 mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
@@ -260,10 +244,112 @@ mutation SetSettings(
     $title: String
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
+    $googleApiKey: String
+    $maxFilesInPlaylist: UNumber
 ) {
     setSettings(
         title: $title
         deleteConfirmation: $deleteConfirmation
         enableConfirmation: $enableConfirmation
+        googleApiKey: $googleApiKey
+        maxFilesInPlaylist: $maxFilesInPlaylist
     )
+}
+
+fragment restreamBasic on Restream {
+    id
+    key
+    label
+    input {
+        id
+        key
+        endpoints {
+            id
+            kind
+            status
+            label
+            fileId
+        }
+        src {
+            ... on RemoteInputSrc {
+                url
+                label
+            }
+            ... on FailoverInputSrc {
+                inputs {
+                    id
+                    key
+                    endpoints {
+                        id
+                        kind
+                        status
+                        label
+                        fileId
+                        streamStat {
+                            audioChannelLayout
+                            audioChannels
+                            audioSampleRate
+                            audioCodecName
+                            videoCodecName
+                            videoRFrameRate
+                            videoHeight
+                            videoWidth
+                            bitRate
+                            error
+                        }
+                    }
+                    src {
+                        ... on RemoteInputSrc {
+                            url
+                            label
+                        }
+                    }
+                    enabled
+                }
+            }
+        }
+        enabled
+    }
+    ...restreamOutputs
+    maxFilesInPlaylist
+}
+
+fragment restreamPlaylist on Restream {
+    playlist {
+        currentlyPlayingFile {
+            fileId
+            name
+            wasPlayed
+        }
+        queue {
+            fileId
+            name
+            wasPlayed
+        }
+    }
+}
+
+fragment restreamOutputs on Restream {
+    outputs {
+        id
+        dst
+        label
+        previewUrl
+        volume {
+            level
+            muted
+        }
+        mixins {
+            id
+            src
+            volume {
+                level
+                muted
+            }
+            delay
+            sidechain
+        }
+        enabled
+        status
+    }
 }

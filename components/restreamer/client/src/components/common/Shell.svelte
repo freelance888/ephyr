@@ -3,6 +3,8 @@
   import Icons from 'uikit/dist/js/uikit-icons';
   import { showError } from '../../utils/util';
   import ServerInfo from './ServerInfo.svelte';
+  import { Split } from '@geoffcox/svelte-splitter/src/index';
+  import Console from '../Console.svelte';
 
   UIkit.use(Icons);
 
@@ -11,52 +13,62 @@
   export let canRenderMainComponent;
   export let error;
   export let serverInfo;
+
+  const onToggleConsole = (event) => {
+    const primaryPaneHeight = event.detail ? '70%' : '100%';
+
+    let primary = document.querySelector('.split.horizontal');
+    primary.style.setProperty('--primary-size', primaryPaneHeight);
+  };
 </script>
 
 <template>
-  <div class="page uk-flex uk-flex-column">
-    <header class="uk-container">
-      <div class="uk-grid uk-grid-small" uk-grid>
-        <a
-          href="https://creativesociety.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="logo uk-flex"
-          title="Join us on creativesociety.com"
-        >
-          <img src="logo.jpg" alt="Logo" />
-          <h3>Creative Society</h3>
-          <small>Ephyr re-streamer {process.env.VERSION}</small>
-        </a>
-        {#if !isLoading}
-          <ServerInfo {serverInfo} />
-        {/if}
-        <div class="uk-margin-auto-left">
-          {#if canRenderToolbar}
-            <slot name="toolbar" />
+  <Split horizontal initialPrimarySize="100%" minSecondarySize="40px">
+    <div slot="primary" class="page uk-flex uk-flex-column">
+      <header class="uk-container">
+        <div class="uk-grid uk-grid-small" uk-grid>
+          <a
+            href="https://creativesociety.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="logo uk-flex"
+            title="Join us on creativesociety.com"
+          >
+            <img src="logo.jpg" alt="Logo" />
+            <h3>Creative Society</h3>
+            <small>Ephyr re-streamer {process.env.VERSION}</small>
+          </a>
+          {#if !isLoading}
+            <ServerInfo {serverInfo} />
           {/if}
-          {#if error}
-            {showError(error.message) || ''}
-          {/if}
+          <div class="uk-margin-auto-left">
+            {#if canRenderToolbar}
+              <slot name="toolbar" />
+            {/if}
+            {#if error}
+              {showError(error.message) || ''}
+            {/if}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main class="uk-container uk-flex-1">
-      {#if isLoading}
-        <div class="uk-alert uk-alert-warning loading">Loading...</div>
-      {:else if canRenderMainComponent}
-        <slot name="main" />
-      {/if}
-    </main>
+      <main class="uk-container uk-flex-1">
+        {#if isLoading}
+          <div class="uk-alert uk-alert-warning loading">Loading...</div>
+        {:else if canRenderMainComponent}
+          <slot name="main" />
+        {/if}
+      </main>
 
-    <footer class="uk-container">
-      Developed for people with ❤ by
-      <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
-        >AllatRa IT</a
-      >
-    </footer>
-  </div>
+      <footer class="uk-container">
+        Developed for people with ❤ by
+        <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
+          >AllatRa IT</a
+        >
+      </footer>
+    </div>
+    <Console slot="secondary" on:toggleConsole={onToggleConsole} />
+  </Split>
 </template>
 
 <style lang="stylus" global>
@@ -69,6 +81,10 @@
     --danger-color: #f0506e
     --secondary-warning-color: #7a5128
   }
+
+  html,
+  body
+    height: 100%
 
   .circle
     background-color: currentColor
@@ -88,7 +104,7 @@
     color: var(--secondary-warning-color)
 
   .page
-    min-height: 100vh;
+    min-height: calc(100vh - 60px);
 
   h2, h3
     color: var(--primary-text-color)
@@ -99,6 +115,11 @@
     max-width: auto !important
     width: calc(100% - 68px)
     min-width: 320px
+
+  .split.horizontal
+    max-height: 100vh !important;
+  .primary
+    overflow-y: auto !important;
 
   header
     padding: 10px
@@ -171,17 +192,30 @@
     font-size: smaller
     font-weight: bold
     position: absolute
-    top: -12px
+    top: -16px
     left: 0
     padding: 2px 10px
     border-top-left-radius: 4px
     border-top-right-radius: 4px
     background-color: #f8f8f8
 
+  .uk-alert
+    font-size: 14px
+    margin: 5px 0 10px 0
+
+  .uk-checkbox
+    margin: 10px 0 10px 0
+
   .hidden
     display: none
 
   .uk-tooltip
     max-width: 400px
+
+  .has-error
+    color:  var(--danger-color)
+
+  .has-warning
+    color: var(--warning-color)
 
 </style>

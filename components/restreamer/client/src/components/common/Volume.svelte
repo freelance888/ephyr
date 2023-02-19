@@ -78,6 +78,9 @@
     font-size: 10px
     margin-right: 3px
 
+  .fa-volume-mute
+    color: #f0506e
+
   .volume
     padding-left: 17px
     font-size: 10px

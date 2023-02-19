@@ -1,7 +1,5 @@
 import { identity } from 'svelte/internal';
-import { writable, get } from 'svelte/store';
-import type { Writable } from 'svelte/store';
-
+import { writable, get, type Writable } from 'svelte/store';
 import { sanitizeLabel, sanitizeUrl } from './utils/util';
 
 // Copied from 'svelte/store' as cannot be imported.

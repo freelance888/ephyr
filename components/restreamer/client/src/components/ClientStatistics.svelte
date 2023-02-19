@@ -10,10 +10,7 @@
 
   export let client;
 
-  $: clientTitle =
-    client.statistics &&
-    client.statistics.data &&
-    client.statistics.data.clientTitle;
+  $: clientTitle = client?.statistics?.data?.clientTitle;
 
   function getStatusCount(items, status) {
     const filteredItems = items.find((x) => x.status === status);
@@ -31,8 +28,17 @@
 
 <template>
   <section class="uk-section uk-section-muted toolbar">
-    <span class="section-label"
-      ><a href={client.id}>{clientTitle ? clientTitle : client.id}</a></span
+    <span class="section-label">
+      <span
+        class="client-info {client.isProtected
+          ? 'is-protected'
+          : 'not-protected'}"
+        title={client.isProtected
+          ? ''
+          : 'This client is not protected by password so that will not receive any commands'}
+        uk-icon="icon: {client.isProtected ? 'lock' : 'warning'}"
+      />
+      <a href={client.id}>{clientTitle ? clientTitle : client.id}</a></span
     >
     <Confirm let:confirm>
       <button
@@ -47,7 +53,7 @@
       >
       <span slot="confirm">Remove</span>
     </Confirm>
-    {#if client.statistics && client.statistics.data}
+    {#if client.statistics?.data}
       <div class="uk-grid uk-grid-small">
         <div class="uk-width-1-4@m">
           <span class="toolbar-label">
@@ -97,7 +103,7 @@
             Please check the correctness of the server URL</span
           >
         {:else}
-          {client.statistics && client.statistics.errors}
+          {client.statistics?.errors}
         {/if}
       </div>
     {/if}
@@ -117,6 +123,15 @@
     display: inline-flex
     padding-left: 4px
     justify-content: center
+
+  .client-info
+    font-size: 16px
+
+  .is-protected
+    color: #32d296
+
+  .not-protected
+    color: #f0506e;
 
   .uk-close
     position: absolute
