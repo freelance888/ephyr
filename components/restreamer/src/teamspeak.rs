@@ -419,11 +419,8 @@ impl Future for AudioCapture {
         loop {
             let StreamItem::Audio(audio_packet) =
                 ready!(Pin::new(&mut self.conn.events()).poll_next(cx))
-                    .ok_or_else(||E::UnexpectedFinish)?
-                    .map_err(E::ConnectionFailed)?
-            else {
-                continue
-            };
+                .ok_or_else(|| E::UnexpectedFinish)?
+                .map_err(E::ConnectionFailed)? else { continue };
 
             let member_id = match audio_packet.data().data() {
                 AudioData::S2C { from, .. }

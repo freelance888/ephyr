@@ -1,4 +1,5 @@
 import { sanitizeLabel, sanitizeUrl } from '../utils/util';
+import without from 'lodash/without';
 
 export class BackupModel {
   isPull: boolean = false;
@@ -15,6 +16,8 @@ export class RestreamModel {
   isPull: boolean = false;
   pullUrl: string = '';
   withHls: boolean = false;
+  fileId: string = '';
+  maxFilesInPlaylist: string = '';
 
   backups: BackupModel[] = [];
 
@@ -38,6 +41,14 @@ export class RestreamModel {
         pullUrl = value.input.src.inputs[0].src.url;
       }
 
+      const fileBackup = value.input.src.inputs?.find(
+        (x) => x.key === 'file_backup'
+      );
+      if (fileBackup) {
+        this.fileId = fileBackup.endpoints[0].fileId;
+        value.input.src.inputs = without(value.input.src.inputs, fileBackup);
+      }
+
       this.backups = value.input.src.inputs?.slice(1).map((x) => ({
         key: x.key,
         pullUrl: x.src?.url ?? null,
@@ -51,6 +62,7 @@ export class RestreamModel {
     this.isPull = !!pullUrl;
     this.pullUrl = sanitizeUrl(pullUrl ?? '');
     this.withHls = withHls;
+    this.maxFilesInPlaylist = value.maxFilesInPlaylist ?? '';
   }
 
   removeBackup(index: number): void {

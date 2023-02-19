@@ -16,6 +16,7 @@ const config: webpack.Configuration = {
     main: './src/AppRestreamer.ts',
     'mix/main': './src/AppMix.ts',
     'dashboard/main': './src/AppDashboard.ts',
+    'full-stream/main': './src/AppFullStream.ts',
   },
   resolve: {
     alias: {
@@ -64,6 +65,12 @@ const config: webpack.Configuration = {
             compilerOptions: {
               dev: !is_prod,
             },
+            onwarn: (warning, handler) => {
+              if (warning.code.startsWith('a11y')) return;
+
+              // Handle all other warnings normally
+              handler(warning);
+            },
           },
         },
       },
@@ -98,10 +105,12 @@ const config: webpack.Configuration = {
         { from: 'static/assets' },
         { from: 'static/assets', to: 'mix' },
         { from: 'static/assets', to: 'dashboard' },
+        { from: 'static/assets', to: 'full-stream' },
       ],
     }),
     new MiniCssExtractPlugin({
       filename: is_prod ? '[name].[contenthash].css' : '[name].css',
+      ignoreOrder: true,
     }),
     new HtmlWebpackPlugin({
       title: 'Ephyr re-streamer',
@@ -123,6 +132,13 @@ const config: webpack.Configuration = {
       template: 'static/index.html',
       baseHref: '/dashboard',
       chunks: ['dashboard/main'],
+    }),
+    new HtmlWebpackPlugin({
+      title: 'Ephyr Full Stream',
+      filename: 'full-stream/index.html',
+      template: 'static/index.html',
+      baseHref: '/full-stream',
+      chunks: ['full-stream/main'],
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,

@@ -1,7 +1,8 @@
-<script lang="ts">
+<script lang="js">
   import { onDestroy } from 'svelte';
-  import { mutation } from 'svelte-apollo';
-  import { SetRestream } from '../../api/client.js';
+  import { mutation, subscribe } from 'svelte-apollo';
+  import { SetRestream, Info } from '../../api/client.graphql';
+
   import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
@@ -10,15 +11,17 @@
   import isEqual from 'lodash/isEqual';
   import RestreamBackup from './RestreamBackup.svelte';
 
+  const info = subscribe(Info, { errorPolicy: 'all' });
   const setRestreamMutation = mutation(SetRestream);
 
   export let visible = false;
   export let public_host = 'localhost';
+  export let restream = new RestreamModel();
 
-  export let restream: RestreamModel = new RestreamModel();
-  let previous: RestreamModel = cloneDeep(restream);
-
+  let previous = cloneDeep(restream);
   let restreamStore = writable(restream);
+
+  $: hasApiKey = $info.data?.info?.googleApiKey;
 
   let submitable = false;
   onDestroy(
@@ -48,6 +51,14 @@
         });
       }
 
+      if (current.maxFilesInPlaylist ?? '' !== previous.maxFilesInPlaylist) {
+        changed ||= true;
+      }
+
+      if (current.fileId !== previous.fileId) {
+        changed ||= true;
+      }
+
       if (!!current.id) {
         changed ||= current.withHls !== previous.withHls;
       }
@@ -55,10 +66,10 @@
     })
   );
 
-  async function submit(): Promise<void> {
+  async function submit() {
     if (!submitable) return;
 
-    let variables: any = {
+    let variables = {
       key: restream.key,
       with_hls: restream.withHls,
     };
@@ -82,6 +93,14 @@
       variables.id = restream.id;
     }
 
+    if (restream.fileId) {
+      variables.file_id = restream.fileId;
+    }
+
+    if (restream.maxFilesInPlaylist) {
+      variables.max_files_in_playlist = restream.maxFilesInPlaylist;
+    }
+
     try {
       await setRestreamMutation({ variables });
       close();
@@ -94,7 +113,7 @@
     visible = false;
   };
 
-  const removeBackup = (index: number) => {
+  const removeBackup = (index) => {
     restreamStore.update((v) => {
       v.removeBackup(index);
       return v;
@@ -139,7 +158,8 @@
         {#if $restreamStore.id}Edit{:else}Add new{/if} input source for re-streaming
       </h2>
       <button
-        class="uk-modal-close-outside uk-close"
+        class="uk-modal-close-outside"
+        uk-close
         type="button"
         on:click={close}
       />
@@ -220,6 +240,38 @@
             {/each}
           </ul>
         </div>
+
+        <div class="uk-section uk-section-xsmall">
+          <div class="layout-no-wrap">
+            <input
+              class="uk-input"
+              type="text"
+              bind:value={$restreamStore.fileId}
+              disabled={!hasApiKey}
+              placeholder="Google File ID"
+            />
+            <button
+              type="button"
+              class="uk-display-inline-block clear-file-id"
+              uk-close
+              on:click={() => ($restreamStore.fileId = '')}
+            />
+          </div>
+          <div class="uk-alert" class:uk-alert-danger={!hasApiKey}>
+            {hasApiKey
+              ? 'Google file id for file backup.'
+              : 'Please specify Google Api Key in `Settings` before setting File ID'}
+          </div>
+          <input
+            class="uk-input uk-width-1-4 files-limit"
+            type="number"
+            min="2"
+            step="1"
+            bind:value={$restreamStore.maxFilesInPlaylist}
+            placeholder="Files limit"
+          />
+          <div class="uk-alert">Max amount of files in a playlist.</div>
+        </div>
       </fieldset>
 
       <button
@@ -246,10 +298,6 @@
     border: none
     padding: 0
 
-  .uk-alert
-    font-size: 14px
-    margin: 10px 0
-
   .restream
     .uk-form-small
       display: block
@@ -271,5 +319,15 @@
   .backups-section
     padding-top: 10px;
     padding-bottom: 0;
+
+  .files-limit
+    margin-top: 5px;
+
+  .clear-file-id
+    position: relative
+    left: -26px;
+
+  .layout-no-wrap
+    white-space: nowrap
 
 </style>

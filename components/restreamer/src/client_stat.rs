@@ -15,7 +15,6 @@ use crate::{
     types::DroppableAbortHandle,
     State,
 };
-
 use ephyr_log::log;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
@@ -26,7 +25,6 @@ use crate::client_stat::statistics_query::{
 };
 
 use crate::state::ServerInfo;
-use chrono::{DateTime, Utc};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
@@ -53,13 +51,13 @@ impl ClientJobsPool {
 
     /// Creates new [`ClientJob`] for added [`Client`] and removes for
     /// deleted [`Client`]
-    pub fn apply(&mut self, clients: &[Client]) {
+    pub fn start_statistics_loop(&mut self, clients: &[Client]) {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
         for c in clients {
             let client_id = c.id.clone();
             let job = self.pool.remove(&client_id).unwrap_or_else(|| {
-                ClientJob::run(c.id.clone(), self.state.clone())
+                ClientJob::gather_statistics(c.id.clone(), self.state.clone())
             });
 
             drop(new_pool.insert(client_id, job));
@@ -68,8 +66,6 @@ impl ClientJobsPool {
         self.pool = new_pool;
     }
 }
-
-type DateTimeUtc = DateTime<Utc>;
 
 /// GraphQL query for getting client statistics
 #[derive(GraphQLQuery)]
@@ -143,7 +139,7 @@ pub struct ClientJob {
 impl ClientJob {
     /// Spawns new future for getting client statistics from [`Client`]
     #[must_use]
-    pub fn run(id: ClientId, state: State) -> Self {
+    pub fn gather_statistics(id: ClientId, state: State) -> Self {
         let client_id1 = id.clone();
 
         let (spawner, abort_handle) = future::abortable(async move {
@@ -157,14 +153,14 @@ impl ClientJob {
                         }
                         .unwrap_or_else(|e| {
                             let error_message = format!(
-                                "Error retrieving data for client {client_id}. \
-                                {e}"
+                                "Error retrieving data for client \
+                                {client_id}. {e}",
                             );
 
                             log::error!("{}", error_message);
-                            Self::save_client_error(
+                            save_client_error(
                                 client_id,
-                                error_message,
+                                vec![error_message],
                                 state1,
                             );
                         }),
@@ -219,71 +215,72 @@ impl ClientJob {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        Self::save_client_stat(client_id, response, state);
+        save_client_statistics(client_id, response, state);
         Ok(())
     }
+}
 
-    fn save_client_error(
-        client_id: &ClientId,
-        error_message: String,
-        state: &State,
-    ) {
-        let mut clients = state.clients.lock_mut();
-        let Some(client) = clients
-            .iter_mut()
-            .find(|r| r.id == *client_id)
+/// Saves error in [`State`] for specific [`Client`]
+///
+/// # Panics
+/// if [`Client`] is not found
+pub fn save_client_error(
+    client_id: &ClientId,
+    error_messages: Vec<String>,
+    state: &State,
+) {
+    let mut clients = state.clients.lock_mut();
+
+    let Some(client) = clients.iter_mut().find(|r| r.id == *client_id)
+        else { panic!("Client with id = {} was not found", client_id) };
+
+    client.statistics = Some(ClientStatisticsResponse {
+        data: None,
+        errors: Some(error_messages),
+    });
+}
+
+/// Saves [`Client`] statistics result in [`State`]
+///
+/// # Panics
+/// if [`Client`] is not found
+pub fn save_client_statistics(
+    client_id: &ClientId,
+    response: Response<<StatisticsQuery as GraphQLQuery>::ResponseData>,
+    state: &State,
+) {
+    let response_errors: Vec<String> = response
+        .errors
+        .unwrap_or_default()
+        .into_iter()
+        .map(|e| e.message)
+        .collect();
+
+    let mut clients = state.clients.lock_mut();
+
+    let Some(client) =
+        clients.iter_mut().find(|r| r.id == *client_id)
         else {
             panic!("Client with id = {} was not found", client_id)
         };
 
-        client.statistics = Some(ClientStatisticsResponse {
+    client.statistics = match response.data {
+        Some(data) => Some(ClientStatisticsResponse {
+            data: Some(ClientStatistics::new(
+                data.statistics.client_title,
+                data.statistics.inputs.into_iter().map(Into::into).collect(),
+                data.statistics
+                    .outputs
+                    .into_iter()
+                    .map(Into::into)
+                    .collect(),
+                data.statistics.server_info.into(),
+            )),
+            errors: Some(response_errors),
+        }),
+        None => Some(ClientStatisticsResponse {
             data: None,
-            errors: Some(vec![error_message]),
-        });
-    }
-
-    fn save_client_stat(
-        client_id: &ClientId,
-        response: Response<<StatisticsQuery as GraphQLQuery>::ResponseData>,
-        state: &State,
-    ) {
-        let response_errors: Vec<String> = response
-            .errors
-            .unwrap_or_default()
-            .into_iter()
-            .map(|e| e.message)
-            .collect();
-
-        let mut clients = state.clients.lock_mut();
-        let Some(client) = clients
-            .iter_mut()
-            .find(|r| r.id == *client_id)
-        else {
-            panic!("Client with id = {} was not found", client_id)
-        };
-
-        client.statistics = match response.data {
-            Some(data) => Some(ClientStatisticsResponse {
-                data: Some(ClientStatistics::new(
-                    data.statistics.client_title,
-                    data.statistics
-                        .inputs
-                        .into_iter()
-                        .map(Into::into)
-                        .collect(),
-                    data.statistics
-                        .outputs
-                        .into_iter()
-                        .map(Into::into)
-                        .collect(),
-                    data.statistics.server_info.into(),
-                )),
-                errors: Some(response_errors),
-            }),
-            None => Some(ClientStatisticsResponse {
-                data: None,
-                errors: Some(response_errors),
-            }),
-        };
-    }
+            errors: Some(response_errors),
+        }),
+    };
 }

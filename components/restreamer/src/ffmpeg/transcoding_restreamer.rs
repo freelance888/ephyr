@@ -65,6 +65,14 @@ impl TranscodingRestreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     pub(crate) fn setup_ffmpeg(&self, cmd: &mut Command) {
+        match self.from_url.scheme() {
+            "http" | "https" | "rtmp" | "rtmps" => (),
+            "file" => {
+                let _ = cmd.arg("-re").args(["-stream_loop", "-1"]);
+            }
+            _ => unimplemented!(),
+        }
+
         let _ = cmd.args(["-i", self.from_url.as_str()]);
 
         if let Some(val) = self.vcodec.as_ref() {

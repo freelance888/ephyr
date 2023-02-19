@@ -5,15 +5,16 @@
 //! [`Output`]: crate::state::Output
 use crate::state::Status;
 use anyhow::anyhow;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
-use crate::{stream_probe::StreamInfo, types::UNumber};
 use derive_more::{Deref, Display, Into};
 use juniper::{
     GraphQLObject, GraphQLScalar, InputValue, ParseScalarResult,
     ParseScalarValue, ScalarToken, ScalarValue, Value,
 };
 use regex::Regex;
+
+use crate::{stream_probe::StreamInfo, types::UNumber};
 use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
 
@@ -45,7 +46,7 @@ pub struct ClientStatistics {
     pub client_title: String,
 
     /// Time when statistics was taken
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: String,
 
     /// Count of inputs grouped by status
     pub inputs: Vec<StatusStatistics>,
@@ -72,7 +73,7 @@ impl ClientStatistics {
     ) -> Self {
         Self {
             client_title,
-            timestamp: Utc::now(),
+            timestamp: Utc::now().format("%d.%m.%Y %H:%M").to_string(),
             inputs,
             outputs,
             server_info,
@@ -289,14 +290,13 @@ impl StreamStatistics {
         match result {
             Err(e) => Self::create_error_instance(&e),
             Ok(info) => {
-                let Some(audio_stream) = info.find_stream("audio")
-                else {
+                let Some(audio_stream) = info.find_stream("audio") else {
                     return Self::create_error_instance(&anyhow!(
                         "Can't find 'audio' stream"
                     ))
                 };
-                let Some(video_stream) = info.find_stream("video")
-                else {
+
+                let Some(video_stream) = info.find_stream("video") else {
                     return Self::create_error_instance(&anyhow!(
                         "Can't find 'video' stream"
                     ))

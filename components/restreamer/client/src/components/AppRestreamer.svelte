@@ -1,7 +1,7 @@
 <script lang="js">
   import { createGraphQlClient } from '../utils/util';
 
-  import { Info, State, ServerInfo } from '../../api/client.graphql';
+  import { Info, State, ServerInfo, Files } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Toolbar from './Toolbar.svelte';
@@ -18,6 +18,7 @@
   const info = subscribe(Info, { errorPolicy: 'all' });
   const state = subscribe(State, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
+  const files = subscribe(Files, { errorPolicy: 'all' });
 
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
@@ -44,6 +45,6 @@
       {isOnline}
       {gqlClient}
     />
-    <PageAll slot="main" {info} {state} {serverInfo} />
+    <PageAll slot="main" {info} {state} {serverInfo} {files} />
   </Shell>
 </template>

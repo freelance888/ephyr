@@ -1,26 +1,26 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
-  import { mutation, getClient, subscribe } from 'svelte-apollo';
+  import { getClient, mutation, subscribe } from 'svelte-apollo';
 
   import {
-    RemoveRestream,
-    DisableOutput,
     DisableAllOutputs,
+    DisableOutput,
     EnableAllOutputs,
     EnableOutput,
     ExportRestream,
-    RemoveOutput,
-    TuneDelay,
-    TuneVolume,
-    TuneSidechain,
     Info,
+    RemoveOutput,
+    RemoveRestream,
+    TuneDelay,
+    TuneSidechain,
+    TuneVolume,
   } from '../../api/client.graphql';
 
-  import { isFailoverInput, showError } from '../utils/util';
+  import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
   import { statusesList } from '../utils/constants';
 
-  import { outputModal, exportModal } from '../stores';
+  import { exportModal, outputModal } from '../stores';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -33,6 +33,7 @@
   } from '../utils/filters.util';
   import { RestreamModel } from '../models/restream.model';
   import RestreamModal from '../modals/RestreamModal.svelte';
+  import cloneDeep from 'lodash/cloneDeep';
   import {
     getEndpointsWithDiffStreams,
     getEndpointsWithStreamsErrors,
@@ -50,6 +51,8 @@
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
+  export let files;
+  export let isFullView = false;
 
   let outputMutations = {
     DisableOutput,
@@ -78,6 +81,8 @@
     ? globalOutputsFilters
     : [];
   $: hasActiveFilters = reStreamOutputsFilters.length;
+
+  $: hasVideos = value.playlist && value.playlist.queue.length > 0;
 
   $: showControls = false;
 
@@ -167,6 +172,7 @@
       <button
         type="button"
         class="uk-close"
+        hidden={isFullView}
         uk-close
         on:click={deleteConfirmation
           ? () => confirm(removeRestream)
@@ -181,16 +187,9 @@
       <span slot="confirm">Remove</span>
     </Confirm>
 
-    <button
-      class="uk-button uk-button-primary uk-button-small"
-      data-testid="add-output:open-modal-btn"
-      on:click={openAddOutputModal}
-    >
-      <i class="fas fa-plus" />&nbsp;<span>Output</span>
-    </button>
-
     <a
       class="export-import"
+      hidden={isFullView}
       href="/"
       on:click|preventDefault={openExportModal}
       title="Export/Import"
@@ -198,9 +197,9 @@
       <i class="fas fa-share-square" />
     </a>
 
-    {#if !!value.label}
-      <span class="section-label">
-        {value.label}
+    {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
+      <span class="section-label"
+        >{value.label ?? ''}
         {#key streamsErrorsTooltip || streamsDiffTooltip}
           <span>
             <i
@@ -215,41 +214,57 @@
       </span>
     {/if}
 
-    {#if value.outputs && value.outputs.length > 0}
-      <span class="total">
-        {#each statusesList as status (status)}
-          <StatusFilter
-            {status}
-            count={reStreamOutputsCountByStatus[status]}
-            active={reStreamOutputsFilters.includes(status)}
-            disabled={hasGlobalOutputsFilters}
-            title={hasGlobalOutputsFilters &&
-              'Filter is disabled while global output filters are active'}
-            handleClick={() =>
-              (reStreamOutputsFilters = toggleFilterStatus(
-                reStreamOutputsFilters,
-                status
-              ))}
-          />
-        {/each}
+    <div class="uk-float-right uk-flex uk-flex-bottom">
+      <div class="uk-flex">
+        <span
+          class="item-icon uk-icon uk-margin-right"
+          hidden={!hasVideos || isFullView}
+          uk-icon="icon: youtube; ratio: 1.5"
+        />
+        {#if value.outputs && value.outputs.length > 0}
+          <span class="total">
+            {#each statusesList as status (status)}
+              <StatusFilter
+                {status}
+                count={reStreamOutputsCountByStatus[status]}
+                active={reStreamOutputsFilters.includes(status)}
+                disabled={hasGlobalOutputsFilters}
+                title={hasGlobalOutputsFilters &&
+                  'Filter is disabled while global output filters are active'}
+                handleClick={() =>
+                  (reStreamOutputsFilters = toggleFilterStatus(
+                    reStreamOutputsFilters,
+                    status
+                  ))}
+              />
+            {/each}
 
-        <Confirm let:confirm>
-          <Toggle
-            data-testid="toggle-all-outputs-status"
-            id="all-outputs-toggle-{value.id}"
-            checked={allEnabled}
-            title="{toggleStatusText} all outputs"
-            confirmFn={enableConfirmation ? confirm : undefined}
-            onChangeFn={toggleAllOutputs}
-          />
-          <span slot="title"
-            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
-          >
-          <span slot="description">Are you sure about it?</span>
-          <span slot="confirm">{toggleStatusText}</span>
-        </Confirm>
-      </span>
-    {/if}
+            <Confirm let:confirm>
+              <Toggle
+                data-testid="toggle-all-outputs-status"
+                id="all-outputs-toggle-{value.id}"
+                checked={allEnabled}
+                title="{toggleStatusText} all outputs"
+                confirmFn={enableConfirmation ? confirm : undefined}
+                onChangeFn={toggleAllOutputs}
+              />
+              <span slot="title"
+                >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+              >
+              <span slot="description">Are you sure about it?</span>
+              <span slot="confirm">{toggleStatusText}</span>
+            </Confirm>
+          </span>
+        {/if}
+      </div>
+      <button
+        class="uk-button uk-button-primary uk-button-small"
+        data-testid="add-output:open-modal-btn"
+        on:click={openAddOutputModal}
+      >
+        <i class="fas fa-plus" />&nbsp;<span>Output</span>
+      </button>
+    </div>
 
     <a
       data-testid="edit-input-modal:open"
@@ -263,7 +278,7 @@
       <RestreamModal
         public_host={$info.data.info.publicHost}
         bind:visible={openRestreamModal}
-        restream={new RestreamModel(value)}
+        restream={new RestreamModel(cloneDeep(value))}
       />
     {/if}
     <Input
@@ -271,6 +286,7 @@
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
+      {files}
       with_label={false}
       show_controls={showControls}
     />
@@ -281,6 +297,7 @@
           restream_id={value.id}
           restream_key={value.key}
           value={input}
+          {files}
           with_label={true}
           show_controls={showControls}
         />
@@ -323,23 +340,15 @@
       display: none
 
     &:hover
-      .uk-close, .uk-button-small
-      .edit-input, .export-import
+      .uk-close, .edit-input, .export-import, .uk-button-small
         opacity: 1
 
     .uk-button-small
-      float: right
+      margin-left: 16px
       font-size: 0.7rem
       margin-top: -2px
       opacity: 0
       transition: opacity .3s ease
-
-      &:hover
-        opacity: 1
-
-    .total
-      float: right
-      margin-right: 20px
 
     .edit-input, .export-import, .uk-close
       position: absolute
@@ -387,12 +396,5 @@
 
     .info-icon
       font-size: 16px
-
-    .has-error
-      color: var(--danger-color)
-
-    .has-warning
-      color: var(--warning-color)
-
 
 </style>

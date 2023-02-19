@@ -1,6 +1,7 @@
 subscription Statistics {
     statistics {
         id
+        isProtected
         statistics {
             data {
                 clientTitle
@@ -26,6 +27,18 @@ subscription Statistics {
             errors
         }
     }
+}
+
+subscription ConsoleLog {
+    consoleLog {
+        kind
+        message
+        source
+    }
+}
+
+mutation ConsoleClear {
+    consoleClear
 }
 
 mutation AddClient($client_id: ClientId!) {

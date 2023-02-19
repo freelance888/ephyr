@@ -7,6 +7,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
+    file_manager::FileId,
     spec, srs,
     state::{
         client_statistics::StreamStatistics, InputKey, Label, RestreamKey,
@@ -30,6 +31,13 @@ pub struct InputEndpoint {
     /// User defined label for each Endpoint
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<Label>,
+
+    /// If the endpoint is of type FILE, then this contains
+    /// the file ID that is in the [`State::files`]
+    ///
+    /// [`State::files`]: crate::state::State::files
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<FileId>,
 
     /// `Status` of this `InputEndpoint` indicating whether it actually serves a
     /// live stream ready to be consumed by `Output`s and clients.
@@ -66,6 +74,7 @@ impl InputEndpoint {
             id: EndpointId::random(),
             kind: spec.kind,
             status: Status::Offline,
+            file_id: spec.file_id,
             label: spec.label,
             srs_publisher_id: None,
             srs_player_ids: HashSet::new(),
@@ -93,6 +102,7 @@ impl InputEndpoint {
         spec::v1::InputEndpoint {
             kind: self.kind,
             label: self.label.clone(),
+            file_id: self.file_id.clone(),
         }
     }
 
@@ -102,6 +112,14 @@ impl InputEndpoint {
     #[must_use]
     pub fn is_rtmp(&self) -> bool {
         matches!(self.kind, InputEndpointKind::Rtmp)
+    }
+
+    /// Indicates whether this [`InputEndpoint`] is an
+    /// [`InputEndpointKind::Rtmp`].
+    #[inline]
+    #[must_use]
+    pub fn is_file(&self) -> bool {
+        matches!(self.kind, InputEndpointKind::File)
     }
 }
 
@@ -136,6 +154,10 @@ pub enum InputEndpointKind {
     /// [HLS]: https://en.wikipedia.org/wiki/HTTP_Live_Streaming
     #[display(fmt = "HLS")]
     Hls,
+
+    /// File input.
+    #[display(fmt = "FILE")]
+    File,
 }
 
 impl InputEndpointKind {
@@ -163,7 +185,7 @@ impl InputEndpointKind {
             "rtmp://127.0.0.1:1935/{}{}/{}",
             restream,
             match kind {
-                InputEndpointKind::Rtmp => "",
+                InputEndpointKind::Rtmp | InputEndpointKind::File => "",
                 InputEndpointKind::Hls => "?vhost=hls",
             },
             input,

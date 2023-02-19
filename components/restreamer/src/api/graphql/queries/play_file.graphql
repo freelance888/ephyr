@@ -1,0 +1,3 @@
+mutation BroadcastPlayFile($fileId: String!) {
+    broadcastPlayFile(fileId: $fileId)
+}

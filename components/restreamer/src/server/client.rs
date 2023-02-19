@@ -27,6 +27,7 @@ use std::fmt;
 const MIX_ROUTE: &str = "/mix";
 const MIX_ROUTE_API: &str = "/api-mix";
 const STATISTICS_ROUTE_API: &str = "/api-statistics";
+const FULL_STREAM_ROUTE: &str = "/full-stream";
 const INDEX_FILE: &str = "index.html";
 
 pub mod public_dir {
@@ -48,6 +49,18 @@ pub mod public_dashboard_dir {
     #![doc(hidden)]
 
     include!(concat!(env!("OUT_DIR"), "/generated_dashboard.rs"));
+}
+
+pub mod public_full_stream_dir {
+    #![allow(
+        clippy::must_use_candidate,
+        unused_results,
+        unused_imports,
+        unused_variables
+    )]
+    #![doc(hidden)]
+
+    include!(concat!(env!("OUT_DIR"), "/generated_full_stream.rs"));
 }
 
 /// Runs client HTTP server.
@@ -76,6 +89,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         let root_dir_files = public_dir::generate();
         let mix_dir_files = public_mix_dir::generate();
         let dashboard_dir_files = public_dashboard_dir::generate();
+        let full_stream_dir_files = public_full_stream_dir::generate();
 
         let mut app = App::new()
             .app_data(stored_cfg.clone())
@@ -107,6 +121,10 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         )
         .service(
             ResourceFiles::new("/dashboard", dashboard_dir_files)
+                .resolve_not_found_to(INDEX_FILE),
+        )
+        .service(
+            ResourceFiles::new(FULL_STREAM_ROUTE, full_stream_dir_files)
                 .resolve_not_found_to(INDEX_FILE),
         )
         .service(ResourceFiles::new("/", root_dir_files))
@@ -290,13 +308,13 @@ fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         route.starts_with(MIX_ROUTE) || route.starts_with(MIX_ROUTE_API);
     let settings = req.app_data::<State>().unwrap().settings.get_cloned();
 
-    let hash = if is_mix_auth {
+    let maybe_hash = if is_mix_auth {
         settings.password_output_hash
     } else {
         settings.password_hash
     };
 
-    let Some(hash) = hash else { return Ok(req) };
+    let Some(hash) = maybe_hash else { return Ok(req) };
 
     let err = || {
         AuthenticationError::new(

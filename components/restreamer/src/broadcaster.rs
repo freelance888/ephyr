@@ -1,8 +1,9 @@
 //! Broadcaster for dashboard commands
 
 use crate::{
+    console_logger::{ConsoleLogger, ConsoleMessageKind, ConsoleMessageSource},
     display_panic,
-    state::{ClientId, ClientStatisticsResponse},
+    state::ClientId,
     State,
 };
 use ephyr_log::log;
@@ -62,7 +63,7 @@ impl Broadcaster {
 
         let state = self.state.clone();
 
-        // We send command only clients protected by password,
+        // We send commands only to clients protected by password,
         // i.e having base auth url
         state
             .clients
@@ -121,11 +122,7 @@ impl Broadcaster {
                     "Error sending command for client {client_id}. {e}"
                 );
                 log::error!("{}", error_message);
-                Self::save_command_error(
-                    &client_id,
-                    vec![error_message],
-                    &state,
-                );
+                Self::save_command_error(&client_id, &[error_message], &state);
             }))
             .catch_unwind()
             .await
@@ -215,22 +212,22 @@ impl Broadcaster {
                 .map(|e| e.message)
                 .collect();
 
-            Self::save_command_error(client_id, response_errors, state);
+            Self::save_command_error(client_id, &response_errors, state);
         }
     }
 
     /// Saves error in [`State`] for specific [`Client`]
     fn save_command_error(
         client_id: &ClientId,
-        error_messages: Vec<String>,
+        error_messages: &[String],
         state: &State,
     ) {
-        let mut clients = state.clients.lock_mut();
-        if let Some(c) = clients.iter_mut().find(|r| &r.id == client_id) {
-            c.statistics = Some(ClientStatisticsResponse {
-                data: None,
-                errors: Some(error_messages),
-            });
-        };
+        let err_message =
+            format!("{}: {}", client_id, error_messages.join(", "));
+        ConsoleLogger::new(state.clone()).log_message(
+            err_message,
+            ConsoleMessageKind::Err,
+            ConsoleMessageSource::Dashboard,
+        );
     }
 }

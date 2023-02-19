@@ -62,7 +62,7 @@ pub struct Opts {
         short,
         long,
         env = "EPHYR_RESTREAMER_STATE_PATH",
-        default_value = "state.json",
+        default_value = "./state.json",
         help = "Path to a file to persist state in",
         long_help = "Path to a file to persist the server's state in"
     )]
@@ -134,6 +134,17 @@ pub struct Opts {
                 OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE"
     )]
     pub verbose: Option<slog::Level>,
+
+    /// Path for local video files.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_VIDEO_FILE_ROOT",
+        default_value = "/tmp/ephyr",
+        help = "Path where video files will be stored",
+        long_help = "Here the video files that can be streamed to the output \
+                     will be downloaded."
+    )]
+    pub file_root: PathBuf,
 }
 
 impl Opts {

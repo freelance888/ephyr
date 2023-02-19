@@ -24,6 +24,9 @@ pub struct RestreamersPool {
     /// [FFmpeg]: https://ffmpeg.org
     ffmpeg_path: PathBuf,
 
+    /// Path to where local video files are downloaded to and played by ffmpeg
+    files_root: PathBuf,
+
     /// Pool of currently running [FFmpeg] re-streaming processes identified by
     /// an ID of the correspondent element in a [`State`].
     ///
@@ -43,10 +46,15 @@ impl RestreamersPool {
     /// Creates a new [`RestreamersPool`] out of the given parameters.
     #[inline]
     #[must_use]
-    pub fn new<P: Into<PathBuf>>(ffmpeg_path: P, state: State) -> Self {
+    pub fn new<P: Into<PathBuf>>(
+        ffmpeg_path: P,
+        state: State,
+        file_root: PathBuf,
+    ) -> Self {
         Self {
             ffmpeg_path: ffmpeg_path.into(),
             pool: HashMap::new(),
+            files_root: file_root,
             state,
         }
     }
@@ -55,14 +63,23 @@ impl RestreamersPool {
     /// according to the given renewed [`state::Restream`]s.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    pub fn apply(&mut self, restreams: &[state::Restream]) {
+    pub(crate) fn apply(&mut self, restreams: &[state::Restream]) {
         // The most often case is when one new FFmpeg process is added.
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 
         for r in restreams {
-            self.apply_input(&r.key, &r.input, &mut new_pool);
+            self.apply_playlist(r, &mut new_pool);
+            self.apply_input(
+                &r.key,
+                &r.input,
+                r.playlist.currently_playing_file.is_some(),
+                &mut new_pool,
+            );
 
-            if !r.input.enabled || !r.input.is_ready_to_serve() {
+            if !r.input.enabled
+                || (!r.input.is_ready_to_serve()
+                    && r.playlist.currently_playing_file.is_none())
+            {
                 continue;
             }
 
@@ -84,6 +101,25 @@ impl RestreamersPool {
         self.pool = new_pool;
     }
 
+    fn apply_playlist(
+        &mut self,
+        restream: &state::Restream,
+        new_pool: &mut HashMap<Uuid, Restreamer>,
+    ) {
+        if restream.playlist.currently_playing_file.is_some() {
+            let id = restream.playlist.id.into();
+            // TODO: should it be made in another way?
+            if let Some(new_kind) = RestreamerKind::from_playlist(
+                &restream.playlist,
+                &restream.key,
+                &restream.input.key,
+                &self.files_root,
+            ) {
+                self.apply_new_kind(id, new_kind, new_pool);
+            };
+        }
+    }
+
     /// Traverses the given [`state::Input`] filling the `new_pool` with
     /// required [FFmpeg] re-streaming processes. Tries to preserve already
     /// running [FFmpeg] processes in its `pool` as much as possible.
@@ -93,49 +129,31 @@ impl RestreamersPool {
         &mut self,
         key: &state::RestreamKey,
         input: &state::Input,
+        is_playing_playlist: bool,
         new_pool: &mut HashMap<Uuid, Restreamer>,
     ) {
         if let Some(state::InputSrc::Failover(s)) = &input.src {
             for i in &s.inputs {
-                self.apply_input(key, i, new_pool);
+                self.apply_input(key, i, false, new_pool);
             }
         }
+
         for endpoint in &input.endpoints {
-            let _ = self.apply_input_endpoint(key, input, endpoint, new_pool);
+            let id = endpoint.id.into();
+
+            let kind = RestreamerKind::from_input(
+                input,
+                endpoint,
+                key,
+                is_playing_playlist,
+                &self.state.files.lock_ref(),
+                &self.files_root,
+            );
+
+            if let Some(new_kind) = kind {
+                self.apply_new_kind(id, new_kind, new_pool);
+            }
         }
-    }
-
-    /// Inspects the given [`state::InputEndpoint`] filling the `new_pool` with
-    /// a required [FFmpeg] re-streaming process. Tries to preserve already
-    /// running [FFmpeg] processes in its `pool` as much as possible.
-    ///
-    /// [FFmpeg]: https://ffmpeg.org
-    fn apply_input_endpoint(
-        &mut self,
-        key: &state::RestreamKey,
-        input: &state::Input,
-        endpoint: &state::InputEndpoint,
-        new_pool: &mut HashMap<Uuid, Restreamer>,
-    ) -> Option<()> {
-        let id = endpoint.id.into();
-
-        let new_kind = RestreamerKind::from_input(input, endpoint, key)?;
-
-        let process = self
-            .pool
-            .remove(&id)
-            .and_then(|mut p| (!p.kind.needs_restart(&new_kind)).then_some(p))
-            .unwrap_or_else(|| {
-                Restreamer::run(
-                    self.ffmpeg_path.clone(),
-                    new_kind,
-                    self.state.clone(),
-                )
-            });
-
-        let old_process = new_pool.insert(id, process);
-        drop(old_process);
-        Some(())
     }
 
     /// Inspects the given [`state::Output`] filling the `new_pool` with a
@@ -161,6 +179,20 @@ impl RestreamersPool {
             self.pool.get(&id).map(|p| &p.kind),
         )?;
 
+        self.apply_new_kind(id, new_kind, new_pool);
+        Some(())
+    }
+
+    /// Tries to remove process with provided `id` from current process pool
+    /// and checks if it needs to be restarted bases on `new_kind`. If not
+    /// the process is inserted to `new_pool`, otherwise a new process is
+    /// created with new settings.
+    fn apply_new_kind(
+        &mut self,
+        id: Uuid,
+        new_kind: RestreamerKind,
+        new_pool: &mut HashMap<Uuid, Restreamer>,
+    ) {
         let process = self
             .pool
             .remove(&id)
@@ -175,6 +207,5 @@ impl RestreamersPool {
 
         let old_process = new_pool.insert(id, process);
         drop(old_process);
-        Some(())
     }
 }

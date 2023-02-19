@@ -1425,6 +1425,7 @@ dependencies = [
  "static-files",
  "structopt",
  "systemstat",
+ "tap",
  "tokio",
  "tokio-stream",
  "tsclientlib",

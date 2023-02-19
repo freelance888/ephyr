@@ -1,5 +1,6 @@
 {"data":{
   "__schema": {
+    "description": null,
     "queryType": {
       "name": "Query"
     },
@@ -10,6 +11,7 @@
         "kind": "SCALAR",
         "name": "Boolean",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -19,7 +21,8 @@
       {
         "kind": "OBJECT",
         "name": "ClientStatistics",
-        "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)",
+        "description": "Information about status of all [`Input`]s and [`Output`]s and\nserver health info (CPU usage, memory usage, etc.)\n\n[`Input`]: crate::state::Input\n[`Output`]: crate::state::Output",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "clientTitle",
@@ -46,7 +49,7 @@
               "name": null,
               "ofType": {
                 "kind": "SCALAR",
-                "name": "DateTimeUtc",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -127,6 +130,7 @@
         "kind": "OBJECT",
         "name": "__InputValue",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -194,6 +198,7 @@
         "kind": "SCALAR",
         "name": "String",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -204,6 +209,7 @@
         "kind": "OBJECT",
         "name": "__Field",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -310,11 +316,12 @@
       {
         "kind": "OBJECT",
         "name": "StatusStatistics",
-        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]",
+        "description": "Statistics of statuses in [`Input`]s or [`Output`]s of [`Client`]\n\n[`Input`]: crate::state::Input\n[`Output`]: crate::state::Output",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "status",
-            "description": "Status of [`Input`]s or [`Output`]",
+            "description": "Status of [`Input`]s or [`Output`]\n\n[`Input`]: crate::state::Input\n[`Output`]: crate::state::Output",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -354,6 +361,7 @@
         "kind": "ENUM",
         "name": "__TypeKind",
         "description": "GraphQL type kind\n\nThe GraphQL specification defines a number of type kinds - the meta type of a type.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -410,19 +418,10 @@
         "possibleTypes": null
       },
       {
-        "kind": "SCALAR",
-        "name": "DateTimeUtc",
-        "description": "DateTime",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
         "kind": "OBJECT",
         "name": "__Type",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -438,6 +437,18 @@
           },
           {
             "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "specifiedByUrl",
             "description": null,
             "args": [],
             "type": {
@@ -608,6 +619,7 @@
         "kind": "SCALAR",
         "name": "Float",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -618,6 +630,7 @@
         "kind": "OBJECT",
         "name": "ServerInfo",
         "description": "Server's info",
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "cpuUsage",
@@ -643,10 +656,9 @@
             "isDeprecated": false,
             "deprecationReason": null
           },
-
           {
             "name": "ramTotal",
-            "description": "Total RAM installed on current machine, bytes",
+            "description": "Total RAM installed on current machine",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -658,7 +670,7 @@
           },
           {
             "name": "ramFree",
-            "description": "Free (available) RAM, bytes",
+            "description": "Free (available) RAM",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -670,7 +682,7 @@
           },
           {
             "name": "txDelta",
-            "description": "Bytes, transfered last second",
+            "description": "Network traffic, transferred last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -682,7 +694,7 @@
           },
           {
             "name": "rxDelta",
-            "description": "Bytes, received last second",
+            "description": "Network traffic, received last second",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -714,6 +726,7 @@
         "kind": "ENUM",
         "name": "Status",
         "description": "Status indicating availability of an `Input`, `Output`, or a `Mixin`.",
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -749,7 +762,20 @@
         "kind": "OBJECT",
         "name": "__Schema",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
+          {
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
           {
             "name": "types",
             "description": null,
@@ -848,6 +874,7 @@
         "kind": "SCALAR",
         "name": "Int",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -858,6 +885,7 @@
         "kind": "OBJECT",
         "name": "Query",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "statistics",
@@ -885,6 +913,7 @@
         "kind": "OBJECT",
         "name": "__EnumValue",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -952,6 +981,7 @@
         "kind": "ENUM",
         "name": "__DirectiveLocation",
         "description": null,
+        "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -981,7 +1011,25 @@
             "deprecationReason": null
           },
           {
+            "name": "SCALAR",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "FRAGMENT_DEFINITION",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "FIELD_DEFINITION",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "VARIABLE_DEFINITION",
             "description": null,
             "isDeprecated": false,
             "deprecationReason": null
@@ -997,6 +1045,12 @@
             "description": null,
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "ENUM_VALUE",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "possibleTypes": null
@@ -1005,6 +1059,7 @@
         "kind": "OBJECT",
         "name": "__Directive",
         "description": null,
+        "specifiedByUrl": null,
         "fields": [
           {
             "name": "name",
@@ -1053,6 +1108,22 @@
                     "ofType": null
                   }
                 }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "isRepeatable",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
               }
             },
             "isDeprecated": false,
@@ -1141,6 +1212,7 @@
       {
         "name": "include",
         "description": null,
+        "isRepeatable": false,
         "locations": [
           "FIELD",
           "FRAGMENT_SPREAD",
@@ -1164,8 +1236,58 @@
         ]
       },
       {
+        "name": "deprecated",
+        "description": null,
+        "isRepeatable": false,
+        "locations": [
+          "FIELD_DEFINITION",
+          "ENUM_VALUE"
+        ],
+        "args": [
+          {
+            "name": "reason",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          }
+        ]
+      },
+      {
+        "name": "specifiedBy",
+        "description": null,
+        "isRepeatable": false,
+        "locations": [
+          "SCALAR"
+        ],
+        "args": [
+          {
+            "name": "url",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          }
+        ]
+      },
+      {
         "name": "skip",
         "description": null,
+        "isRepeatable": false,
         "locations": [
           "FIELD",
           "FRAGMENT_SPREAD",
