@@ -36,7 +36,7 @@
   export let files;
 
   let searchInInputs = true;
-  let searchInOutputs = true;
+  let searchInOutputs = false;
 
   const searchQueryKey = 'search';
   let params = new URLSearchParams(location.search);
@@ -91,11 +91,25 @@
     if (searchText) {
       const queryParams = new URLSearchParams();
       queryParams.set(searchQueryKey, encodeURIComponent(searchText));
+      appendFilterByParams(queryParams);
       history.replaceState(null, null, '?' + queryParams.toString());
     } else {
       history.replaceState(null, null, '/');
     }
   };
+
+  const appendFilterByParams = (queryParams) => {
+    const searchInParam = searchInInputs && 'input';
+    const searchOutParam = searchInOutputs && 'output';
+    const filterBy = (searchInParam || searchOutParam) && 'filter_by';
+    const params = [];
+    if (filterBy) {
+        searchInParam && params.push(encodeURIComponent(searchInParam));
+        searchOutParam && params.push(encodeURIComponent(searchOutParam));
+        queryParams.append(filterBy, params.join(','));
+      } 
+  }
+
 
   const getFilteredRestreams = (
     substring,
