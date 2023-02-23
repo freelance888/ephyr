@@ -10,6 +10,7 @@
   import cloneDeep from 'lodash/cloneDeep';
   import isEqual from 'lodash/isEqual';
   import RestreamBackup from './RestreamBackup.svelte';
+  import Alert from '../components/common/Alert.svelte';
 
   const info = subscribe(Info, { errorPolicy: 'all' });
   const setRestreamMutation = mutation(SetRestream);
@@ -20,6 +21,8 @@
 
   let previous = cloneDeep(restream);
   let restreamStore = writable(restream);
+
+  let alerts = [];
 
   $: hasApiKey = $info.data?.info?.googleApiKey;
 
@@ -146,6 +149,16 @@
       return v;
     });
   };
+
+  const showAlert = () => {
+    const text = 'Please specify Google Api Key in `Settings` before setting File ID';
+    const id = Math.floor(Math.random() * 999);
+    alerts = [...alerts, {text, id}]
+  }
+
+  const removeAlert = (event) => {
+		alerts = alerts.filter( alert => alert.id !== event.detail.id )
+	}
 </script>
 
 <template>
@@ -242,26 +255,34 @@
         </div>
 
         <div class="uk-section uk-section-xsmall">
-          <div class="layout-no-wrap">
-            <input
-              class="uk-input"
+          <div class="uk-relative">
+            <label on:click={showAlert} class="uk-flex uk-flex-between backup-item">
+              <span class="label-file-id">file backup</span>
+              <input
+              class="uk-input file-id"
               type="text"
               bind:value={$restreamStore.fileId}
               disabled={!hasApiKey}
               placeholder="Google File ID"
-            />
+              />
+            </label>
             <button
               type="button"
-              class="uk-display-inline-block clear-file-id"
+              class="clear-file-id uk-absolute"
               uk-close
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
-          <div class="uk-alert" class:uk-alert-danger={!hasApiKey}>
-            {hasApiKey
-              ? 'Google file id for file backup.'
-              : 'Please specify Google Api Key in `Settings` before setting File ID'}
-          </div>
+          {#if hasApiKey}
+            <div class="uk-alert">
+                Google file id for file backup.
+            </div>
+          {:else}
+            {#each alerts as message (message.id)}
+              <Alert {message} delay=3000 on:change={removeAlert}/>
+            {/each}
+          {/if}
+         
           <input
             class="uk-input uk-width-1-4 files-limit"
             type="number"
@@ -324,10 +345,25 @@
     margin-top: 5px;
 
   .clear-file-id
-    position: relative
-    left: -26px;
+    top: 50%
+    transform: translateY(-50%)
+    right: 8px
 
-  .layout-no-wrap
-    white-space: nowrap
+  .uk-absolute
+    position: absolute
+  
+  .uk-relative
+    position: relative
+
+  .label-file-id
+    margin-left: auto
+    align-self: center
+    font-size: 0.875em
+
+  .file-id
+    width: 59%
+
+  .backup-item
+    column-gap: 20px
 
 </style>
