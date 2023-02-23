@@ -94,7 +94,12 @@
     }
 
     if (restream.fileId) {
-      variables.file_id = restream.fileId;
+      const fileId = fetchFileId(restream.fileId);
+      if (fileId) {
+        variables.file_id = fileId;
+      } else {
+        showError('Google File Id is incorrect');
+      }
     }
 
     if (restream.maxFilesInPlaylist) {
@@ -146,6 +151,16 @@
       return v;
     });
   };
+
+  const fetchFileId = (data) => {
+    let result = null;
+    const trimmed = data.match(/(?<fileId>(?<=file).+)/).groups;
+    if (trimmed.fileId) {
+      result = trimmed.fileId.split('=')[1];
+    }
+    return result;
+  }
+
 </script>
 
 <template>

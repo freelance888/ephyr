@@ -35,13 +35,23 @@
   let googleDriveFolderId = '';
 
   async function loadPlaylist(folderId) {
-    const variables = { id: restreamId, folder_id: folderId };
-    try {
-      await getPlaylistFromDrive({ variables });
-      googleDriveFolderId = '';
-    } catch (e) {
-      showError(e.message);
+    folderId = fetchFolderId(folderId);
+    if (folderId) {
+      const variables = { id: restreamId, folder_id: trimmed.folderId };
+      try {
+        await getPlaylistFromDrive({ variables });
+        googleDriveFolderId = '';
+      } catch (e) {
+        showError(e.message);
+      }
+    } else {
+      showError('Google File Id is incorrect');
     }
+  }
+
+  function fetchFolderId(data) {
+    const trimmed = data.match(/(?<folderId>(?<=folders\/)[\S]+)/).groups;
+    return trimmed.folderId;
   }
 
   async function deleteFile(id) {
