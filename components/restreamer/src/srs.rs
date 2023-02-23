@@ -122,7 +122,11 @@ impl Server {
                     let mut process = cmd.spawn().map_err(|e| {
                         log::error!("Cannot start SRS server: {e}");
                     })?;
-                    process.capture_logs(parse_srs_log_line);
+                    process.capture_logs(
+                        "srs".to_string(),
+                        parse_srs_log_line,
+                        None,
+                    );
 
                     let out =
                         process.wait_with_output().await.map_err(|e| {

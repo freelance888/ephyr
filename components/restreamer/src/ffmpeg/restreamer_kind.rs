@@ -386,7 +386,7 @@ impl RestreamerKind {
             m.start_fed_mixins_fifo(&kill_rx);
         }
 
-        Self::run_ffmpeg_(cmd, kill_rx).await
+        self.run_ffmpeg_(cmd, kill_rx).await
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
@@ -401,6 +401,7 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     async fn run_ffmpeg_(
+        &self,
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
     ) -> io::Result<()> {
@@ -428,7 +429,11 @@ impl RestreamerKind {
                 .expect("Failed to kill process");
         });
 
-        process.capture_logs(parse_ffmpeg_log_line);
+        process.capture_logs(
+            "ffmpeg".to_string(),
+            parse_ffmpeg_log_line,
+            Some(self.id::<Uuid>().to_string()),
+        );
         let out = process.wait_with_output().await?;
         kill_task.abort();
 

@@ -27,7 +27,6 @@ pub use tracing_futures::Instrument;
 pub use tracing_log::log;
 
 use tracing_log::LogTracer;
-use tracing_subscriber::FmtSubscriber;
 
 /// Initializes global logger with the given verbosity `level` ([`Info`] by
 /// default, if [`None`]), returning its guard that should be held as long as
@@ -44,7 +43,11 @@ pub fn init(level: Option<Level>) {
     };
     let level = level.unwrap_or(Level::INFO);
 
-    let subscriber = FmtSubscriber::builder().with_max_level(level).finish();
+    let subscriber = tracing_subscriber::fmt()
+        .with_max_level(level)
+        .with_thread_names(true)
+        .compact()
+        .finish();
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("setting tracing subscriber failed");
