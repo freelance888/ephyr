@@ -1,26 +1,25 @@
 <script lang="js">
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { fade } from 'svelte/transition'
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
 
-    export let message;
-    export let delay;
+  export let message;
+  export let delay;
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
 
-    const removeAlert = (id) => {
-        dispatch('change', {
-            id
-        })
-    }
+  const removeAlert = (id) => {
+    dispatch('change', {
+      id,
+    });
+  };
 
-    onMount(() => {
-        setTimeout(() => removeAlert(message.id), delay);
-    })
-
+  onMount(() => {
+    setTimeout(() => removeAlert(message.id), delay);
+  });
 </script>
 
 <div class="uk-alert-danger" out:fade>
-    {message.text}
+  {message.text}
 </div>
 
 <style lang="stylus">

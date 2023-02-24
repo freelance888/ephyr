@@ -151,14 +151,15 @@
   };
 
   const showAlert = () => {
-    const text = 'Please specify Google Api Key in `Settings` before setting File ID';
+    const text =
+      'Please specify Google Api Key in `Settings` before setting File ID';
     const id = Math.floor(Math.random() * 999);
-    alerts = [...alerts, {text, id}]
-  }
+    alerts = [...alerts, { text, id }];
+  };
 
   const removeAlert = (event) => {
-		alerts = alerts.filter( alert => alert.id !== event.detail.id )
-	}
+    alerts = alerts.filter((alert) => alert.id !== event.detail.id);
+  };
 </script>
 
 <template>
@@ -256,14 +257,17 @@
 
         <div class="uk-section uk-section-xsmall">
           <div class="uk-relative">
-            <label on:click={showAlert} class="uk-flex uk-flex-between backup-item">
+            <label
+              on:click={showAlert}
+              class="uk-flex uk-flex-between backup-item"
+            >
               <span class="label-file-id">file backup</span>
               <input
-              class="uk-input file-id"
-              type="text"
-              bind:value={$restreamStore.fileId}
-              disabled={!hasApiKey}
-              placeholder="Google File ID"
+                class="uk-input file-id"
+                type="text"
+                bind:value={$restreamStore.fileId}
+                disabled={!hasApiKey}
+                placeholder="Google File ID"
               />
             </label>
             <button
@@ -274,15 +278,13 @@
             />
           </div>
           {#if hasApiKey}
-            <div class="uk-alert">
-                Google file id for file backup.
-            </div>
+            <div class="uk-alert">Google file id for file backup.</div>
           {:else}
             {#each alerts as message (message.id)}
-              <Alert {message} delay=3000 on:change={removeAlert}/>
+              <Alert {message} delay="3000" on:change={removeAlert} />
             {/each}
           {/if}
-         
+
           <input
             class="uk-input uk-width-1-4 files-limit"
             type="number"
