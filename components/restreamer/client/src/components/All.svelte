@@ -104,12 +104,11 @@
     const filterBy = (searchInParam || searchOutParam) && 'filter_by';
     const params = [];
     if (filterBy) {
-        searchInParam && params.push(encodeURIComponent(searchInParam));
-        searchOutParam && params.push(encodeURIComponent(searchOutParam));
-        queryParams.append(filterBy, params.join(','));
-      } 
-  }
-
+      searchInParam && params.push(encodeURIComponent(searchInParam));
+      searchOutParam && params.push(encodeURIComponent(searchOutParam));
+      queryParams.append(filterBy, params.join(','));
+    }
+  };
 
   const getFilteredRestreams = (
     substring,
