@@ -98,7 +98,7 @@
       if (fileId) {
         variables.file_id = fileId;
       } else {
-        showError('Google File Id is incorrect');
+        showError(`Google File: ${restream.fileId} Id is incorrect`);
       }
     }
 
@@ -159,8 +159,7 @@
       result = trimmed.fileId.split('=')[1];
     }
     return result;
-  }
-
+  };
 </script>
 
 <template>

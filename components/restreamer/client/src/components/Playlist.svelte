@@ -37,7 +37,7 @@
   async function loadPlaylist(folderId) {
     folderId = fetchFolderId(folderId);
     if (folderId) {
-      const variables = { id: restreamId, folder_id: trimmed.folderId };
+      const variables = { id: restreamId, folder_id: folderId };
       try {
         await getPlaylistFromDrive({ variables });
         googleDriveFolderId = '';
@@ -45,7 +45,7 @@
         showError(e.message);
       }
     } else {
-      showError('Google File Id is incorrect');
+      showError(`Google File Id: ${folderId} is incorrect`);
     }
   }
 
