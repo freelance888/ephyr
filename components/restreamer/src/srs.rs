@@ -56,9 +56,16 @@ fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
         .map(|t| t.trim_start_matches([' ', '[']))
         .collect();
     // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
-    ParsedMsg {
-        message: parsed[0],
-        level: parsed[3],
+    if parsed.len() == 5 {
+        ParsedMsg {
+            message: parsed[0],
+            level: parsed[3],
+        }
+    } else {
+        ParsedMsg {
+            message: line,
+            level: "error",
+        }
     }
 }
 
