@@ -14,7 +14,11 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, tracing, ChildCapture, ParsedMsg};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument, Span},
+    ChildCapture, ParsedMsg,
+};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{fs, process::Command};
@@ -77,6 +81,7 @@ impl Server {
     /// If [SRS] configuration file fails to be created.
     ///
     /// [SRS]: https://github.com/ossrs/srs
+    #[instrument(err, name = "srs", skip_all)]
     pub async fn try_new<P: AsRef<Path>>(
         workdir: P,
         cfg: &Config,
@@ -122,44 +127,38 @@ impl Server {
             .arg("-c")
             .arg(&conf_path);
 
-        let (spawner, abort_handle) = future::abortable(async move {
-            loop {
-                let cmd = &mut cmd;
-                let _ = AssertUnwindSafe(async move {
-                    let mut process = cmd.spawn().map_err(|e| {
-                        log::error!("Cannot start SRS server: {e}");
-                    })?;
-                    process.capture_logs(
-                        "srs".to_string(),
-                        parse_srs_log_line,
-                        None,
-                    );
-
-                    let out =
-                        process.wait_with_output().await.map_err(|e| {
-                            log::error!("Failed to observe SRS server: {e}");
+        let (spawner, abort_handle) = future::abortable(
+            async move {
+                loop {
+                    let cmd = &mut cmd;
+                    let _ = AssertUnwindSafe(async move {
+                        let mut process = cmd.spawn().map_err(|e| {
+                            tracing::error!("Cannot start SRS server: {e}");
                         })?;
-                    log::info!(
-                        "{}",
-                        String::from_utf8_lossy(&out.stdout).to_string()
-                    );
-                    log::error!(
-                        "SRS server stopped with exit code: {}",
-                        out.status,
-                    );
-                    Ok(())
-                })
-                .unwrap_or_else(|_: ()| ())
-                .catch_unwind()
-                .await
-                .map_err(|p| {
-                    log::error!(
-                        "Panicked while spawning/observing SRS server: {}",
-                        display_panic(&p),
-                    );
-                });
+                        process
+                            .capture_logs(Span::current(), parse_srs_log_line);
+
+                        let _ =
+                            process.wait_with_output().await.map_err(|e| {
+                                tracing::error!(
+                                    "Failed to observe SRS server: {e}"
+                                );
+                            })?;
+                        Ok(())
+                    })
+                    .unwrap_or_else(|_: ()| ())
+                    .catch_unwind()
+                    .await
+                    .map_err(|p| {
+                        tracing::error!(
+                            "Panicked while spawning/observing SRS server: {}",
+                            display_panic(&p),
+                        );
+                    });
+                }
             }
-        });
+            .in_current_span(),
+        );
 
         let srv = Self {
             conf_path,
@@ -183,6 +182,7 @@ impl Server {
     /// If [SRS] configuration file fails to be created.
     ///
     /// [SRS]: https://github.com/ossrs/srs
+    #[instrument(err, skip_all, fields(group = "srs"))]
     pub async fn refresh(&self, cfg: &Config) -> anyhow::Result<()> {
         // SRS server reloads automatically on its conf file changes.
         fs::write(
@@ -254,15 +254,16 @@ impl Drop for ClientId {
     /// no more copies left.
     ///
     /// [SRS]: https://github.com/ossrs/srs
+    #[instrument(skip_all, fields(group = "srs"))]
     fn drop(&mut self) {
         if let Some(client_id) = Arc::get_mut(&mut self.0).cloned() {
             drop(tokio::spawn(
                 api::srs::Client::kickoff_client(client_id.clone()).map_err(
                     move |e| {
-                        log::warn!(
-                            "Failed to kickoff client {} from SRS: {}",
-                            client_id,
-                            e,
+                        tracing::error!(
+                            client=client_id,
+                            e=%e,
+                            "Failed to kickoff client",
                         );
                     },
                 ),

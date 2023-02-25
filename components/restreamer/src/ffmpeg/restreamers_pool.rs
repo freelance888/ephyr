@@ -4,7 +4,7 @@
 
 use std::{collections::HashMap, path::PathBuf};
 
-use ephyr_log::log;
+use ephyr_log::tracing;
 use url::Url;
 use uuid::Uuid;
 
@@ -12,6 +12,7 @@ use crate::{
     ffmpeg::{restreamer::Restreamer, restreamer_kind::RestreamerKind},
     state::{self, State},
 };
+use ephyr_log::tracing::{instrument, Span};
 use std::result::Result::Err;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
@@ -40,6 +41,9 @@ pub struct RestreamersPool {
     /// [FFmpeg]: https://ffmpeg.org
     /// [`State`]: crate::state::State
     state: State,
+
+    /// Handle tracing
+    span: Span,
 }
 
 impl RestreamersPool {
@@ -56,6 +60,7 @@ impl RestreamersPool {
             pool: HashMap::new(),
             files_root: file_root,
             state,
+            span: tracing::info_span!("restreamers_pool"),
         }
     }
 
@@ -63,6 +68,7 @@ impl RestreamersPool {
     /// according to the given renewed [`state::Restream`]s.
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    #[instrument(skip_all, fields(group = "restreamers_pool"))]
     pub(crate) fn apply(&mut self, restreams: &[state::Restream]) {
         // The most often case is when one new FFmpeg process is added.
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
@@ -86,7 +92,7 @@ impl RestreamersPool {
             let input_url = match r.main_input_rtmp_endpoint_url() {
                 Ok(input_url) => input_url,
                 Err(e) => {
-                    log::error!(
+                    tracing::error!(
                         "Failed to get main input RTMP endpoint: {}",
                         e
                     );
@@ -187,12 +193,15 @@ impl RestreamersPool {
     /// and checks if it needs to be restarted bases on `new_kind`. If not
     /// the process is inserted to `new_pool`, otherwise a new process is
     /// created with new settings.
+    #[instrument(parent = &self.span, skip(self))]
     fn apply_new_kind(
         &mut self,
         id: Uuid,
         new_kind: RestreamerKind,
         new_pool: &mut HashMap<Uuid, Restreamer>,
     ) {
+        let restream_span =
+            tracing::info_span!(parent: &self.span, "restreamer", actor = %id);
         let process = self
             .pool
             .remove(&id)
@@ -202,6 +211,7 @@ impl RestreamersPool {
                     self.ffmpeg_path.clone(),
                     new_kind,
                     self.state.clone(),
+                    restream_span,
                 )
             });
 

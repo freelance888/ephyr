@@ -2,6 +2,7 @@ use tokio::{
     io::{AsyncBufReadExt, BufReader},
     process::Child,
 };
+use tracing::{instrument, Instrument, Span};
 
 const TARGET: &str = "from_proc";
 
@@ -18,41 +19,34 @@ pub struct ParsedMsg<'a> {
 pub trait ChildCapture {
     /// Redirect logs from stdout and stderr of [Child] process
     /// to `tracing`. Where `parser` is user defined function to parse log line.
-    fn capture_logs<F>(
-        &mut self,
-        group: String,
-        parser: F,
-        uid: Option<String>,
-    ) where
+    fn capture_logs<F>(&mut self, span: Span, parser: F)
+    where
         Self: Sized,
         F: Fn(&str) -> ParsedMsg<'_> + Send + 'static;
 }
 
 /// Pass [ParsedMsg.message] to [tracing] based on [ParsedMsg.level].
-fn capture_line(
-    pid: Option<u32>,
-    group: &String,
-    parsed_msg: ParsedMsg,
-    actor: &Option<String>,
-) {
+#[instrument(parent = span, target="from_proc", skip_all)]
+fn capture_line(pid: Option<u32>, span: &Span, parsed_msg: ParsedMsg) {
     let ParsedMsg { level, message } = parsed_msg;
     // TODO: convert to HashMap when tracing `valuable` stabilizes.
     match level.to_lowercase().as_str() {
         "error" => {
-            tracing::error!(target: TARGET, message, pid, group, actor);
+            tracing::error!(target: TARGET, parent: span, message, pid);
         }
         "info" => {
-            tracing::info!(target: TARGET, message, pid, group, actor);
+            tracing::info!(target: TARGET, parent: span, message, pid);
         }
         "debug" | "verbose" => {
-            tracing::debug!(target: TARGET, message, pid, group, actor);
+            tracing::debug!(target: TARGET, parent: span, message, pid);
         }
-        _ => tracing::trace!(target: TARGET, message, pid, group, actor),
+        _ => tracing::trace!(target: TARGET, parent: span, message, pid),
     };
 }
 
 impl ChildCapture for Child {
-    fn capture_logs<F>(&mut self, group: String, parser: F, uid: Option<String>)
+    #[instrument(parent=&span, skip_all)]
+    fn capture_logs<F>(&mut self, span: Span, parser: F)
     where
         F: Fn(&str) -> ParsedMsg<'_> + Send + 'static,
     {
@@ -61,21 +55,24 @@ impl ChildCapture for Child {
 
         let process_id = self.id();
 
-        drop(tokio::spawn(async move {
-            let mut out_lines = out_buff.lines();
-            let mut err_lines = err_buff.lines();
-            loop {
-                if let Some(out_line) =
-                    out_lines.next_line().await.ok().flatten()
-                {
-                    capture_line(process_id, &group, parser(&out_line), &uid);
-                }
-                if let Some(err_line) =
-                    err_lines.next_line().await.ok().flatten()
-                {
-                    capture_line(process_id, &group, parser(&err_line), &uid);
+        drop(tokio::spawn(
+            async move {
+                let mut out_lines = out_buff.lines();
+                let mut err_lines = err_buff.lines();
+                loop {
+                    if let Some(out_line) =
+                        out_lines.next_line().await.ok().flatten()
+                    {
+                        capture_line(process_id, &span, parser(&out_line));
+                    }
+                    if let Some(err_line) =
+                        err_lines.next_line().await.ok().flatten()
+                    {
+                        capture_line(process_id, &span, parser(&err_line));
+                    }
                 }
             }
-        }));
+            .in_current_span(),
+        ));
     }
 }

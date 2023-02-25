@@ -4,7 +4,11 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::{tracing, ChildCapture, ParsedMsg};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument, Span},
+    ChildCapture, ParsedMsg,
+};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -230,7 +234,6 @@ impl RestreamerKind {
                 .map_err(|_| {
                     tracing::error!(
                         %file.file_id,
-                        name = "ffmpeg",
                         "Failed to parse `from_url` from `file_id`"
                     );
                 }) {
@@ -244,7 +247,7 @@ impl RestreamerKind {
             "rtmp://127.0.0.1:1935/{restream_key}/{input_key}",
         ))
         .map_err(|e| {
-            tracing::error!(%e, name = "ffmpeg", "Failed to parse `to_url`");
+            tracing::error!(%e, "Failed to parse `to_url`");
         });
 
         match (from_url, to_url) {
@@ -366,13 +369,6 @@ impl RestreamerKind {
             Self::Mixing(m) => m.setup_ffmpeg(cmd, state).await?,
             Self::File(m) => m.setup_ffmpeg(cmd, false).await?,
         };
-        tracing::debug!(
-            ?cmd,
-            name = "ffmpeg",
-            actor = self.id::<Uuid>().to_string(),
-            "FFmpeg CMD"
-        );
-
         Ok(())
     }
 
@@ -392,16 +388,18 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
+    #[instrument(parent = &span, skip_all, fields(?cmd))]
     pub(crate) async fn run_ffmpeg(
         &self,
         cmd: Command,
         kill_rx: watch::Receiver<RestreamerStatus>,
+        span: Span,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.start_fed_mixins_fifo(&kill_rx);
+            m.start_fed_mixins_fifo(&kill_rx, span.clone());
         }
 
-        self.run_ffmpeg_(cmd, kill_rx).await
+        Self::run_ffmpeg_(cmd, kill_rx, span).await
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
@@ -415,10 +413,11 @@ impl RestreamerKind {
     /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    #[instrument(parent = &span, skip_all)]
     async fn run_ffmpeg_(
-        &self,
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
+        span: Span,
     ) -> io::Result<()> {
         let mut process = cmd.spawn()?;
 
@@ -430,29 +429,24 @@ impl RestreamerKind {
             .expect("Failed to retrieve Process ID")
             .try_into()
             .expect("Failed to convert u32 to i32");
-        let restreamer_id = self.id::<Uuid>().to_string();
-        // Task that sends SIGTERM if async stop of ffmpeg was invoked
-        let kill_task = tokio::spawn(async move {
-            let _ = kill_rx.changed().await;
-            tracing::debug!(
-                name = "ffmpeg",
-                actor = restreamer_id,
-                "Signal for FFmpeg received"
-            );
-            // It is necessary to send the signal two times and wait after
-            // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                .expect("Failed to kill process");
-            tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                .expect("Failed to kill process");
-        });
 
-        process.capture_logs(
-            "ffmpeg".to_string(),
-            parse_ffmpeg_log_line,
-            Some(self.id::<Uuid>().to_string()),
+        // Task that sends SIGTERM if async stop of ffmpeg was invoked
+        let kill_task = tokio::spawn(
+            async move {
+                let _ = kill_rx.changed().await;
+                tracing::debug!("Signal for FFmpeg received");
+                // It is necessary to send the signal two times and wait after
+                // sending the first one to correctly close all ffmpeg processes
+                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                    .expect("Failed to kill process");
+                tokio::time::sleep(Duration::from_millis(1)).await;
+                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                    .expect("Failed to kill process");
+            }
+            .in_current_span(),
         );
+
+        process.capture_logs(span, parse_ffmpeg_log_line);
         let out = process.wait_with_output().await?;
         kill_task.abort();
 
@@ -467,8 +461,6 @@ impl RestreamerKind {
             tracing::debug!(
                 status_code,
                 signal_code,
-                name = "ffmpeg",
-                actor = self.id::<Uuid>().to_string(),
                 "FFmpeg re-streamer successfully stopped"
             );
             Ok(())

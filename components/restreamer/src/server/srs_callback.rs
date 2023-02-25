@@ -10,7 +10,10 @@ use futures::{FutureExt, TryFutureExt};
 use tap::Tap;
 use url::Url;
 
-use ephyr_log::{tracing, tracing::instrument};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument, Span},
+};
 
 use crate::{
     api::srs::callback,
@@ -30,6 +33,9 @@ use crate::{
 ///
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
+#[instrument(name = "srs_cb", skip_all,
+    fields(%cfg.callback_http_port, %cfg.callback_http_ip)
+)]
 pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
     Ok(HttpServer::new(move || {
         App::new()
@@ -38,8 +44,9 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .service(on_callback)
     })
     .bind((cfg.callback_http_ip, cfg.callback_http_port))
-    .map_err(|e| tracing::error!(%e, %cfg.callback_http_port, "Failed to bind callback HTTP server"))?
+    .map_err(|e| tracing::error!(%e, "Failed to bind callback HTTP server"))?
     .run()
+    .in_current_span()
     .await
     .map_err(|e| {
         tracing::error!(%e, "Failed to run callback HTTP server");
@@ -56,17 +63,24 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[allow(clippy::unused_async)]
 #[post("/")]
+#[instrument(name = "srs_cb", skip_all,
+    fields(
+            action=%req.action,
+            client=%req.ip,
+            input=&req.app_stream())
+)]
 async fn on_callback(
     req: web::Json<callback::Request>,
     state: Data<State>,
 ) -> Result<&'static str, Error> {
+    let span = Span::current();
     match req.action {
-        callback::Event::OnConnect => on_connect(&req, &state),
-        callback::Event::OnPublish => on_start(&req, &state, true),
-        callback::Event::OnUnpublish => on_stop(&req, &state, true),
-        callback::Event::OnPlay => on_start(&req, &state, false),
-        callback::Event::OnStop => on_stop(&req, &state, false),
-        callback::Event::OnHls => on_hls(&req, &state),
+        callback::Event::OnConnect => on_connect(&req, &state, &span),
+        callback::Event::OnPublish => on_start(&req, &state, true, &span),
+        callback::Event::OnUnpublish => on_stop(&req, &state, true, &span),
+        callback::Event::OnPlay => on_start(&req, &state, false, &span),
+        callback::Event::OnStop => on_stop(&req, &state, false, &span),
+        callback::Event::OnHls => on_hls(&req, &state, &span),
     }
     .map(|_| "0")
 }
@@ -81,12 +95,12 @@ async fn on_callback(
 /// If [`callback::Request::app`] matches no existing [`state::Restream`].
 ///
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, skip_all, fields(
-        action = %req.action,
-        client = %req.ip,
-        stream = &req.app_stream(),
-        group = "srs"))]
-fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
+#[instrument(err, parent=span, skip_all)]
+fn on_connect(
+    req: &callback::Request,
+    state: &State,
+    span: &Span,
+) -> Result<(), Error> {
     state
         .restreams
         .get_cloned()
@@ -119,15 +133,12 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
 /// [`state::Restream`]: crate::state::Restream
 ///
 /// [SRS]: https://github.com/ossrs/srs
-#[instrument(err, skip_all, fields(
-        action = %req.action,
-        client = %req.ip,
-        stream = &req.app_stream(),
-        group = "srs"))]
+#[instrument(err, parent=span, skip_all)]
 fn on_start(
     req: &callback::Request,
     state: &State,
     publishing: bool,
+    span: &Span,
 ) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
@@ -193,7 +204,7 @@ fn on_start(
         );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
-            update_stream_info(endpoint.id, url.clone(), state.clone());
+            update_stream_info(endpoint.id, url, state.clone(), span);
         }
         tracing::info!(actor = %endpoint.id, "Publishing started");
     } else {
@@ -221,15 +232,12 @@ fn on_start(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, skip_all, fields(
-        action = %req.action,
-        client = %req.ip,
-        stream = &req.app_stream(),
-        group = "srs"))]
+#[instrument(err, parent=span, skip_all)]
 fn on_stop(
     req: &callback::Request,
     state: &State,
     publishing: bool,
+    span: &Span,
 ) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream`.
@@ -293,12 +301,12 @@ fn on_stop(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, skip_all, fields(
-        action = %req.action,
-        client = %req.ip,
-        stream = &req.app_stream(),
-        group = "srs"))]
-fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
+#[instrument(err, parent=span, skip_all)]
+fn on_hls(
+    req: &callback::Request,
+    state: &State,
+    span: &Span,
+) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
     #[must_use]
@@ -346,8 +354,8 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     }
     Ok(())
 }
-#[instrument(skip(state), fields(group = "srs"))]
-fn update_stream_info(id: EndpointId, url: Url, state: State) {
+#[instrument(parent=span, skip_all)]
+fn update_stream_info(id: EndpointId, url: Url, state: State, span: &Span) {
     drop(
         tokio::spawn(
             AssertUnwindSafe(async move {
@@ -363,6 +371,7 @@ fn update_stream_info(id: EndpointId, url: Url, state: State) {
                     "Can not fetch stream info",
                 );
             }),
-        ),
+        )
+        .in_current_span(),
     );
 }

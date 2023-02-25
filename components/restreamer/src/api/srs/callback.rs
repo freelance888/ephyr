@@ -3,6 +3,7 @@
 //! [SRS]: https://github.com/ossrs/srs
 //! [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 
+use derive_more::Display;
 use std::net::IpAddr;
 
 use serde::{Deserialize, Serialize};
@@ -32,7 +33,7 @@ pub struct Request {
     /// related to.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_RtmpUrlVhost
+    /// [1]: https://github.com/ossrs/srs/wiki/migrate_v4_EN_rtmp-url-vhost
     pub vhost: String,
 
     /// [SRS] `app` of RTMP stream that happened event is related to.
@@ -46,6 +47,18 @@ pub struct Request {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream: Option<String>,
 }
+impl Request {
+    /// Combine [`Request::app`] and [`Request::stream`] fields.
+    /// Uses for tracing
+    #[must_use]
+    pub fn app_stream(&self) -> String {
+        if let Some(stream) = &self.stream {
+            format!("{}/{}", self.app, stream)
+        } else {
+            self.app.to_string()
+        }
+    }
+}
 
 /// Possible [SRS] events in [HTTP Callback API][1] that this application reacts
 /// onto.
@@ -53,7 +66,7 @@ pub struct Request {
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[allow(clippy::enum_variant_names)]
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, Display)]
 #[serde(rename_all = "snake_case")]
 pub enum Event {
     /// [SRS] client connects to [SRS] `app`.
