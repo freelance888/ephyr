@@ -35,13 +35,15 @@
   export let info;
   export let files;
 
-  let searchInInputs = true;
-  let searchInOutputs = true;
-
   const searchQueryKey = 'search';
+  const filterQueryKey = 'filter_by';
   let params = new URLSearchParams(location.search);
   const searchString = params.get(searchQueryKey);
+  const filterBy = params.get(filterQueryKey);
   let searchText = decodeURIComponent(searchString ? searchString : '');
+
+  let searchInInputs = searchText ? filterBy.includes('input') : true;
+  let searchInOutputs = searchText ? filterBy.includes('output') : false;
 
   $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
@@ -91,9 +93,22 @@
     if (searchText) {
       const queryParams = new URLSearchParams();
       queryParams.set(searchQueryKey, encodeURIComponent(searchText));
+      appendFilterByParams(queryParams);
       history.replaceState(null, null, '?' + queryParams.toString());
     } else {
       history.replaceState(null, null, '/');
+    }
+  };
+
+  const appendFilterByParams = (queryParams) => {
+    const searchInParam = searchInInputs && 'input';
+    const searchOutParam = searchInOutputs && 'output';
+    const filterBy = (searchInParam || searchOutParam) && 'filter_by';
+    const params = [];
+    if (filterBy) {
+      searchInParam && params.push(encodeURIComponent(searchInParam));
+      searchOutParam && params.push(encodeURIComponent(searchOutParam));
+      queryParams.append(filterBy, params.join(','));
     }
   };
 
