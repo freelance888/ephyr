@@ -35,13 +35,15 @@
   export let info;
   export let files;
 
-  let searchInInputs = true;
-  let searchInOutputs = false;
-
   const searchQueryKey = 'search';
+  const filterQueryKey = 'filter_by';
   let params = new URLSearchParams(location.search);
   const searchString = params.get(searchQueryKey);
+  const filterBy = params.get(filterQueryKey);
   let searchText = decodeURIComponent(searchString ? searchString : '');
+
+  let searchInInputs = searchText ? filterBy.includes('input') : true;
+  let searchInOutputs = searchText ? filterBy.includes('output') : false;
 
   $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
