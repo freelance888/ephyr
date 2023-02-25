@@ -6,14 +6,15 @@ use crate::{
     state::ClientId,
     State,
 };
-use ephyr_log::log;
+use derive_more::Display;
+use ephyr_log::{tracing, tracing::Instrument};
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 use std::{future::Future, panic::AssertUnwindSafe};
 
 /// Set of dashboard commands that can be broadcast to clients
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Display, Eq)]
 pub enum DashboardCommand {
     /// Command for enabling all restreams' outputs
     EnableAllOutputs(),
@@ -72,10 +73,13 @@ impl Broadcaster {
             .filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
-                    self.handle_one_command(
-                        client.id.clone(),
-                        &command.clone(),
-                    );
+                    let client_id = client.id.clone();
+                    let command = command.clone();
+                    tracing::info_span!("broadcaster",
+                        client=%client_id, command=?command)
+                    .in_scope(|| {
+                        self.handle_one_command(client_id, &command.clone());
+                    });
                 }
             });
     }
@@ -109,33 +113,36 @@ impl Broadcaster {
         }
     }
 
-    fn try_to_run_command<
-        FutureCommand: Future<Output = anyhow::Result<()>> + Send + 'static,
-    >(
+    fn try_to_run_command<FutureCommand>(
         client_id: ClientId,
         state: State,
         command: FutureCommand,
-    ) {
-        drop(tokio::spawn(async move {
-            let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
-                let error_message = format!(
-                    "Error sending command for client {client_id}. {e}"
-                );
-                log::error!("{}", error_message);
-                Self::save_command_error(&client_id, &[error_message], &state);
-            }))
-            .catch_unwind()
-            .await
-            .map_err(|p| {
-                log::error!(
-                    "{}",
-                    format!(
+    ) where
+        FutureCommand: Future<Output = anyhow::Result<()>> + Send + 'static,
+    {
+        drop(tokio::spawn(
+            async move {
+                let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
+                    let error_message =
+                        format!("Error sending command for client. {e}");
+                    tracing::error!(error_message);
+                    Self::save_command_error(
+                        &client_id,
+                        &[error_message],
+                        &state,
+                    );
+                }))
+                .catch_unwind()
+                .await
+                .map_err(|p| {
+                    tracing::error!(
                         "Panicked while broadcast command to client: {}",
                         display_panic(&p)
-                    )
-                );
-            });
-        }));
+                    );
+                });
+            }
+            .in_current_span(),
+        ));
     }
 
     async fn request_enable_outputs(
@@ -158,11 +165,7 @@ impl Broadcaster {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        log::info!(
-            "Enabling outputs on client: {}. Response: {:#?}",
-            client_id,
-            response
-        );
+        tracing::info!(?response, "Enabling outputs on client",);
 
         Self::handle_errors(&client_id, &state, response.errors);
         Ok(())
@@ -188,11 +191,7 @@ impl Broadcaster {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        log::info!(
-            "Disabling outputs on client: {}. Response: {:#?}",
-            client_id,
-            response
-        );
+        tracing::info!(?response, "Disabling outputs on client",);
 
         Self::handle_errors(&client_id, &state, response.errors);
         Ok(())
