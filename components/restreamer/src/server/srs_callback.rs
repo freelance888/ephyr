@@ -7,9 +7,10 @@ use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
 use futures::{FutureExt, TryFutureExt};
+use tap::Tap;
 use url::Url;
 
-use ephyr_log::log;
+use ephyr_log::{tracing, tracing::instrument};
 
 use crate::{
     api::srs::callback,
@@ -37,11 +38,11 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .service(on_callback)
     })
     .bind((cfg.callback_http_ip, cfg.callback_http_port))
-    .map_err(|e| log::error!("Failed to bind callback HTTP server: {e}"))?
+    .map_err(|e| tracing::error!(%e, %cfg.callback_http_port, "Failed to bind callback HTTP server"))?
     .run()
     .await
     .map_err(|e| {
-        log::error!("Failed to run callback HTTP server: {e}");
+        tracing::error!(%e, "Failed to run callback HTTP server");
     })?)
 }
 
@@ -80,12 +81,22 @@ async fn on_callback(
 /// If [`callback::Request::app`] matches no existing [`state::Restream`].
 ///
 /// [`state::Restream`]: crate::state::Restream
+#[instrument(err, skip_all, fields(
+        action = %req.action,
+        client = %req.ip,
+        stream = &req.app_stream(),
+        group = "srs"))]
 fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
     state
         .restreams
         .get_cloned()
         .iter()
         .find(|r| r.input.enabled && r.key == *req.app)
+        .tap(|r| {
+            if let Some(r) = r {
+                tracing::info!(actor = %r.id, "Connection established");
+            }
+        })
         .ok_or_else(|| error::ErrorNotFound("Such `app` doesn't exist"))
         .map(|_| ())
 }
@@ -108,6 +119,11 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
 /// [`state::Restream`]: crate::state::Restream
 ///
 /// [SRS]: https://github.com/ossrs/srs
+#[instrument(err, skip_all, fields(
+        action = %req.action,
+        client = %req.ip,
+        stream = &req.app_stream(),
+        group = "srs"))]
 fn on_start(
     req: &callback::Request,
     state: &State,
@@ -177,8 +193,9 @@ fn on_start(
         );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
-            update_stream_info(endpoint.id, url, state.clone());
+            update_stream_info(endpoint.id, url.clone(), state.clone());
         }
+        tracing::info!(actor = %endpoint.id, "Publishing started");
     } else {
         // `srs::ClientId` kicks the client when `Drop`ped, so we should be
         // careful here to not accidentally kick the client by creating a
@@ -187,6 +204,7 @@ fn on_start(
             let _ =
                 endpoint.srs_player_ids.insert(req.client_id.clone().into());
         }
+        tracing::info!(actor = %endpoint.id, "Playing stopped");
     }
     Ok(())
 }
@@ -203,6 +221,11 @@ fn on_start(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
+#[instrument(err, skip_all, fields(
+        action = %req.action,
+        client = %req.ip,
+        stream = &req.app_stream(),
+        group = "srs"))]
 fn on_stop(
     req: &callback::Request,
     state: &State,
@@ -249,8 +272,10 @@ fn on_stop(
     if publishing {
         endpoint.srs_publisher_id = None;
         endpoint.status = Status::Offline;
+        tracing::info!(actor = %endpoint.id, "Publishing stopped");
     } else {
         let _ = endpoint.srs_player_ids.remove(&req.client_id);
+        tracing::info!(actor = %endpoint.id, "Playing stopped");
     }
     Ok(())
 }
@@ -268,6 +293,11 @@ fn on_stop(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
+#[instrument(err, skip_all, fields(
+        action = %req.action,
+        client = %req.ip,
+        stream = &req.app_stream(),
+        group = "srs"))]
 fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
@@ -316,18 +346,23 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     }
     Ok(())
 }
-
+#[instrument(skip(state), fields(group = "srs"))]
 fn update_stream_info(id: EndpointId, url: Url, state: State) {
-    drop(tokio::spawn(
-        AssertUnwindSafe(async move {
-            let result = stream_probe(url).await;
-            state
-                .set_stream_info(id, result)
-                .unwrap_or_else(|e| log::error!("{}", e));
-        })
-        .catch_unwind()
-        .map_err(move |p| {
-            log::error!("Can not fetch stream info: {}", display_panic(&p),);
-        }),
-    ));
+    drop(
+        tokio::spawn(
+            AssertUnwindSafe(async move {
+                let result = stream_probe(url).await;
+                state
+                    .set_stream_info(id, result)
+                    .unwrap_or_else(|e| tracing::error!(%e));
+            })
+            .catch_unwind()
+            .map_err(move |p| {
+                tracing::error!(
+                    e = display_panic(&p),
+                    "Can not fetch stream info",
+                );
+            }),
+        ),
+    );
 }
