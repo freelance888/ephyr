@@ -48,6 +48,8 @@ pub type AudioHandler = tsclientlib::audio::AudioHandler<MemberId>;
 /// [TeamSpeak]: https://teamspeak.com
 type MemberId = u16;
 
+const CONNECTION_RETRY_TIMEOUT: Duration = Duration::from_secs(120);
+
 /// Audio input captured from [TeamSpeak] server.
 ///
 /// It produces [PCM 32-bit floating-point big-endian][1] encoded
@@ -157,7 +159,7 @@ impl Input {
 
         let capturing = retry_notify(
             ExponentialBackoff {
-                max_elapsed_time: None,
+                max_elapsed_time: Some(CONNECTION_RETRY_TIMEOUT),
                 ..ExponentialBackoff::default()
             },
             move || {
