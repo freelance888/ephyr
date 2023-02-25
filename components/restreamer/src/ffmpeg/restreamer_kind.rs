@@ -42,7 +42,7 @@ fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
         .map(|t| t.trim_start_matches([' ', '[']))
         .collect();
     // parsed contains data: (msg, level_log)
-    if parsed.len() == 2 {
+    if parsed.len() >= 2 {
         ParsedMsg {
             message: parsed[0],
             level: parsed[1],
