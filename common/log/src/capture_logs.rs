@@ -18,8 +18,12 @@ pub struct ParsedMsg<'a> {
 pub trait ChildCapture {
     /// Redirect logs from stdout and stderr of [Child] process
     /// to `tracing`. Where `parser` is user defined function to parse log line.
-    fn capture_logs<F>(&mut self, name: String, parser: F, uid: Option<String>)
-    where
+    fn capture_logs<F>(
+        &mut self,
+        group: String,
+        parser: F,
+        uid: Option<String>,
+    ) where
         Self: Sized,
         F: Fn(&str) -> ParsedMsg<'_> + Send + 'static;
 }
@@ -27,7 +31,7 @@ pub trait ChildCapture {
 /// Pass [ParsedMsg.message] to [tracing] based on [ParsedMsg.level].
 fn capture_line(
     pid: Option<u32>,
-    name: &String,
+    group: &String,
     parsed_msg: ParsedMsg,
     actor: &Option<String>,
 ) {
@@ -35,20 +39,20 @@ fn capture_line(
     // TODO: convert to HashMap when tracing `valuable` stabilizes.
     match level.to_lowercase().as_str() {
         "error" => {
-            tracing::error!(target: TARGET, message, pid, name, actor);
+            tracing::error!(target: TARGET, message, pid, group, actor);
         }
         "info" => {
-            tracing::info!(target: TARGET, message, pid, name, actor);
+            tracing::info!(target: TARGET, message, pid, group, actor);
         }
         "debug" | "verbose" => {
-            tracing::debug!(target: TARGET, message, pid, name, actor);
+            tracing::debug!(target: TARGET, message, pid, group, actor);
         }
-        _ => tracing::trace!(target: TARGET, message, pid, name, actor),
+        _ => tracing::trace!(target: TARGET, message, pid, group, actor),
     };
 }
 
 impl ChildCapture for Child {
-    fn capture_logs<F>(&mut self, name: String, parser: F, uid: Option<String>)
+    fn capture_logs<F>(&mut self, group: String, parser: F, uid: Option<String>)
     where
         F: Fn(&str) -> ParsedMsg<'_> + Send + 'static,
     {
@@ -64,12 +68,12 @@ impl ChildCapture for Child {
                 if let Some(out_line) =
                     out_lines.next_line().await.ok().flatten()
                 {
-                    capture_line(process_id, &name, parser(&out_line), &uid);
+                    capture_line(process_id, &group, parser(&out_line), &uid);
                 }
                 if let Some(err_line) =
                     err_lines.next_line().await.ok().flatten()
                 {
-                    capture_line(process_id, &name, parser(&err_line), &uid);
+                    capture_line(process_id, &group, parser(&err_line), &uid);
                 }
             }
         }));
