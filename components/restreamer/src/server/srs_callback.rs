@@ -7,7 +7,6 @@ use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
 use futures::{FutureExt, TryFutureExt};
-use url::Url;
 
 use ephyr_log::log;
 

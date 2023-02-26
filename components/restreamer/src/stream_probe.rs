@@ -2,11 +2,9 @@
 //!
 //! [FFprobe]: https://ffmpeg.org/ffprobe.html
 
-use crate::types::UNumber;
 use anyhow::anyhow;
 use std::process::Stdio;
 use tokio::process::Command;
-use url::Url;
 
 /// Gather information about `rtmp` stream
 ///

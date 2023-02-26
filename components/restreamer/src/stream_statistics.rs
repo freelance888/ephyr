@@ -68,6 +68,7 @@ impl StreamStatistics {
         }
     }
 
+    /// Initializes stream statistics for error result
     pub fn create_error_instance(e: &anyhow::Error) -> Self {
         Self {
             audio_codec_name: None,

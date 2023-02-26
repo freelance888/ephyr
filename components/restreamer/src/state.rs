@@ -731,7 +731,7 @@ impl State {
                     {
                         // For file - populate statistics from [`LocalFileInfo`]
                         if let Some(file_id) = e.file_id.clone() {
-                            files.iter().find_map(|f| {
+                            let _ = files.iter().find_map(|f| {
                                 (f.file_id == file_id).then(|| {
                                     e.stream_stat = f.stream_stat.clone()
                                 })

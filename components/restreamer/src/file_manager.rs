@@ -14,7 +14,7 @@ use tap::prelude::*;
 use crate::{
     cli::Opts,
     display_panic,
-    state::{EndpointId, InputEndpointKind, InputSrc, State, Status},
+    state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
 };
