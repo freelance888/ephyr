@@ -470,7 +470,7 @@ fn update_stream_info(file_id: FileId, url: String, state: State) {
         AssertUnwindSafe(async move {
             let result = stream_probe(url).await;
             state
-                .set_file_stream_info(file_id, result)
+                .set_file_stream_info(&file_id, result)
                 .unwrap_or_else(|e| log::error!("{}", e));
         })
         .catch_unwind()

@@ -733,7 +733,7 @@ impl State {
                         if let Some(file_id) = e.file_id.clone() {
                             let _ = files.iter().find_map(|f| {
                                 (f.file_id == file_id).then(|| {
-                                    e.stream_stat = f.stream_stat.clone()
+                                    e.stream_stat = f.stream_stat.clone();
                                 })
                             });
                         }
@@ -775,14 +775,16 @@ impl State {
     /// If file with specified `file_id` is not found
     pub fn set_file_stream_info(
         &self,
-        file_id: FileId,
+        file_id: &FileId,
         result: anyhow::Result<StreamInfo>,
     ) -> anyhow::Result<()> {
         let mut files = self.files.lock_mut();
-        let mut file =
-            files.iter_mut().find(|f| f.file_id == file_id).ok_or_else(
-                || anyhow!("Can't find file with file_id: {:?}", file_id),
-            )?;
+        let mut file = files
+            .iter_mut()
+            .find(|f| f.file_id == *file_id)
+            .ok_or_else(|| {
+                anyhow!("Can't find file with file_id: {:?}", file_id)
+            })?;
 
         file.stream_stat = Some(StreamStatistics::new(result));
 
