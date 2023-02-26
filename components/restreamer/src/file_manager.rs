@@ -13,11 +13,18 @@ use tap::prelude::*;
 
 use crate::{
     cli::Opts,
-    state::{InputEndpointKind, InputSrc, State, Status},
+    display_panic,
+    state::{EndpointId, InputEndpointKind, InputSrc, State, Status},
+    stream_probe::stream_probe,
+    stream_statistics::StreamStatistics,
 };
 use chrono::Utc;
+use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
-use std::{borrow::BorrowMut, ffi::OsString, result::Result::Err};
+use std::{
+    borrow::BorrowMut, ffi::OsString, panic::AssertUnwindSafe,
+    result::Result::Err,
+};
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
@@ -172,9 +179,11 @@ impl FileManager {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
                 name: None,
+                path: None,
                 state: FileState::Pending,
                 download_state: None,
                 error: None,
+                stream_stat: None,
             };
             all_files.push(new_file);
             drop(all_files);
@@ -344,10 +353,11 @@ impl FileManager {
     ) -> Result<(), String> {
         // Try opening the target file where the downloaded
         // bytes will be written
+        let file_path = format!("{root_dir}/{}", &file_id);
         if let Ok(file) = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
-            .open(format!("{root_dir}/{}", &file_id))
+            .open(file_path.clone())
         {
             let mut writer = BufWriter::new(file);
             let mut last_update = Utc::now();
@@ -412,6 +422,7 @@ impl FileManager {
                     file.download_state.as_mut().unwrap().current_progress =
                         current;
                     file.state = FileState::Local;
+                    file.path = Some(file_path.clone());
                 });
 
             // set the endpoints with this file ID to Online, this
@@ -437,17 +448,36 @@ impl FileManager {
                             })
                             .for_each(|endpoint| {
                                 endpoint.status = Status::Online;
+                                update_stream_info(
+                                    endpoint.file_id.clone().unwrap(),
+                                    file_path.clone(),
+                                    state.clone(),
+                                );
                             });
                     });
                 }
             });
             Ok(())
         } else {
-            Err("Could not create a file with \
-                                    writing privileges."
-                .to_string())
+            Err("Could not create a file with writing privileges.".to_string())
         }
     }
+}
+
+/// Update stream info for downloaded file
+fn update_stream_info(file_id: FileId, url: String, state: State) {
+    drop(tokio::spawn(
+        AssertUnwindSafe(async move {
+            let result = stream_probe(url).await;
+            state
+                .set_file_stream_info(file_id, result)
+                .unwrap_or_else(|e| log::error!("{}", e));
+        })
+        .catch_unwind()
+        .map_err(move |p| {
+            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+        }),
+    ));
 }
 
 /// Represents a File with given ID and hold additional information
@@ -461,11 +491,17 @@ pub struct LocalFileInfo {
     /// Name of the file if API call for the name was successful
     pub name: Option<String>,
 
+    /// Full path to the file
+    pub path: Option<String>,
+
     /// State of the file
     pub state: FileState,
 
     /// Download error message
     pub error: Option<String>,
+
+    /// Corresponding stream info
+    pub stream_stat: Option<StreamStatistics>,
 
     /// If the file is downloading the state of the download
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -477,9 +513,11 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
         LocalFileInfo {
             file_id: FileId(file_response.id),
             name: Some(file_response.name),
+            path: None,
             state: FileState::Pending,
             download_state: None,
             error: None,
+            stream_stat: None,
         }
     }
 }

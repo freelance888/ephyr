@@ -2,6 +2,7 @@
 //!
 //! [FFprobe]: https://ffmpeg.org/ffprobe.html
 
+use crate::types::UNumber;
 use anyhow::anyhow;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -13,7 +14,7 @@ use url::Url;
 ///
 /// If `ffprobe` command fails for some reason
 /// Or if we fail to deserialize results of `ffprobe` command
-pub async fn stream_probe(url: Url) -> anyhow::Result<StreamInfo> {
+pub async fn stream_probe(url: String) -> anyhow::Result<StreamInfo> {
     let mut cmd = Command::new("ffprobe");
     let entries = [
         "format=bit_rate:stream=codec_type",
