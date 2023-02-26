@@ -1,5 +1,5 @@
 //! Information about status of all [`Input`]s and [`Output`]s and
-//! server health info (CPU usage, memory usage, etc.) and stream statistics
+//! server health info (CPU usage, memory usage, etc.)
 //!
 //! [`Input`]: crate::state::Input
 //! [`Output`]: crate::state::Output

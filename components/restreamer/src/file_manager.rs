@@ -179,7 +179,6 @@ impl FileManager {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
                 name: None,
-                path: None,
                 state: FileState::Pending,
                 download_state: None,
                 error: None,
@@ -422,7 +421,6 @@ impl FileManager {
                     file.download_state.as_mut().unwrap().current_progress =
                         current;
                     file.state = FileState::Local;
-                    file.path = Some(file_path.clone());
                 });
 
             // set the endpoints with this file ID to Online, this
@@ -491,9 +489,6 @@ pub struct LocalFileInfo {
     /// Name of the file if API call for the name was successful
     pub name: Option<String>,
 
-    /// Full path to the file
-    pub path: Option<String>,
-
     /// State of the file
     pub state: FileState,
 
@@ -513,7 +508,6 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
         LocalFileInfo {
             file_id: FileId(file_response.id),
             name: Some(file_response.name),
-            path: None,
             state: FileState::Pending,
             download_state: None,
             error: None,
