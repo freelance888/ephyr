@@ -261,7 +261,9 @@
               on:click={showAlert}
               class="uk-flex uk-flex-between backup-item"
             >
-              <span class="label-file-id" class:disabled={!hasApiKey}>File backup</span>
+              <span class="label-file-id" class:disabled={!hasApiKey}
+                >File backup</span
+              >
               <input
                 class="uk-input file-id"
                 type="text"
@@ -285,7 +287,8 @@
             {/each}
           {/if}
 
-          <div class="uk-alert uk-relative">Max amount of files in a playlist.
+          <div class="uk-alert uk-relative">
+            Max amount of files in a playlist.
             <input
               class="uk-input uk-width-1-4 files-limit uk-absolute"
               type="number"
