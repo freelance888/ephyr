@@ -261,7 +261,7 @@
               on:click={showAlert}
               class="uk-flex uk-flex-between backup-item"
             >
-              <span class="label-file-id">file backup</span>
+              <span class="label-file-id" class:disabled={!hasApiKey}>File backup</span>
               <input
                 class="uk-input file-id"
                 type="text"
@@ -285,15 +285,16 @@
             {/each}
           {/if}
 
-          <input
-            class="uk-input uk-width-1-4 files-limit"
-            type="number"
-            min="2"
-            step="1"
-            bind:value={$restreamStore.maxFilesInPlaylist}
-            placeholder="Files limit"
-          />
-          <div class="uk-alert">Max amount of files in a playlist.</div>
+          <div class="uk-alert uk-relative">Max amount of files in a playlist.
+            <input
+              class="uk-input uk-width-1-4 files-limit uk-absolute"
+              type="number"
+              min="2"
+              step="1"
+              bind:value={$restreamStore.maxFilesInPlaylist}
+              placeholder="Files limit"
+            />
+          </div>
         </div>
       </fieldset>
 
@@ -321,6 +322,9 @@
     border: none
     padding: 0
 
+  .uk-section>:last-child
+    margin-top: 10px;
+
   .restream
     .uk-form-small
       display: block
@@ -344,7 +348,9 @@
     padding-bottom: 0;
 
   .files-limit
-    margin-top: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    right 10px;
 
   .clear-file-id
     top: 50%
@@ -367,5 +373,8 @@
 
   .backup-item
     column-gap: 20px
+  
+  .disabled
+    color: #999
 
 </style>
