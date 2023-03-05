@@ -204,7 +204,12 @@ fn on_start(
         );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
-            update_stream_info(endpoint.id, url, state.clone(), span);
+            update_stream_info(
+                endpoint.id,
+                url.to_string(),
+                state.clone(),
+                span,
+            );
         }
         tracing::info!(actor = %endpoint.id, "Publishing started");
     } else {
@@ -355,7 +360,7 @@ fn on_hls(
     Ok(())
 }
 #[instrument(parent=span, skip_all)]
-fn update_stream_info(id: EndpointId, url: Url, state: State, span: &Span) {
+fn update_stream_info(id: EndpointId, url: String, state: State, span: &Span) {
     drop(
         tokio::spawn(
             AssertUnwindSafe(async move {

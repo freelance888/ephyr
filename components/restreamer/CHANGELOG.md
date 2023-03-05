@@ -15,11 +15,12 @@ All user visible changes to this project will be documented in this file. This p
 - Display input streams info ([#170], [#266]);
 - "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
 - Display of last sent Command\Error onto Dashboard ([#220], [#297])
-- Display file name in backup file endpoint ([#175], [#297])
+- Display file name in file-backup endpoint ([#175], [#297])
 - Google Drive API key to Ephyr server ([#168], [#297])
 - Video playback for file Input ([#166], [#297])
 - Indication if password is added to the server into Dashboard ([#162], [#297])
 - `filter_by` GET parameter ([#260], [#319])
+- Display stream info for file-backup endpoint [#322]);
 ### Fixed
 - State disappears after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
@@ -51,6 +52,7 @@ All user visible changes to this project will be documented in this file. This p
 [#297]: /../../pull/297
 [#302]: /../../pull/302
 [#319]: /../../pull/319
+[#322]: /../../pull/322
 
 
 
