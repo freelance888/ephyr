@@ -250,7 +250,6 @@
             uk-tooltip={fileIdToolTip}
           >
             <label
-              on:click={showAlert}
               class="uk-flex uk-flex-between backup-item"
             >
               <span class="label-file-id" class:disabled={!hasApiKey}
