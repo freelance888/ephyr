@@ -23,8 +23,6 @@
     ? 'Please specify Google Api Key in `Settings` before setting File ID'
     : null;
 
-  let alerts = [];
-
   $: hasApiKey = $info.data?.info?.googleApiKey;
 
   let submitable = false;
