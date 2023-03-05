@@ -2,7 +2,6 @@
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
   import { SetRestream, Info } from '../../api/client.graphql';
-
   import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
@@ -10,7 +9,6 @@
   import cloneDeep from 'lodash/cloneDeep';
   import isEqual from 'lodash/isEqual';
   import RestreamBackup from './RestreamBackup.svelte';
-  import Alert from '../components/common/Alert.svelte';
 
   const info = subscribe(Info, { errorPolicy: 'all' });
   const setRestreamMutation = mutation(SetRestream);
@@ -21,6 +19,9 @@
 
   let previous = cloneDeep(restream);
   let restreamStore = writable(restream);
+  $: fileIdToolTip = !hasApiKey
+    ? 'Please specify Google Api Key in `Settings` before setting File ID'
+    : null;
 
   let alerts = [];
 
@@ -160,6 +161,10 @@
   const removeAlert = (event) => {
     alerts = alerts.filter((alert) => alert.id !== event.detail.id);
   };
+
+  // const tipHandler = () => {
+
+  // }
 </script>
 
 <template>
@@ -256,7 +261,11 @@
         </div>
 
         <div class="uk-section uk-section-xsmall">
-          <div class="uk-relative">
+          <div
+            class="uk-relative"
+            class:question-pointer={!hasApiKey}
+            uk-tooltip={fileIdToolTip}
+          >
             <label
               on:click={showAlert}
               class="uk-flex uk-flex-between backup-item"
@@ -279,15 +288,11 @@
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
-          {#if hasApiKey}
-            <div class="uk-alert">Google file id for file backup.</div>
-          {:else}
-            {#each alerts as message (message.id)}
-              <Alert {message} delay="3000" on:change={removeAlert} />
-            {/each}
-          {/if}
-
-          <div class="uk-alert uk-relative">
+          <div
+            class="uk-alert uk-relative"
+            class:question-pointer={!hasApiKey}
+            uk-tooltip={fileIdToolTip}
+          >
             Max amount of files in a playlist.
             <input
               class="uk-input uk-width-1-4 files-limit uk-absolute"
@@ -296,6 +301,7 @@
               step="1"
               bind:value={$restreamStore.maxFilesInPlaylist}
               placeholder="Files limit"
+              disabled={!hasApiKey}
             />
           </div>
         </div>
@@ -379,5 +385,10 @@
   
   .disabled
     color: #999
+
+  .question-pointer:hover
+    .uk-input
+      background: #e5e5e5
+      cursor: help
 
 </style>
