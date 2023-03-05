@@ -252,7 +252,7 @@ impl MutationsRoot {
         }
         .tap(|_| {
             let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileCommand::FileAddedOrRemoved);
+            commands.push(FileCommand::ListOfFilesChanged);
         })
         .map_err(|e| {
             graphql::Error::new("DUPLICATE_RESTREAM_KEY")
@@ -343,7 +343,7 @@ impl MutationsRoot {
 
     fn set_playlist(
         restream_id: RestreamId,
-        playlist: Vec<String>,
+        playlist: Vec<FileId>,
         context: &Context,
     ) -> Option<bool> {
         context.state().restreams.lock_mut().iter_mut().find_map(
@@ -360,6 +360,8 @@ impl MutationsRoot {
                         })
                         .cloned()
                         .collect();
+                    let mut commands = context.state().file_commands.lock_mut();
+                    commands.push(FileCommand::ListOfFilesChanged);
                 })
             },
         )?;
@@ -387,7 +389,7 @@ impl MutationsRoot {
     /// Starts playing the provided file from playlist
     fn play_file_from_playlist(
         restream_id: RestreamId,
-        file_id: String,
+        file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         context
@@ -414,7 +416,7 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_play_file(
-        #[graphql(description = "file identity")] file_id: String,
+        #[graphql(description = "file identity")] file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -441,7 +443,7 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_stop_playing_file(
-        #[graphql(description = "file identity")] file_id: String,
+        #[graphql(description = "file identity")] file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -497,6 +499,9 @@ impl MutationsRoot {
                 })?
                 .playlist
                 .apply(playlist_files);
+
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
 
             Ok(Some(true))
         } else {
@@ -1223,37 +1228,12 @@ impl SubscriptionsRoot {
     async fn restream(
         id: RestreamId,
         context: &Context,
-    ) -> BoxStream<'static, Option<RestreamWithParent>> {
-        let public_host = context.config().public_host.clone().unwrap();
+    ) -> BoxStream<'static, Option<Restream>> {
         context
             .state()
             .restreams
             .signal_cloned()
-            .filter_map(move |vec| {
-                let restream = vec.iter().find(|r| r.id == id);
-                let parent = restream.and_then(|restream| {
-                    vec.iter().find_map(|r| {
-                        r.outputs
-                            .iter()
-                            .find(|o| {
-                                o.dst
-                                    .is_address_of_restream(
-                                        &restream.key,
-                                        &public_host,
-                                    )
-                                    .unwrap_or(false)
-                            })
-                            .map(|out| RestreamParent {
-                                restream: r.clone(),
-                                output_id: out.id,
-                            })
-                    })
-                });
-                restream.map(|r| RestreamWithParent {
-                    restream: r.clone(),
-                    parent,
-                })
-            })
+            .filter_map(move |vec| vec.into_iter().find(|r| r.id == id))
             .dedupe_cloned()
             .to_stream()
             .boxed()
@@ -1298,24 +1278,4 @@ pub struct Info {
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
     pub max_files_in_playlist: Option<UNumber>,
-}
-
-/// Restream with its source output if it has any
-#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
-pub struct RestreamWithParent {
-    /// Restream info
-    restream: Restream,
-
-    /// Restream parent if it has any
-    parent: Option<RestreamParent>,
-}
-
-/// Restream parent which contains output that streams to the current restream
-#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
-pub struct RestreamParent {
-    /// parent restream
-    restream: Restream,
-
-    /// output ID of the parent restream output that streams to the child
-    output_id: OutputId,
 }

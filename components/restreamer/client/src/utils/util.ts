@@ -88,7 +88,7 @@ export function isFullStreamPage(): boolean {
 }
 
 export const getFullStreamUrl = (restreamId: string) => {
-  return `/${FullStreamPage}?tran_restream_id=${restreamId}`;
+  return `/${FullStreamPage}?restream-id=${restreamId}`;
 };
 
 /**

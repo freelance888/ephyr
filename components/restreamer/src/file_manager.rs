@@ -34,8 +34,9 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 /// Commands for handling operations on files
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileCommand {
-    /// Notifies that file backup was added/removed to/from restream
-    FileAddedOrRemoved,
+    /// Notifies that file backup was added/removed to/from restream or
+    /// [`PlaylistFileInfo`] was loaded for specific [`Restream`]
+    ListOfFilesChanged,
     /// Request for redo download file from Google Drive with
     /// specific [`FileId`]
     ForceDownloadFile(FileId),
@@ -85,7 +86,7 @@ impl FileManager {
             self.state.file_commands.lock_mut().drain(..).collect();
 
         commands.iter().for_each(|c| match c {
-            FileCommand::FileAddedOrRemoved => self.check_files(),
+            FileCommand::ListOfFilesChanged => self.check_files(),
             FileCommand::ForceDownloadFile(file_id) => {
                 let mut files = self.state.files.lock_mut();
                 files.retain(|file| &file.file_id != file_id);
@@ -103,7 +104,7 @@ impl FileManager {
     pub fn check_files(&self) {
         self.state.file_commands.lock_mut().clear();
 
-        let mut file_ids = vec![];
+        let mut files_data = vec![];
         let restreams = self.state.restreams.lock_mut();
         restreams.iter().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
@@ -119,29 +120,29 @@ impl FileManager {
                         })
                     })
                     .for_each(|file_id| {
-                        file_ids.push(file_id);
+                        files_data.push((file_id, None));
                     });
             }
-            // restream.playlist.queue.iter().for_each(|file| {
-            //     self.need_file(&file.file_id, Some(file.name.clone()));
-            // });
+            restream.playlist.queue.iter().for_each(|file| {
+                files_data.push((&file.file_id, Some(file.name.clone())));
+            });
         });
 
         // Removes not used files from state
         let mut files = self.state.files.lock_mut();
         files.retain(|f| {
-            file_ids
+            files_data
                 .clone()
                 .into_iter()
-                .any(|file_id| &f.file_id == file_id)
+                .any(|(file_id, _)| &f.file_id == file_id)
         });
         drop(files);
 
         self.sync_with_state();
 
         // Check if file need to be downloaded
-        for file_id in file_ids {
-            self.need_file(file_id, None);
+        for (file_id, file_name) in files_data {
+            self.need_file(file_id, file_name);
         }
     }
 
@@ -265,7 +266,12 @@ impl FileManager {
                         .lock_mut()
                         .iter_mut()
                         .find(|file| file.file_id == file_id)
-                        .map(|file_info| file_info.name = file_name);
+                        .map(|file_info| file_info.name = file_name)
+                        .ok_or_else(|| {
+                            "Could not find file with the \
+                             provided file ID"
+                                .to_string()
+                        })?;
                 }
 
                 // Download the file contents
@@ -522,7 +528,7 @@ impl From<api_response::ExtendedFileInfoResponse> for LocalFileInfo {
 )]
 pub struct PlaylistFileInfo {
     /// Google ID of this file
-    pub file_id: String,
+    pub file_id: FileId,
 
     /// Name of this file
     pub name: String,
@@ -534,7 +540,7 @@ pub struct PlaylistFileInfo {
 impl From<api_response::ExtendedFileInfoResponse> for PlaylistFileInfo {
     fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
         PlaylistFileInfo {
-            file_id: file_response.id,
+            file_id: FileId(file_response.id),
             name: file_response.name,
             was_played: false,
         }

@@ -8,15 +8,14 @@
     Info,
     RemoveOutput,
     ServerInfo,
+    SingleRestream,
     TuneDelay,
-    TuneVolume,
-    TranslationRestream,
+    TuneVolume
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Playlist from './Playlist.svelte';
   import Output from './Output.svelte';
-  import RestreamModal from '../modals/RestreamModal.svelte';
   import OutputModal from '../modals/OutputModal.svelte';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
@@ -37,11 +36,11 @@
   setClient(gqlClient);
 
   const urlParams = new URLSearchParams(window.location.search);
-  const translationRestreamId = urlParams.get('tran_restream_id');
+  const restreamId = urlParams.get('restream-id');
 
   let isOnline = false;
-  const restream = subscribe(TranslationRestream, {
-    variables: { id: translationRestreamId.toString() },
+  const singleRestream = subscribe(SingleRestream, {
+    variables: { id: restreamId.toString() },
     errorPolicy: 'all',
   });
   const info = subscribe(Info, { errorPolicy: 'all' });
@@ -52,28 +51,19 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info && $info.error;
-  $: isLoading = !isOnline || $restream.loading;
-  $: canRenderMainComponent = isOnline && $restream.data && $info.data;
-  $: stateError = $restream && $restream.error;
+  $: isLoading = !isOnline || $singleRestream.loading;
+  $: canRenderMainComponent = isOnline && $singleRestream.data && $info.data;
+  $: stateError = $singleRestream && $singleRestream.error;
   $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
-  $: restreamData = canRenderMainComponent && $restream.data.restream;
-
-  $: translationRestream = canRenderMainComponent && restreamData.restream;
-  $: parentRestream = canRenderMainComponent && restreamData.parent;
-  $: parentRestreamOutput =
-    parentRestream &&
-    parentRestream.restream.outputs.find(
-      (o) => o.id === parentRestream.outputId
-    );
+  $: restream = canRenderMainComponent && $singleRestream.data?.restream;
 
   $: translationYoutubeUrl =
     canRenderMainComponent &&
-    translationRestream &&
-    translationRestream.outputs
+    restream.outputs
       .filter((x) => isYoutubeVideo(x.previewUrl))
       .map((x) => x.previewUrl)[0];
 
-  $: playlist = translationRestream && translationRestream.playlist;
+  $: playlist = restream?.playlist;
 </script>
 
 <template>
@@ -84,30 +74,18 @@
     serverInfo={sInfo}
   >
     <div slot="main">
-      <RestreamModal public_host={$info.data.info.publicHost} />
       <OutputModal />
-      <div class="section-title">{translationRestream.key}</div>
+      <div class="section-title">{restream.key}</div>
       <Restream
         public_host={$info.data.info.publicHost}
-        value={translationRestream}
+        value={restream}
         {files}
         isFullView="true"
         globalOutputsFilters={[]}
       />
-      {#if parentRestreamOutput && parentRestreamOutput.mixins.length > 0}
-        <div class="section-title">Sound mixer</div>
-        <section class="uk-section uk-section-muted single-output">
-          <Output
-            restream_id={parentRestream.id}
-            value={parentRestreamOutput}
-            isReadOnly="true"
-            mutations={outputMutations}
-          />
-        </section>
-      {/if}
       <div class="section-title">Playlist</div>
       <section class="uk-section uk-section-muted uk-padding-remove">
-        <Playlist restreamId={translationRestreamId} {playlist} />
+        <Playlist restreamId={restream.id} {playlist} />
       </section>
       {#if translationYoutubeUrl}
         <div class="section-title">Watch translation</div>
@@ -126,13 +104,8 @@
     font-size: 1.2rem
     text-transform: uppercase
 
-  .single-output
-    padding: 16px
-    :global(.volume input)
-      width: 90% !important
-
   .video-player
-    @extend .single-output
+    padding: 16px
     max-height: 800px
     min-height: 150px
 

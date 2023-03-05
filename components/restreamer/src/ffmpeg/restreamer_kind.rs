@@ -203,7 +203,7 @@ impl RestreamerKind {
         let from_url =
             playlist.currently_playing_file.as_ref().and_then(|file| {
                 if let Ok(from_url) = Url::from_file_path(
-                    file_root.join(&file.file_id),
+                    file_root.join(&file.file_id.to_string()),
                 )
                 .map_err(|_| {
                     log::error!(

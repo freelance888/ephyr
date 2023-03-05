@@ -214,13 +214,24 @@
       </span>
     {/if}
 
-    <div class="uk-float-right uk-flex uk-flex-bottom">
+    <div class="uk-float-right uk-flex uk-flex-middle">
+      <a
+        href={getFullStreamUrl(value.id)}
+        hidden={isFullView}
+        target="_blank"
+        rel="noreferrer"
+        class="uk-text-uppercase uk-text-small uk-margin-right"
+        title="Open Full Stream Page"
+      >
+        Full view
+      </a>
       <div class="uk-flex">
         <span
           class="item-icon uk-icon uk-margin-right"
           hidden={!hasVideos || isFullView}
           uk-icon="icon: youtube; ratio: 1.5"
         />
+
         {#if value.outputs && value.outputs.length > 0}
           <span class="total">
             {#each statusesList as status (status)}

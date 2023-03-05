@@ -46,19 +46,10 @@ subscription State {
     }
 }
 
-subscription TranslationRestream($id: RestreamId!) {
+subscription SingleRestream($id: RestreamId!) {
     restream(id: $id) {
-        restream {
-            ...restreamBasic
-            ...restreamPlaylist
-        }
-        parent {
-            restream {
-                id
-                ...restreamOutputs
-            }
-            outputId
-        }
+        ...restreamBasic
+        ...restreamPlaylist
     }
 }
 
@@ -108,11 +99,11 @@ mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
 }
 
-mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [String!]!) {
+mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [FileId!]!) {
     setPlaylist(restreamId: $restreamId, playlist: $fileIds)
 }
 
-mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: String!) {
+mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: FileId!) {
     playFileFromPlaylist(restreamId: $restreamId, fileId: $file_id)
 }
 
