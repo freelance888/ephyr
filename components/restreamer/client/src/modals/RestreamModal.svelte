@@ -249,9 +249,7 @@
             class:question-pointer={!hasApiKey}
             uk-tooltip={fileIdToolTip}
           >
-            <label
-              class="uk-flex uk-flex-between backup-item"
-            >
+            <label class="uk-flex uk-flex-between backup-item">
               <span class="label-file-id" class:disabled={!hasApiKey}
                 >File backup</span
               >
