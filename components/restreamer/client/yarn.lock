@@ -3801,9 +3801,9 @@ uikit-icons@^0.5:
     react "^16.11.0"
 
 uikit@^3:
-  version "3.15.23"
-  resolved "https://registry.yarnpkg.com/uikit/-/uikit-3.15.23.tgz#15e0a0199559ea902f183585da16039865e1308a"
-  integrity sha512-+7X+hYjFkX4mpWX6EvgKl8q43B5YvMdYsQGJfNVh5keke7fDlFov4bbL0MSb82o6tYVvmrrjWK8qXBzDFg4cPg==
+  version "3.16.1"
+  resolved "https://registry.yarnpkg.com/uikit/-/uikit-3.16.1.tgz#175051d01ba08cc7d05253f83d07a01b3bce261b"
+  integrity sha512-qgWBZxGQgdRQ1/rAEX0mFPOS30Vhyhk7ntqntGcfvQtxZVpqaLuwwW6hGwyUdVOUT9dcDFDZsW1MoG1W+ea0zw==
 
 universalify@^2.0.0:
   version "2.0.0"
