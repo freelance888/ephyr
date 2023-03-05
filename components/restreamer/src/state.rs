@@ -46,10 +46,10 @@ use crate::{
     broadcaster::DashboardCommand,
     console_logger::ConsoleMessage,
     display_panic,
-    file_manager::{FileCommand, LocalFileInfo, PlaylistFileInfo},
+    file_manager::{FileCommand, FileId, LocalFileInfo, PlaylistFileInfo},
     spec,
-    state::client_statistics::StreamStatistics,
     stream_probe::StreamInfo,
+    stream_statistics::StreamStatistics,
     Spec,
 };
 use std::collections::HashMap;
@@ -718,15 +718,29 @@ impl State {
         Some(true)
     }
 
-    /// Clean up stream statistics info
-    pub fn cleanup_stream_info(&self) {
+    /// Syncronize stream statistics
+    pub fn sync_stream_info(&self) {
+        let files = self.files.lock_mut();
         let mut restreams = self.restreams.lock_mut();
         restreams.iter_mut().for_each(|r| {
             if let Some(InputSrc::Failover(s)) = &mut r.input.src {
                 for mut e in
                     s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
                 {
-                    if e.status == Status::Offline {
+                    if e.kind == InputEndpointKind::File && e.file_id.is_some()
+                    {
+                        // For file - populate statistics from [`LocalFileInfo`]
+                        if let Some(file_id) = e.file_id.clone() {
+                            let _ = files.iter().find_map(|f| {
+                                (f.file_id == file_id).then(|| {
+                                    e.stream_stat = f.stream_stat.clone();
+                                })
+                            });
+                        }
+                    } else if e.stream_stat.is_some()
+                        && e.status == Status::Offline
+                    {
+                        // For stream - clear statistics if stream is offline
                         e.stream_stat = None;
                     }
                 }
@@ -751,6 +765,29 @@ impl State {
             .ok_or_else(|| anyhow!("Can't find endpoint with id: {:?}", id))?;
 
         endpoint.stream_stat = Some(StreamStatistics::new(result));
+        Ok(())
+    }
+
+    ///Updates stream info for [`LocalFileInfo`]
+    ///
+    /// # Errors
+    ///
+    /// If file with specified `file_id` is not found
+    pub fn set_file_stream_info(
+        &self,
+        file_id: &FileId,
+        result: anyhow::Result<StreamInfo>,
+    ) -> anyhow::Result<()> {
+        let mut files = self.files.lock_mut();
+        let mut file = files
+            .iter_mut()
+            .find(|f| f.file_id == *file_id)
+            .ok_or_else(|| {
+                anyhow!("Can't find file with file_id: {:?}", file_id)
+            })?;
+
+        file.stream_stat = Some(StreamStatistics::new(result));
+
         Ok(())
     }
 

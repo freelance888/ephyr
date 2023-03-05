@@ -7,7 +7,6 @@ use actix_web::{
     error, middleware, post, web, web::Data, App, Error, HttpServer,
 };
 use futures::{FutureExt, TryFutureExt};
-use url::Url;
 
 use ephyr_log::log;
 
@@ -177,7 +176,7 @@ fn on_start(
         );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
-            update_stream_info(endpoint.id, url, state.clone());
+            update_stream_info(endpoint.id, url.to_string(), state.clone());
         }
     } else {
         // `srs::ClientId` kicks the client when `Drop`ped, so we should be
@@ -317,7 +316,7 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     Ok(())
 }
 
-fn update_stream_info(id: EndpointId, url: Url, state: State) {
+fn update_stream_info(id: EndpointId, url: String, state: State) {
     drop(tokio::spawn(
         AssertUnwindSafe(async move {
             let result = stream_probe(url).await;

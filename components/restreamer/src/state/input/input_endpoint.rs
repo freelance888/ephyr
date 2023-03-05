@@ -9,10 +9,8 @@ use uuid::Uuid;
 use crate::{
     file_manager::FileId,
     spec, srs,
-    state::{
-        client_statistics::StreamStatistics, InputKey, Label, RestreamKey,
-        Status,
-    },
+    state::{InputKey, Label, RestreamKey, Status},
+    stream_statistics::StreamStatistics,
 };
 
 /// Endpoint of an `Input` serving a live stream for `Output`s and clients.
