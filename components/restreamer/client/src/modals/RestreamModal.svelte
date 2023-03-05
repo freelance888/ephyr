@@ -245,7 +245,7 @@
 
         <div class="uk-section uk-section-xsmall">
           <div
-            class="uk-relative"
+            class="uk-position-relative"
             class:question-pointer={!hasApiKey}
             uk-tooltip={fileIdToolTip}
           >
@@ -263,19 +263,19 @@
             </label>
             <button
               type="button"
-              class="clear-file-id uk-absolute"
+              class="clear-file-id uk-position-absolute"
               uk-close
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
           <div
-            class="uk-alert uk-relative"
+            class="uk-alert uk-position-relative"
             class:question-pointer={!hasApiKey}
             uk-tooltip={fileIdToolTip}
           >
             Max amount of files in a playlist.
             <input
-              class="uk-input uk-width-1-4 files-limit uk-absolute"
+              class="uk-input uk-width-1-4 files-limit uk-position-absolute"
               type="number"
               min="2"
               step="1"
@@ -345,12 +345,6 @@
     top: 50%
     transform: translateY(-50%)
     right: 8px
-
-  .uk-absolute
-    position: absolute
-  
-  .uk-relative
-    position: relative
 
   .label-file-id
     margin-left: auto
