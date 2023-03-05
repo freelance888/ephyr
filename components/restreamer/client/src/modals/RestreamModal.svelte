@@ -150,21 +150,6 @@
       return v;
     });
   };
-
-  const showAlert = () => {
-    const text =
-      'Please specify Google Api Key in `Settings` before setting File ID';
-    const id = Math.floor(Math.random() * 999);
-    alerts = [...alerts, { text, id }];
-  };
-
-  const removeAlert = (event) => {
-    alerts = alerts.filter((alert) => alert.id !== event.detail.id);
-  };
-
-  // const tipHandler = () => {
-
-  // }
 </script>
 
 <template>
