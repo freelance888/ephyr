@@ -9,6 +9,10 @@
   export let visible = false;
   export let info;
 
+  $: fileIdToolTip = !info.googleApiKey
+    ? 'Please specify Google Api Key in `Settings` before setting File ID'
+    : null;
+
   function close() {
     visible = false;
   }
@@ -20,6 +24,10 @@
     } catch (e) {
       showError(e.message);
     }
+  }
+
+  function onEmptyGooleApiKey() {
+    if (!info.googleApiKey) info.maxFilesInPlaylist = null;
   }
 </script>
 
@@ -59,6 +67,7 @@
         <input
           class="uk-input google-api-key"
           bind:value={info.googleApiKey}
+          on:input={onEmptyGooleApiKey}
           placeholder="Google API key"
         />
         <div class="uk-alert">
@@ -67,11 +76,14 @@
         </div>
         <input
           class="uk-input uk-width-1-4"
+          class:question-pointer={!info.googleApiKey}
           type="number"
           min="2"
           step="1"
           bind:value={info.maxFilesInPlaylist}
           placeholder="Files limit"
+          disabled={!info.googleApiKey}
+          uk-tooltip={fileIdToolTip}
         />
         <div class="uk-alert">Max amount of files in a playlist.</div>
       </fieldset>
@@ -96,5 +108,9 @@
 
     .google-api-key
       margin-top: 5px;
+
+    .question-pointer:hover
+      cursor: help
+      background: #e5e5e5
 
 </style>
