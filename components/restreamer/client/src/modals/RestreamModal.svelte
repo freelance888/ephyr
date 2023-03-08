@@ -22,6 +22,7 @@
   let restreamStore = writable(restream);
 
   $: hasApiKey = $info.data?.info?.googleApiKey;
+  let isValidFileIdInput = true;
 
   let submitable = false;
   onDestroy(
@@ -95,10 +96,11 @@
 
     if (restream.fileId) {
       const fileId = fetchFileId(restream.fileId);
-      if (fileId) {
+      if (fileId || fileId.length < 33) {
+        restream.fileId = fileId;
         variables.file_id = fileId;
       } else {
-        showError(`Google File: ${restream.fileId} Id is incorrect`);
+        showError(`Google File: ${restream.fileId} ID is incorrect`);
       }
     }
 
@@ -153,12 +155,32 @@
   };
 
   const fetchFileId = (data) => {
-    let result = null;
-    const trimmed = data.match(/(?<fileId>(?<=file).+)/).groups;
-    if (trimmed.fileId) {
-      result = trimmed.fileId.split('=')[1];
+    switch (true) {
+      case data?.length === 33:
+        return data;
+      case data?.length > 33:
+        const trimmed = data.match(/(?<fileId>(?<=file\/d\/).{33})\//)?.groups;
+        if (trimmed?.fileId) return trimmed.fileId.replace('/', '');
+      default:
+        isValidFileIdInput = false;
+        return 'Google File ID is incorrect';
     }
-    return result;
+  };
+
+  const handleInputFileId = (event) => {
+    const stringWithFileId = event.target.value;
+    if (!stringWithFileId) return;
+    $restreamStore.fileId = fetchFileId(stringWithFileId);
+    validateFileIdInput();
+  };
+
+  const validateFileIdInput = () => {
+    if (!isValidFileIdInput) {
+      setTimeout(() => {
+        $restreamStore.fileId = '';
+        isValidFileIdInput = true;
+      }, 3000);
+    }
   };
 </script>
 
@@ -259,9 +281,11 @@
           <div class="layout-no-wrap">
             <input
               class="uk-input"
+              class:invalid-file-id={!isValidFileIdInput}
               type="text"
               bind:value={$restreamStore.fileId}
-              disabled={!hasApiKey}
+              on:input={handleInputFileId}
+              disabled={!hasApiKey || !isValidFileIdInput}
               placeholder="Google File ID"
             />
             <button
@@ -343,5 +367,8 @@
 
   .layout-no-wrap
     white-space: nowrap
+
+  .invalid-file-id
+    color: #f55
 
 </style>

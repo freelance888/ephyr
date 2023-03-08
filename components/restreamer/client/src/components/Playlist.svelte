@@ -32,11 +32,12 @@
         wasPlayed: x.wasPlayed,
       }))
     : [];
+
   let googleDriveFolderId = '';
+  let isValidFolderIdInput = true;
 
   async function loadPlaylist(folderId) {
-    folderId = fetchFolderId(folderId);
-    if (folderId) {
+    if (isValidFolderIdInput) {
       const variables = { id: restreamId, folder_id: folderId };
       try {
         await getPlaylistFromDrive({ variables });
@@ -45,13 +46,37 @@
         showError(e.message);
       }
     } else {
-      showError(`Google File Id: ${folderId} is incorrect`);
+      showError(`Google Folder Id: ${folderId} is incorrect`);
     }
   }
 
   function fetchFolderId(data) {
-    const trimmed = data.match(/(?<folderId>(?<=folders\/)[\S]+)/).groups;
-    return trimmed.folderId;
+    switch (true) {
+      case data?.length === 33:
+        return data;
+      case data?.length > 33:
+        const trimmed = data.match(/(?<folderId>(?<=folders\/)[\S]+)/)?.groups;
+        if (trimmed?.folderId) return trimmed.folderId;
+      default:
+        isValidFileIdInput = false;
+        return 'Google File ID is incorrect';
+    }
+  }
+
+  function handleInputFolderId(event) {
+    const stringWithFolderId = event.target.value;
+    if (!stringWithFolderId) return;
+    googleDriveFolderId = fetchFolderId(stringWithFolderId);
+    validateFileIdInput();
+  }
+
+  function validateFileIdInput() {
+    if (!isValidFolderIdInput) {
+      setTimeout(() => {
+        googleDriveFolderId = '';
+        isValidFolderIdInput = true;
+      }, 3000);
+    }
   }
 
   async function deleteFile(id) {
@@ -111,8 +136,11 @@
       <input
         id="gdrive"
         bind:value={googleDriveFolderId}
+        on:input={handleInputFolderId}
         class="google-drive-link uk-input uk-form-small uk-flex-1"
+        class:invalid-folder-id={!isValidFolderIdInput}
         type="text"
+        disabled={!isValidFolderIdInput}
         placeholder="ID of Google Drive folder"
       />
 
@@ -252,5 +280,8 @@
 
     &.is-finished
       opacity: 0.4
+
+  .invalid-folder-id
+    color: #f55
 
 </style>
