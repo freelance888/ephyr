@@ -33,6 +33,9 @@ subscription Files {
             maxProgress
             currentProgress
         }
+        streamStat {
+            ...streamStat
+        }
     }
 }
 
@@ -286,16 +289,7 @@ fragment restreamBasic on Restream {
                         label
                         fileId
                         streamStat {
-                            audioChannelLayout
-                            audioChannels
-                            audioSampleRate
-                            audioCodecName
-                            videoCodecName
-                            videoRFrameRate
-                            videoHeight
-                            videoWidth
-                            bitRate
-                            error
+                            ...streamStat
                         }
                     }
                     src {
@@ -352,4 +346,17 @@ fragment restreamOutputs on Restream {
         enabled
         status
     }
+}
+
+fragment streamStat on StreamStatistics {
+    audioChannelLayout
+    audioChannels
+    audioSampleRate
+    audioCodecName
+    videoCodecName
+    videoRFrameRate
+    videoHeight
+    videoWidth
+    bitRate
+    error
 }

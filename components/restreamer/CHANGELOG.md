@@ -14,13 +14,15 @@ All user visible changes to this project will be documented in this file. This p
 - Option to record audio-only files ([#239]);
 - Display input streams info ([#170], [#266]);
 - "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
-- Add display of last sent Command\Error onto Dashboard ([#220], [#297])
-- Display file name in backup file endpoint ([#175], [#297])
-- Add Google Drive API key to Ephyr server ([#168], [#297])
+- Display of last sent Command\Error onto Dashboard ([#220], [#297])
+- Display file name in file-backup endpoint ([#175], [#297])
+- Google Drive API key to Ephyr server ([#168], [#297])
 - Video playback for file Input ([#166], [#297])
-- Add indication if password is added to the server into Dashboard ([#162], [#297])
+- Indication if password is added to the server into Dashboard ([#162], [#297])
+- `filter_by` GET parameter ([#260], [#319])
+- Display stream info for file-backup endpoint [#322]);
 ### Fixed
-- State disapers after restart ([#235], [#267]);
+- State disappears after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
 - Inconsistency in Restreamer - key and label validation ([#253], [#302]);
 ### Miscellaneous
@@ -37,6 +39,7 @@ All user visible changes to this project will be documented in this file. This p
 [#236]: /../../issues/236
 [#241]: /../../issues/241
 [#253]: /../../issues/253
+[#260]: /../../issues/260
 
 [#239]: /../../pull/239
 [#244]: /../../pull/244
@@ -45,6 +48,8 @@ All user visible changes to this project will be documented in this file. This p
 [#296]: /../../pull/296
 [#297]: /../../pull/297
 [#302]: /../../pull/302
+[#319]: /../../pull/319
+[#322]: /../../pull/322
 
 
 

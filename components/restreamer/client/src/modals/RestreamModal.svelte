@@ -2,7 +2,6 @@
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
   import { SetRestream, Info } from '../../api/client.graphql';
-
   import { sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
@@ -20,6 +19,9 @@
 
   let previous = cloneDeep(restream);
   let restreamStore = writable(restream);
+  $: fileIdToolTip = !hasApiKey
+    ? 'Please specify Google Api Key in `Settings` before setting File ID'
+    : null;
 
   $: hasApiKey = $info.data?.info?.googleApiKey;
   let isValidFileIdInput = true;
@@ -278,37 +280,48 @@
         </div>
 
         <div class="uk-section uk-section-xsmall">
-          <div class="layout-no-wrap">
-            <input
-              class="uk-input"
-              class:invalid-file-id={!isValidFileIdInput}
-              type="text"
-              bind:value={$restreamStore.fileId}
-              on:input={handleInputFileId}
-              disabled={!hasApiKey || !isValidFileIdInput}
-              placeholder="Google File ID"
-            />
+          <div
+            class="uk-position-relative"
+            class:question-pointer={!hasApiKey}
+            uk-tooltip={fileIdToolTip}
+          >
+            <label class="uk-flex uk-flex-between backup-item">
+              <span class="label-file-id" class:disabled={!hasApiKey}
+                >File backup</span
+              >
+              <input
+                class="uk-input file-id"
+                class:invalid-file-id={!isValidFileIdInput}
+                type="text"
+                bind:value={$restreamStore.fileId}
+                on:input={handleInputFileId}
+                disabled={!hasApiKey || !isValidFileIdInput}
+                placeholder="Google File ID"
+              />
+            </label>
             <button
               type="button"
-              class="uk-display-inline-block clear-file-id"
+              class="clear-file-id uk-position-absolute"
               uk-close
               on:click={() => ($restreamStore.fileId = '')}
             />
           </div>
-          <div class="uk-alert" class:uk-alert-danger={!hasApiKey}>
-            {hasApiKey
-              ? 'Google file id for file backup.'
-              : 'Please specify Google Api Key in `Settings` before setting File ID'}
+          <div
+            class="uk-alert uk-position-relative"
+            class:question-pointer={!hasApiKey}
+            uk-tooltip={fileIdToolTip}
+          >
+            Max amount of files in a playlist.
+            <input
+              class="uk-input uk-width-1-4 files-limit uk-position-absolute"
+              type="number"
+              min="2"
+              step="1"
+              bind:value={$restreamStore.maxFilesInPlaylist}
+              placeholder="Files limit"
+              disabled={!hasApiKey}
+            />
           </div>
-          <input
-            class="uk-input uk-width-1-4 files-limit"
-            type="number"
-            min="2"
-            step="1"
-            bind:value={$restreamStore.maxFilesInPlaylist}
-            placeholder="Files limit"
-          />
-          <div class="uk-alert">Max amount of files in a playlist.</div>
         </div>
       </fieldset>
 
@@ -336,6 +349,9 @@
     border: none
     padding: 0
 
+  .uk-section>:last-child
+    margin-top: 10px;
+
   .restream
     .uk-form-small
       display: block
@@ -359,14 +375,33 @@
     padding-bottom: 0;
 
   .files-limit
-    margin-top: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    right 10px;
 
   .clear-file-id
-    position: relative
-    left: -26px;
+    top: 50%
+    transform: translateY(-50%)
+    right: 8px
 
-  .layout-no-wrap
-    white-space: nowrap
+  .label-file-id
+    margin-left: auto
+    align-self: center
+    font-size: 0.875em
+
+  .file-id
+    width: 59%
+
+  .backup-item
+    column-gap: 20px
+  
+  .disabled
+    color: #999
+
+  .question-pointer:hover
+    .uk-input
+      background: #e5e5e5
+      cursor: help
 
   .invalid-file-id
     color: #f55

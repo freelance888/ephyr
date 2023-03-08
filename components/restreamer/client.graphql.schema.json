@@ -3470,7 +3470,7 @@
           },
           {
             "name": "audioSampleRate",
-            "description": null,
+            "description": "Audio sample rate. Example - \"44100\"",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3494,7 +3494,7 @@
           },
           {
             "name": "videoCodecName",
-            "description": null,
+            "description": "Name of video codec. Example: \"h264\"",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3506,7 +3506,7 @@
           },
           {
             "name": "videoRFrameRate",
-            "description": null,
+            "description": "Video frame rate (fps). Example: \"30/1\"",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3530,7 +3530,7 @@
           },
           {
             "name": "videoHeight",
-            "description": null,
+            "description": "Video height",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3542,7 +3542,7 @@
           },
           {
             "name": "bitRate",
-            "description": null,
+            "description": "Total bit rate",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3554,7 +3554,7 @@
           },
           {
             "name": "error",
-            "description": null,
+            "description": "Error message, if we could not retrieve stream info",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -3888,6 +3888,18 @@
             "deprecationReason": null
           },
           {
+            "name": "path",
+            "description": "Full path to the file",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "state",
             "description": "State of the file",
             "args": [],
@@ -3910,6 +3922,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "streamStat",
+            "description": "Corresponding stream info",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "StreamStatistics",
               "ofType": null
             },
             "isDeprecated": false,

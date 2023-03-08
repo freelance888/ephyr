@@ -125,8 +125,8 @@ pub async fn run(state: State) -> Result<(), Failure> {
 
                 *state.server_info.lock_mut() = info;
 
-                // Try to clean up stream info
-                state.cleanup_stream_info();
+                // Try to syncronize stream info
+                state.sync_stream_info();
             })
             .catch_unwind()
             .await
