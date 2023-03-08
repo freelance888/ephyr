@@ -9,7 +9,7 @@ import {
 import {
   hasEndpointsWithDiffStreams,
   hasEndpointsWithStreamsErrors,
-} from './input.util';
+} from './streamInfo.util';
 
 export const getAggregatedStreamsData = (reStreams) =>
   reStreams.reduce(

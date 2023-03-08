@@ -273,7 +273,7 @@
             class:question-pointer={!hasApiKey}
             uk-tooltip={fileIdToolTip}
           >
-            Max amount of files in a playlist.
+            Max number of files in a playlist.
             <input
               class="uk-input uk-width-1-4 files-limit uk-position-absolute"
               type="number"

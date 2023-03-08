@@ -37,7 +37,7 @@
   import {
     getEndpointsWithDiffStreams,
     getEndpointsWithStreamsErrors,
-  } from '../utils/input.util';
+  } from '../utils/streamInfo.util';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -225,13 +225,11 @@
       >
         Full view
       </a>
-      <div class="uk-flex">
-        <span
-          class="item-icon uk-icon uk-margin-right"
-          hidden={!hasVideos || isFullView}
-          uk-icon="icon: youtube; ratio: 1.5"
-        />
-
+      <div class="uk-flex uk-flex-middle">
+        <i class="fa fa-headphones uk-margin-right"
+           aria-hidden="true"
+           hidden={!hasVideos || isFullView}>
+        </i>
         {#if value.outputs && value.outputs.length > 0}
           <span class="total">
             {#each statusesList as status (status)}

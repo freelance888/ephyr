@@ -15,7 +15,6 @@
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Playlist from './Playlist.svelte';
-  import Output from './Output.svelte';
   import OutputModal from '../modals/OutputModal.svelte';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
@@ -45,17 +44,19 @@
   });
   const info = subscribe(Info, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
-  const files = subscribe(Files, { errorPolicy: 'all' });
+  const filesInfo = subscribe(Files, { errorPolicy: 'all' });
 
   let title = document.title;
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
-  $: infoError = $info && $info.error;
+  $: infoError = $info?.error;
   $: isLoading = !isOnline || $singleRestream.loading;
-  $: canRenderMainComponent = isOnline && $singleRestream.data && $info.data;
-  $: stateError = $singleRestream && $singleRestream.error;
-  $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
-  $: restream = canRenderMainComponent && $singleRestream.data?.restream;
+  $: canRenderMainComponent = isOnline && $singleRestream.data && $info.data && $filesInfo?.data;
+  $: restreamError = $singleRestream?.error;
+  $: sInfo = $serverInfo?.data?.serverInfo;
+  $: restream = canRenderMainComponent && $singleRestream?.data?.restream;
+  $: filesError = $filesInfo?.error;
+  $: files = canRenderMainComponent && $filesInfo?.data?.files || [];
 
   $: translationYoutubeUrl =
     canRenderMainComponent &&
@@ -70,7 +71,7 @@
   <Shell
     {isLoading}
     {canRenderMainComponent}
-    error={stateError || infoError}
+    error={restreamError || infoError | filesError}
     serverInfo={sInfo}
   >
     <div slot="main">
@@ -85,7 +86,7 @@
       />
       <div class="section-title">Playlist</div>
       <section class="uk-section uk-section-muted uk-padding-remove">
-        <Playlist restreamId={restream.id} {playlist} />
+        <Playlist restreamId={restream.id} {playlist} {files} />
       </section>
       {#if translationYoutubeUrl}
         <div class="section-title">Watch translation</div>

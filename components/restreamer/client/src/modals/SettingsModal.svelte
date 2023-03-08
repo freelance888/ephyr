@@ -85,7 +85,7 @@
           disabled={!info.googleApiKey}
           uk-tooltip={fileIdToolTip}
         />
-        <div class="uk-alert">Max amount of files in a playlist.</div>
+        <div class="uk-alert">Max number of files in a playlist.</div>
       </fieldset>
 
       <button class="uk-button uk-button-primary" on:click={submit_change}

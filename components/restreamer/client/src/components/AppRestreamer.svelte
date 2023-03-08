@@ -18,15 +18,19 @@
   const info = subscribe(Info, { errorPolicy: 'all' });
   const state = subscribe(State, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
-  const files = subscribe(Files, { errorPolicy: 'all' });
+  const filesInfo = subscribe(Files, { errorPolicy: 'all' });
 
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
   $: isLoading = !isOnline || $state.loading;
-  $: canRenderMainComponent = isOnline && $state.data && $info.data;
-  $: stateError = $state && $state.error;
-  $: sInfo = $serverInfo && $serverInfo.data && $serverInfo.data.serverInfo;
+  $: canRenderMainComponent = isOnline && $state.data && $info.data && $filesInfo.data;
+  $: stateError = $state?.error;
+  $: sInfo = $serverInfo?.data?.serverInfo;
   $: document.title = (isOnline ? '' : '🔴  ') + document.title;
+
+  $: filesError = $filesInfo?.error;
+  $: files = canRenderMainComponent && $filesInfo?.data?.files || [];
+
 </script>
 
 <template>
@@ -34,7 +38,7 @@
     {isLoading}
     {canRenderToolbar}
     {canRenderMainComponent}
-    error={stateError || infoError}
+    error={stateError || infoError || filesError}
     serverInfo={sInfo}
   >
     <Toolbar

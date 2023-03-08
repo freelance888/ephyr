@@ -1,5 +1,6 @@
 <script lang="js">
   import { copyToClipboard } from '../../utils/util';
+  import StreamInfo from './StreamInfo.svelte';
 
   export let url;
   export let previewUrl;
@@ -13,12 +14,10 @@
       <span class="url-placeholder">{url}</span>
     {/if}
     {#if streamInfo}
-      <span
-        class="info-icon"
-        class:has-error={isError}
-        uk-icon="icon: info; ratio: 0.7"
-        uk-tooltip={streamInfo}
-      />
+      <StreamInfo
+        {streamInfo}
+        {isError}
+      ></StreamInfo>
     {/if}
     {#if previewUrl}
       <span class="url-preview"
@@ -49,9 +48,6 @@
       .url-copy-btn
         opacity: 1
         vertical-align: baseline
-
-  .info-icon
-    margin-left: 4px
 
   .url-placeholder
     word-break: break-all

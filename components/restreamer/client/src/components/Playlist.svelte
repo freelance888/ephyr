@@ -10,6 +10,7 @@
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
+  import FileInfo from './common/FileInfo.svelte';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -21,6 +22,7 @@
 
   export let restreamId;
   export let playlist;
+  export let files = [];
 
   $: queue = playlist
     ? playlist.queue.map((x) => ({
@@ -29,10 +31,12 @@
         isPlaying: playlist.currentlyPlayingFile
           ? playlist.currentlyPlayingFile.fileId === x.fileId
           : false,
+        file: files.find(f => f.fileId === x.fileId),
         wasPlayed: x.wasPlayed,
       }))
     : [];
   let googleDriveFolderId = '';
+
 
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
@@ -134,7 +138,6 @@
             uk-icon="table"
             on:mousedown={startDrag}
           />
-
           <Confirm let:confirm>
             <span slot="title"
               >{item.isPlaying ? 'Stop' : 'Start'} playing file</span
@@ -143,7 +146,7 @@
             <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
-              class="item-name uk-height-1-1 uk-width-1-1"
+              class="item-file uk-height-1-1 uk-width-1-1 uk-flex uk-flex-middle"
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
               on:click={() => confirm(() => startStopPlaying(item.id))}
@@ -151,10 +154,10 @@
               <span
                 class="item-icon uk-icon"
                 uk-icon={item.isPlaying
-                  ? 'icon: future; ratio: 2.5'
-                  : 'icon: youtube; ratio: 2.5'}
+                  ? 'icon: future; ratio: 2'
+                  : 'icon: play-circle; ratio: 2'}
               />
-              <span>{item.name}</span>
+              <FileInfo classList='uk-display-inline-block' file={item.file}></FileInfo>
             </div>
           </Confirm>
           <Confirm let:confirm>
@@ -234,9 +237,8 @@
     padding-right: 4px
     padding-left: 4px
 
-  .item-name
+  .item-file
     flex: 1
-    padding: 8px
     &.is-playing
       font-weight: 700
 
