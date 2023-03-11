@@ -9,6 +9,7 @@ use actix_web::{
 use futures::{FutureExt, TryFutureExt};
 use tap::Tap;
 
+
 use ephyr_log::{
     tracing,
     tracing::{instrument, Instrument, Span},
@@ -358,6 +359,7 @@ fn on_hls(
     }
     Ok(())
 }
+
 #[instrument(parent=span, skip_all)]
 fn update_stream_info(id: EndpointId, url: String, state: State, span: &Span) {
     drop(
