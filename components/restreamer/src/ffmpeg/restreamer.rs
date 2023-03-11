@@ -8,11 +8,7 @@ use crate::{
     state::{State, Status},
 };
 use chrono::{DateTime, Utc};
-use ephyr_log::{
-    tracing,
-    tracing::{instrument, Span},
-    Instrument,
-};
+use ephyr_log::{tracing, tracing::instrument, Instrument};
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use std::{
     panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
@@ -57,9 +53,6 @@ pub struct Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     abort_if_hanged: future::AbortHandle,
-
-    /// Handle tracing
-    span: Span,
 }
 
 impl Restreamer {
@@ -69,12 +62,11 @@ impl Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
-    #[instrument(skip_all, parent=&span)]
+    #[instrument(name = "restreamer_run", skip_all)]
     pub fn run<P: AsRef<Path> + Send + 'static>(
         ffmpeg_path: P,
         kind: RestreamerKind,
         state: State,
-        span: Span,
     ) -> Self {
         let (kind_for_abort, state_for_abort) = (kind.clone(), state.clone());
         let kind_for_spawn = kind.clone();
@@ -114,11 +106,7 @@ impl Restreamer {
                             .await?;
 
                             let running = kind
-                                .run_ffmpeg(
-                                    cmd,
-                                    kill_rx_for_ffmpeg,
-                                    Span::current(),
-                                )
+                                .run_ffmpeg(cmd, kill_rx_for_ffmpeg)
                                 .in_current_span();
                             pin_mut!(running);
 
@@ -195,7 +183,6 @@ impl Restreamer {
             kind,
             kill_tx,
             abort_if_hanged,
-            span,
         }
     }
 
@@ -230,7 +217,6 @@ impl Restreamer {
 
 impl Drop for Restreamer {
     /// Send signal that [`Restreamer`] process is finished
-    #[instrument(skip(self), parent=&self.span)]
     fn drop(&mut self) {
         // Send notification to kill FFMPEG with SIGTERM
         tracing::debug!("Send signal to FFmpeg's");

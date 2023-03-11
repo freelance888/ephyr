@@ -15,8 +15,8 @@ use nix::{
     unistd::Pid,
 };
 use std::{
-    convert::TryInto, os::unix::process::ExitStatusExt, path::Path,
-    time::Duration,
+    convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
+    path::Path, time::Duration,
 };
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
@@ -78,6 +78,19 @@ pub enum RestreamerKind {
     /// Sourcing a video and audio from local file and streaming it to input
     /// endpoint.
     File(FileRestreamer),
+}
+
+impl Display for RestreamerKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RestreamerKind::Copy(_r) => write!(f, "RestreamerKind::Copy"),
+            RestreamerKind::Transcoding(_r) => {
+                write!(f, "RestreamerKind::Transcoding")
+            }
+            RestreamerKind::Mixing(_r) => write!(f, "RestreamerKind::Mixing"),
+            RestreamerKind::File(_r) => write!(f, "RestreamerKind::File"),
+        }
+    }
 }
 
 impl RestreamerKind {
@@ -388,18 +401,17 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
-    #[instrument(parent = &span, skip_all, fields(?cmd))]
+    #[instrument(skip_all, fields(?cmd))]
     pub(crate) async fn run_ffmpeg(
         &self,
         cmd: Command,
         kill_rx: watch::Receiver<RestreamerStatus>,
-        span: Span,
     ) -> io::Result<()> {
         if let Self::Mixing(m) = self {
-            m.start_fed_mixins_fifo(&kill_rx, span.clone());
+            m.start_fed_mixins_fifo(&kill_rx);
         }
 
-        Self::run_ffmpeg_(cmd, kill_rx, span).await
+        Self::run_ffmpeg_(cmd, kill_rx).await
     }
 
     /// Properly runs the given [FFmpeg] [`Command`] awaiting its completion.
@@ -413,13 +425,11 @@ impl RestreamerKind {
     /// [FFmpeg] process was stopped.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(parent = &span, skip_all)]
     async fn run_ffmpeg_(
         mut cmd: Command,
         mut kill_rx: watch::Receiver<RestreamerStatus>,
-        span: Span,
     ) -> io::Result<()> {
-        let mut process = cmd.spawn()?;
+        let process = cmd.spawn()?;
 
         // To avoid instant resolve on await for `kill_rx`
         let _ = *kill_rx.borrow_and_update();
@@ -446,8 +456,11 @@ impl RestreamerKind {
             .in_current_span(),
         );
 
-        process.capture_logs(span, parse_ffmpeg_log_line);
-        let out = process.wait_with_output().await?;
+        let out = process.capture_logs_and_wait_for_output(
+            tracing::info_span!(
+                parent: Span::current(), "ffmpeg_proc", uuid = %Uuid::new_v4()
+            ),
+            parse_ffmpeg_log_line, false).await?;
         kill_task.abort();
 
         let status_code = out.status.code();

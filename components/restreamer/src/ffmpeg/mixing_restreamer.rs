@@ -16,7 +16,7 @@ use std::{
 
 use ephyr_log::{
     tracing,
-    tracing::{instrument, Instrument, Span},
+    tracing::{instrument, Instrument},
 };
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
@@ -358,11 +358,10 @@ impl MixingRestreamer {
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(parent = &span, skip_all)]
+    #[instrument(skip_all)]
     pub(crate) fn start_fed_mixins_fifo(
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
-        span: Span,
     ) {
         async fn run_copy_and_stop_on_signal(
             input: Arc<Mutex<teamspeak::Input>>,
@@ -375,7 +374,7 @@ impl MixingRestreamer {
             // Initialize copying future to fed it into select
             let mut src = input.lock().await;
             let mut file = File::create(&fifo_path).await?;
-            let copying = io::copy(&mut *src, &mut file).in_current_span();
+            let copying = io::copy(&mut *src, &mut file);
             pin!(copying);
 
             // Run copying to FIFO and stops if receive signal from `kill_rx`
@@ -408,14 +407,20 @@ impl MixingRestreamer {
                 });
             }
             if let Some(i) = m.stdin.as_ref() {
-                drop(
-                    tokio::spawn(run_copy_and_stop_on_signal(
-                        Arc::clone(i),
-                        m.get_fifo_path(),
-                        kill_rx.clone(),
-                    ))
+                drop(tokio::spawn(
+                    {
+                        tracing::debug!(
+                            fifo=?m.get_fifo_path().as_path(),
+                            "Start copying from FIFO",
+                        );
+                        run_copy_and_stop_on_signal(
+                            Arc::clone(i),
+                            m.get_fifo_path(),
+                            kill_rx.clone(),
+                        )
+                    }
                     .in_current_span(),
-                );
+                ));
             }
         }
     }

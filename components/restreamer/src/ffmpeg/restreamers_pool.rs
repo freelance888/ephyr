@@ -12,7 +12,7 @@ use crate::{
     ffmpeg::{restreamer::Restreamer, restreamer_kind::RestreamerKind},
     state::{self, State},
 };
-use ephyr_log::tracing::{instrument, Span};
+use ephyr_log::tracing::instrument;
 use std::result::Result::Err;
 
 /// Pool of [FFmpeg] processes performing re-streaming of a media traffic.
@@ -41,9 +41,6 @@ pub struct RestreamersPool {
     /// [FFmpeg]: https://ffmpeg.org
     /// [`State`]: crate::state::State
     state: State,
-
-    /// Handle tracing
-    span: Span,
 }
 
 impl RestreamersPool {
@@ -60,7 +57,6 @@ impl RestreamersPool {
             pool: HashMap::new(),
             files_root: file_root,
             state,
-            span: tracing::info_span!("restreamers_pool"),
         }
     }
 
@@ -68,7 +64,7 @@ impl RestreamersPool {
     /// according to the given renewed [`state::Restream`]s.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(skip_all, fields(group = "restreamers_pool"))]
+    #[instrument(name = "pool::apply" skip_all)]
     pub(crate) fn apply(&mut self, restreams: &[state::Restream]) {
         // The most often case is when one new FFmpeg process is added.
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
@@ -107,6 +103,9 @@ impl RestreamersPool {
         self.pool = new_pool;
     }
 
+    #[instrument(name = "pool::apply_playlist", skip_all,
+        fields(actor=%restream.id))
+    ]
     fn apply_playlist(
         &mut self,
         restream: &state::Restream,
@@ -131,6 +130,13 @@ impl RestreamersPool {
     /// running [FFmpeg] processes in its `pool` as much as possible.
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    #[instrument(name = "pool::apply_input", skip_all,
+        fields(
+            restream.key=%key,
+            input.key=%input.key,
+            is_playing_playlist)
+        )
+    ]
     fn apply_input(
         &mut self,
         key: &state::RestreamKey,
@@ -140,12 +146,14 @@ impl RestreamersPool {
     ) {
         if let Some(state::InputSrc::Failover(s)) = &input.src {
             for i in &s.inputs {
+                tracing::debug!(actor=%i.id,"Failover input");
                 self.apply_input(key, i, false, new_pool);
             }
         }
 
         for endpoint in &input.endpoints {
             let id = endpoint.id.into();
+            tracing::debug!(actor=%id, "Input endpoint aka Restreamer");
 
             let kind = RestreamerKind::from_input(
                 input,
@@ -167,6 +175,8 @@ impl RestreamersPool {
     /// running [FFmpeg] processes in its `pool` as much as possible.
     ///
     /// [FFmpeg]: https://ffmpeg.org
+    #[instrument(name = "pool::apply_output" skip_all,
+        fields(src=%from_url.path(), dst=output.dst.path()))]
     fn apply_output(
         &mut self,
         from_url: &Url,
@@ -193,15 +203,16 @@ impl RestreamersPool {
     /// and checks if it needs to be restarted bases on `new_kind`. If not
     /// the process is inserted to `new_pool`, otherwise a new process is
     /// created with new settings.
-    #[instrument(parent = &self.span, skip(self))]
+    #[instrument(name = "pool::apply_new_kind", skip(new_pool),
+        fields(id=%id, src=%new_kind.src_url().path(), dst=%new_kind.to_url()))]
     fn apply_new_kind(
         &mut self,
         id: Uuid,
         new_kind: RestreamerKind,
         new_pool: &mut HashMap<Uuid, Restreamer>,
     ) {
-        let restream_span =
-            tracing::info_span!(parent: &self.span, "restreamer", actor = %id);
+        tracing::info!(%id, %new_kind, "New kind applied");
+
         let process = self
             .pool
             .remove(&id)
@@ -211,7 +222,6 @@ impl RestreamersPool {
                     self.ffmpeg_path.clone(),
                     new_kind,
                     self.state.clone(),
-                    restream_span,
                 )
             });
 

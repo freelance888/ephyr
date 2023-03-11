@@ -22,6 +22,7 @@ use ephyr_log::{
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{fs, process::Command};
+use uuid::Uuid;
 
 use crate::{api, display_panic, dvr};
 
@@ -132,18 +133,25 @@ impl Server {
                 loop {
                     let cmd = &mut cmd;
                     let _ = AssertUnwindSafe(async move {
-                        let mut process = cmd.spawn().map_err(|e| {
+                        let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;
-                        process
-                            .capture_logs(Span::current(), parse_srs_log_line);
-
-                        let _ =
-                            process.wait_with_output().await.map_err(|e| {
+                        let _ = process
+                            .capture_logs_and_wait_for_output(
+                                tracing::info_span!(
+                                    parent: Span::current(),
+                                    "srs_proc",
+                                    uuid = %Uuid::new_v4()
+                                ),
+                                parse_srs_log_line,
+                                true,
+                            )
+                            .await
+                            .map_err(|e| {
                                 tracing::error!(
                                     "Failed to observe SRS server: {e}"
                                 );
-                            })?;
+                            });
                         Ok(())
                     })
                     .unwrap_or_else(|_: ()| ())
