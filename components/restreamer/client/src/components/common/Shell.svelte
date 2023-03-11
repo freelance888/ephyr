@@ -218,4 +218,16 @@
   .has-warning
     color: var(--warning-color)
 
+  .url-action-btn
+    align-self: center
+    height: 100%
+    color: var(--primary-text-color)
+    opacity: 0
+    text-transform: initial
+    text-decoration: none
+    font-size: 13px
+    transition: 0.1s ease-in
+    &:hover
+      color: var(--primary-text-hover-color)
+
 </style>

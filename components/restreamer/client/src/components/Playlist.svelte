@@ -37,7 +37,6 @@
     : [];
   let googleDriveFolderId = '';
 
-
   async function loadPlaylist(folderId) {
     const variables = { id: restreamId, folder_id: folderId };
     try {
@@ -149,16 +148,20 @@
               class="item-file uk-height-1-1 uk-width-1-1 uk-flex uk-flex-middle"
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
-              on:click={() => confirm(() => startStopPlaying(item.id))}
+
             >
-              <span
-                class="item-icon uk-icon"
-                uk-icon={item.isPlaying
-                  ? 'icon: future; ratio: 2'
-                  : 'icon: play-circle; ratio: 2'}
-              />
-              <FileInfo classList='uk-display-inline-block' file={item.file}></FileInfo>
+                <span
+                  class="item-icon"
+                  on:click={() => confirm(() => startStopPlaying(item.id))}
+                >
+                  {#key item.isPlaying}
+                    <i class="fas {item.isPlaying ? 'fa-stop-circle' : 'fa-play-circle'}"/>
+                  {/key}
+                </span>
+
+              <FileInfo file={item.file} classList='uk-margin-small-left'></FileInfo>
             </div>
+
           </Confirm>
           <Confirm let:confirm>
             <span slot="title">Delete file from playlist</span>
@@ -220,7 +223,6 @@
 
     &:hover
       background-color: #f8f8f8
-      cursor: pointer
 
       .uk-close
         display: block
@@ -236,11 +238,18 @@
   .item-icon
     padding-right: 4px
     padding-left: 4px
+    font-size: 32px
+    cursor: pointer
+
+    .is-downloading
+      color: var(--warning-color)
 
   .item-file
     flex: 1
     &.is-playing
       font-weight: 700
+      .item-icon
+        color: var(--success-color)
 
     &.is-finished
       opacity: 0.4

@@ -254,7 +254,7 @@
                 >File backup</span
               >
               <input
-                class="uk-input file-id"
+                class="uk-input uk-form-small file-id"
                 type="text"
                 bind:value={$restreamStore.fileId}
                 disabled={!hasApiKey}

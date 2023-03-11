@@ -5,13 +5,12 @@
 
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
-  import Url from './Url.svelte';
   import StreamInfo from './StreamInfo.svelte';
 
   export let file;
   export let classList;
 
-  $: fileDownloadProgress = getDownloadProgress();
+  $: fileDownloadProgress = getDownloadProgress(file);
 
   $: isDownloadError = file?.state === 'DOWNLOAD_ERROR';
 
@@ -28,13 +27,13 @@
     }
   }
 
-  const getDownloadProgress = () => {
+  const getDownloadProgress = (f) => {
     let value =
-      file?.downloadState &&
-      file.downloadState.currentProgress !==
-      file.downloadState.maxProgress
-        ? (file.downloadState.currentProgress /
-          file.downloadState.maxProgress) * 100
+      f?.downloadState &&
+      f.downloadState.currentProgress !==
+      f.downloadState.maxProgress
+        ? (f.downloadState.currentProgress /
+          f.downloadState.maxProgress) * 100
         : 0;
 
     return value < 0 || value >= 100 ? undefined : value;
@@ -44,16 +43,15 @@
 
 <template>
   <Confirm let:confirm>
-    <div class="uk-flex uk-flex-middle {classList}">
+    <div class="file-info-container uk-flex uk-flex-middle {classList}">
       <div class="uk-flex uk-flex-column">
         <div class="uk-flex uk-flex-middle">
-          <a
+          <span
             href="/"
-            class="file-name "
-            on:click|preventDefault={confirm(() => downloadFile())}
+            class="file-name uk-display-inline-block"
           >
             {fileName}
-          </a>
+          </span>
           {#if isDownloadError}
             <span
               class="info-icon has-error"
@@ -70,7 +68,7 @@
               value={fileDownloadProgress}
               max="100"
             />
-            <span class="uk-display-inline-block download-percents"
+            <span class="download-percents"
             >{fileDownloadProgress.toFixed(0)}</span
             >%
           {/if}
@@ -82,6 +80,14 @@
           isError={!!file.streamStat?.error}>
         </StreamInfo>
       {/if}
+      <button
+        class="download-btn url-action-btn uk-button uk-button-link  uk-margin-small-left"
+        on:click|preventDefault={confirm(() => downloadFile())}
+      >
+        Download
+        <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
+      </button>
+
     </div>
     <span slot="title"
     >Download file <code>{fileName}</code></span
@@ -97,6 +103,14 @@
   .file-name
     color: var(--primary-text-color)
     padding-right: 6px
+
+  .file-info-container
+    &:hover
+      .download-btn
+        opacity: 1
+
+  .download-btn
+    opacity: 0
 
   .uk-progress
     height: 3px;
@@ -116,4 +130,6 @@
     font-size: smaller
     margin: 0 4px
   }
+
+
 </style>

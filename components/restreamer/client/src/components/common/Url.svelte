@@ -28,7 +28,7 @@
     {/if}
     {#if url}
       <button
-        class="url-copy-btn uk-button uk-button-link uk-margin-small-left"
+        class="url-action-btn uk-button uk-button-link uk-margin-small-left"
         on:click|preventDefault={() => copyToClipboard(url)}
       >
         Copy
@@ -45,7 +45,7 @@
     min-width: 20em
 
     &:hover
-      .url-copy-btn
+      .url-action-btn
         opacity: 1
         vertical-align: baseline
 
@@ -54,17 +54,5 @@
 
   .url-preview
     margin-left: 4px
-
-  .url-copy-btn
-    align-self: center
-    height: 100%
-    color: var(--primary-text-color)
-    opacity: 0
-    text-transform: initial
-    text-decoration: none
-    font-size: 13px
-    transition: 0.1s ease-in
-    &:hover
-      color: var(--primary-text-hover-color)
 
 </style>

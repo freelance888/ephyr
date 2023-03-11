@@ -128,10 +128,10 @@
     font-size: 16px
 
   .is-protected
-    color: #32d296
+    color: var(--success-color);
 
   .not-protected
-    color: #f0506e;
+    color: var(--danger-color);
 
   .uk-close
     position: absolute
