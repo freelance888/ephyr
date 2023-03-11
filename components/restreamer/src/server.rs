@@ -6,7 +6,7 @@ pub mod statistics;
 
 use std::{net::IpAddr, time::Duration};
 
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::future;
 use tokio::{fs, time};
 
@@ -35,7 +35,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
             detect_public_ip()
                 .await
                 .ok_or_else(|| {
-                    log::error!("Cannot detect server's public IP address");
+                    tracing::error!("Cannot detect server's public IP address");
                 })?
                 .to_string(),
         );
@@ -43,12 +43,12 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {e}");
+            tracing::error!("Failed to resolve FFmpeg binary path: {e}");
         })?;
 
-    let state = State::try_new(&cfg.state_path)
-        .await
-        .map_err(|e| log::error!("Failed to initialize server state: {e}"))?;
+    let state = State::try_new(&cfg.state_path).await.map_err(|e| {
+        tracing::error!("Failed to initialize server state: {e}");
+    })?;
 
     let srs = srs::Server::try_new(
         &cfg.srs_path,
@@ -59,7 +59,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     )
     .await
-    .map_err(|e| log::error!("Failed to initialize SRS server: {e}"))?;
+    .map_err(|e| tracing::error!("Failed to initialize SRS server: {e}"))?;
     State::on_change(
         "cleanup_dvr_files",
         &state.restreams,

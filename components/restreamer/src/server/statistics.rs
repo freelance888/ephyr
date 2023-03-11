@@ -4,7 +4,7 @@ use systemstat::{Platform, System};
 use tokio::time;
 
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
@@ -29,7 +29,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
 
     let sys = System::new();
     if let Err(e) = sys.cpu_load_aggregate().and(sys.memory()) {
-        log::error!("Skip statistics. Failed to gather with error: {}", e);
+        tracing::error!("Skip statistics. Failed to gather with error: {}", e);
         return Ok(());
     }
 
@@ -65,7 +65,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. CPU load: error: {}", x);
+                        tracing::error!("Statistics. CPU load: error: {}", x);
                     }
                 }
 
@@ -83,7 +83,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. Memory: error: {}", x);
+                        tracing::error!("Statistics. Memory: error: {}", x);
                     }
                 }
 
@@ -127,7 +127,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. Networks: error: {}", x);
+                        tracing::error!("Statistics. Networks: error: {}", x);
                     }
                 }
 
@@ -139,7 +139,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
             .catch_unwind()
             .await
             .map_err(|p| {
-                log::error!(
+                tracing::error!(
                     "Panicked while getting server statistics {}",
                     display_panic(&p),
                 );

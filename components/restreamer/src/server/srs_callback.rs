@@ -8,7 +8,6 @@ use actix_web::{
 };
 use futures::{FutureExt, TryFutureExt};
 use tap::Tap;
-use url::Url;
 
 use ephyr_log::{
     tracing,

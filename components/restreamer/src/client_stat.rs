@@ -15,7 +15,7 @@ use crate::{
     types::DroppableAbortHandle,
     State,
 };
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{future, FutureExt as _, TryFutureExt};
 use tokio::time;
 
@@ -25,6 +25,7 @@ use crate::client_stat::statistics_query::{
 };
 
 use crate::state::ServerInfo;
+use ephyr_log::tracing::Instrument;
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
@@ -59,7 +60,6 @@ impl ClientJobsPool {
             let job = self.pool.remove(&client_id).unwrap_or_else(|| {
                 ClientJob::gather_statistics(c.id.clone(), self.state.clone())
             });
-
             drop(new_pool.insert(client_id, job));
         }
 
@@ -151,13 +151,14 @@ impl ClientJob {
                         async move {
                             Self::fetch_client_stat(client_id, state1).await
                         }
+                        .in_current_span()
                         .unwrap_or_else(|e| {
                             let error_message = format!(
                                 "Error retrieving data for client \
                                 {client_id}. {e}",
                             );
 
-                            log::error!("{}", error_message);
+                            tracing::error!(error_message);
                             save_client_error(
                                 client_id,
                                 vec![error_message],
@@ -172,7 +173,7 @@ impl ClientJob {
                             "Panicked while getting statistics from client: {}",
                             display_panic(&p)
                         );
-                        log::error!("{}", error_message);
+                        tracing::error!(error_message);
                     });
 
                 time::sleep(Duration::from_secs(2)).await;
@@ -181,7 +182,7 @@ impl ClientJob {
 
         // Spawn periodic job for gathering info from client
         drop(tokio::spawn(spawner.map(move |_| {
-            log::info!(
+            tracing::info!(
                 "Client {} removed. Stop getting statistics",
                 client_id1
             );
@@ -199,7 +200,7 @@ impl ClientJob {
         type Vars = <StatisticsQuery as GraphQLQuery>::Variables;
         type ResponseData = <StatisticsQuery as GraphQLQuery>::ResponseData;
 
-        log::debug!("Getting statistics from client: {}", client_id);
+        tracing::debug!("Getting statistics from client: {}", client_id);
 
         let request_body = StatisticsQuery::build_query(Vars {});
         let request = reqwest::Client::builder()

@@ -11,7 +11,7 @@ use actix_web_httpauth::extractors::{
     AuthExtractor as _, AuthExtractorConfig, AuthenticationError,
 };
 use actix_web_static_files::ResourceFiles;
-use ephyr_log::{log, tracing_actix_web::TracingLogger};
+use ephyr_log::{tracing, tracing_actix_web::TracingLogger};
 use futures::{future, FutureExt as _};
 use juniper::http::playground::playground_source;
 use juniper_actix::{graphql_handler, subscriptions::subscriptions_handler};
@@ -130,10 +130,10 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         .service(ResourceFiles::new("/", root_dir_files))
     })
     .bind((cfg.client_http_ip, cfg.client_http_port))
-    .map_err(|e| log::error!("Failed to bind client HTTP server: {e}"))?
+    .map_err(|e| tracing::error!("Failed to bind client HTTP server: {e}"))?
     .run()
     .await
-    .map_err(|e| log::error!("Failed to run client HTTP server: {e}"))?)
+    .map_err(|e| tracing::error!("Failed to run client HTTP server: {e}"))?)
 }
 
 /// List of schemes
@@ -298,7 +298,7 @@ async fn playground() -> HttpResponse {
 /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
 fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
     let route = req.uri().path();
-    log::debug!("authorize URI PATH: {}", route);
+    tracing::debug!("authorize URI PATH: {}", route);
 
     if route.starts_with(STATISTICS_ROUTE_API) {
         return Ok(req);

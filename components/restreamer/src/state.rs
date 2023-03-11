@@ -30,7 +30,7 @@ use std::{future::Future, mem, panic::AssertUnwindSafe, path::Path};
 
 use anyhow::anyhow;
 use derive_more::{Display, From, Into};
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{
     future::TryFutureExt as _,
     sink,
@@ -134,7 +134,7 @@ impl State {
                 serde_json::to_vec(&persisted_state)
                     .expect("Failed to serialize server state"),
             )
-            .map_err(|e| log::error!("Failed to persist server state: {e}"))
+            .map_err(|e| tracing::error!("Failed to persist server state: {e}"))
         };
         let persist_state2 = persist_state1.clone();
         let persist_state3 = persist_state1.clone();
@@ -228,7 +228,7 @@ impl State {
             )
             .catch_unwind()
             .map_err(move |p| {
-                log::error!(
+                tracing::error!(
                     "Panicked executing `{}` hook of state: {}",
                     name,
                     display_panic(&p),
@@ -803,7 +803,7 @@ impl State {
                 if let Some(main_input) = item {
                     Self::update_stat(&mut stat, main_input.status);
                 } else {
-                    log::error!(
+                    tracing::error!(
                         "Main endpoint not found for {} input",
                         restream.input.id
                     );

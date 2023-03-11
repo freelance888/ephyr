@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{future, stream::TryStreamExt};
 use once_cell::sync::OnceCell;
 use tokio::fs;
@@ -104,7 +104,11 @@ impl Storage {
                 .await
                 .unwrap_or_else(|e| {
                     if e.kind() != io::ErrorKind::NotFound {
-                        log::error!("Failed to list {} DVR files: {}", id, e);
+                        tracing::error!(
+                            "Failed to list {} DVR files: {}",
+                            id,
+                            e
+                        );
                     }
                     vec![]
                 });
@@ -126,7 +130,7 @@ impl Storage {
 
         if let Err(e) = fs::remove_file(full).await {
             if e.kind() != io::ErrorKind::NotFound {
-                log::error!(
+                tracing::error!(
                     "Failed to remove {} DVR file: {}",
                     path.display(),
                     e,
@@ -167,7 +171,7 @@ impl Storage {
                 })
                 .await
                 .unwrap_or_else(|e| {
-                    log::error!("Failed to cleanup DVR files: {e}");
+                    tracing::error!("Failed to cleanup DVR files: {e}");
                 });
         };
     }

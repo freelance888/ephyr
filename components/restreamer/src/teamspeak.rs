@@ -20,7 +20,7 @@ use std::{
 use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
 use derive_more::{Display, Error};
-use ephyr_log::{log, tracing};
+use ephyr_log::tracing;
 use futures::{
     future, ready, sink, FutureExt as _, Stream, StreamExt as _,
     TryFutureExt as _,
@@ -167,16 +167,15 @@ impl Input {
                     .map_err(AudioCaptureError::into_backoff)
             },
             |err, dur| {
-                log::error!(
+                tracing::error!(
                     "Backoff TeamSpeak server audio capturing for {} due to \
-                     error: {}",
+                     error: {err}",
                     humantime::format_duration(dur),
-                    err,
                 );
             },
         )
         .map_err(move |e| {
-            log::error!("Cannot capture audio from TeamSpeak server: {e}");
+            tracing::error!("Cannot capture audio from TeamSpeak server: {e}");
             is_conn_unrecoverable.store(true, Ordering::SeqCst);
         });
 
@@ -387,7 +386,7 @@ impl AudioCapture {
         cfg: Config,
         audio: Arc<Mutex<AudioHandler>>,
     ) -> Result<(), AudioCaptureError> {
-        log::debug!(
+        tracing::debug!(
             "Connecting to TeamSpeak server: {}/{:?}",
             cfg.get_address(),
             cfg.get_channel()
@@ -436,7 +435,7 @@ impl Future for AudioCapture {
                 ) {
                     return Poll::Ready(Err(E::DecodingFailed(e)));
                 }
-                log::warn!("Drop audio packet from TeamSpeak server: {e}");
+                tracing::warn!("Drop audio packet from TeamSpeak server: {e}");
             }
         }
     }

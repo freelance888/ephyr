@@ -6,7 +6,7 @@ use std::{
 };
 
 use derive_more::{Deref, Display, Into};
-use ephyr_log::log;
+use ephyr_log::tracing;
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
@@ -165,7 +165,7 @@ impl FileManager {
             {
                 let file_path = self.file_root_dir.join(disk_file.file_name());
                 let _ = std::fs::remove_file(file_path).map_err(|err| {
-                    log::error!("Can not delete file. {}", err);
+                    tracing::error!("Can not delete file. {}", err);
                 });
             }
         });
@@ -217,7 +217,7 @@ impl FileManager {
             .find(|file| &file.file_id == file_id)
             .map_or_else(
                 || {
-                    log::error!(
+                    tracing::error!(
                         "Could not find file \
                              with the provided id: {}",
                         file_id
@@ -232,6 +232,7 @@ impl FileManager {
     }
 
     /// Spawns a separate process that tries to download given file ID
+    #[allow(clippy::too_many_lines)]
     fn download_file(&self, id: &FileId, file_name: Option<String>) {
         let root_dir = self.file_root_dir.to_str().unwrap().to_string();
         let state = self.state.clone();
@@ -325,14 +326,22 @@ impl FileManager {
             }
             .await
             .map_err(|err| {
-                log::error!("Could not download file {}: {}", &file_id, err);
+                tracing::error!(
+                    "Could not download file {}: {}",
+                    &file_id,
+                    err
+                );
                 state
                     .files
                     .lock_mut()
                     .iter_mut()
                     .find(|file| file.file_id == file_id)
                     .map_or_else(
-                        || log::error!("Could not set the file state to error"),
+                        || {
+                            tracing::error!(
+                                "Could not set the file state to error"
+                            );
+                        },
                         |val| {
                             val.state = FileState::DownloadError;
                             val.error = Some(err);
@@ -469,11 +478,11 @@ fn update_stream_info(file_id: FileId, url: String, state: State) {
             let result = stream_probe(url).await;
             state
                 .set_file_stream_info(&file_id, result)
-                .unwrap_or_else(|e| log::error!("{}", e));
+                .unwrap_or_else(|e| tracing::error!("{}", e));
         })
         .catch_unwind()
         .map_err(move |p| {
-            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+            tracing::warn!("Can not fetch stream info: {}", display_panic(&p),);
         }),
     ));
 }
