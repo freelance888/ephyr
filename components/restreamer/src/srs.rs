@@ -262,7 +262,6 @@ impl Drop for ClientId {
     /// no more copies left.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[instrument(skip_all, fields(group = "srs"))]
     fn drop(&mut self) {
         if let Some(client_id) = Arc::get_mut(&mut self.0).cloned() {
             drop(tokio::spawn(
