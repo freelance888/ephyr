@@ -150,7 +150,6 @@ impl FileManager {
         let files = self.state.files.lock_mut();
         let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
             .expect("Cannot read the provided file root directory")
-            .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| match entry.file_type() {
                 // Returns only files, skips directories

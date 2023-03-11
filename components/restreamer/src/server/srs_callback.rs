@@ -9,10 +9,9 @@ use actix_web::{
 use futures::{FutureExt, TryFutureExt};
 use tap::Tap;
 
-
 use ephyr_log::{
     tracing,
-    tracing::{instrument, Instrument, Span},
+    tracing::{instrument, Instrument},
 };
 
 use crate::{
@@ -73,14 +72,13 @@ async fn on_callback(
     req: web::Json<callback::Request>,
     state: Data<State>,
 ) -> Result<&'static str, Error> {
-    let span = Span::current();
     match req.action {
-        callback::Event::OnConnect => on_connect(&req, &state, &span),
-        callback::Event::OnPublish => on_start(&req, &state, true, &span),
-        callback::Event::OnUnpublish => on_stop(&req, &state, true, &span),
-        callback::Event::OnPlay => on_start(&req, &state, false, &span),
-        callback::Event::OnStop => on_stop(&req, &state, false, &span),
-        callback::Event::OnHls => on_hls(&req, &state, &span),
+        callback::Event::OnConnect => on_connect(&req, &state),
+        callback::Event::OnPublish => on_start(&req, &state, true),
+        callback::Event::OnUnpublish => on_stop(&req, &state, true),
+        callback::Event::OnPlay => on_start(&req, &state, false),
+        callback::Event::OnStop => on_stop(&req, &state, false),
+        callback::Event::OnHls => on_hls(&req, &state),
     }
     .map(|_| "0")
 }
@@ -95,12 +93,8 @@ async fn on_callback(
 /// If [`callback::Request::app`] matches no existing [`state::Restream`].
 ///
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, parent=span, skip_all)]
-fn on_connect(
-    req: &callback::Request,
-    state: &State,
-    span: &Span,
-) -> Result<(), Error> {
+#[instrument(err, skip_all)]
+fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
     state
         .restreams
         .get_cloned()
@@ -133,12 +127,11 @@ fn on_connect(
 /// [`state::Restream`]: crate::state::Restream
 ///
 /// [SRS]: https://github.com/ossrs/srs
-#[instrument(err, parent=span, skip_all)]
+#[instrument(err, skip_all)]
 fn on_start(
     req: &callback::Request,
     state: &State,
     publishing: bool,
-    span: &Span,
 ) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
@@ -204,12 +197,7 @@ fn on_start(
         );
         if !url.to_string().contains("playback") {
             endpoint.stream_stat = None;
-            update_stream_info(
-                endpoint.id,
-                url.to_string(),
-                state.clone(),
-                span,
-            );
+            update_stream_info(endpoint.id, url.to_string(), state.clone());
         }
         tracing::info!(actor = %endpoint.id, "Publishing started");
     } else {
@@ -237,12 +225,11 @@ fn on_start(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, parent=span, skip_all)]
+#[instrument(err, skip_all)]
 fn on_stop(
     req: &callback::Request,
     state: &State,
     publishing: bool,
-    span: &Span,
 ) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream`.
@@ -306,12 +293,8 @@ fn on_stop(
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
-#[instrument(err, parent=span, skip_all)]
-fn on_hls(
-    req: &callback::Request,
-    state: &State,
-    span: &Span,
-) -> Result<(), Error> {
+#[instrument(err, skip_all)]
+fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
     #[must_use]
@@ -359,9 +342,8 @@ fn on_hls(
     }
     Ok(())
 }
-
-#[instrument(parent=span, skip_all)]
-fn update_stream_info(id: EndpointId, url: String, state: State, span: &Span) {
+#[instrument(skip_all)]
+fn update_stream_info(id: EndpointId, url: String, state: State) {
     drop(
         tokio::spawn(
             AssertUnwindSafe(async move {
