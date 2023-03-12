@@ -2,8 +2,18 @@
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
   import FileInfo from '../common/FileInfo.svelte';
-  import StreamInfo from '../common/StreamInfo.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
+  import {
+    ENDPOINT_KIND_FILE,
+    ENDPOINT_KIND_RTMP,
+    FILE_DOWNLOAD_ERROR,
+    FILE_DOWNLOADING,
+    FILE_LOCAL,
+    FILE_PENDING,
+    INITIALIZING,
+    OFFLINE,
+    ONLINE
+  } from '../../utils/constants';
 
   export let endpoint;
   export let input;
@@ -17,19 +27,19 @@
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
   $: currentFile = searchFile(files);
-  $: isFile = endpoint.kind === 'FILE';
+  $: isFile = endpoint.kind === ENDPOINT_KIND_FILE;
 
-  $: isFileError = currentFile?.state === 'DOWNLOAD_ERROR';
+  $: isFileError = currentFile?.state === FILE_DOWNLOAD_ERROR;
 
-  $: alertDanger = isFile ? isFileError : endpoint.status === 'OFFLINE';
+  $: alertDanger = isFile ? isFileError : endpoint.status === OFFLINE;
 
   $: alertWarning = isFile
-    ? currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING'
-    : endpoint.status === 'INITIALIZING';
+    ? currentFile?.state === FILE_PENDING || currentFile?.state === FILE_DOWNLOADING
+    : endpoint.status === INITIALIZING;
 
   $: alertSuccess = isFile
-    ? currentFile?.state === 'LOCAL'
-    : endpoint.status === 'ONLINE';
+    ? currentFile?.state === FILE_LOCAL
+    : endpoint.status === ONLINE;
 
   const searchFile = (allFiles) => {
     return allFiles
@@ -55,8 +65,8 @@
             title="Serves live {endpoint.kind} stream"
           /></span
         >
-      {:else if isFailover || endpoint.kind !== 'RTMP'}
-        {#if endpoint.status === 'ONLINE'}
+      {:else if isFailover || endpoint.kind !== ENDPOINT_KIND_RTMP}
+        {#if endpoint.status === ONLINE}
           <span
             ><i
               class="fas fa-circle"
@@ -65,7 +75,7 @@
                 : ''}live {endpoint.kind} stream"
             /></span
           >
-        {:else if endpoint.status === 'INITIALIZING'}
+        {:else if endpoint.status === INITIALIZING}
           <span
             ><i
               class="fas fa-dot-circle"

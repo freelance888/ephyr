@@ -1,7 +1,7 @@
 <script lang='js'>
   import { mutation } from 'svelte-apollo';
   import { DownloadFile } from '../../../api/client.graphql';
-  import { showError } from '../../utils/util';
+  import { sanitizeTooltip, showError } from '../../utils/util';
 
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
@@ -12,9 +12,7 @@
 
   $: fileDownloadProgress = getDownloadProgress(file);
 
-  $: isDownloadError = file?.state === 'DOWNLOAD_ERROR';
-
-  $: downloadErrorMessage = file?.error;
+  $: downloadErrorMessage = file?.error && sanitizeTooltip(file?.error);
 
   $: fileName = file.name ? file.name : file.fileId;
 
@@ -52,7 +50,7 @@
           >
             {fileName}
           </span>
-          {#if isDownloadError}
+          {#if downloadErrorMessage}
             <span
               class="info-icon has-error"
               uk-icon="icon: info; ratio: 0.7"

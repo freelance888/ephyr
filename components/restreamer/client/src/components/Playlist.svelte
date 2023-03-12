@@ -6,11 +6,15 @@
     GetPlaylistFromGdrive,
     PlayFileFromPlaylist,
     SetPlaylist,
-    StopPlayingFileFromPlaylist,
+    StopPlayingFileFromPlaylist
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
   import FileInfo from './common/FileInfo.svelte';
+  import { FILE_DOWNLOADING, FILE_LOCAL } from '../utils/constants';
+  import FileIcon from './svg/FileIcon.svelte';
+  import PlayIcon from './svg/PlayIcon.svelte';
+  import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -33,7 +37,11 @@
           : false,
         file: files.find(f => f.fileId === x.fileId),
         wasPlayed: x.wasPlayed,
-      }))
+      })).map(x => ({
+      ...x,
+      isLocal: x.file.state === FILE_LOCAL,
+      isDownloading: x.file.state === FILE_DOWNLOADING
+    }))
     : [];
   let googleDriveFolderId = '';
 
@@ -131,7 +139,7 @@
       on:finalize={onDrop}
     >
       {#each queue as item (item.id)}
-        <div class="item uk-card uk-card-default">
+          <div class="item uk-card uk-card-default">
           <span
             class="item-drag-zone uk-icon"
             uk-icon="table"
@@ -148,17 +156,23 @@
               class="item-file uk-height-1-1 uk-width-1-1 uk-flex uk-flex-middle"
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
-
             >
                 <span
                   class="item-icon"
-                  on:click={() => confirm(() => startStopPlaying(item.id))}
+                  class:can-be-started={item.isLocal}
+                  on:click={() => item.isLocal ? confirm(() => startStopPlaying(item.id)) : undefined}
                 >
-                  {#key item.isPlaying}
-                    <i class="fas {item.isPlaying ? 'fa-stop-circle' : 'fa-play-circle'}"/>
-                  {/key}
+                    {#if !item.isLocal}
+                      <span class='file-icon' class:is-downloading={item.isDownloading}>
+                        <!-- Inline svg prevents duplicating fa icons during drag & drop -->
+                        <FileIcon />
+                      </span>
+                    {:else if item.isPlaying}
+                      <PlayIcon/>
+                    {:else}
+                      <StopPlayingIcon/>
+                    {/if}
                 </span>
-
               <FileInfo file={item.file} classList='uk-margin-small-left'></FileInfo>
             </div>
 
@@ -239,7 +253,12 @@
     padding-right: 4px
     padding-left: 4px
     font-size: 32px
-    cursor: pointer
+    &.can-be-started
+      cursor: pointer
+    .file-icon
+      :global(svg)
+        font-size: 28px
+        vertical-align: baseline
 
     .is-downloading
       color: var(--warning-color)
@@ -247,7 +266,6 @@
   .item-file
     flex: 1
     &.is-playing
-      font-weight: 700
       .item-icon
         color: var(--success-color)
 

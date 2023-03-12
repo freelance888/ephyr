@@ -138,3 +138,5 @@ export const isFailoverInput = (input: any) => {
 export const escapeRegExp = (str: string) => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+export const sanitizeTooltip = (message) => message.replaceAll(':', ' - ');

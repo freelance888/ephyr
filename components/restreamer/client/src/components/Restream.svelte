@@ -38,6 +38,8 @@
     getEndpointsWithDiffStreams,
     getEndpointsWithStreamsErrors,
   } from '../utils/streamInfo.util';
+  import EqualizereIcon from './svg/EqualizereIcon.svelte';
+  import PlaylistIcon from './svg/PlaylistIcon.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -83,6 +85,8 @@
   $: hasActiveFilters = reStreamOutputsFilters.length;
 
   $: hasVideos = value.playlist && value.playlist.queue.length > 0;
+
+  $: isPlaylistPlaying = value.playlist.currentlyPlayingFile;
 
   $: showControls = false;
 
@@ -226,10 +230,16 @@
         Full view
       </a>
       <div class="uk-flex uk-flex-middle">
-        <i class="fa fa-headphones uk-margin-right"
+        <span class="playlist-icon uk-margin-right"
+           class:is-playing={isPlaylistPlaying}
            aria-hidden="true"
            hidden={!hasVideos || isFullView}>
-        </i>
+          {#if isPlaylistPlaying}
+            <EqualizereIcon/>
+          {:else}
+            <PlaylistIcon/>
+          {/if}
+        </span>
         {#if value.outputs && value.outputs.length > 0}
           <span class="total">
             {#each statusesList as status (status)}
@@ -406,4 +416,10 @@
     .info-icon
       font-size: 16px
 
+    .playlist-icon
+      &.is-playing
+        color: var(--success-color)
+      :global(svg)
+        width: 24px
+        height: 24px
 </style>
