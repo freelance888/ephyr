@@ -8,13 +8,17 @@ use crate::{
     state::{State, Status},
 };
 use chrono::{DateTime, Utc};
-use ephyr_log::{tracing, tracing::instrument, Instrument};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Span},
+    Instrument,
+};
 use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
 use std::{
     panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
 };
 use tokio::{process::Command, sync::watch, time};
-
+use uuid::Uuid;
 /// Status of [Restreamer] process
 ///
 /// Using for communication through [`tokio::sync::watch`]
@@ -53,6 +57,8 @@ pub struct Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     abort_if_hanged: future::AbortHandle,
+
+    span: Span,
 }
 
 impl Restreamer {
@@ -62,7 +68,9 @@ impl Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
-    #[instrument(name = "restreamer_run", skip_all)]
+    #[instrument(name = "restreamer_run", skip_all, fields(
+        actor = %kind.id::<Uuid>())
+    )]
     pub fn run<P: AsRef<Path> + Send + 'static>(
         ffmpeg_path: P,
         kind: RestreamerKind,
@@ -183,6 +191,7 @@ impl Restreamer {
             kind,
             kill_tx,
             abort_if_hanged,
+            span: Span::current(),
         }
     }
 
@@ -217,6 +226,7 @@ impl Restreamer {
 
 impl Drop for Restreamer {
     /// Send signal that [`Restreamer`] process is finished
+    #[instrument(parent=&self.span, skip_all)]
     fn drop(&mut self) {
         // Send notification to kill FFMPEG with SIGTERM
         tracing::debug!("Send signal to FFmpeg's");

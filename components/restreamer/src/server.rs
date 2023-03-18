@@ -79,10 +79,9 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         restreamers.apply(&restreams);
         future::ready(())
     });
-
     let file_manager = FileManager::new(&cfg, state.clone());
     file_manager.check_files();
-    State::on_change("file_manager", &state.file_commands, move |_| {
+    State::on_change("handle_fm_commands", &state.file_commands, move |_| {
         file_manager.handle_commands();
         future::ready(())
     });
@@ -95,7 +94,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let mut broadcaster = Broadcaster::new(state.clone());
     State::on_change(
-        "execute_dashboard_command",
+        "handle_dashboard_commands",
         &state.dashboard_commands,
         move |_| {
             broadcaster.handle_commands();

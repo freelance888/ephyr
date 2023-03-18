@@ -4,7 +4,7 @@ use systemstat::{Platform, System};
 use tokio::time;
 
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
-use ephyr_log::tracing;
+use ephyr_log::{tracing, tracing::instrument};
 use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
@@ -21,6 +21,7 @@ use std::panic::AssertUnwindSafe;
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_precision_loss)]
 #[allow(clippy::cast_possible_wrap)]
+#[instrument(skip_all, name = "statistics::run")]
 pub async fn run(state: State) -> Result<(), Failure> {
     // we use tx_last and rx_last to compute the delta
     // (send/receive bytes last second)

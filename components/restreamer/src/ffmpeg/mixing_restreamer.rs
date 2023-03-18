@@ -76,6 +76,9 @@ impl MixingRestreamer {
     /// `prev` value may be specified to consume already initialized resources,
     /// which are unwanted to be re-created.
     #[must_use]
+    #[instrument(skip_all, name="MixinRestreamer::new", fields(
+        src=%from_url, dst=%output.dst)
+    )]
     pub fn new(
         output: &state::Output,
         from_url: &Url,
@@ -363,18 +366,23 @@ impl MixingRestreamer {
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
     ) {
+        #[instrument(skip(input))]
         async fn run_copy_and_stop_on_signal(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
             mut kill_rx: watch::Receiver<RestreamerStatus>,
         ) -> io::Result<()> {
+            tracing::debug!(
+                fifo=?fifo_path.as_path(),
+                "Start copying from FIFO",
+            );
             // To avoid instant resolve on await for `kill_rx`
             let _ = *kill_rx.borrow_and_update();
 
             // Initialize copying future to fed it into select
             let mut src = input.lock().await;
             let mut file = File::create(&fifo_path).await?;
-            let copying = io::copy(&mut *src, &mut file);
+            let copying = io::copy(&mut *src, &mut file).in_current_span();
             pin!(copying);
 
             // Run copying to FIFO and stops if receive signal from `kill_rx`
@@ -409,10 +417,6 @@ impl MixingRestreamer {
             if let Some(i) = m.stdin.as_ref() {
                 drop(tokio::spawn(
                     {
-                        tracing::debug!(
-                            fifo=?m.get_fifo_path().as_path(),
-                            "Start copying from FIFO",
-                        );
                         run_copy_and_stop_on_signal(
                             Arc::clone(i),
                             m.get_fifo_path(),
@@ -474,6 +478,9 @@ impl Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
     #[must_use]
+    #[instrument(skip_all, name="mixin::new", fields(
+        label=label.map(ToString::to_string), src=%state.src)
+    )]
     pub fn new(
         state: &state::Mixin,
         label: Option<&state::Label>,
@@ -608,44 +615,48 @@ fn tune_delay(track: Uuid, port: u16, delay: Delay) {
 ///
 /// [FFmpeg]: https://ffmpeg.org
 /// [ZeroMQ]: https://zeromq.org
+#[instrument(skip_all)]
 fn tune_with_zmq(port: u16, command: ZmqMessage) {
     use zeromq::{Socket as _, SocketRecv as _, SocketSend as _};
 
     drop(tokio::spawn(
-        AssertUnwindSafe(async move {
-            let addr = format!("tcp://127.0.0.1:{port}");
+        AssertUnwindSafe(
+            async move {
+                let addr = format!("tcp://127.0.0.1:{port}");
 
-            let mut socket = zeromq::ReqSocket::new();
-            socket.connect(&addr).await.map_err(|e| {
-                tracing::error!(
+                let mut socket = zeromq::ReqSocket::new();
+                socket.connect(&addr).await.map_err(|e| {
+                    tracing::error!(
                     "Failed to establish ZeroMQ connection with {addr} : {e}"
                 );
-            })?;
-            socket.send(command).await.map_err(|e| {
-                tracing::error!(
-                    "Failed to send ZeroMQ message to {addr} : {e}"
-                );
-            })?;
+                })?;
+                socket.send(command).await.map_err(|e| {
+                    tracing::error!(
+                        "Failed to send ZeroMQ message to {addr} : {e}"
+                    );
+                })?;
 
-            let resp = socket.recv().await.map_err(|e| {
-                tracing::error!(
-                    "Failed to receive ZeroMQ response from {addr} : {e}"
-                );
-            })?;
+                let resp = socket.recv().await.map_err(|e| {
+                    tracing::error!(
+                        "Failed to receive ZeroMQ response from {addr} : {e}"
+                    );
+                })?;
 
-            let data = resp.into_vec().pop().unwrap();
-            if data.as_ref() != "0 Success".as_bytes() {
-                tracing::error!(
-                    "Received invalid ZeroMQ response from {addr} : {}",
-                    std::str::from_utf8(&data).map_or_else(
-                        |_| Cow::Owned(format!("{:?}", &data)),
-                        Cow::Borrowed,
-                    ),
-                );
+                let data = resp.into_vec().pop().unwrap();
+                if data.as_ref() != "0 Success".as_bytes() {
+                    tracing::error!(
+                        "Received invalid ZeroMQ response from {addr} : {}",
+                        std::str::from_utf8(&data).map_or_else(
+                            |_| Cow::Owned(format!("{:?}", &data)),
+                            Cow::Borrowed,
+                        ),
+                    );
+                }
+
+                <Result<_, ()>>::Ok(())
             }
-
-            <Result<_, ()>>::Ok(())
-        })
+            .in_current_span(),
+        )
         .catch_unwind()
         .map_err(|p| {
             tracing::error!(

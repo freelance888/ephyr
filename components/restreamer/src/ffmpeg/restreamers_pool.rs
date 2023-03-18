@@ -64,7 +64,7 @@ impl RestreamersPool {
     /// according to the given renewed [`state::Restream`]s.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(name = "pool::apply" skip_all)]
+    #[instrument(skip_all, name = "restreamers_pool::apply")]
     pub(crate) fn apply(&mut self, restreams: &[state::Restream]) {
         // The most often case is when one new FFmpeg process is added.
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
@@ -103,9 +103,7 @@ impl RestreamersPool {
         self.pool = new_pool;
     }
 
-    #[instrument(name = "pool::apply_playlist", skip_all,
-        fields(actor=%restream.id))
-    ]
+    #[instrument(skip_all, fields(actor=%restream.id))]
     fn apply_playlist(
         &mut self,
         restream: &state::Restream,
@@ -130,7 +128,7 @@ impl RestreamersPool {
     /// running [FFmpeg] processes in its `pool` as much as possible.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(name = "pool::apply_input", skip_all,
+    #[instrument(skip_all,
         fields(
             restream.key=%key,
             input.key=%input.key,
@@ -175,8 +173,9 @@ impl RestreamersPool {
     /// running [FFmpeg] processes in its `pool` as much as possible.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(name = "pool::apply_output" skip_all,
-        fields(src=%from_url.path(), dst=output.dst.path()))]
+    #[instrument(skip_all, fields(
+        src=%from_url.path(), dst=output.dst.path())
+    )]
     fn apply_output(
         &mut self,
         from_url: &Url,
@@ -203,8 +202,9 @@ impl RestreamersPool {
     /// and checks if it needs to be restarted bases on `new_kind`. If not
     /// the process is inserted to `new_pool`, otherwise a new process is
     /// created with new settings.
-    #[instrument(name = "pool::apply_new_kind", skip(new_pool),
-        fields(id=%id, src=%new_kind.src_url().path(), dst=%new_kind.to_url()))]
+    #[instrument(skip_all, fields(id=%id,
+        src=%new_kind.src_url().path(), dst=%new_kind.to_url())
+    )]
     fn apply_new_kind(
         &mut self,
         id: Uuid,

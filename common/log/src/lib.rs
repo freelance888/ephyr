@@ -22,7 +22,7 @@
 mod capture_logs;
 pub use capture_logs::{ChildCapture, ParsedMsg};
 use tracing::level_filters::LevelFilter;
-pub use tracing::{self, Level};
+pub use tracing::{self, Level, Span};
 pub use tracing_actix_web;
 use tracing_forest::ForestLayer;
 pub use tracing_futures::Instrument;

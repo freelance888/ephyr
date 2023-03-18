@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use ephyr_log::tracing;
+use ephyr_log::{tracing, tracing::instrument};
 use futures::{future, stream::TryStreamExt};
 use once_cell::sync::OnceCell;
 use tokio::fs;
@@ -145,6 +145,7 @@ impl Storage {
     /// [`state::Output`]s of the given renewed [`state::Restream`]s.
     ///
     /// [DVR]: https://en.wikipedia.org/wiki/Digital_video_recorder
+    #[instrument(skip_all, name = "dvr::cleanup")]
     pub async fn cleanup(&self, restreams: &[state::Restream]) {
         // TODO: Consider only `file:///` outputs?
         if let Ok(read_dir) = fs::read_dir(&self.root_path).await {
@@ -164,8 +165,16 @@ impl Storage {
                 })
                 .try_for_each_concurrent(4, |i| async move {
                     if i.file_type().await?.is_dir() {
+                        tracing::debug!(
+                            "Deleting DVR directory: {}",
+                            i.path().display()
+                        );
                         fs::remove_dir_all(i.path()).await
                     } else {
+                        tracing::debug!(
+                            "Deleting DVR file: {}",
+                            i.path().display()
+                        );
                         fs::remove_file(i.path()).await
                     }
                 })

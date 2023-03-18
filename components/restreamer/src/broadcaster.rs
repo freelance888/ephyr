@@ -7,7 +7,10 @@ use crate::{
     State,
 };
 use derive_more::Display;
-use ephyr_log::{tracing, tracing::Instrument};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument},
+};
 use futures::{FutureExt, TryFutureExt};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
@@ -57,6 +60,7 @@ impl Broadcaster {
     }
 
     /// Processes all commands from queue
+    #[instrument(skip_all, name = "broadcaster::handle_commands")]
     pub fn handle_commands(&mut self) {
         // Pops all existing command from queue
         let commands: Vec<DashboardCommand> =
@@ -75,11 +79,7 @@ impl Broadcaster {
                 for command in &commands {
                     let client_id = client.id.clone();
                     let command = command.clone();
-                    tracing::info_span!("broadcaster",
-                        client=%client_id, command=?command)
-                    .in_scope(|| {
-                        self.handle_one_command(client_id, &command.clone());
-                    });
+                    self.handle_one_command(client_id, &command.clone());
                 }
             });
     }

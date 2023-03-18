@@ -22,6 +22,7 @@ use crate::{
     cli::{Failure, Opts},
     State,
 };
+use ephyr_log::tracing::instrument;
 use std::fmt;
 
 const MIX_ROUTE: &str = "/mix";
@@ -80,6 +81,7 @@ pub mod public_full_stream_dir {
 ///
 /// [`cli::Opts::debug`]: crate::cli::Opts::debug
 /// [2]: https://github.com/graphql/graphql-playground
+#[instrument(skip_all, name = "client::run")]
 pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
     let in_debug_mode = cfg.debug;
 

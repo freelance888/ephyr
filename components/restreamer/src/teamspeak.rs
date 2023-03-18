@@ -35,6 +35,7 @@ use tokio::{
 use tsclientlib::{DisconnectOptions, StreamItem};
 use tsproto_packets::packets::AudioData;
 
+use ephyr_log::tracing::{instrument, Span};
 pub use tsclientlib::{ConnectOptions as Config, Connection};
 
 /// Handler responsible for decoding, tracking and mixing audio of all
@@ -97,6 +98,8 @@ pub struct Input {
     /// Indicator whether the spawned [`AudioCapture`] is unable to recover from
     /// its last error, and so this [`Input`] should return an error too.
     is_conn_unrecoverable: Arc<AtomicBool>,
+
+    span: Span,
 }
 
 impl Input {
@@ -146,12 +149,14 @@ impl Input {
             audio: Arc::new(Mutex::new(AudioHandler::new())),
             conn: None,
             is_conn_unrecoverable: Arc::new(AtomicBool::default()),
+            span: tracing::info_span!("teamspeak::Input"),
         }
     }
 
     /// Spawns an [`AudioCapture`] associated with this [`Input`], retrying it
     /// endlessly with an [`ExponentialBackoff`] if it fails in a recoverable
     /// way.
+    #[instrument(skip_all, parent=&self.span)]
     fn spawn_audio_capturing(&mut self) {
         let cfg = self.cfg.clone();
         let audio = self.audio.clone();
@@ -195,6 +200,7 @@ impl AsyncRead for Input {
     /// talking members, the just a silence is emitted.
     ///
     /// [TeamSpeak]: https://teamspeak.com
+    #[instrument(skip_all, parent=&self.span)]
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -272,6 +278,7 @@ impl Drop for Input {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[inline]
+    #[instrument(skip_all, parent=&self.span)]
     fn drop(&mut self) {
         if let Some((conn, waiter)) = self.conn.take() {
             conn.abort();
@@ -321,6 +328,8 @@ pub struct AudioCapture {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     audio: Arc<Mutex<AudioHandler>>,
+
+    span: Span,
 }
 
 impl AudioCapture {
@@ -329,11 +338,16 @@ impl AudioCapture {
     #[inline]
     #[must_use]
     #[allow(clippy::missing_panics_doc)]
-    pub fn new(conn: Connection, audio: Arc<Mutex<AudioHandler>>) -> Self {
+    pub fn new(
+        conn: Connection,
+        audio: Arc<Mutex<AudioHandler>>,
+        span: Span,
+    ) -> Self {
         audio.lock().unwrap().reset();
         Self {
             conn: ManuallyDrop::new(conn),
             audio,
+            span,
         }
     }
 
@@ -382,6 +396,7 @@ impl AudioCapture {
     /// See [`AudioCaptureError`] for details.
     ///
     /// [TeamSpeak]: https://teamspeak.com
+    #[instrument(skip_all, name = "AudioCapture")]
     pub async fn run(
         cfg: Config,
         audio: Arc<Mutex<AudioHandler>>,
@@ -395,7 +410,7 @@ impl AudioCapture {
             .hardware_id(Self::new_hwid())
             .connect()
             .map_err(AudioCaptureError::InitializationFailed)?;
-        AudioCapture::new(conn, audio).await
+        AudioCapture::new(conn, audio, Span::current()).await
     }
 }
 
@@ -450,6 +465,7 @@ impl Drop for AudioCapture {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[inline]
+    #[instrument(skip_all, parent=&self.span)]
     fn drop(&mut self) {
         // This is totally safe, because `self.conn` field is guaranteed to be
         // never used again later, so `ManuallyDrop` won't be touched again.

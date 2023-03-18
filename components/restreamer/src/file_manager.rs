@@ -6,7 +6,7 @@ use std::{
 };
 
 use derive_more::{Deref, Display, Into};
-use ephyr_log::tracing;
+use ephyr_log::{tracing, Instrument};
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
@@ -19,6 +19,7 @@ use crate::{
     stream_statistics::StreamStatistics,
 };
 use chrono::Utc;
+use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
 use std::{
@@ -80,6 +81,7 @@ impl FileManager {
     }
 
     /// Command processing
+    #[instrument(skip_all, name = "file_manager::handle_commands")]
     pub fn handle_commands(&self) {
         let commands: Vec<FileCommand> =
             self.state.file_commands.lock_mut().drain(..).collect();
@@ -473,12 +475,15 @@ impl FileManager {
 /// Update stream info for downloaded file
 fn update_stream_info(file_id: FileId, url: String, state: State) {
     drop(tokio::spawn(
-        AssertUnwindSafe(async move {
-            let result = stream_probe(url).await;
-            state
-                .set_file_stream_info(&file_id, result)
-                .unwrap_or_else(|e| tracing::error!("{}", e));
-        })
+        AssertUnwindSafe(
+            async move {
+                let result = stream_probe(url).await;
+                state
+                    .set_file_stream_info(&file_id, result)
+                    .unwrap_or_else(|e| tracing::error!("{}", e));
+            }
+            .in_current_span(),
+        )
         .catch_unwind()
         .map_err(move |p| {
             tracing::warn!("Can not fetch stream info: {}", display_panic(&p),);

@@ -32,7 +32,7 @@ use crate::{
 ///
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
-#[instrument(name = "srs_cb", skip_all,
+#[instrument(name = "srs_callback", skip_all,
     fields(%cfg.callback_http_port, %cfg.callback_http_ip)
 )]
 pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
@@ -62,7 +62,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[allow(clippy::unused_async)]
 #[post("/")]
-#[instrument(name = "srs_cb", skip_all,
+#[instrument(name = "srs_callback", skip_all,
     fields(
             action=%req.action,
             client=%req.ip,
@@ -346,12 +346,15 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
 fn update_stream_info(id: EndpointId, url: String, state: State) {
     drop(
         tokio::spawn(
-            AssertUnwindSafe(async move {
-                let result = stream_probe(url).await;
-                state
-                    .set_stream_info(id, result)
-                    .unwrap_or_else(|e| tracing::error!(%e));
-            })
+            AssertUnwindSafe(
+                async move {
+                    let result = stream_probe(url).await;
+                    state
+                        .set_stream_info(id, result)
+                        .unwrap_or_else(|e| tracing::error!(%e));
+                }
+                .in_current_span(),
+            )
             .catch_unwind()
             .map_err(move |p| {
                 tracing::error!(

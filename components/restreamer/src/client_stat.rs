@@ -25,7 +25,7 @@ use crate::client_stat::statistics_query::{
 };
 
 use crate::state::ServerInfo;
-use ephyr_log::tracing::Instrument;
+use ephyr_log::tracing::{instrument, Instrument};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest;
 
@@ -52,6 +52,7 @@ impl ClientJobsPool {
 
     /// Creates new [`ClientJob`] for added [`Client`] and removes for
     /// deleted [`Client`]
+    #[instrument(skip_all, name = "client_stat::start_statistics_loop")]
     pub fn start_statistics_loop(&mut self, clients: &[Client]) {
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
 

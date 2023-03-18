@@ -144,6 +144,9 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        restream.key=%key, %is_playing_playlist, input.key=%input.key)
+    )]
     pub fn from_input(
         input: &state::Input,
         endpoint: &state::InputEndpoint,
@@ -233,6 +236,11 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        restream.key=%restream_key,
+        input.key=%input_key,
+        file_root=%file_root.display())
+    )]
     pub fn from_playlist(
         playlist: &state::Playlist,
         restream_key: &RestreamKey,
@@ -284,6 +292,9 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        src=%from_url, dst=%output.dst)
+    )]
     pub fn from_output(
         output: &state::Output,
         from_url: &Url,
@@ -410,7 +421,7 @@ impl RestreamerKind {
         if let Self::Mixing(m) = self {
             m.start_fed_mixins_fifo(&kill_rx);
         }
-
+        tracing::debug!("Starting ffmpeg process {cmd:?}");
         Self::run_ffmpeg_(cmd, kill_rx).await
     }
 
