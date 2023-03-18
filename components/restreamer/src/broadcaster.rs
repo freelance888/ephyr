@@ -77,9 +77,10 @@ impl Broadcaster {
             .filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
-                    let client_id = client.id.clone();
-                    let command = command.clone();
-                    self.handle_one_command(client_id, &command.clone());
+                    self.handle_one_command(
+                        client.id.clone(),
+                        &command.clone(),
+                    );
                 }
             });
     }

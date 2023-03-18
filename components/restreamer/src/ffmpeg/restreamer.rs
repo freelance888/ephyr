@@ -68,7 +68,7 @@ impl Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
-    #[instrument(name = "restreamer_run", skip_all, fields(
+    #[instrument(name = "Restreamer::run", skip_all, fields(
         actor = %kind.id::<Uuid>())
     )]
     pub fn run<P: AsRef<Path> + Send + 'static>(

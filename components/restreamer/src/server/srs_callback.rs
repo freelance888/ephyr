@@ -105,7 +105,9 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
                 tracing::info!(actor = %r.id, "Connection established");
             }
         })
-        .ok_or_else(|| error::ErrorNotFound("Such `app` doesn't exist"))
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("App `{}` doesn't exist", req.app))
+        })
         .map(|_| ())
 }
 
@@ -160,10 +162,13 @@ fn on_start(
     let restream = restreams
         .iter_mut()
         .find(|r| r.input.enabled && r.key == *req.app)
-        .ok_or_else(|| error::ErrorNotFound("Such `app` doesn't exist"))?;
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("App `{}` doesn't exist", req.app))
+        })?;
 
-    let input = lookup_input(&mut restream.input, stream)
-        .ok_or_else(|| error::ErrorNotFound("Such `stream` doesn't exist"))?;
+    let input = lookup_input(&mut restream.input, stream).ok_or_else(|| {
+        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist"))
+    })?;
 
     let endpoint = input
         .endpoints
@@ -174,9 +179,9 @@ fn on_start(
     if publishing {
         if !req.ip.is_loopback() && (input.src.is_some() || !endpoint.is_rtmp())
         {
-            return Err(error::ErrorForbidden(
-                "Such `stream` is allowed only locally",
-            ));
+            return Err(error::ErrorNotFound(format!(
+                "Stream `{stream}` doesn't exist"
+            )));
         }
 
         let publisher_id = match endpoint.srs_publisher_id.clone() {
@@ -258,16 +263,24 @@ fn on_stop(
     let restream = restreams
         .iter_mut()
         .find(|r| r.key == *req.app)
-        .ok_or_else(|| error::ErrorNotFound("Such `app` doesn't exist"))?;
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("App {} doesn't exist", req.app))
+        })?;
 
-    let input = lookup_input(&mut restream.input, stream)
-        .ok_or_else(|| error::ErrorNotFound("Such `stream` doesn't exist"))?;
+    let input = lookup_input(&mut restream.input, stream).ok_or_else(|| {
+        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist",))
+    })?;
 
     let endpoint = input
         .endpoints
         .iter_mut()
         .find(|e| e.kind == kind)
-        .ok_or_else(|| error::ErrorForbidden("Such `vhost` is not allowed"))?;
+        .ok_or_else(|| {
+            error::ErrorForbidden(format!(
+                "Vhost `{}` is not allowed",
+                req.vhost
+            ))
+        })?;
 
     if publishing {
         endpoint.srs_publisher_id = None;
@@ -315,20 +328,31 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     let stream = req.stream.as_deref().unwrap_or_default();
     let kind = (req.vhost.as_str() == "hls")
         .then_some(InputEndpointKind::Hls)
-        .ok_or_else(|| error::ErrorForbidden("Such `vhost` is not allowed"))?;
+        .ok_or_else(|| {
+            error::ErrorForbidden(format!(
+                "Vhost `{}` is not allowed",
+                req.vhost
+            ))
+        })?;
 
     let mut restreams = state.restreams.lock_mut();
     let restream = restreams
         .iter_mut()
         .find(|r| r.input.enabled && r.key == *req.app)
-        .ok_or_else(|| error::ErrorNotFound("Such `app` doesn't exist"))?;
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("App `{}` doesn't exist", req.app))
+        })?;
 
     let endpoint = lookup_input(&mut restream.input, stream)
-        .ok_or_else(|| error::ErrorNotFound("Such `stream` doesn't exist"))?
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("Stream `{stream}` doesn't exist"))
+        })?
         .endpoints
         .iter_mut()
         .find(|e| e.kind == kind)
-        .ok_or_else(|| error::ErrorNotFound("Such `stream` doesn't exist"))?;
+        .ok_or_else(|| {
+            error::ErrorNotFound(format!("Stream `{stream}` doesn't exist"))
+        })?;
 
     if endpoint.status != Status::Online {
         return Err(error::ErrorImATeapot("Not ready to serve"));

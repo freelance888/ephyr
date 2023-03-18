@@ -64,7 +64,7 @@ impl RestreamersPool {
     /// according to the given renewed [`state::Restream`]s.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[instrument(skip_all, name = "restreamers_pool::apply")]
+    #[instrument(skip_all, name = "RestreamersPool::apply")]
     pub(crate) fn apply(&mut self, restreams: &[state::Restream]) {
         // The most often case is when one new FFmpeg process is added.
         let mut new_pool = HashMap::with_capacity(self.pool.len() + 1);
