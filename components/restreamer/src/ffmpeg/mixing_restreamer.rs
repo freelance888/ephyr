@@ -478,7 +478,7 @@ impl Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
     #[must_use]
-    #[instrument(skip_all, name="mixin::new", fields(
+    #[instrument(skip_all, name="Mixin::new", fields(
         label=label.map(ToString::to_string), src=%state.src)
     )]
     pub fn new(

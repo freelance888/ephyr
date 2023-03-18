@@ -1,4 +1,6 @@
 describe('CHECK STREAMING STATE', () => {
+  const COMMON_WAIT_TIME = 10000;
+
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -12,19 +14,19 @@ describe('CHECK STREAMING STATE', () => {
 
   it('1 Assert Start All', () => {
     cy.allOutputStart();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.checkStartedAllStated();
   });
 
   it('2 Assert Stop All', () => {
     cy.allOutputStop();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.checkStoppedAllStated();
   });
 
   it('3 Click Start All', () => {
     cy.allOutputStart();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.checkStartedAllStated();
   });
 
@@ -34,7 +36,7 @@ describe('CHECK STREAMING STATE', () => {
       .find("input[title='Sidechain']")
       .first()
       .click();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
   });
 
   it('4 Assert Started', () => {
@@ -47,7 +49,7 @@ describe('CHECK STREAMING STATE', () => {
       .find("input[title='Sidechain']")
       .first()
       .click();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
   });
 
   it('5 Select Delay should not restart', () => {
@@ -65,7 +67,7 @@ describe('CHECK STREAMING STATE', () => {
 
   it('6 Assert Stopped', () => {
     cy.allOutputStop();
-    cy.wait(6000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.checkStoppedAllStated();
   });
 });

@@ -223,6 +223,7 @@ impl Broadcaster {
     ) {
         let err_message =
             format!("{}: {}", client_id, error_messages.join(", "));
+        tracing::error!(err_message);
         ConsoleLogger::new(state.clone()).log_message(
             err_message,
             ConsoleMessageKind::Err,

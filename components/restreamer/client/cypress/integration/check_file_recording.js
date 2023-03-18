@@ -1,4 +1,6 @@
 describe('CHECK FILE RECORDING', () => {
+  const COMMON_WAIT_TIME = 10000;
+
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
@@ -12,11 +14,11 @@ describe('CHECK FILE RECORDING', () => {
 
   it('Start streams 2 times to create 2 file records', () => {
     cy.allOutputStart();
-    cy.wait(5000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.allOutputStop();
 
     cy.allOutputStart();
-    cy.wait(5000);
+    cy.wait(COMMON_WAIT_TIME);
     cy.allOutputStop();
   });
 
