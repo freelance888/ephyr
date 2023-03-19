@@ -6,7 +6,7 @@ pub mod statistics;
 
 use std::{net::IpAddr, time::Duration};
 
-use ephyr_log::tracing;
+use ephyr_log::{tracing, TelemetryConfig};
 use futures::future;
 use tokio::{fs, time};
 
@@ -28,7 +28,10 @@ use crate::{
 /// [`HttpServer`]: actix_web::HttpServer
 #[actix_web::main]
 pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
-    ephyr_log::init(cfg.verbose);
+    TelemetryConfig::new(cfg.verbose)
+        .jaeger_endpoint(cfg.jaeger_agent_ip, cfg.jaeger_agent_port)
+        .jaeger_service_name(cfg.jaeger_service_name.clone())
+        .init();
 
     if cfg.public_host.is_none() {
         cfg.public_host = Some(

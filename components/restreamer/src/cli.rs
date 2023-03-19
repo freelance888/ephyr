@@ -145,6 +145,34 @@ pub struct Opts {
                      will be downloaded."
     )]
     pub file_root: PathBuf,
+
+    /// Port of Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_AGENT_IP",
+        help = "IP of Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_agent_ip: Option<IpAddr>,
+
+    /// Port of Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_AGENT_PORT",
+        help = "Port of Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_agent_port: Option<u16>,
+
+    /// Service name for Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME",
+        default_value = "ephyr-restreamer",
+        help = "Service name for Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_service_name: String,
 }
 
 impl Opts {
