@@ -467,11 +467,12 @@ impl RestreamerKind {
             .in_current_span(),
         );
 
-        let out = process.capture_logs_and_wait_for_output(
-            tracing::info_span!(
-                parent: Span::current(), "ffmpeg_proc", uuid = %Uuid::new_v4()
-            ),
-            parse_ffmpeg_log_line, false).await?;
+        let out = process
+            .capture_logs_and_wait_for_output(
+                tracing::info_span!(parent: Span::current(), "ffmpeg_proc"),
+                parse_ffmpeg_log_line,
+            )
+            .await?;
         kill_task.abort();
 
         let status_code = out.status.code();

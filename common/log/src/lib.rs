@@ -22,17 +22,15 @@
 mod capture_logs;
 
 pub use capture_logs::{ChildCapture, ParsedMsg};
-use std::net::IpAddr;
-
 use opentelemetry::sdk::propagation::TraceContextPropagator;
+use std::net::IpAddr;
 use tracing::level_filters::LevelFilter;
 pub use tracing::{self, Level, Span};
 pub use tracing_actix_web;
-use tracing_forest::ForestLayer;
 pub use tracing_futures::Instrument;
 pub use tracing_log::log;
 use tracing_log::LogTracer;
-use tracing_subscriber::{layer::SubscriberExt, Layer, Registry};
+use tracing_subscriber::{fmt, layer::SubscriberExt, Layer, Registry};
 
 /// Allow to configure the tracing.
 #[derive(Clone, Debug)]
@@ -90,16 +88,17 @@ impl TelemetryConfig {
         if let Err(e) = LogTracer::init() {
             panic!("Failed to initialize logger: {e}");
         };
+        let service_name = self.jaeger_service_name.unwrap_or("unknown".into());
 
-        let mut layers = vec![ForestLayer::default().boxed()];
+        let mut layers = vec![fmt::layer().pretty().boxed()];
 
         if let Some(endpoint) = self.jaeger_endpoint {
             let tracer = opentelemetry_jaeger::new_agent_pipeline()
                 .with_endpoint(endpoint)
-                .with_service_name(
-                    self.jaeger_service_name.unwrap_or("unknown".into()),
-                )
-                .install_simple()
+                .with_service_name(service_name)
+                .with_max_packet_size(9216)
+                .with_auto_split_batch(true)
+                .install_batch(opentelemetry::runtime::Tokio)
                 .expect("Failed to install jaeger agent");
             opentelemetry::global::set_text_map_propagator(
                 TraceContextPropagator::new(),

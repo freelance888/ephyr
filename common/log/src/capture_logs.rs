@@ -26,7 +26,6 @@ pub trait ChildCapture {
         mut self,
         span: Span,
         parser: F,
-        immediate: bool,
     ) -> io::Result<Output>
     where
         Self: Sized,
@@ -34,49 +33,20 @@ pub trait ChildCapture {
 }
 
 /// Pass [ParsedMsg.message] to [tracing] based on [ParsedMsg.level].
-fn capture_line(
-    pid: Option<u32>,
-    span: &Span,
-    parsed_msg: ParsedMsg,
-    immediate: bool,
-) {
+fn capture_line(pid: Option<u32>, span: &Span, parsed_msg: ParsedMsg) {
     let ParsedMsg { level, message } = parsed_msg;
     // TODO: convert to HashMap when tracing `valuable` stabilizes.
     match level.to_lowercase().as_str() {
         "error" => {
-            tracing::error!(
-                target: TARGET,
-                parent: span,
-                immediate,
-                message,
-                pid
-            );
+            tracing::error!(target: TARGET, parent: span, message, pid);
         }
         "info" => {
-            tracing::info!(
-                target: TARGET,
-                parent: span,
-                immediate,
-                message,
-                pid
-            );
+            tracing::info!(target: TARGET, parent: span, message, pid);
         }
         "debug" | "verbose" => {
-            tracing::debug!(
-                target: TARGET,
-                parent: span,
-                immediate,
-                message,
-                pid
-            );
+            tracing::debug!(target: TARGET, parent: span, message, pid);
         }
-        _ => tracing::trace!(
-            target: TARGET,
-            parent: span,
-            immediate,
-            message,
-            pid
-        ),
+        _ => tracing::trace!(target: TARGET, parent: span, message, pid),
     };
 }
 
@@ -86,7 +56,6 @@ impl ChildCapture for Child {
         mut self,
         span: Span,
         parser: F,
-        immediate: bool,
     ) -> io::Result<Output>
     where
         F: Fn(&str) -> ParsedMsg<'_> + Send + 'static,
@@ -116,7 +85,6 @@ impl ChildCapture for Child {
                                     process_id,
                                     &span,
                                     parser(&out_line),
-                                    immediate
                                 );
                             } else {
                                 out_done = true;
@@ -128,7 +96,6 @@ impl ChildCapture for Child {
                                     process_id,
                                     &span,
                                     parser(&err_line),
-                                    immediate
                                 );
                             } else {
                                 err_done = true;

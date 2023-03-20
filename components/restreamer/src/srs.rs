@@ -22,7 +22,6 @@ use ephyr_log::{
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{fs, process::Command};
-use uuid::Uuid;
 
 use crate::{api, display_panic, dvr};
 
@@ -136,22 +135,24 @@ impl Server {
                         let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;
-                        let _ = process
+                        let out = process
                             .capture_logs_and_wait_for_output(
                                 tracing::info_span!(
                                     parent: Span::current(),
-                                    "srs_proc",
-                                    uuid = %Uuid::new_v4()
+                                    "srs_proc"
                                 ),
                                 parse_srs_log_line,
-                                true,
                             )
                             .await
                             .map_err(|e| {
                                 tracing::error!(
                                     "Failed to observe SRS server: {e}"
                                 );
-                            });
+                            })?;
+                        tracing::warn!(
+                            "SRS server stopped with exit code: {}",
+                            out.status
+                        );
                         Ok(())
                     })
                     .unwrap_or_else(|_: ()| ())
@@ -190,7 +191,7 @@ impl Server {
     /// If [SRS] configuration file fails to be created.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[instrument(err, skip_all, fields(group = "srs"))]
+    //#[instrument(err, skip_all, fields(group = "srs"))]
     pub async fn refresh(&self, cfg: &Config) -> anyhow::Result<()> {
         // SRS server reloads automatically on its conf file changes.
         fs::write(

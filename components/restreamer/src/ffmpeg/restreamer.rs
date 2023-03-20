@@ -58,6 +58,7 @@ pub struct Restreamer {
     /// [FFmpeg]: https://ffmpeg.org
     abort_if_hanged: future::AbortHandle,
 
+    /// Span to connect with drop
     span: Span,
 }
 
