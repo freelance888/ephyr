@@ -27,7 +27,7 @@ use crate::{
         mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
         transcoding_restreamer::TranscodingRestreamer,
     },
-    file_manager::{FileId, FileState, LocalFileInfo},
+    file_manager::LocalFileInfo,
     proc::kill_process,
     state::{self, RestreamKey, State, Status},
 };
@@ -166,39 +166,9 @@ impl RestreamerKind {
                 if is_playing_playlist {
                     return None;
                 }
-                let from_url = match input.src.as_ref()? {
-                    state::InputSrc::Remote(remote) => {
-                        remote.url.clone().into()
-                    }
-                    state::InputSrc::Failover(s) => {
-                        s.inputs.iter().find_map(|i| {
-                            i.endpoints.iter().find_map(|e| {
-                                if e.is_rtmp() && e.status == Status::Online {
-                                    Some(e.kind.rtmp_url(key, &i.key))
-                                } else if i.enabled
-                                    && e.is_file()
-                                    && e.file_id.is_some()
-                                    && files.iter().any(|f| {
-                                        e.file_id == Some(f.file_id.clone())
-                                            && (f.state == FileState::Local)
-                                    })
-                                {
-                                    url::Url::from_file_path(
-                                        file_root.join(
-                                            e.file_id
-                                                .as_ref()
-                                                .unwrap_or(&FileId::default())
-                                                .to_string(),
-                                        ),
-                                    )
-                                    .ok()
-                                } else {
-                                    None
-                                }
-                            })
-                        })?
-                    }
-                };
+                let from_url =
+                    input.src.as_ref()?.src_url(key, files, file_root)?;
+
                 CopyRestreamer {
                     id: endpoint.id.into(),
                     from_url,
