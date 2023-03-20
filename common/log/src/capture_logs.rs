@@ -96,30 +96,44 @@ impl ChildCapture for Child {
 
         let process_id = self.id();
 
+        let mut out_lines = out_buff.lines();
+        let mut err_lines = err_buff.lines();
+
+        let mut out_done = false;
+        let mut err_done = false;
+
         let capture_task = tokio::spawn(
             async move {
-                let mut out_lines = out_buff.lines();
-                let mut err_lines = err_buff.lines();
                 loop {
-                    if let Some(out_line) =
-                        out_lines.next_line().await.ok().flatten()
-                    {
-                        capture_line(
-                            process_id,
-                            &span,
-                            parser(&out_line),
-                            immediate,
-                        );
+                    if out_done && err_done {
+                        break;
                     }
-                    if let Some(err_line) =
-                        err_lines.next_line().await.ok().flatten()
-                    {
-                        capture_line(
-                            process_id,
-                            &span,
-                            parser(&err_line),
-                            immediate,
-                        );
+
+                    tokio::select! {
+                        out_line = out_lines.next_line(), if !out_done => {
+                            if let Some(out_line) = out_line.ok().flatten() {
+                                capture_line(
+                                    process_id,
+                                    &span,
+                                    parser(&out_line),
+                                    immediate
+                                );
+                            } else {
+                                out_done = true;
+                            }
+                        }
+                        err_line = err_lines.next_line(), if !err_done => {
+                            if let Some(err_line) = err_line.ok().flatten() {
+                                capture_line(
+                                    process_id,
+                                    &span,
+                                    parser(&err_line),
+                                    immediate
+                                );
+                            } else {
+                                err_done = true;
+                            }
+                        }
                     }
                 }
             }
