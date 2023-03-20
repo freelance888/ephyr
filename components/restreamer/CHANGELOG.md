@@ -20,7 +20,8 @@ All user visible changes to this project will be documented in this file. This p
 - Video playback for file Input ([#166], [#297])
 - Indication if password is added to the server into Dashboard ([#162], [#297])
 - `filter_by` GET parameter ([#260], [#319])
-- Display stream info for file-backup endpoint [#322]);
+- Display stream info for file-backup endpoint ([#322]);
+- Jaeger tracing exporter ([#284]);
 ### Fixed
 - State disappears after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
