@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
   import { SetRestream, Info } from '../../api/client.graphql';
-  import { sanitizeLabel, showError } from '../utils/util';
+  import { isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
@@ -24,6 +24,7 @@
     : null;
 
   $: hasApiKey = $info.data?.info?.googleApiKey;
+  let isValidFileIdInput = true;
 
   let submitable = false;
   onDestroy(
@@ -96,7 +97,11 @@
     }
 
     if (restream.fileId) {
-      variables.file_id = restream.fileId;
+      const fileId = fetchFileId(restream.fileId);
+      if (fileId) {
+        restream.fileId = fileId;
+        variables.file_id = fileId;
+      }
     }
 
     if (restream.maxFilesInPlaylist) {
@@ -147,6 +152,28 @@
     restreamStore.update((v) => {
       return v;
     });
+  };
+
+  const fetchFileId = (id) => {
+    return isFullGDrivePath(id)
+      ? id.match(/(?<fileId>(?<=file\/d\/).{33})\//)?.groups?.fileId
+      : id;
+  };
+
+  const handleInputFileId = (event) => {
+    const stringWithFileId = event.target.value;
+    if (!stringWithFileId) return;
+    $restreamStore.fileId = fetchFileId(stringWithFileId);
+    validateFileIdInput();
+  };
+
+  const validateFileIdInput = () => {
+    if (!isValidFileIdInput) {
+      setTimeout(() => {
+        $restreamStore.fileId = '';
+        isValidFileIdInput = true;
+      }, 3000);
+    }
   };
 </script>
 
@@ -257,6 +284,7 @@
                 class="uk-input file-id"
                 type="text"
                 bind:value={$restreamStore.fileId}
+                on:input={handleInputFileId}
                 disabled={!hasApiKey}
                 placeholder="Google File ID"
               />
