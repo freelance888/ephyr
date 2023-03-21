@@ -167,7 +167,7 @@ docker.untar:
 #	make gh.clear
 
 gh.clear:
-	gh api -H "Accept: application/vnd.github+json" \
+	gh api --paginate -H "Accept: application/vnd.github+json" \
 		/repos/$(GH_REPO)/actions/caches \
 		| for ID in `jq '.actions_caches[].id'`; \
 		  do echo "Deleting $$ID"; \

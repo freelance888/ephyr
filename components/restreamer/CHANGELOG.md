@@ -11,41 +11,56 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 - Deploy:
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
-- Option to record audio-only files ([#239]);
-- Display input streams info ([#170], [#266]);
-- "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
-- Display of last sent Command\Error onto Dashboard ([#220], [#297])
-- Display file name in file-backup endpoint ([#175], [#297])
-- Google Drive API key to Ephyr server ([#168], [#297])
-- Video playback for file Input ([#166], [#297])
-- Indication if password is added to the server into Dashboard ([#162], [#297])
-- `filter_by` GET parameter ([#260], [#319])
-- Display stream info for file-backup endpoint ([#322]);
-- Jaeger tracing exporter ([#284]);
+    - Add Jaeger envs: EPHYR_RESTREAMER_JAEGER_AGENT_IP, EPHYR_RESTREAMER_JAEGER_AGENT_PORT ([#284]);
+- CI:
+  - Configure dependabot ([#244]);
+- Dashboard:
+  - "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
+  - Display of last sent Command\Error onto Dashboard ([#220], [#297])
+  - Indication if password is added to the server into Dashboard ([#162], [#297])
+- Output:
+  - Option to record audio-only files ([#239]);
+- Input:
+  - Display input streams info ([#170], [#266]);
+  - Display file name in file-backup endpoint ([#175], [#297])
+  - Video playback for file Input ([#166], [#297])
+  - Display stream info for file-backup endpoint ([#322]);
+  - Auto conversion of Google Drive links to Id's ([#313], [#321]);
+- General
+  - Show number of cores on server instance ([#227], [#254]);
+  - Google Drive API key to Ephyr server ([#168], [#297])
+  - `filter_by` GET parameter ([#260], [#319])
 ### Fixed
 - State disappears after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
 - Inconsistency in Restreamer - key and label validation ([#253], [#302]);
 ### Miscellaneous
+
+- Logging:
+  - `slog` replaced with `tracing` ([#284]);
+  - Jaeger tracing exporter ([#271], [#284]);
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
-  - `slog` replaced with `tracing` ([#284]);
   - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]);
 
 [#162]: /../../issues/162
 [#166]: /../../issues/166
 [#168]: /../../issues/168
 [#170]: /../../issues/170
+[#171]: /../../issues/171
 [#175]: /../../issues/175
 [#220]: /../../issues/220
+[#227]: /../../issues/227
 [#235]: /../../issues/235
 [#236]: /../../issues/236
 [#241]: /../../issues/241
 [#253]: /../../issues/253
 [#260]: /../../issues/260
+[#313]: /../../issues/313
 
 [#239]: /../../pull/239
 [#244]: /../../pull/244
+[#254]: /../../pull/254
 [#266]: /../../pull/266
 [#267]: /../../pull/267
 [#284]: /../../pull/284
@@ -53,6 +68,7 @@ All user visible changes to this project will be documented in this file. This p
 [#297]: /../../pull/297
 [#302]: /../../pull/302
 [#319]: /../../pull/319
+[#321]: /../../pull/321
 [#322]: /../../pull/322
 
 
