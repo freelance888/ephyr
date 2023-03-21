@@ -168,13 +168,25 @@ impl RestreamerKind {
                 }
                 let from_url =
                     input.src.as_ref()?.src_url(key, files, file_root)?;
+                let to_url = endpoint.kind.rtmp_url(key, &input.key);
+                let id: Uuid = endpoint.id.into();
 
-                CopyRestreamer {
-                    id: endpoint.id.into(),
-                    from_url,
-                    to_url: endpoint.kind.rtmp_url(key, &input.key),
+                if &input.key == "playback" {
+                    TranscodingRestreamer {
+                        id,
+                        from_url,
+                        to_url,
+                        options: Default::default(),
+                    }
+                    .into()
+                } else {
+                    CopyRestreamer {
+                        id,
+                        from_url,
+                        to_url,
+                    }
+                    .into()
                 }
-                .into()
             }
 
             state::InputEndpointKind::Hls => {
@@ -186,10 +198,7 @@ impl RestreamerKind {
                     from_url: state::InputEndpointKind::Rtmp
                         .rtmp_url(key, &input.key),
                     to_url: endpoint.kind.rtmp_url(key, &input.key),
-                    vcodec: Some("libx264".into()),
-                    vprofile: Some("baseline".into()),
-                    vpreset: Some("superfast".into()),
-                    acodec: Some("libfdk_aac".into()),
+                    options: Default::default(),
                 }
                 .into()
             }
