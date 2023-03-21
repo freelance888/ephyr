@@ -138,3 +138,7 @@ export const isFailoverInput = (input: any) => {
 export const escapeRegExp = (str: string) => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+export const isFullGDrivePath = (id: string): boolean => {
+  return id.startsWith('https://drive.google.com');
+};

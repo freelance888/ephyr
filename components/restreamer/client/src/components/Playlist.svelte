@@ -9,7 +9,7 @@
     StopPlayingFileFromPlaylist,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
-  import { showError } from '../utils/util';
+  import { isFullGDrivePath, showError } from '../utils/util';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -50,17 +50,10 @@
     }
   }
 
-  function fetchFolderId(data) {
-    switch (true) {
-      case data?.length === 33:
-        return data;
-      case data?.length > 33:
-        const trimmed = data.match(/(?<folderId>(?<=folders\/)[\S]+)/)?.groups;
-        if (trimmed?.folderId) return trimmed.folderId;
-      default:
-        isValidFileIdInput = false;
-        return 'Google File ID is incorrect';
-    }
+  function fetchFolderId(id) {
+    return isFullGDrivePath(id)
+      ? id.match(/(?<folderId>(?<=folders\/)[\S]+)/)?.groups?.folderId
+      : id;
   }
 
   function handleInputFolderId(event) {
@@ -138,7 +131,6 @@
         bind:value={googleDriveFolderId}
         on:input={handleInputFolderId}
         class="google-drive-link uk-input uk-form-small uk-flex-1"
-        class:invalid-folder-id={!isValidFolderIdInput}
         type="text"
         disabled={!isValidFolderIdInput}
         placeholder="ID of Google Drive folder"
@@ -280,8 +272,5 @@
 
     &.is-finished
       opacity: 0.4
-
-  .invalid-folder-id
-    color: #f55
 
 </style>

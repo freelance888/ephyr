@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
   import { SetRestream, Info } from '../../api/client.graphql';
-  import { sanitizeLabel, showError } from '../utils/util';
+  import { isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
@@ -98,11 +98,9 @@
 
     if (restream.fileId) {
       const fileId = fetchFileId(restream.fileId);
-      if (fileId || fileId.length < 33) {
+      if (fileId) {
         restream.fileId = fileId;
         variables.file_id = fileId;
-      } else {
-        showError(`Google File: ${restream.fileId} ID is incorrect`);
       }
     }
 
@@ -156,17 +154,10 @@
     });
   };
 
-  const fetchFileId = (data) => {
-    switch (true) {
-      case data?.length === 33:
-        return data;
-      case data?.length > 33:
-        const trimmed = data.match(/(?<fileId>(?<=file\/d\/).{33})\//)?.groups;
-        if (trimmed?.fileId) return trimmed.fileId.replace('/', '');
-      default:
-        isValidFileIdInput = false;
-        return 'Google File ID is incorrect';
-    }
+  const fetchFileId = (id) => {
+    return isFullGDrivePath(id)
+      ? id.match(/(?<fileId>(?<=file\/d\/).{33})\//)?.groups?.fileId
+      : id;
   };
 
   const handleInputFileId = (event) => {
@@ -291,11 +282,10 @@
               >
               <input
                 class="uk-input file-id"
-                class:invalid-file-id={!isValidFileIdInput}
                 type="text"
                 bind:value={$restreamStore.fileId}
                 on:input={handleInputFileId}
-                disabled={!hasApiKey || !isValidFileIdInput}
+                disabled={!hasApiKey}
                 placeholder="Google File ID"
               />
             </label>
@@ -402,8 +392,5 @@
     .uk-input
       background: #e5e5e5
       cursor: help
-
-  .invalid-file-id
-    color: #f55
 
 </style>
