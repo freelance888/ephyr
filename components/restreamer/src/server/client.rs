@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use actix_service::Service as _;
 use actix_web::{
-    dev::ServiceRequest, get, middleware, route, web, App, Error, HttpRequest,
+    dev::ServiceRequest, get, route, web, App, Error, HttpRequest,
     HttpResponse, HttpServer,
 };
 use actix_web_httpauth::extractors::{
@@ -11,7 +11,7 @@ use actix_web_httpauth::extractors::{
     AuthExtractor as _, AuthExtractorConfig, AuthenticationError,
 };
 use actix_web_static_files::ResourceFiles;
-use ephyr_log::log;
+use ephyr_log::{tracing, tracing_actix_web::TracingLogger};
 use futures::{future, FutureExt as _};
 use juniper::http::playground::playground_source;
 use juniper_actix::{graphql_handler, subscriptions::subscriptions_handler};
@@ -22,6 +22,7 @@ use crate::{
     cli::{Failure, Opts},
     State,
 };
+use ephyr_log::tracing::instrument;
 use std::fmt;
 
 const MIX_ROUTE: &str = "/mix";
@@ -80,6 +81,7 @@ pub mod public_full_stream_dir {
 ///
 /// [`cli::Opts::debug`]: crate::cli::Opts::debug
 /// [2]: https://github.com/graphql/graphql-playground
+#[instrument(skip_all, name = "client::run")]
 pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
     let in_debug_mode = cfg.debug;
 
@@ -99,7 +101,7 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .app_data(web::Data::new(api::graphql::mix::schema()))
             .app_data(web::Data::new(api::graphql::dashboard::schema()))
             .app_data(web::Data::new(api::graphql::statistics::schema()))
-            .wrap(middleware::Logger::default())
+            .wrap(TracingLogger::default())
             .wrap_fn(|req, srv| match authorize(req) {
                 Ok(req) => srv.call(req).left_future(),
                 Err(e) => future::err(e).right_future(),
@@ -130,10 +132,10 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
         .service(ResourceFiles::new("/", root_dir_files))
     })
     .bind((cfg.client_http_ip, cfg.client_http_port))
-    .map_err(|e| log::error!("Failed to bind client HTTP server: {e}"))?
+    .map_err(|e| tracing::error!("Failed to bind client HTTP server: {e}"))?
     .run()
     .await
-    .map_err(|e| log::error!("Failed to run client HTTP server: {e}"))?)
+    .map_err(|e| tracing::error!("Failed to run client HTTP server: {e}"))?)
 }
 
 /// List of schemes
@@ -298,7 +300,7 @@ async fn playground() -> HttpResponse {
 /// [1]: https://en.wikipedia.org/wiki/Basic_access_authentication
 fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
     let route = req.uri().path();
-    log::debug!("authorize URI PATH: {}", route);
+    tracing::debug!("authorize URI PATH: {}", route);
 
     if route.starts_with(STATISTICS_ROUTE_API) {
         return Ok(req);

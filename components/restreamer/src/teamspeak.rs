@@ -20,7 +20,7 @@ use std::{
 use backoff::{future::retry_notify, ExponentialBackoff};
 use byteorder::{BigEndian, ByteOrder as _};
 use derive_more::{Display, Error};
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{
     future, ready, sink, FutureExt as _, Stream, StreamExt as _,
     TryFutureExt as _,
@@ -35,6 +35,7 @@ use tokio::{
 use tsclientlib::{DisconnectOptions, StreamItem};
 use tsproto_packets::packets::AudioData;
 
+use ephyr_log::tracing::{instrument, Span};
 pub use tsclientlib::{ConnectOptions as Config, Connection};
 
 /// Handler responsible for decoding, tracking and mixing audio of all
@@ -47,6 +48,8 @@ pub type AudioHandler = tsclientlib::audio::AudioHandler<MemberId>;
 ///
 /// [TeamSpeak]: https://teamspeak.com
 type MemberId = u16;
+
+const CONNECTION_RETRY_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Audio input captured from [TeamSpeak] server.
 ///
@@ -95,6 +98,8 @@ pub struct Input {
     /// Indicator whether the spawned [`AudioCapture`] is unable to recover from
     /// its last error, and so this [`Input`] should return an error too.
     is_conn_unrecoverable: Arc<AtomicBool>,
+
+    span: Span,
 }
 
 impl Input {
@@ -116,19 +121,14 @@ impl Input {
     #[must_use]
     pub fn new<C: Into<Config>>(cfg: C) -> Self {
         let cfg = {
-            use ephyr_log::Drain as _;
-
-            let lgr = ephyr_log::logger();
-            let is_debug = lgr.is_debug_enabled();
-            let is_trace = lgr.is_trace_enabled();
+            let current_level = tracing::level_filters::LevelFilter::current();
+            let is_debug = current_level == tracing::Level::DEBUG;
+            let is_trace = current_level == tracing::Level::TRACE;
 
             // TODO #6: Memoize TeamSpeak Identity and reuse.
             //      https://github.com/ALLATRA-IT/ephyr/issues/6
-            let mut cfg = cfg
-                .into()
-                .logger(lgr)
-                .log_commands(is_debug)
-                .log_packets(is_trace);
+            let mut cfg =
+                cfg.into().log_commands(is_debug).log_packets(is_trace);
             // TeamSpeak limits client names by 30 UTF-8 characters max. If the
             // provided name is longer, then we should truncate it to fit into
             // the requirement.
@@ -139,7 +139,6 @@ impl Input {
             cfg
         };
 
-        let lgr = ephyr_log::logger();
         Self {
             cfg,
             ticker: time::interval(Duration::from_millis(
@@ -147,15 +146,17 @@ impl Input {
             )),
             frame: vec![0.0; Self::FRAME_SIZE],
             cursor: 0,
-            audio: Arc::new(Mutex::new(AudioHandler::new(lgr))),
+            audio: Arc::new(Mutex::new(AudioHandler::new())),
             conn: None,
             is_conn_unrecoverable: Arc::new(AtomicBool::default()),
+            span: tracing::info_span!("teamspeak::Input"),
         }
     }
 
     /// Spawns an [`AudioCapture`] associated with this [`Input`], retrying it
     /// endlessly with an [`ExponentialBackoff`] if it fails in a recoverable
     /// way.
+    #[instrument(skip_all, parent=&self.span)]
     fn spawn_audio_capturing(&mut self) {
         let cfg = self.cfg.clone();
         let audio = self.audio.clone();
@@ -163,7 +164,7 @@ impl Input {
 
         let capturing = retry_notify(
             ExponentialBackoff {
-                max_elapsed_time: None,
+                max_elapsed_time: Some(CONNECTION_RETRY_TIMEOUT),
                 ..ExponentialBackoff::default()
             },
             move || {
@@ -171,16 +172,15 @@ impl Input {
                     .map_err(AudioCaptureError::into_backoff)
             },
             |err, dur| {
-                log::error!(
+                tracing::error!(
                     "Backoff TeamSpeak server audio capturing for {} due to \
-                     error: {}",
+                     error: {err}",
                     humantime::format_duration(dur),
-                    err,
                 );
             },
         )
         .map_err(move |e| {
-            log::error!("Cannot capture audio from TeamSpeak server: {e}");
+            tracing::error!("Cannot capture audio from TeamSpeak server: {e}");
             is_conn_unrecoverable.store(true, Ordering::SeqCst);
         });
 
@@ -200,6 +200,7 @@ impl AsyncRead for Input {
     /// talking members, the just a silence is emitted.
     ///
     /// [TeamSpeak]: https://teamspeak.com
+    #[instrument(skip_all, parent=&self.span)]
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -277,6 +278,7 @@ impl Drop for Input {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[inline]
+    #[instrument(skip_all, parent=&self.span)]
     fn drop(&mut self) {
         if let Some((conn, waiter)) = self.conn.take() {
             conn.abort();
@@ -326,6 +328,8 @@ pub struct AudioCapture {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     audio: Arc<Mutex<AudioHandler>>,
+
+    span: Span,
 }
 
 impl AudioCapture {
@@ -334,11 +338,16 @@ impl AudioCapture {
     #[inline]
     #[must_use]
     #[allow(clippy::missing_panics_doc)]
-    pub fn new(conn: Connection, audio: Arc<Mutex<AudioHandler>>) -> Self {
+    pub fn new(
+        conn: Connection,
+        audio: Arc<Mutex<AudioHandler>>,
+        span: Span,
+    ) -> Self {
         audio.lock().unwrap().reset();
         Self {
             conn: ManuallyDrop::new(conn),
             audio,
+            span,
         }
     }
 
@@ -387,11 +396,12 @@ impl AudioCapture {
     /// See [`AudioCaptureError`] for details.
     ///
     /// [TeamSpeak]: https://teamspeak.com
+    #[instrument(skip_all, name = "AudioCapture")]
     pub async fn run(
         cfg: Config,
         audio: Arc<Mutex<AudioHandler>>,
     ) -> Result<(), AudioCaptureError> {
-        log::debug!(
+        tracing::debug!(
             "Connecting to TeamSpeak server: {}/{:?}",
             cfg.get_address(),
             cfg.get_channel()
@@ -400,7 +410,7 @@ impl AudioCapture {
             .hardware_id(Self::new_hwid())
             .connect()
             .map_err(AudioCaptureError::InitializationFailed)?;
-        AudioCapture::new(conn, audio).await
+        AudioCapture::new(conn, audio, Span::current()).await
     }
 }
 
@@ -440,7 +450,7 @@ impl Future for AudioCapture {
                 ) {
                     return Poll::Ready(Err(E::DecodingFailed(e)));
                 }
-                log::warn!("Drop audio packet from TeamSpeak server: {e}");
+                tracing::warn!("Drop audio packet from TeamSpeak server: {e}");
             }
         }
     }
@@ -455,6 +465,7 @@ impl Drop for AudioCapture {
     ///
     /// [TeamSpeak]: https://teamspeak.com
     #[inline]
+    #[instrument(skip_all, parent=&self.span)]
     fn drop(&mut self) {
         // This is totally safe, because `self.conn` field is guaranteed to be
         // never used again later, so `ManuallyDrop` won't be touched again.

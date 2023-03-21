@@ -6,7 +6,7 @@ pub mod statistics;
 
 use std::{net::IpAddr, time::Duration};
 
-use ephyr_log::log;
+use ephyr_log::{tracing, TelemetryConfig};
 use futures::future;
 use tokio::{fs, time};
 
@@ -28,12 +28,17 @@ use crate::{
 /// [`HttpServer`]: actix_web::HttpServer
 #[actix_web::main]
 pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
+    TelemetryConfig::new(cfg.verbose)
+        .jaeger_endpoint(cfg.jaeger_agent_ip, cfg.jaeger_agent_port)
+        .jaeger_service_name(cfg.jaeger_service_name.clone())
+        .init();
+
     if cfg.public_host.is_none() {
         cfg.public_host = Some(
             detect_public_ip()
                 .await
                 .ok_or_else(|| {
-                    log::error!("Cannot detect server's public IP address");
+                    tracing::error!("Cannot detect server's public IP address");
                 })?
                 .to_string(),
         );
@@ -41,12 +46,12 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
-            log::error!("Failed to resolve FFmpeg binary path: {e}");
+            tracing::error!("Failed to resolve FFmpeg binary path: {e}");
         })?;
 
-    let state = State::try_new(&cfg.state_path)
-        .await
-        .map_err(|e| log::error!("Failed to initialize server state: {e}"))?;
+    let state = State::try_new(&cfg.state_path).await.map_err(|e| {
+        tracing::error!("Failed to initialize server state: {e}");
+    })?;
 
     let srs = srs::Server::try_new(
         &cfg.srs_path,
@@ -57,7 +62,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         },
     )
     .await
-    .map_err(|e| log::error!("Failed to initialize SRS server: {e}"))?;
+    .map_err(|e| tracing::error!("Failed to initialize SRS server: {e}"))?;
     State::on_change(
         "cleanup_dvr_files",
         &state.restreams,
@@ -77,10 +82,9 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
         restreamers.apply(&restreams);
         future::ready(())
     });
-
     let file_manager = FileManager::new(&cfg, state.clone());
     file_manager.check_files();
-    State::on_change("file_manager", &state.file_commands, move |_| {
+    State::on_change("handle_fm_commands", &state.file_commands, move |_| {
         file_manager.handle_commands();
         future::ready(())
     });
@@ -93,7 +97,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
 
     let mut broadcaster = Broadcaster::new(state.clone());
     State::on_change(
-        "execute_dashboard_command",
+        "handle_dashboard_commands",
         &state.dashboard_commands,
         move |_| {
             broadcaster.handle_commands();

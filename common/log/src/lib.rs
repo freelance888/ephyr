@@ -4,7 +4,6 @@
     rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
-    rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
     unsafe_code
@@ -20,52 +19,98 @@
     unused_results
 )]
 
-pub use slog::{self, Drain};
-pub use slog_scope::{self as log, logger};
+mod capture_logs;
 
-/// Initializes global logger with the given verbosity `level` ([`Info`] by
-/// default, if [`None`]), returning its guard that should be held as long as
-/// program runs.
-///
-/// # Panics
-///
-/// If failed to initialize logger.
-///
-/// [`Info`]: slog::Level::Info
-pub fn init(level: Option<slog::Level>) -> slog_scope::GlobalLoggerGuard {
-    let guard = slog_scope::set_global_logger(main_logger(
-        level.unwrap_or(slog::Level::Info),
-    ));
-    if let Err(e) = slog_stdlog::init() {
-        panic!("Failed to initialize logger: {}", e);
-    };
-    guard
+pub use capture_logs::{ChildCapture, ParsedMsg};
+use opentelemetry::sdk::propagation::TraceContextPropagator;
+use std::net::IpAddr;
+use tracing::level_filters::LevelFilter;
+pub use tracing::{self, Level, Span};
+pub use tracing_actix_web;
+pub use tracing_futures::Instrument;
+pub use tracing_log::log;
+use tracing_log::LogTracer;
+use tracing_subscriber::{fmt, layer::SubscriberExt, Layer, Registry};
+
+/// Allow to configure the tracing.
+#[derive(Clone, Debug)]
+pub struct TelemetryConfig {
+    /// Endpoint of Jaeger server to send logs to.
+    pub jaeger_endpoint: Option<String>,
+    /// Service name to collect logs on Jaeger.
+    pub jaeger_service_name: Option<String>,
+    /// Logging level
+    pub level: LevelFilter,
 }
 
-/// Creates, configures and returns main [`Logger`] of the application.
-///
-/// [`Logger`]: slog::Logger
-#[must_use]
-pub fn main_logger(level: slog::Level) -> slog::Logger {
-    use slog::Drain as _;
-    use slog_async::OverflowStrategy::Drop;
+impl TelemetryConfig {
+    /// Create  [`TelemetryConfig`] with the given verbosity `level`
+    /// ([`Info`] by default, if [`None`]).
+    ///
+    /// [`Info`]: tracing::Level::INFO
+    #[must_use]
+    pub fn new(level: Option<Level>) -> Self {
+        Self {
+            level: LevelFilter::from(level.unwrap_or(Level::INFO)),
+            jaeger_endpoint: None,
+            jaeger_service_name: None,
+        }
+    }
 
-    let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::CompactFormat::new(decorator).build().fuse();
+    /// Set Jaeger endpoint to send traces to.
+    #[must_use]
+    pub fn jaeger_endpoint(
+        mut self,
+        agent_ip: Option<IpAddr>,
+        agent_port: Option<u16>,
+    ) -> Self {
+        if let (Some(ip), Some(port)) = (agent_ip, agent_port) {
+            self.jaeger_endpoint = Some(format!("{ip}:{port}"));
+        };
+        self
+    }
 
-    let drain = drain
-        .filter_level(level)
-        .filter(|rec| {
-            // Disable annoying DEBUG logs from `hyper` crate.
-            !(rec.level() == slog::Level::Debug
-                && rec.module() == "hyper::proto::h1::io")
-        })
-        .fuse();
+    /// Set Jaeger service name to collect logs on Jaeger.
+    #[must_use]
+    pub fn jaeger_service_name(mut self, service_name: String) -> Self {
+        self.jaeger_service_name = Some(service_name);
+        self
+    }
 
-    let drain = slog_async::Async::new(drain)
-        .overflow_strategy(Drop)
-        .build()
-        .fuse();
+    /// Initialize the logging and telemetry.
+    /// If [`TelemetryConfig.jaeger_endpoint`] is set,
+    /// the telemetry will be sent to Jaeger
+    ///
+    /// # Panics
+    ///
+    /// If failed to initialize logger.
+    pub fn init(self) {
+        if let Err(e) = LogTracer::init() {
+            panic!("Failed to initialize logger: {e}");
+        };
+        let service_name = self.jaeger_service_name.unwrap_or("unknown".into());
 
-    slog::Logger::root(drain, slog::o!())
+        let mut layers = vec![fmt::layer().pretty().boxed()];
+
+        if let Some(endpoint) = self.jaeger_endpoint {
+            let tracer = opentelemetry_jaeger::new_agent_pipeline()
+                .with_endpoint(endpoint)
+                .with_service_name(service_name)
+                .with_max_packet_size(9216)
+                .with_auto_split_batch(true)
+                .install_batch(opentelemetry::runtime::Tokio)
+                .expect("Failed to install jaeger agent");
+            opentelemetry::global::set_text_map_propagator(
+                TraceContextPropagator::new(),
+            );
+            layers.push(
+                tracing_opentelemetry::layer().with_tracer(tracer).boxed(),
+            );
+        }
+
+        let subscriber = Registry::default().with(self.level).with(layers);
+
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("setting tracing subscriber failed");
+    }
 }

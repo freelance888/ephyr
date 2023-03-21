@@ -20,7 +20,8 @@ All user visible changes to this project will be documented in this file. This p
 - Video playback for file Input ([#166], [#297])
 - Indication if password is added to the server into Dashboard ([#162], [#297])
 - `filter_by` GET parameter ([#260], [#319])
-- Display stream info for file-backup endpoint [#322]);
+- Display stream info for file-backup endpoint ([#322]);
+- Jaeger tracing exporter ([#284]);
 ### Fixed
 - State disappears after restart ([#235], [#267]);
 - Not possible to write DVR on local disk ([#236], [#267]);
@@ -28,6 +29,8 @@ All user visible changes to this project will be documented in this file. This p
 ### Miscellaneous
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
+  - `slog` replaced with `tracing` ([#284]);
+  - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]);
 
 [#162]: /../../issues/162
 [#166]: /../../issues/166
@@ -45,6 +48,7 @@ All user visible changes to this project will be documented in this file. This p
 [#244]: /../../pull/244
 [#266]: /../../pull/266
 [#267]: /../../pull/267
+[#284]: /../../pull/284
 [#296]: /../../pull/296
 [#297]: /../../pull/297
 [#302]: /../../pull/302

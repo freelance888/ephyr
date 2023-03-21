@@ -14,7 +14,11 @@ use std::{
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
-use ephyr_log::{log, slog};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument, Span},
+    ChildCapture, ParsedMsg,
+};
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use smart_default::SmartDefault;
 use tokio::{fs, process::Command};
@@ -37,6 +41,38 @@ pub struct Server {
     _process: Arc<ServerProcess>,
 }
 
+/// Parse [SRS] log line to extract message
+///
+/// Description of log format[1].
+///
+/// # Examples
+///
+/// ```ignore
+/// let r =
+///     parse_srs_log("[2014-08-06 10:09:34.579][trace][22314][108] Message");
+/// assert_eq!(r, "Message");
+/// ```
+/// [SRS]: https://github.com/ossrs/srs
+/// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log#log-format
+fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
+    let parsed: Vec<_> = line
+        .rsplit(']')
+        .map(|t| t.trim_start_matches([' ', '[']))
+        .collect();
+    // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
+    if parsed.len() == 5 {
+        ParsedMsg {
+            message: parsed[0],
+            level: parsed[3],
+        }
+    } else {
+        ParsedMsg {
+            message: line,
+            level: "error",
+        }
+    }
+}
+
 impl Server {
     /// Tries to create and run a new [SRS] server process.
     ///
@@ -45,6 +81,7 @@ impl Server {
     /// If [SRS] configuration file fails to be created.
     ///
     /// [SRS]: https://github.com/ossrs/srs
+    #[instrument(err, name = "srs", skip_all)]
     pub async fn try_new<P: AsRef<Path>>(
         workdir: P,
         cfg: &Config,
@@ -83,41 +120,54 @@ impl Server {
         let mut cmd = Command::new(bin_path);
         let _ = cmd
             .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .kill_on_drop(true)
             .current_dir(workdir)
             .arg("-c")
             .arg(&conf_path);
 
-        let (spawner, abort_handle) = future::abortable(async move {
-            loop {
-                let cmd = &mut cmd;
-                let _ = AssertUnwindSafe(async move {
-                    let process = cmd.spawn().map_err(|e| {
-                        log::crit!("Cannot start SRS server: {e}");
-                    })?;
-                    let out =
-                        process.wait_with_output().await.map_err(|e| {
-                            log::crit!("Failed to observe SRS server: {e}");
+        let (spawner, abort_handle) = future::abortable(
+            async move {
+                loop {
+                    let cmd = &mut cmd;
+                    let _ = AssertUnwindSafe(async move {
+                        let process = cmd.spawn().map_err(|e| {
+                            tracing::error!("Cannot start SRS server: {e}");
                         })?;
-                    log::crit!(
-                        "SRS server stopped with exit code: {}",
-                        out.status,
-                    );
-                    Ok(())
-                })
-                .unwrap_or_else(|_: ()| ())
-                .catch_unwind()
-                .await
-                .map_err(|p| {
-                    log::crit!(
-                        "Panicked while spawning/observing SRS server: {}",
-                        display_panic(&p),
-                    );
-                });
+                        let out = process
+                            .capture_logs_and_wait_for_output(
+                                tracing::info_span!(
+                                    parent: Span::current(),
+                                    "srs_proc"
+                                ),
+                                parse_srs_log_line,
+                            )
+                            .await
+                            .map_err(|e| {
+                                tracing::error!(
+                                    "Failed to observe SRS server: {e}"
+                                );
+                            })?;
+                        tracing::warn!(
+                            "SRS server stopped with exit code: {}",
+                            out.status
+                        );
+                        Ok(())
+                    })
+                    .unwrap_or_else(|_: ()| ())
+                    .catch_unwind()
+                    .await
+                    .map_err(|p| {
+                        tracing::error!(
+                            "Panicked while spawning/observing SRS server: {}",
+                            display_panic(&p),
+                        );
+                    });
+                }
             }
-        });
+            .in_current_span(),
+        );
 
         let srv = Self {
             conf_path,
@@ -141,6 +191,7 @@ impl Server {
     /// If [SRS] configuration file fails to be created.
     ///
     /// [SRS]: https://github.com/ossrs/srs
+    //#[instrument(err, skip_all, fields(group = "srs"))]
     pub async fn refresh(&self, cfg: &Config) -> anyhow::Result<()> {
         // SRS server reloads automatically on its conf file changes.
         fs::write(
@@ -217,10 +268,10 @@ impl Drop for ClientId {
             drop(tokio::spawn(
                 api::srs::Client::kickoff_client(client_id.clone()).map_err(
                     move |e| {
-                        log::warn!(
-                            "Failed to kickoff client {} from SRS: {}",
-                            client_id,
-                            e,
+                        tracing::error!(
+                            client=client_id,
+                            e=%e,
+                            "Failed to kickoff client",
                         );
                     },
                 ),
@@ -254,7 +305,7 @@ pub struct Config {
 /// Severity of [SRS] [server logs][1].
 ///
 /// [SRS]: https://github.com/ossrs/srs
-/// [1]: https://github.com/ossrs/srs/wiki/v4_EN_SrsLog#loglevel
+/// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log
 #[derive(Clone, Copy, Debug, Display, SmartDefault)]
 pub enum LogLevel {
     /// Error level.
@@ -289,14 +340,14 @@ pub enum LogLevel {
     Verbose,
 }
 
-impl From<slog::Level> for LogLevel {
+impl From<tracing::Level> for LogLevel {
     #[inline]
-    fn from(lvl: slog::Level) -> Self {
+    fn from(lvl: tracing::Level) -> Self {
         match lvl {
-            slog::Level::Critical | slog::Level::Error => Self::Error,
-            slog::Level::Warning | slog::Level::Info => Self::Warn,
-            slog::Level::Debug => Self::Trace,
-            slog::Level::Trace => Self::Info,
+            tracing::Level::ERROR => Self::Error,
+            tracing::Level::WARN | tracing::Level::INFO => Self::Warn,
+            tracing::Level::DEBUG => Self::Trace,
+            tracing::Level::TRACE => Self::Info,
         }
     }
 }

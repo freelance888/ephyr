@@ -4,7 +4,7 @@ use systemstat::{Platform, System};
 use tokio::time;
 
 use crate::{cli::Failure, display_panic, state::ServerInfo, State};
-use ephyr_log::log;
+use ephyr_log::{tracing, tracing::instrument};
 use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
@@ -21,11 +21,18 @@ use std::panic::AssertUnwindSafe;
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_precision_loss)]
 #[allow(clippy::cast_possible_wrap)]
+#[instrument(skip_all, name = "statistics::run")]
 pub async fn run(state: State) -> Result<(), Failure> {
     // we use tx_last and rx_last to compute the delta
     // (send/receive bytes last second)
     let mut tx_last: f64 = 0.0;
     let mut rx_last: f64 = 0.0;
+
+    let sys = System::new();
+    if let Err(e) = sys.cpu_load_aggregate().and(sys.memory()) {
+        tracing::error!("Skip statistics. Failed to gather with error: {}", e);
+        return Ok(());
+    }
 
     let spawner = async move {
         loop {
@@ -45,11 +52,11 @@ pub async fn run(state: State) -> Result<(), Failure> {
                         // further to compute network statistics
                         // (bytes sent/received last second)
                         time::sleep(Duration::from_secs(1)).await;
-                        let cpu = cpu.done().unwrap();
+                        let cpu_idle = cpu.done().map_or(0.0, |c| c.idle);
 
                         // in percents
                         info.update_cpu(Some(
-                            f64::from(1.0 - cpu.idle) * 100.0,
+                            f64::from(1.0 - cpu_idle) * 100.0,
                         ));
 
                         let cpus_usize = num_cpus::get();
@@ -59,7 +66,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. CPU load: error: {}", x);
+                        tracing::error!("Statistics. CPU load: error: {}", x);
                     }
                 }
 
@@ -77,7 +84,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. Memory: error: {}", x);
+                        tracing::error!("Statistics. Memory: error: {}", x);
                     }
                 }
 
@@ -92,16 +99,18 @@ pub async fn run(state: State) -> Result<(), Failure> {
                         // computed among all the available network
                         // interfaces
                         for netif in netifs.values() {
-                            let netstats =
-                                sys.network_stats(&netif.name).unwrap();
+                            let (tx_bytes, rx_bytes) = sys
+                                .network_stats(&netif.name)
+                                .map_or((0, 0), |stat| {
+                                    (
+                                        stat.tx_bytes.as_u64(),
+                                        stat.rx_bytes.as_u64(),
+                                    )
+                                });
                             // in megabytes
-                            tx += netstats.tx_bytes.as_u64() as f64
-                                / 1024.0
-                                / 1024.0;
+                            tx += tx_bytes as f64 / 1024.0 / 1024.0;
                             // in megabytes
-                            rx += netstats.rx_bytes.as_u64() as f64
-                                / 1024.0
-                                / 1024.0;
+                            rx += rx_bytes as f64 / 1024.0 / 1024.0;
                         }
 
                         // Compute delta
@@ -119,7 +128,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
                     }
                     Err(x) => {
                         info.set_error(Some(x.to_string()));
-                        log::error!("Statistics. Networks: error: {}", x);
+                        tracing::error!("Statistics. Networks: error: {}", x);
                     }
                 }
 
@@ -131,7 +140,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
             .catch_unwind()
             .await
             .map_err(|p| {
-                log::crit!(
+                tracing::error!(
                     "Panicked while getting server statistics {}",
                     display_panic(&p),
                 );

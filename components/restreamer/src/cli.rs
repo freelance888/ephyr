@@ -3,7 +3,7 @@
 use std::{fmt, net::IpAddr, path::PathBuf, str::FromStr as _};
 
 use anyhow::anyhow;
-use ephyr_log::slog;
+use ephyr_log::tracing;
 use structopt::StructOpt;
 
 /// CLI (command line interface) of the re-streamer server.
@@ -131,9 +131,9 @@ pub struct Opts {
         long,
         parse(try_from_str = Self::parse_log_level),
         help = "Logs verbosity level: \
-                OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE"
+                OFF | ERRO | WARN | INFO | DEBG | TRCE"
     )]
-    pub verbose: Option<slog::Level>,
+    pub verbose: Option<tracing::Level>,
 
     /// Path for local video files.
     #[structopt(
@@ -145,6 +145,34 @@ pub struct Opts {
                      will be downloaded."
     )]
     pub file_root: PathBuf,
+
+    /// Port of Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_AGENT_IP",
+        help = "IP of Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_agent_ip: Option<IpAddr>,
+
+    /// Port of Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_AGENT_PORT",
+        help = "Port of Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_agent_port: Option<u16>,
+
+    /// Service name for Jaeger to send traces.
+    #[structopt(
+        long,
+        env = "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME",
+        default_value = "ephyr-restreamer",
+        help = "Service name for Jaeger to send traces",
+        long_help = "Uses for aggregation of traces for Jaeger"
+    )]
+    pub jaeger_service_name: String,
 }
 
 impl Opts {
@@ -157,21 +185,21 @@ impl Opts {
         <Self as StructOpt>::from_args()
     }
 
-    /// Parses [`slog::Level`] from the given string.
+    /// Parses [`tracing::Level`] from the given string.
     ///
-    /// This function is required, because [`slog::Level`]'s [`FromStr`]
+    /// This function is required, because [`tracing::Level`]'s [`FromStr`]
     /// implementation returns `()`, which is not [`Display`] as [`StructOpt`]
     /// requires.
     ///
     /// # Errors
     ///
-    /// If [`slog::Level`] failed to parse from the string.
+    /// If [`tracing::Level`] failed to parse from the string.
     ///
     /// [`Display`]: std::fmt::Display
     /// [`FromStr`]: std::str::FromStr
-    pub fn parse_log_level(lvl: &str) -> Result<slog::Level, anyhow::Error> {
+    pub fn parse_log_level(lvl: &str) -> Result<tracing::Level, anyhow::Error> {
         #[allow(clippy::map_err_ignore)]
-        slog::Level::from_str(lvl).map_err(|_| {
+        tracing::Level::from_str(lvl).map_err(|_| {
             anyhow!(
                 "'{}' is invalid verbosity level, allowed levels are: \
                  OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE",

@@ -44,9 +44,9 @@ pub mod stream_statistics;
 pub mod teamspeak;
 pub mod types;
 
-use std::{any::Any, mem};
+use std::any::Any;
 
-use ephyr_log::slog;
+use ephyr_log::tracing;
 
 pub use self::{spec::Spec, state::State};
 
@@ -60,16 +60,11 @@ pub fn run() -> Result<(), cli::Failure> {
     let mut cfg = cli::Opts::from_args();
     cfg.verbose = cfg.verbose.or({
         if cfg.debug {
-            Some(slog::Level::Debug)
+            Some(tracing::Level::DEBUG)
         } else {
             None
         }
     });
-
-    // This guard should be held till the end of the program for the logger
-    // to present in global context.
-    mem::forget(ephyr_log::init(cfg.verbose));
-
     server::run(cfg)
 }
 

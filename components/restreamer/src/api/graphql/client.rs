@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
@@ -501,7 +501,7 @@ impl MutationsRoot {
             Ok(Some(true))
         } else {
             let err = result.err().unwrap();
-            log::error!("{}", &err);
+            tracing::error!(err);
             Err(graphql::Error::new("GDRIVE_API_ERROR")
                 .status(StatusCode::BAD_REQUEST)
                 .message(&err))

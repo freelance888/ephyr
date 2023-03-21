@@ -2,21 +2,23 @@
 //!
 //! [FFmpeg]: https://ffmpeg.org
 
-use chrono::{DateTime, Utc};
-use std::{
-    panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
-};
-
-use ephyr_log::log;
-use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
-use tokio::{process::Command, sync::watch, time};
-
 use crate::{
     display_panic,
     ffmpeg::restreamer_kind::RestreamerKind,
     state::{State, Status},
 };
-
+use chrono::{DateTime, Utc};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Span},
+    Instrument,
+};
+use futures::{future, pin_mut, FutureExt as _, TryFutureExt as _};
+use std::{
+    panic::AssertUnwindSafe, path::Path, process::Stdio, time::Duration,
+};
+use tokio::{process::Command, sync::watch, time};
+use uuid::Uuid;
 /// Status of [Restreamer] process
 ///
 /// Using for communication through [`tokio::sync::watch`]
@@ -55,6 +57,9 @@ pub struct Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     abort_if_hanged: future::AbortHandle,
+
+    /// Span to connect with drop
+    span: Span,
 }
 
 impl Restreamer {
@@ -64,6 +69,9 @@ impl Restreamer {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(name = "Restreamer::run", skip_all, fields(
+        actor = %kind.id::<Uuid>())
+    )]
     pub fn run<P: AsRef<Path> + Send + 'static>(
         ffmpeg_path: P,
         kind: RestreamerKind,
@@ -74,98 +82,106 @@ impl Restreamer {
         let mut time_of_fail: Option<DateTime<Utc>> = None;
         let (kill_tx, kill_rx) = watch::channel(RestreamerStatus::Started);
 
-        let (spawner, abort_if_hanged) = future::abortable(async move {
-            let kill_rx_for_loop = kill_rx.clone();
-            loop {
-                let (kind, state) = (&kind_for_spawn, &state);
-                let mut cmd = Command::new(ffmpeg_path.as_ref());
-                let kill_rx_for_ffmpeg = kill_rx.clone();
+        let (spawner, abort_if_hanged) = future::abortable(
+            async move {
+                let kill_rx_for_loop = kill_rx.clone();
+                loop {
+                    let (kind, state) = (&kind_for_spawn, &state);
+                    let mut cmd = Command::new(ffmpeg_path.as_ref());
+                    let kill_rx_for_ffmpeg = kill_rx.clone();
 
-                let _ = AssertUnwindSafe(
-                    async move {
-                        Self::change_status(
-                            time_of_fail,
-                            kind,
-                            state,
-                            Status::Initializing,
-                        );
-
-                        kind.setup_ffmpeg(
-                            cmd.kill_on_drop(true)
-                                .stdin(Stdio::null())
-                                .stdout(Stdio::null())
-                                .stderr(Stdio::piped()),
-                            state,
-                        )
-                        .map_err(|e| {
-                            log::error!(
-                                "Failed to setup FFmpeg re-streamer: {}",
-                                e,
+                    let _ = AssertUnwindSafe(
+                        async move {
+                            Self::change_status(
+                                time_of_fail,
+                                kind,
+                                state,
+                                Status::Initializing,
                             );
-                        })
-                        .await?;
 
-                        let running = kind.run_ffmpeg(cmd, kill_rx_for_ffmpeg);
-                        pin_mut!(running);
-
-                        let set_online = async move {
-                            // If ffmpeg process does not fail within 10 sec
-                            // than set `Online` status.
-                            time::sleep(Duration::from_secs(10)).await;
-                            kind.renew_status(Status::Online, state);
-
-                            future::pending::<()>().await;
-                            Ok(())
-                        };
-                        pin_mut!(set_online);
-
-                        future::try_select(running, set_online)
-                            .await
+                            kind.setup_ffmpeg(
+                                cmd.kill_on_drop(true)
+                                    .stdin(Stdio::null())
+                                    .stdout(Stdio::piped())
+                                    .stderr(Stdio::piped()),
+                                state,
+                            )
                             .map_err(|e| {
-                                log::error!(
-                                    "Failed to run FFmpeg re-streamer: {}",
-                                    e.factor_first().0,
+                                tracing::error!(
+                                    "Failed to setup FFmpeg re-streamer: {}",
+                                    e,
                                 );
                             })
-                            .map(|r| r.factor_first().0)
-                    }
-                    .unwrap_or_else(|_| {
-                        Self::change_status(
-                            time_of_fail,
-                            kind,
-                            state,
-                            Status::Offline,
-                        );
-                        time_of_fail = Some(Utc::now());
-                    }),
-                )
-                .catch_unwind()
-                .await
-                .map_err(|p| {
-                    log::crit!(
-                        "Panicked while spawning/observing FFmpeg \
+                            .await?;
+
+                            let running = kind
+                                .run_ffmpeg(cmd, kill_rx_for_ffmpeg)
+                                .in_current_span();
+                            pin_mut!(running);
+
+                            let set_online = async move {
+                                // If ffmpeg process does not fail within 10 sec
+                                // than set `Online` status.
+                                time::sleep(Duration::from_secs(10)).await;
+                                kind.renew_status(Status::Online, state);
+
+                                future::pending::<()>().await;
+                                Ok(())
+                            }
+                            .in_current_span();
+                            pin_mut!(set_online);
+
+                            future::try_select(running, set_online)
+                                .await
+                                .map_err(|e| {
+                                    tracing::error!(
+                                        "Failed to run FFmpeg re-streamer: {}",
+                                        e.factor_first().0,
+                                    );
+                                })
+                                .map(|r| r.factor_first().0)
+                        }
+                        .in_current_span()
+                        .unwrap_or_else(|_| {
+                            Self::change_status(
+                                time_of_fail,
+                                kind,
+                                state,
+                                Status::Offline,
+                            );
+                            time_of_fail = Some(Utc::now());
+                        }),
+                    )
+                    .catch_unwind()
+                    .await
+                    .map_err(|p| {
+                        tracing::error!(
+                            "Panicked while spawning/observing FFmpeg \
                          re-streamer: {}",
-                        display_panic(&p),
-                    );
-                });
+                            display_panic(&p),
+                        );
+                    });
 
-                if *kill_rx_for_loop.borrow() == RestreamerStatus::Finished {
-                    break;
-                };
+                    if *kill_rx_for_loop.borrow() == RestreamerStatus::Finished
+                    {
+                        break;
+                    };
 
-                if let RestreamerKind::File(_) = kind {
-                    let _ = state
-                        .restreams
-                        .lock_mut()
-                        .iter_mut()
-                        .find(|r| r.playlist.id == kind.id())
-                        .map(|r| r.playlist.currently_playing_file = None);
-                    break;
-                };
+                    if let RestreamerKind::File(_) = kind {
+                        let _ = state
+                            .restreams
+                            .lock_mut()
+                            .iter_mut()
+                            .find(|r| r.playlist.id == kind.id())
+                            .map(|r| r.playlist.currently_playing_file = None);
+                        break;
+                    };
 
-                time::sleep(Duration::from_secs(2)).await;
+                    time::sleep(Duration::from_secs(2)).await;
+                }
             }
-        });
+            .in_current_span(),
+        );
 
         // Spawn FFmpeg re-streamer manager as a child process.
         drop(tokio::spawn(spawner.map(move |_| {
@@ -176,6 +192,7 @@ impl Restreamer {
             kind,
             kill_tx,
             abort_if_hanged,
+            span: Span::current(),
         }
     }
 
@@ -210,17 +227,21 @@ impl Restreamer {
 
 impl Drop for Restreamer {
     /// Send signal that [`Restreamer`] process is finished
+    #[instrument(parent=&self.span, skip_all)]
     fn drop(&mut self) {
         // Send notification to kill FFMPEG with SIGTERM
-        log::debug!("Send signal to FFmpeg's");
+        tracing::debug!("Send signal to FFmpeg's");
         let _ = self.kill_tx.send(RestreamerStatus::Finished);
 
         // If FFmpeg wasn't killed kill it with SIGKILL
         let abort_for_future = self.abort_if_hanged.clone();
-        drop(tokio::spawn(async move {
-            log::debug!("Abort Restreamer in 5 sec if not killed");
-            time::sleep(Duration::from_secs(5)).await;
-            abort_for_future.abort();
-        }));
+        drop(tokio::spawn(
+            async move {
+                tracing::debug!("Abort Restreamer in 5 sec if not killed");
+                time::sleep(Duration::from_secs(5)).await;
+                abort_for_future.abort();
+            }
+            .in_current_span(),
+        ));
     }
 }
