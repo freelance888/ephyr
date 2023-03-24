@@ -6,6 +6,7 @@
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
+  import { FILE_LOCAL } from '../../utils/constants';
 
   export let file;
   export let classList;
@@ -56,6 +57,10 @@
               uk-icon="icon: info; ratio: 0.7"
               uk-tooltip={downloadErrorMessage}
             />
+          {:else if file.state === FILE_LOCAL}
+            <span>
+              <i class="fa fa-check file-was-downloaded" />
+            </span>
           {/if}
         </div>
 
@@ -116,18 +121,19 @@
     margin-top: 0
     background-color: #fff
 
-  progress::-webkit-progress-value {
+  progress::-webkit-progress-value
     background: var(--warning-color);
-  }
 
-  progress::-moz-progress-bar {
+
+  progress::-moz-progress-bar
     background: var(--warning-color);
-  }
 
-  .download-percents {
+  .download-percents
     font-size: smaller
     margin: 0 4px
-  }
 
+
+  .file-was-downloaded
+    color: var(--success-color)
 
 </style>

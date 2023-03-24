@@ -288,7 +288,7 @@ impl MutationsRoot {
         });
 
         let mut commands = context.state().file_commands.lock_mut();
-        commands.push(FileCommand::ForceDownloadFile(file_id));
+        commands.push(FileCommand::NeedDownloadFile(file_id));
 
         Some(true)
     }

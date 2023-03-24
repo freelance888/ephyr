@@ -37,9 +37,15 @@ pub enum FileCommand {
     /// Notifies that file backup was added/removed to/from restream or
     /// [`PlaylistFileInfo`] was loaded for specific [`Restream`]
     ListOfFilesChanged,
+
     /// Request for redo download file from Google Drive with
-    /// specific [`FileId`]
-    ForceDownloadFile(FileId),
+    /// specific [`FileId`].
+    /// File will be waiting until the queue has capacity
+    /// to download file
+    NeedDownloadFile(FileId),
+
+    /// Start download process for specific [`FileId`]
+    StartDownloadFile(FileId),
 }
 
 /// Identity of file on `Google Drive`.
@@ -87,12 +93,28 @@ impl FileManager {
 
         commands.iter().for_each(|c| match c {
             FileCommand::ListOfFilesChanged => self.check_files(),
-            FileCommand::ForceDownloadFile(file_id) => {
+
+            FileCommand::NeedDownloadFile(file_id) => {
                 let mut files = self.state.files.lock_mut();
                 files.retain(|file| &file.file_id != file_id);
                 drop(files);
                 self.sync_with_state();
                 self.need_file(file_id, None);
+            }
+
+            FileCommand::StartDownloadFile(file_id) => {
+                let file = self
+                    .state
+                    .files
+                    .get_cloned()
+                    .into_iter()
+                    .find(|f| f.file_id == *file_id);
+                if let Some(mut f) = file {
+                    f.stream_stat = None;
+                    f.state = FileState::Pending;
+                    f.error = None;
+                    self.download_file(&f.file_id, f.name);
+                }
             }
         });
     }
@@ -179,15 +201,13 @@ impl FileManager {
         if !all_files.iter().any(|file| &file.file_id == file_id) {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
-                name: None,
-                state: FileState::Pending,
+                name: file_name,
+                state: FileState::Waiting,
                 download_state: None,
                 error: None,
                 stream_stat: None,
             };
             all_files.push(new_file);
-            drop(all_files);
-            self.download_file(file_id, file_name);
         }
     }
 
@@ -553,8 +573,12 @@ impl From<api_response::ExtendedFileInfoResponse> for PlaylistFileInfo {
     Debug, Clone, Copy, Serialize, Deserialize, GraphQLEnum, PartialEq, Eq,
 )]
 pub enum FileState {
+    /// The file is waiting for starting download process
+    Waiting,
+
     /// The file download is pending first server response
     Pending,
+
     /// The file is downloading
     Downloading,
     /// File is downloaded and saved in the directory provided

@@ -718,36 +718,6 @@ impl State {
         Some(true)
     }
 
-    /// Syncronize stream statistics
-    pub fn sync_stream_info(&self) {
-        let files = self.files.lock_mut();
-        let mut restreams = self.restreams.lock_mut();
-        restreams.iter_mut().for_each(|r| {
-            if let Some(InputSrc::Failover(s)) = &mut r.input.src {
-                for mut e in
-                    s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
-                {
-                    if e.kind == InputEndpointKind::File && e.file_id.is_some()
-                    {
-                        // For file - populate statistics from [`LocalFileInfo`]
-                        if let Some(file_id) = e.file_id.clone() {
-                            let _ = files.iter().find_map(|f| {
-                                (f.file_id == file_id).then(|| {
-                                    e.stream_stat = f.stream_stat.clone();
-                                })
-                            });
-                        }
-                    } else if e.stream_stat.is_some()
-                        && e.status == Status::Offline
-                    {
-                        // For stream - clear statistics if stream is offline
-                        e.stream_stat = None;
-                    }
-                }
-            }
-        });
-    }
-
     /// Updates info about stream for [`InputEndpoint`]
     ///
     /// # Errors
