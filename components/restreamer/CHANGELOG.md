@@ -16,26 +16,29 @@ All user visible changes to this project will be documented in this file. This p
   - Configure dependabot ([#244]);
 - Dashboard:
   - "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
-  - Display of last sent Command\Error onto Dashboard ([#220], [#297])
-  - Indication if password is added to the server into Dashboard ([#162], [#297])
+  - Display of last sent Command\Error onto Dashboard ([#220], [#297]);
+  - Indication if password is added to the server into Dashboard ([#162], [#297]);
 - Output:
   - Option to record audio-only files ([#239]);
 - Input:
   - Display input streams info ([#170], [#266]);
-  - Display file name in file-backup endpoint ([#175], [#297])
-  - Video playback for file Input ([#166], [#297])
+  - Display file name in file-backup endpoint ([#175], [#297]);
+  - Video playback for file Input ([#166], [#297]);
   - Display stream info for file-backup endpoint ([#322]);
   - Auto conversion of Google Drive links to Id's ([#313], [#321]);
 - General
   - Show number of cores on server instance ([#227], [#254]);
-  - Google Drive API key to Ephyr server ([#168], [#297])
-  - `filter_by` GET parameter ([#260], [#319])
-### Fixed
-- State disappears after restart ([#235], [#267]);
-- Not possible to write DVR on local disk ([#236], [#267]);
-- Inconsistency in Restreamer - key and label validation ([#253], [#302]);
-### Miscellaneous
+  - Google Drive API key to Ephyr server ([#168], [#297]);
+  - `filter_by` GET parameter ([#260], [#319]);
+  - Protect Google API key with stars ([#323], [#341]);
 
+### Fixed
+- Deploy:
+  - State disappears after restart ([#235], [#267]);
+  - Not possible to write DVR on local disk ([#236], [#267]);
+- Inconsistency in Restreamer - key and label validation ([#253], [#302]);
+
+### Miscellaneous
 - Logging:
   - `slog` replaced with `tracing` ([#284]);
   - Jaeger tracing exporter ([#271], [#284]);
@@ -57,6 +60,7 @@ All user visible changes to this project will be documented in this file. This p
 [#253]: /../../issues/253
 [#260]: /../../issues/260
 [#313]: /../../issues/313
+[#323]: /../../issues/323
 
 [#239]: /../../pull/239
 [#244]: /../../pull/244
@@ -70,6 +74,7 @@ All user visible changes to this project will be documented in this file. This p
 [#319]: /../../pull/319
 [#321]: /../../pull/321
 [#322]: /../../pull/322
+[#341]: /../../pull/341
 
 
 
