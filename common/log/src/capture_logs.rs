@@ -43,6 +43,9 @@ fn capture_line(pid: Option<u32>, span: &Span, parsed_msg: ParsedMsg) {
         "info" => {
             tracing::info!(target: TARGET, parent: span, message, pid);
         }
+        "warn" | "warning" => {
+            tracing::warn!(target: TARGET, parent: span, message, pid);
+        }
         "debug" | "verbose" => {
             tracing::debug!(target: TARGET, parent: span, message, pid);
         }
