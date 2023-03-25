@@ -65,42 +65,24 @@ impl ChildCapture for Child {
 
         let process_id = self.id();
 
-        let mut out_lines = out_buff.lines();
-        let mut err_lines = err_buff.lines();
-
-        let mut out_done = false;
-        let mut err_done = false;
+        let mut stdout_lines = out_buff.lines();
+        let mut stderr_lines = err_buff.lines();
 
         let capture_task = tokio::spawn(
             async move {
                 loop {
-                    if out_done && err_done {
-                        break;
+                    let line_option = tokio::select! {
+                        line = stdout_lines.next_line() => line,
+                        line = stderr_lines.next_line() => line,
                     }
+                    .ok()
+                    .flatten();
 
-                    tokio::select! {
-                        out_line = out_lines.next_line(), if !out_done => {
-                            if let Some(out_line) = out_line.ok().flatten() {
-                                capture_line(
-                                    process_id,
-                                    &span,
-                                    parser(&out_line),
-                                );
-                            } else {
-                                out_done = true;
-                            }
+                    match line_option {
+                        Some(line) => {
+                            capture_line(process_id, &span, parser(&line));
                         }
-                        err_line = err_lines.next_line(), if !err_done => {
-                            if let Some(err_line) = err_line.ok().flatten() {
-                                capture_line(
-                                    process_id,
-                                    &span,
-                                    parser(&err_line),
-                                );
-                            } else {
-                                err_done = true;
-                            }
-                        }
+                        None => break,
                     }
                 }
             }
