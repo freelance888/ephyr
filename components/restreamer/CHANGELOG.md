@@ -26,6 +26,7 @@ All user visible changes to this project will be documented in this file. This p
   - Video playback for file Input ([#166], [#297]);
   - Display stream info for file-backup endpoint ([#322]);
   - Auto conversion of Google Drive links to Id's ([#313], [#321]);
+  - Ability to re-order input endpoints ([#345]);
 - General
   - Show number of cores on server instance ([#227], [#254]);
   - Google Drive API key to Ephyr server ([#168], [#297]);
@@ -75,6 +76,7 @@ All user visible changes to this project will be documented in this file. This p
 [#321]: /../../pull/321
 [#322]: /../../pull/322
 [#341]: /../../pull/341
+[#345]: /../../pull/345
 
 
 

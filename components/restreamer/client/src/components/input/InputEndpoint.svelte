@@ -319,7 +319,6 @@
       {#if with_label}
         <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
       {/if}
-
     {/if}
   </div>
 </template>
