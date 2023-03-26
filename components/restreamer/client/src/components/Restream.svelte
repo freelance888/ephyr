@@ -291,7 +291,7 @@
       show_controls={showControls}
     />
     {#if isFailoverInput(value.input)}
-      {#each value.input.src.inputs as input}
+      {#each value.input.src.inputs as input, index}
         <Input
           {public_host}
           restream_id={value.id}
@@ -300,6 +300,11 @@
           {files}
           with_label={true}
           show_controls={showControls}
+          show_move_up={value.input.src.inputs.length > 1 && index !== 0}
+          show_up_confirmation={value.input.src.inputs.length > 1 &&
+            index === 1}
+          show_move_down={value.input.src.inputs.length > 1 &&
+            index !== value.input.src.inputs.length - 1}
         />
       {/each}
     {/if}
