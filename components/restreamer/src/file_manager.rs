@@ -109,7 +109,7 @@ impl FileManager {
                         f.stream_stat = None;
                         f.state = FileState::Pending;
                         f.error = None;
-                        self.download_file(&f.file_id, f.clone().name)
+                        self.download_file(&f.file_id, f.clone().name);
                     })
                 });
             }
@@ -170,7 +170,6 @@ impl FileManager {
         let files = self.state.files.lock_mut();
         let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
             .expect("Cannot read the provided file root directory")
-            .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| match entry.file_type() {
                 // Returns only files, skips directories
@@ -250,6 +249,7 @@ impl FileManager {
     }
 
     /// Spawns a separate process that tries to download given file ID
+    #[allow(clippy::too_many_lines)]
     fn download_file(&self, id: &FileId, file_name: Option<String>) {
         let root_dir = self.file_root_dir.to_str().unwrap().to_string();
         let state = self.state.clone();
@@ -278,7 +278,7 @@ impl FileManager {
                             "Could not get file info for the file".to_string()
                         })?;
                 } else {
-                    let _ = state
+                    state
                         .files
                         .lock_mut()
                         .iter_mut()
@@ -316,9 +316,7 @@ impl FileManager {
                                         r.error.code, r.error.message
                                     )
                                 })
-                                .map_err(|e| {
-                                    format!("Unknown error {}", e)
-                                })?);
+                                .map_err(|e| format!("Unknown error {e}"))?);
                         }
 
                         let error_response = response.text().await;
@@ -676,7 +674,7 @@ pub async fn get_video_list_from_gdrive_folder(
 
 pub(crate) mod api_response {
     use crate::file_manager::GDRIVE_PUBLIC_PARAMS;
-    use reqwest::{Request, Response, StatusCode};
+    use reqwest::{Response, StatusCode};
     use serde::Deserialize;
 
     /// Used to deserialize Google API call for the file details
@@ -759,7 +757,7 @@ pub(crate) mod api_response {
             Ok(r) => {
                 let status = r.status();
                 if status == StatusCode::OK {
-                    return Ok(r.json::<T>().await.map_err(error_parsing)?);
+                    return r.json::<T>().await.map_err(error_parsing);
                 } else if status == 403 {
                     return Err(r
                         .json::<ErrorResponse>()

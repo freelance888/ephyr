@@ -63,6 +63,9 @@ pub async fn run(state: State) -> Result<(), Failure> {
     Ok(())
 }
 
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_possible_wrap)]
+#[allow(clippy::cast_precision_loss)]
 async fn update_server_statistics(
     state: &State,
     tx_last: &mut f64,
