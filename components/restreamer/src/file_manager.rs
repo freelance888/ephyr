@@ -14,6 +14,7 @@ use tap::prelude::*;
 use crate::{
     cli::Opts,
     display_panic,
+    file_manager::api_response::ErrorResponse,
     state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
@@ -103,18 +104,14 @@ impl FileManager {
             }
 
             FileCommand::StartDownloadFile(file_id) => {
-                let file = self
-                    .state
-                    .files
-                    .get_cloned()
-                    .into_iter()
-                    .find(|f| f.file_id == *file_id);
-                if let Some(mut f) = file {
-                    f.stream_stat = None;
-                    f.state = FileState::Pending;
-                    f.error = None;
-                    self.download_file(&f.file_id, f.name);
-                }
+                let _ = self.state.files.lock_mut().iter_mut().find_map(|f| {
+                    (f.file_id == *file_id).then(|| {
+                        f.stream_stat = None;
+                        f.state = FileState::Pending;
+                        f.error = None;
+                        self.download_file(&f.file_id, f.clone().name)
+                    })
+                });
             }
         });
     }
@@ -195,7 +192,7 @@ impl FileManager {
     }
 
     /// Checks if the provided file ID already exists in the file list,
-    /// if not the download of the given file is queued.
+    /// if not add it to the queue
     pub fn need_file(&self, file_id: &FileId, file_name: Option<String>) {
         let mut all_files = self.state.files.lock_mut();
         if !all_files.iter().any(|file| &file.file_id == file_id) {
@@ -307,10 +304,28 @@ impl FileManager {
                     .send()
                     .await
                 {
-                    if response.status() != StatusCode::OK {
+                    let status = response.status();
+                    if status != StatusCode::OK {
+                        if status == 403 {
+                            return Err(response
+                                .json::<ErrorResponse>()
+                                .await
+                                .map(|r| {
+                                    format!(
+                                        "Http response: {} {}",
+                                        r.error.code, r.error.message
+                                    )
+                                })
+                                .map_err(|e| {
+                                    format!("Unknown error {}", e)
+                                })?);
+                        }
+
+                        let error_response = response.text().await;
                         return Err(format!(
-                            "Can't download file. Http response status: {}",
-                            response.status()
+                            "Can't download file. Http response: {} {}",
+                            status,
+                            error_response.unwrap_or_default(),
                         ));
                     }
 
@@ -447,6 +462,11 @@ impl FileManager {
                     file.download_state.as_mut().unwrap().current_progress =
                         current;
                     file.state = FileState::Local;
+                    update_stream_info(
+                        file_id.clone(),
+                        file_path.clone(),
+                        state.clone(),
+                    );
                 });
 
             // set the endpoints with this file ID to Online, this
@@ -472,11 +492,6 @@ impl FileManager {
                             })
                             .for_each(|endpoint| {
                                 endpoint.status = Status::Online;
-                                update_stream_info(
-                                    endpoint.file_id.clone().unwrap(),
-                                    file_path.clone(),
-                                    state.clone(),
-                                );
                             });
                     });
                 }
@@ -645,7 +660,7 @@ impl NetworkByteSize {
 pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
-) -> Result<Vec<PlaylistFileInfo>, &'static str> {
+) -> Result<Vec<PlaylistFileInfo>, String> {
     let mut response =
         api_response::FileListResponse::retrieve_dir_content_from_api(
             api_key, folder_id,
@@ -661,6 +676,7 @@ pub async fn get_video_list_from_gdrive_folder(
 
 pub(crate) mod api_response {
     use crate::file_manager::GDRIVE_PUBLIC_PARAMS;
+    use reqwest::{Request, Response, StatusCode};
     use serde::Deserialize;
 
     /// Used to deserialize Google API call for the file details
@@ -701,8 +717,8 @@ pub(crate) mod api_response {
         pub(crate) async fn retrieve_dir_content_from_api(
             api_key: &str,
             dir_id: &str,
-        ) -> Result<Self, &'static str> {
-            let dir_content = reqwest::get(
+        ) -> Result<Self, String> {
+            let response = reqwest::get(
                 format!(
                     "https://www.googleapis.com/drive/v3/files?\
                      key={api_key}&q='{dir_id}'%20in%20parents&\
@@ -711,16 +727,57 @@ pub(crate) mod api_response {
                 )
                 .as_str(),
             )
-            .await
-            .map_err(|_err| "No valid response from the API")?
-            .json::<Self>()
-            .await
-            .map_err(|_err| "Could not parse the JSON received from the API")?;
-            Ok(dir_content)
+            .await;
+            get_gdrive_result::<Self>(response).await
         }
 
         pub(crate) fn filter_only_video_files(&mut self) {
             self.files.retain(ExtendedFileInfoResponse::is_video);
+        }
+    }
+
+    ///
+    #[derive(Deserialize)]
+    pub(crate) struct ErrorResponse {
+        pub(crate) error: ErrorMessage,
+    }
+
+    ///
+    #[derive(Deserialize)]
+    pub(crate) struct ErrorMessage {
+        pub(crate) code: u16,
+        pub(crate) message: String,
+    }
+
+    pub(crate) async fn get_gdrive_result<T: for<'de> Deserialize<'de>>(
+        response: reqwest::Result<Response>,
+    ) -> Result<T, String> {
+        let error_parsing = |e| format!("Error parsing JSON result: {e}");
+
+        match response {
+            Err(e) => Err(format!("No valid response from the API: {e}")),
+            Ok(r) => {
+                let status = r.status();
+                if status == StatusCode::OK {
+                    return Ok(r.json::<T>().await.map_err(error_parsing)?);
+                } else if status == 403 {
+                    return Err(r
+                        .json::<ErrorResponse>()
+                        .await
+                        .map(|x| {
+                            format!(
+                                "Http response: {} {}",
+                                x.error.code, x.error.message
+                            )
+                        })
+                        .map_err(error_parsing)?);
+                }
+
+                Err(r
+                    .text()
+                    .await
+                    .map_err(|e| format!("Unknown error: {e}"))?)
+            }
         }
     }
 }

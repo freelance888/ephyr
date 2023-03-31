@@ -28,10 +28,14 @@
   export let playlist;
   export let files = [];
 
+  $: {
+    console.log("PLAYLIST: ", playlist)
+  }
+
   $: queue = playlist
     ? playlist.queue.map((x) => ({
         id: x.fileId,
-        name: x.name,
+        name: x.name ?? x.fileId,
         isPlaying: playlist.currentlyPlayingFile
           ? playlist.currentlyPlayingFile.fileId === x.fileId
           : false,
@@ -39,8 +43,8 @@
         wasPlayed: x.wasPlayed,
       })).map(x => ({
       ...x,
-      isLocal: x.file.state === FILE_LOCAL,
-      isDownloading: x.file.state === FILE_DOWNLOADING
+      isLocal: x.file?.state === FILE_LOCAL,
+      isDownloading: x.file?.state === FILE_DOWNLOADING
     }))
     : [];
   let googleDriveFolderId = '';
@@ -173,7 +177,9 @@
                       <StopPlayingIcon/>
                     {/if}
                 </span>
-              <FileInfo file={item.file} classList='uk-margin-small-left'></FileInfo>
+              {#if item.file}
+                <FileInfo file={item.file} classList='uk-margin-small-left'></FileInfo>
+              {/if}
             </div>
 
           </Confirm>

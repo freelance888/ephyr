@@ -6,7 +6,7 @@
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
-  import { FILE_LOCAL } from '../../utils/constants';
+  import { FILE_LOCAL, FILE_PENDING } from '../../utils/constants';
 
   export let file;
   export let classList;
@@ -27,6 +27,8 @@
   }
 
   const getDownloadProgress = (f) => {
+    if (f.state === FILE_PENDING) return 0;
+
     let value =
       f?.downloadState &&
       f.downloadState.currentProgress !==
