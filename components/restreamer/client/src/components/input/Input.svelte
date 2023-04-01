@@ -21,6 +21,9 @@
   export let files;
   export let with_label;
   export let show_controls;
+  export let show_move_up;
+  export let show_move_down;
+  export let show_up_confirmation;
 
   $: isPull = !!value.src && value.src.__typename === 'RemoteInputSrc';
 
@@ -76,6 +79,9 @@
           {files}
           {with_label}
           {show_controls}
+          {show_move_up}
+          {show_up_confirmation}
+          {show_move_down}
         />
       {/each}
     </div>
