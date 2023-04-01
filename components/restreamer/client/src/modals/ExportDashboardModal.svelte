@@ -23,7 +23,7 @@
       hostsJson.set(initialHostsJson);
     }
   });
-  
+
   onDestroy(hostsJson.subscribe((v) => validateSpec(v)));
   onDestroy(
     hostsJson.subscribe((v) => {

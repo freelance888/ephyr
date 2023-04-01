@@ -13,10 +13,12 @@
     FILE_PENDING,
     INITIALIZING,
     OFFLINE,
-    ONLINE
+    ONLINE,
   } from '../../utils/constants';
 
   import { MoveInputInDirection } from '../../../api/client.graphql';
+  import { showError } from '../../utils/util';
+  import { mutation } from 'svelte-apollo';
 
   const moveInputInDirectionMutation = mutation(MoveInputInDirection);
 
@@ -42,7 +44,8 @@
   $: alertDanger = isFile ? isFileError : endpoint.status === OFFLINE;
 
   $: alertWarning = isFile
-    ? currentFile?.state === FILE_PENDING || currentFile?.state === FILE_DOWNLOADING
+    ? currentFile?.state === FILE_PENDING ||
+      currentFile?.state === FILE_DOWNLOADING
     : endpoint.status === INITIALIZING;
 
   $: alertSuccess = isFile
@@ -53,43 +56,6 @@
     return allFiles
       ? allFiles.find((val) => val.fileId === endpoint.fileId)
       : undefined;
-  };
-
-  const formatStreamInfo = (streamStat) => {
-    if (streamStat) {
-      return streamStat.error
-        ? streamStat.error
-        : `<span><strong>${input.key}</strong></span>
-          <br/>
-          <span><strong>video</strong>&#58; ${
-            streamStat.videoCodecName
-          }, </span>
-          <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
-          <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
-          <br/>
-          <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
-          <span>${streamStat.audioSampleRate},</span>
-          <span>${streamStat.audioChannelLayout},</span>
-          <span>channels&#58; ${streamStat.audioChannels}</span>`;
-    }
-
-    return '';
-  };
-
-  const getFileName = (currentFile) =>
-    currentFile.name ? currentFile.name : currentFile.fileId;
-
-  const getFileDownloadProgress = (currentFile) => {
-    let value =
-      currentFile?.downloadState &&
-      currentFile.downloadState.currentProgress !==
-        currentFile.downloadState.maxProgress
-        ? (currentFile.downloadState.currentProgress /
-            currentFile.downloadState.maxProgress) *
-          100
-        : 0;
-
-    return value < 0 || value >= 100 ? undefined : value;
   };
 
   async function moveUp() {
@@ -119,7 +85,6 @@
       showError(e.message);
     }
   }
-
 </script>
 
 <template>
@@ -185,7 +150,7 @@
     </div>
 
     {#if isFile && currentFile}
-      <FileInfo file={currentFile}></FileInfo>
+      <FileInfo file={currentFile} />
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
@@ -294,4 +259,3 @@
     .arrows
       width: 22px
 </style>
-

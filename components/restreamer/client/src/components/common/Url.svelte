@@ -14,10 +14,7 @@
       <span class="url-placeholder">{url}</span>
     {/if}
     {#if streamInfo}
-      <StreamInfo
-        {streamInfo}
-        {isError}
-      ></StreamInfo>
+      <StreamInfo {streamInfo} {isError} />
     {/if}
     {#if previewUrl}
       <span class="url-preview"

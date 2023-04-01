@@ -10,7 +10,7 @@
     ServerInfo,
     SingleRestream,
     TuneDelay,
-    TuneVolume
+    TuneVolume,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -51,12 +51,13 @@
 
   $: infoError = $info?.error;
   $: isLoading = !isOnline || $singleRestream.loading;
-  $: canRenderMainComponent = isOnline && $singleRestream.data && $info.data && $filesInfo?.data;
+  $: canRenderMainComponent =
+    isOnline && $singleRestream.data && $info.data && $filesInfo?.data;
   $: restreamError = $singleRestream?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
   $: restream = canRenderMainComponent && $singleRestream?.data?.restream;
   $: filesError = $filesInfo?.error;
-  $: files = canRenderMainComponent && $filesInfo?.data?.files || [];
+  $: files = (canRenderMainComponent && $filesInfo?.data?.files) || [];
 
   $: translationYoutubeUrl =
     canRenderMainComponent &&

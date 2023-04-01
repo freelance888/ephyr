@@ -6,10 +6,9 @@
     GetPlaylistFromGdrive,
     PlayFileFromPlaylist,
     SetPlaylist,
-    StopPlayingFileFromPlaylist
+    StopPlayingFileFromPlaylist,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
-  import { showError } from '../utils/util';
   import FileInfo from './common/FileInfo.svelte';
   import { FILE_DOWNLOADING, FILE_LOCAL } from '../utils/constants';
   import FileIcon from './svg/FileIcon.svelte';
@@ -30,23 +29,25 @@
   export let files = [];
 
   $: {
-    console.log("PLAYLIST: ", playlist)
+    console.log('PLAYLIST: ', playlist);
   }
 
   $: queue = playlist
-    ? playlist.queue.map((x) => ({
-        id: x.fileId,
-        name: x.name ?? x.fileId,
-        isPlaying: playlist.currentlyPlayingFile
-          ? playlist.currentlyPlayingFile.fileId === x.fileId
-          : false,
-        file: files.find(f => f.fileId === x.fileId),
-        wasPlayed: x.wasPlayed,
-      })).map(x => ({
-      ...x,
-      isLocal: x.file?.state === FILE_LOCAL,
-      isDownloading: x.file?.state === FILE_DOWNLOADING
-    }))
+    ? playlist.queue
+        .map((x) => ({
+          id: x.fileId,
+          name: x.name ?? x.fileId,
+          isPlaying: playlist.currentlyPlayingFile
+            ? playlist.currentlyPlayingFile.fileId === x.fileId
+            : false,
+          file: files.find((f) => f.fileId === x.fileId),
+          wasPlayed: x.wasPlayed,
+        }))
+        .map((x) => ({
+          ...x,
+          isLocal: x.file?.state === FILE_LOCAL,
+          isDownloading: x.file?.state === FILE_DOWNLOADING,
+        }))
     : [];
 
   let googleDriveFolderId = '';
@@ -174,7 +175,7 @@
       on:finalize={onDrop}
     >
       {#each queue as item (item.id)}
-          <div class="item uk-card uk-card-default">
+        <div class="item uk-card uk-card-default">
           <span
             class="item-drag-zone uk-icon"
             uk-icon="table"
@@ -192,27 +193,32 @@
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
             >
-                <span
-                  class="item-icon"
-                  class:can-be-started={item.isLocal}
-                  on:click={() => item.isLocal ? confirm(() => startStopPlaying(item.id)) : undefined}
-                >
-                    {#if !item.isLocal}
-                      <span class='file-icon' class:is-downloading={item.isDownloading}>
-                        <!-- Inline svg prevents duplicating fa icons during drag & drop -->
-                        <FileIcon />
-                      </span>
-                    {:else if item.isPlaying}
-                      <PlayIcon/>
-                    {:else}
-                      <StopPlayingIcon/>
-                    {/if}
-                </span>
+              <span
+                class="item-icon"
+                class:can-be-started={item.isLocal}
+                on:click={() =>
+                  item.isLocal
+                    ? confirm(() => startStopPlaying(item.id))
+                    : undefined}
+              >
+                {#if !item.isLocal}
+                  <span
+                    class="file-icon"
+                    class:is-downloading={item.isDownloading}
+                  >
+                    <!-- Inline svg prevents duplicating fa icons during drag & drop -->
+                    <FileIcon />
+                  </span>
+                {:else if item.isPlaying}
+                  <PlayIcon />
+                {:else}
+                  <StopPlayingIcon />
+                {/if}
+              </span>
               {#if item.file}
-                <FileInfo file={item.file} classList='uk-margin-small-left'></FileInfo>
+                <FileInfo file={item.file} classList="uk-margin-small-left" />
               {/if}
             </div>
-
           </Confirm>
           <Confirm let:confirm>
             <span slot="title">Delete file from playlist</span>

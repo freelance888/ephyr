@@ -68,8 +68,8 @@ export const formatStreamInfo = (streamStat, title = '') => {
       : `<span><strong>${title}</strong></span>
           <br/>
           <span><strong>video</strong>&#58; ${
-        streamStat.videoCodecName
-      }, </span>
+            streamStat.videoCodecName
+          }, </span>
           <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
           <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
           <br/>

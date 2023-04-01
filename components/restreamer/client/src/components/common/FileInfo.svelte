@@ -1,4 +1,4 @@
-<script lang='js'>
+<script lang="js">
   import { mutation } from 'svelte-apollo';
   import { DownloadFile } from '../../../api/client.graphql';
   import { sanitizeTooltip, showError } from '../../utils/util';
@@ -31,15 +31,12 @@
 
     let value =
       f?.downloadState &&
-      f.downloadState.currentProgress !==
-      f.downloadState.maxProgress
-        ? (f.downloadState.currentProgress /
-          f.downloadState.maxProgress) * 100
+      f.downloadState.currentProgress !== f.downloadState.maxProgress
+        ? (f.downloadState.currentProgress / f.downloadState.maxProgress) * 100
         : 0;
 
     return value < 0 || value >= 100 ? undefined : value;
-  }
-
+  };
 </script>
 
 <template>
@@ -47,10 +44,7 @@
     <div class="file-info-container uk-flex uk-flex-middle {classList}">
       <div class="uk-flex uk-flex-column">
         <div class="uk-flex uk-flex-middle">
-          <span
-            href="/"
-            class="file-name uk-display-inline-block"
-          >
+          <span href="/" class="file-name uk-display-inline-block">
             {fileName}
           </span>
           {#if downloadErrorMessage}
@@ -74,7 +68,7 @@
               max="100"
             />
             <span class="download-percents"
-            >{fileDownloadProgress.toFixed(0)}</span
+              >{fileDownloadProgress.toFixed(0)}</span
             >%
           {/if}
         </div>
@@ -82,8 +76,8 @@
       {#if file.streamStat}
         <StreamInfo
           streamInfo={formatStreamInfo(file.streamStat, fileName)}
-          isError={!!file.streamStat?.error}>
-        </StreamInfo>
+          isError={!!file.streamStat?.error}
+        />
       {/if}
       <button
         class="download-btn url-action-btn uk-button uk-button-link  uk-margin-small-left"
@@ -92,19 +86,16 @@
         Download
         <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
       </button>
-
     </div>
-    <span slot="title"
-    >Download file <code>{fileName}</code></span
-    >
+    <span slot="title">Download file <code>{fileName}</code></span>
     <span slot="description"
-    >Current file fill be removed and download process will be started</span
+      >Current file fill be removed and download process will be started</span
     >
     <span slot="confirm">Start download</span>
   </Confirm>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
   .file-name
     color: var(--primary-text-color)
     padding-right: 6px

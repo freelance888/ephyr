@@ -232,14 +232,16 @@
         Full view
       </a>
       <div class="uk-flex uk-flex-middle">
-        <span class="playlist-icon uk-margin-right"
-           class:is-playing={isPlaylistPlaying}
-           aria-hidden="true"
-           hidden={!hasVideos || isFullView}>
+        <span
+          class="playlist-icon uk-margin-right"
+          class:is-playing={isPlaylistPlaying}
+          aria-hidden="true"
+          hidden={!hasVideos || isFullView}
+        >
           {#if isPlaylistPlaying}
-            <EqualizereIcon/>
+            <EqualizereIcon />
           {:else}
-            <PlaylistIcon/>
+            <PlaylistIcon />
           {/if}
         </span>
         {#if value.outputs && value.outputs.length > 0}

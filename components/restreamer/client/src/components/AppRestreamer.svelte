@@ -23,14 +23,14 @@
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
   $: isLoading = !isOnline || $state.loading;
-  $: canRenderMainComponent = isOnline && $state.data && $info.data && $filesInfo.data;
+  $: canRenderMainComponent =
+    isOnline && $state.data && $info.data && $filesInfo.data;
   $: stateError = $state?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
   $: document.title = (isOnline ? '' : '🔴  ') + document.title;
 
   $: filesError = $filesInfo?.error;
-  $: files = canRenderMainComponent && $filesInfo?.data?.files || [];
-
+  $: files = (canRenderMainComponent && $filesInfo?.data?.files) || [];
 </script>
 
 <template>
