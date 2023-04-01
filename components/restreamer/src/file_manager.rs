@@ -37,7 +37,7 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FileCommand {
     /// Notifies that file backup was added/removed to/from restream or
-    /// [`PlaylistFileInfo`] was loaded for specific [`Restream`]
+    /// [`PlaylistFileInfo`] was loaded for specific `Restream`
     ListOfFilesChanged,
 
     /// Request for redo download file from Google Drive with
