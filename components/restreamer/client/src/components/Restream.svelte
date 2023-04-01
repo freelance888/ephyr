@@ -94,6 +94,8 @@
 
   $: streamsDiffTooltip = getStreamsDifferenceTooltip(value.input);
 
+  $: failoverInputsCount = value.input.src?.inputs?.length ?? 0;
+
   let openRestreamModal = false;
 
   async function removeRestream() {
@@ -310,7 +312,7 @@
       show_controls={showControls}
     />
     {#if isFailoverInput(value.input)}
-      {#each value.input.src.inputs as input}
+      {#each value.input.src.inputs as input, index}
         <Input
           {public_host}
           restream_id={value.id}
@@ -319,6 +321,10 @@
           {files}
           with_label={true}
           show_controls={showControls}
+          show_move_up={failoverInputsCount > 1 && index !== 0}
+          show_up_confirmation={failoverInputsCount > 1 && index === 1}
+          show_move_down={failoverInputsCount > 1 &&
+            index !== failoverInputsCount - 1}
         />
       {/each}
     {/if}

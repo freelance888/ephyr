@@ -140,3 +140,7 @@ export const escapeRegExp = (str: string) => {
 };
 
 export const sanitizeTooltip = (message) => message.replaceAll(':', ' - ');
+
+export const isFullGDrivePath = (id: string): boolean => {
+  return id.startsWith('https://drive.google.com');
+};

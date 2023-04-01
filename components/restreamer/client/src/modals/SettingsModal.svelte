@@ -66,6 +66,7 @@
         >
         <input
           class="uk-input google-api-key"
+          type="password"
           bind:value={info.googleApiKey}
           on:input={onEmptyGooleApiKey}
           placeholder="Google API key"

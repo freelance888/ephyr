@@ -4,15 +4,19 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::log;
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument, Span},
+    ChildCapture, ParsedMsg,
+};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
 use std::{
-    convert::TryInto, os::unix::process::ExitStatusExt, path::Path,
-    time::Duration,
+    convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
+    path::Path, time::Duration,
 };
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
@@ -28,6 +32,28 @@ use crate::{
     file_manager::{FileId, FileState, LocalFileInfo},
     state::{self, RestreamKey, State, Status},
 };
+
+/// Parse [FFmpeg] log line.
+///
+/// [FFmpeg]: https://ffmpeg.org
+fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
+    let parsed: Vec<_> = line
+        .rsplit(']')
+        .map(|t| t.trim_start_matches([' ', '[']))
+        .collect();
+    // parsed contains data: (msg, level_log)
+    if parsed.len() >= 2 {
+        ParsedMsg {
+            message: parsed[0],
+            level: parsed[1],
+        }
+    } else {
+        ParsedMsg {
+            message: line,
+            level: "error",
+        }
+    }
+}
 
 /// Data of a concrete kind of a running [FFmpeg] process performing a
 /// re-streaming, that allows to spawn and re-spawn it at any time.
@@ -52,6 +78,19 @@ pub enum RestreamerKind {
     /// Sourcing a video and audio from local file and streaming it to input
     /// endpoint.
     File(FileRestreamer),
+}
+
+impl Display for RestreamerKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RestreamerKind::Copy(_r) => write!(f, "RestreamerKind::Copy"),
+            RestreamerKind::Transcoding(_r) => {
+                write!(f, "RestreamerKind::Transcoding")
+            }
+            RestreamerKind::Mixing(_r) => write!(f, "RestreamerKind::Mixing"),
+            RestreamerKind::File(_r) => write!(f, "RestreamerKind::File"),
+        }
+    }
 }
 
 impl RestreamerKind {
@@ -105,6 +144,9 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        restream.key=%key, %is_playing_playlist, input.key=%input.key)
+    )]
     pub fn from_input(
         input: &state::Input,
         endpoint: &state::InputEndpoint,
@@ -194,6 +236,11 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        restream.key=%restream_key,
+        input.key=%input_key,
+        file_root=%file_root.display())
+    )]
     pub fn from_playlist(
         playlist: &state::Playlist,
         restream_key: &RestreamKey,
@@ -206,9 +253,9 @@ impl RestreamerKind {
                     file_root.join(file.file_id.to_string()),
                 )
                 .map_err(|_| {
-                    log::error!(
-                        "Failed to parse `from_url` from file_id {}",
-                        &file.file_id
+                    tracing::error!(
+                        %file.file_id,
+                        "Failed to parse `from_url` from `file_id`"
                     );
                 }) {
                     Some(from_url)
@@ -220,7 +267,9 @@ impl RestreamerKind {
         let to_url = Url::parse(&format!(
             "rtmp://127.0.0.1:1935/{restream_key}/{input_key}",
         ))
-        .map_err(|e| log::error!("Failed to parse `to_url`: {}", e));
+        .map_err(|e| {
+            tracing::error!(%e, "Failed to parse `to_url`");
+        });
 
         match (from_url, to_url) {
             (Some(from_url), Ok(to_url)) => Some(Self::File(FileRestreamer {
@@ -243,6 +292,9 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[must_use]
+    #[instrument(skip_all, fields(
+        src=%from_url, dst=%output.dst)
+    )]
     pub fn from_output(
         output: &state::Output,
         from_url: &Url,
@@ -294,6 +346,29 @@ impl RestreamerKind {
         }
     }
 
+    fn setup_logger(cmd: &mut Command) {
+        let loglevel_prefix = "repeat+level";
+        let _ = match tracing::level_filters::LevelFilter::current()
+            .into_level()
+        {
+            Some(tracing::Level::DEBUG | tracing::Level::TRACE) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}+verbose"),
+            ]),
+            Some(tracing::Level::INFO) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}+info"),
+            ]),
+            Some(tracing::Level::WARN) => cmd.args([
+                "-hide_banner",
+                "-loglevel",
+                &format!("{loglevel_prefix}++warning"),
+            ]),
+            _ => cmd,
+        };
+    }
     /// Properly setups the given [FFmpeg] [`Command`] before running it.
     ///
     /// The specified [`State`] may be used to retrieve up-to-date parameters,
@@ -311,6 +386,7 @@ impl RestreamerKind {
         cmd: &mut Command,
         state: &State,
     ) -> io::Result<()> {
+        Self::setup_logger(cmd);
         match self {
             Self::Copy(c) => c.setup_ffmpeg(cmd).await?,
             Self::Transcoding(c) => c.setup_ffmpeg(cmd),
@@ -336,6 +412,7 @@ impl RestreamerKind {
     ///
     /// [FFmpeg]: https://ffmpeg.org
     #[inline]
+    #[instrument(skip_all, fields(?cmd))]
     pub(crate) async fn run_ffmpeg(
         &self,
         cmd: Command,
@@ -344,7 +421,7 @@ impl RestreamerKind {
         if let Self::Mixing(m) = self {
             m.start_fed_mixins_fifo(&kill_rx);
         }
-
+        tracing::debug!("Starting ffmpeg process {cmd:?}");
         Self::run_ffmpeg_(cmd, kill_rx).await
     }
 
@@ -375,19 +452,27 @@ impl RestreamerKind {
             .expect("Failed to convert u32 to i32");
 
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
-        let kill_task = tokio::spawn(async move {
-            let _ = kill_rx.changed().await;
-            log::debug!("Signal for FFmpeg received");
-            // It is necessary to send the signal two times and wait after
-            // sending the first one to correctly close all ffmpeg processes
-            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                .expect("Failed to kill process");
-            tokio::time::sleep(Duration::from_millis(1)).await;
-            signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                .expect("Failed to kill process");
-        });
+        let kill_task = tokio::spawn(
+            async move {
+                let _ = kill_rx.changed().await;
+                tracing::debug!("Signal for FFmpeg received");
+                // It is necessary to send the signal two times and wait after
+                // sending the first one to correctly close all ffmpeg processes
+                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                    .expect("Failed to kill process");
+                tokio::time::sleep(Duration::from_millis(1)).await;
+                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
+                    .expect("Failed to kill process");
+            }
+            .in_current_span(),
+        );
 
-        let out = process.wait_with_output().await?;
+        let out = process
+            .capture_logs_and_wait_for_output(
+                tracing::info_span!(parent: Span::current(), "ffmpeg_proc"),
+                parse_ffmpeg_log_line,
+            )
+            .await?;
         kill_task.abort();
 
         let status_code = out.status.code();
@@ -398,12 +483,10 @@ impl RestreamerKind {
             || status_code.and_then(|v| (v == 255).then_some(())).is_some()
             || signal_code.and_then(|v| (v == 15).then_some(())).is_some()
         {
-            log::debug!(
-                "FFmpeg re-streamer successfully stopped\n\
-                        \t exit code: {:?}\n\
-                        \t signal code: {:?}",
+            tracing::debug!(
                 status_code,
-                signal_code
+                signal_code,
+                "FFmpeg re-streamer successfully stopped"
             );
             Ok(())
         } else {

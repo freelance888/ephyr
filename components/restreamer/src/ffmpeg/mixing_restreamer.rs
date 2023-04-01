@@ -11,11 +11,13 @@ use std::{
     fmt::Write as _,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
-    process::Stdio,
     sync::Arc,
 };
 
-use ephyr_log::{log, Drain as _};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument},
+};
 use futures::{FutureExt as _, TryFutureExt as _};
 use interprocess::os::unix::fifo_file::create_fifo;
 use tokio::{
@@ -74,6 +76,9 @@ impl MixingRestreamer {
     /// `prev` value may be specified to consume already initialized resources,
     /// which are unwanted to be re-created.
     #[must_use]
+    #[instrument(skip_all, name="MixinRestreamer::new", fields(
+        src=%from_url, dst=%output.dst)
+    )]
     pub fn new(
         output: &state::Output,
         from_url: &Url,
@@ -169,12 +174,6 @@ impl MixingRestreamer {
             state.restreams.lock_ref().iter().find_map(|r| {
                 r.outputs.iter().find(|o| o.id == my_id).cloned()
             });
-
-        if ephyr_log::logger().is_debug_enabled() {
-            let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
-        } else {
-            let _ = cmd.stderr(Stdio::null());
-        }
 
         let orig_volume = output
             .as_ref()
@@ -293,7 +292,10 @@ impl MixingRestreamer {
             count = self.mixins.len() + 1,
         ));
 
-        log::debug!("FFmpeg FILTER COMPLEX: {:?}", &filter_complex.join(";"));
+        tracing::debug!(
+            "FFmpeg FILTER COMPLEX: {:?}",
+            &filter_complex.join(";")
+        );
         let _ = cmd
             .args(["-filter_complex", &filter_complex.join(";")])
             .args(["-map", "[out]"])
@@ -344,7 +346,6 @@ impl MixingRestreamer {
 
             _ => unimplemented!(),
         };
-        log::debug!("FFmpeg CMD: {:?}", &cmd);
         Ok(())
     }
 
@@ -360,22 +361,28 @@ impl MixingRestreamer {
     ///
     /// [FIFO]: https://www.unix.com/man-page/linux/7/fifo/
     /// [FFmpeg]: https://ffmpeg.org
+    #[instrument(skip_all)]
     pub(crate) fn start_fed_mixins_fifo(
         &self,
         kill_rx: &watch::Receiver<RestreamerStatus>,
     ) {
+        #[instrument(skip(input))]
         async fn run_copy_and_stop_on_signal(
             input: Arc<Mutex<teamspeak::Input>>,
             fifo_path: PathBuf,
             mut kill_rx: watch::Receiver<RestreamerStatus>,
         ) -> io::Result<()> {
+            tracing::debug!(
+                fifo=?fifo_path.as_path(),
+                "Start copying from FIFO",
+            );
             // To avoid instant resolve on await for `kill_rx`
             let _ = *kill_rx.borrow_and_update();
 
             // Initialize copying future to fed it into select
             let mut src = input.lock().await;
             let mut file = File::create(&fifo_path).await?;
-            let copying = io::copy(&mut *src, &mut file);
+            let copying = io::copy(&mut *src, &mut file).in_current_span();
             pin!(copying);
 
             // Run copying to FIFO and stops if receive signal from `kill_rx`
@@ -383,19 +390,19 @@ impl MixingRestreamer {
                 tokio::select! {
                     r = &mut copying => {
                         let _ = r.map_err(|e|
-                            log::error!("Failed to write into FIFO: {}", e)
+                            tracing::error!("Failed to write into FIFO: {}", e)
                         );
                         break;
                     }
                    _ = kill_rx.changed() => {
-                        log::debug!("Signal for FIFO received");
+                        tracing::debug!("Signal for FIFO received");
                         break;
                     }
                 }
             }
             // Clean up FIFO file
             let _ = std::fs::remove_file(fifo_path)
-                .map_err(|e| log::error!("Failed to remove FIFO: {}", e));
+                .map_err(|e| tracing::error!("Failed to remove FIFO: {}", e));
 
             Ok(())
         }
@@ -403,15 +410,21 @@ impl MixingRestreamer {
         for m in &self.mixins {
             // FIFO should be created before open
             if !m.get_fifo_path().exists() {
-                let _ = create_fifo(m.get_fifo_path(), 0o777)
-                    .map_err(|e| log::error!("Failed to create FIFO: {}", e));
+                let _ = create_fifo(m.get_fifo_path(), 0o777).map_err(|e| {
+                    tracing::error!("Failed to create FIFO: {}", e);
+                });
             }
             if let Some(i) = m.stdin.as_ref() {
-                drop(tokio::spawn(run_copy_and_stop_on_signal(
-                    Arc::clone(i),
-                    m.get_fifo_path(),
-                    kill_rx.clone(),
-                )));
+                drop(tokio::spawn(
+                    {
+                        run_copy_and_stop_on_signal(
+                            Arc::clone(i),
+                            m.get_fifo_path(),
+                            kill_rx.clone(),
+                        )
+                    }
+                    .in_current_span(),
+                ));
             }
         }
     }
@@ -465,6 +478,9 @@ impl Mixin {
     /// [TeamSpeak]: https://teamspeak.com
     #[allow(clippy::non_ascii_literal)]
     #[must_use]
+    #[instrument(skip_all, name="Mixin::new", fields(
+        label=label.map(ToString::to_string), src=%state.src)
+    )]
     pub fn new(
         state: &state::Mixin,
         label: Option<&state::Label>,
@@ -491,7 +507,7 @@ impl Mixin {
                         Identity::create,
                         |v| {
                             Identity::new_from_str(v).unwrap_or_else(|e| {
-                                log::error!(
+                                tracing::error!(
                                     "Failed to create identity `{}`\
                                     \n\t with error: {}",
                                     &v,
@@ -599,45 +615,51 @@ fn tune_delay(track: Uuid, port: u16, delay: Delay) {
 ///
 /// [FFmpeg]: https://ffmpeg.org
 /// [ZeroMQ]: https://zeromq.org
+#[instrument(skip_all)]
 fn tune_with_zmq(port: u16, command: ZmqMessage) {
     use zeromq::{Socket as _, SocketRecv as _, SocketSend as _};
 
     drop(tokio::spawn(
-        AssertUnwindSafe(async move {
-            let addr = format!("tcp://127.0.0.1:{port}");
+        AssertUnwindSafe(
+            async move {
+                let addr = format!("tcp://127.0.0.1:{port}");
 
-            let mut socket = zeromq::ReqSocket::new();
-            socket.connect(&addr).await.map_err(|e| {
-                log::error!(
+                let mut socket = zeromq::ReqSocket::new();
+                socket.connect(&addr).await.map_err(|e| {
+                    tracing::error!(
                     "Failed to establish ZeroMQ connection with {addr} : {e}"
                 );
-            })?;
-            socket.send(command).await.map_err(|e| {
-                log::error!("Failed to send ZeroMQ message to {addr} : {e}");
-            })?;
+                })?;
+                socket.send(command).await.map_err(|e| {
+                    tracing::error!(
+                        "Failed to send ZeroMQ message to {addr} : {e}"
+                    );
+                })?;
 
-            let resp = socket.recv().await.map_err(|e| {
-                log::error!(
-                    "Failed to receive ZeroMQ response from {addr} : {e}"
-                );
-            })?;
+                let resp = socket.recv().await.map_err(|e| {
+                    tracing::error!(
+                        "Failed to receive ZeroMQ response from {addr} : {e}"
+                    );
+                })?;
 
-            let data = resp.into_vec().pop().unwrap();
-            if data.as_ref() != "0 Success".as_bytes() {
-                log::error!(
-                    "Received invalid ZeroMQ response from {addr} : {}",
-                    std::str::from_utf8(&data).map_or_else(
-                        |_| Cow::Owned(format!("{:?}", &data)),
-                        Cow::Borrowed,
-                    ),
-                );
+                let data = resp.into_vec().pop().unwrap();
+                if data.as_ref() != "0 Success".as_bytes() {
+                    tracing::error!(
+                        "Received invalid ZeroMQ response from {addr} : {}",
+                        std::str::from_utf8(&data).map_or_else(
+                            |_| Cow::Owned(format!("{:?}", &data)),
+                            Cow::Borrowed,
+                        ),
+                    );
+                }
+
+                <Result<_, ()>>::Ok(())
             }
-
-            <Result<_, ()>>::Ok(())
-        })
+            .in_current_span(),
+        )
         .catch_unwind()
         .map_err(|p| {
-            log::crit!(
+            tracing::error!(
                 "Panicked while sending ZeroMQ message: {}",
                 display_panic(&p),
             );

@@ -123,6 +123,18 @@ mutation DisableInput($restream_id: RestreamId!, $input_id: InputId!) {
     disableInput(id: $input_id, restreamId: $restream_id)
 }
 
+mutation MoveInputInDirection(
+    $restream_id: RestreamId!
+    $input_id: InputId!
+    $direction: Direction!
+) {
+    moveInputInDirection(
+        id: $input_id
+        restreamId: $restream_id
+        direction: $direction
+    )
+}
+
 mutation SetEndpointLabel(
     $restream_id: RestreamId!
     $input_id: InputId!

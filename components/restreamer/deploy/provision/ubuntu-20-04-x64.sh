@@ -16,6 +16,11 @@ WITH_FIREWALLD=${WITH_FIREWALLD:-0}
 # If provider require full update before install (Selectel for example)
 WITH_INITIAL_UPGRADE=${WITH_INITIAL_UPGRADE:-0}
 
+# If want to send traces to Jaeger
+EPHYR_RESTREAMER_JAEGER_AGENT_IP=${EPHYR_RESTREAMER_JAEGER_AGENT_IP:-0}
+EPHYR_RESTREAMER_JAEGER_AGENT_PORT=${EPHYR_RESTREAMER_JAEGER_AGENT_PORT:-0}
+EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=${EPHYR_RESTREAMER_JAEGER_SERVICE_NAME:-0}
+
 if [ "$EPHYR_VER" == "latest" ]; then
   EPHYR_VER=''
 else
@@ -27,6 +32,21 @@ if [ "$WITH_INITIAL_UPGRADE" == "1" ]; then
     DEBIAN_FRONTEND=noninteractive \
         apt-get -qy -o "Dpkg::Options::=--force-confdef" \
                     -o "Dpkg::Options::=--force-confold" upgrade
+fi
+
+RESTREAMER_DIR="/usr/local/share/ephyr-restreamer"
+mkdir -p $RESTREAMER_DIR
+
+# Set environment for docker only if variables set.
+JAEGER_ENV_LIST="$RESTREAMER_DIR/jaeger-env.list"
+if [[ "$EPHYR_RESTREAMER_JAEGER_SERVICE_NAME" != "0" ]]; then
+  echo "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=${EPHYR_RESTREAMER_JAEGER_SERVICE_NAME}" > "$JAEGER_ENV_LIST"
+else
+  echo "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=$(hostname)" > "$JAEGER_ENV_LIST"
+fi
+if [[ "$EPHYR_RESTREAMER_JAEGER_AGENT_IP" != "0" && "$EPHYR_RESTREAMER_JAEGER_AGENT_PORT" != "0" ]]; then
+  echo "EPHYR_RESTREAMER_JAEGER_AGENT_IP=${EPHYR_RESTREAMER_JAEGER_AGENT_IP}" >> "$JAEGER_ENV_LIST"
+  echo "EPHYR_RESTREAMER_JAEGER_AGENT_PORT=${EPHYR_RESTREAMER_JAEGER_AGENT_PORT}" >> "$JAEGER_ENV_LIST"
 fi
 
 # Install Docker for running containers.
@@ -57,7 +77,7 @@ else
 fi
 
 
-# Install Ephyr-restreamer runner
+# Install Ephyr-restreamer executor
 cat <<'EOF' > /usr/local/bin/run-ephyr-restreamer.sh
 #!/usr/bin/env bash
 
@@ -84,12 +104,16 @@ echo "EPHYR_CONTAINER_NAME=$EPHYR_CONTAINER_NAME"
 echo "EPHYR_IMAGE_NAME=$EPHYR_IMAGE_NAME"
 echo "EPHYR_RESTREAMER_STATE_PATH=$EPHYR_RESTREAMER_STATE_PATH"
 
+# Print Jaeger related Environment variables.
+echo "JAEGER_ENV_LIST=$JAEGER_ENV_LIST"
+
 # Run Docker service
 /usr/bin/docker run \
   --network=host \
   -v /var/lib/$EPHYR_CONTAINER_NAME/srs.conf:/usr/local/srs/conf/srs.conf \
   -v /var/lib/$EPHYR_CONTAINER_NAME/state.json:$EPHYR_RESTREAMER_STATE_PATH \
   -v $ephyr_www_dir/:/var/www/srs/ \
+  --env-file "$JAEGER_ENV_LIST" \
   --name=$EPHYR_CONTAINER_NAME \
   $EPHYR_IMAGE_NAME:$EPHYR_IMAGE_TAG $EPHYR_CLI_ARGS
 EOF
@@ -108,7 +132,8 @@ Requires=local-fs.target
 Environment=EPHYR_CONTAINER_NAME=ephyr-restreamer
 Environment=EPHYR_IMAGE_NAME=${REGISTRY_URL}/allatra/ephyr
 Environment=EPHYR_IMAGE_TAG=restreamer${EPHYR_VER}
-Environment=EPHYR_RESTREAMER_STATE_PATH=/tmp/workdir/state.json
+Environment=EPHYR_RESTREAMER_STATE_PATH=${RESTREAMER_DIR}/state.json
+Environment=JAEGER_ENV_LIST=${JAEGER_ENV_LIST}
 
 ExecStartPre=/usr/bin/mkdir -p /var/lib/\${EPHYR_CONTAINER_NAME}/
 ExecStartPre=touch /var/lib/\${EPHYR_CONTAINER_NAME}/srs.conf

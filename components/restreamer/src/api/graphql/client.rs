@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
 use anyhow::anyhow;
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
@@ -31,7 +31,7 @@ use crate::{
         get_video_list_from_gdrive_folder, FileCommand, FileId, LocalFileInfo,
     },
     spec::v1::BackupInput,
-    state::{EndpointId, ServerInfo, VolumeLevel},
+    state::{Direction, EndpointId, ServerInfo, VolumeLevel},
     types::UNumber,
 };
 use url::Url;
@@ -506,7 +506,7 @@ impl MutationsRoot {
             Ok(Some(true))
         } else {
             let err = result.err().unwrap();
-            log::error!("{}", &err);
+            tracing::error!(err);
             Err(graphql::Error::new("GDRIVE_API_ERROR")
                 .status(StatusCode::BAD_REQUEST)
                 .message(&err))
@@ -552,6 +552,29 @@ impl MutationsRoot {
         context: &Context,
     ) -> Option<bool> {
         context.state().disable_input(id, restream_id)
+    }
+
+    /// Moves this [`Input`] in given direction.
+    ///
+    /// This may affect the order and priority of endpoints.
+    /// E.g. if the second endpoint is moved up, it will become the new primary.
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if the move was successful, or `false` if not.
+    fn move_input_in_direction(
+        #[graphql(description = "ID of the `Input` to be streamed.")]
+        id: InputId,
+        #[graphql(
+            description = "ID of the `Restream` to stream the `Input` in."
+        )]
+        restream_id: RestreamId,
+        context: &Context,
+        direction: Direction,
+    ) -> Result<Option<bool>, graphql::Error> {
+        context
+            .state()
+            .move_input_in_direction(id, restream_id, direction)
     }
 
     /// Sets an `Input`'s endpoint label by `Input` and `Endpoint` `id`.

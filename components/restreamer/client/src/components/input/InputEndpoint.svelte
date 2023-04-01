@@ -1,4 +1,5 @@
 <script lang="js">
+  import Confirm from '../common/Confirm.svelte';
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
   import FileInfo from '../common/FileInfo.svelte';
@@ -15,6 +16,10 @@
     ONLINE
   } from '../../utils/constants';
 
+  import { MoveInputInDirection } from '../../../api/client.graphql';
+
+  const moveInputInDirectionMutation = mutation(MoveInputInDirection);
+
   export let endpoint;
   export let input;
   export let input_url;
@@ -22,6 +27,9 @@
   export let with_label;
   export let show_controls;
   export let files;
+  export let show_move_up;
+  export let show_move_down;
+  export let show_up_confirmation;
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
@@ -46,6 +54,71 @@
       ? allFiles.find((val) => val.fileId === endpoint.fileId)
       : undefined;
   };
+
+  const formatStreamInfo = (streamStat) => {
+    if (streamStat) {
+      return streamStat.error
+        ? streamStat.error
+        : `<span><strong>${input.key}</strong></span>
+          <br/>
+          <span><strong>video</strong>&#58; ${
+            streamStat.videoCodecName
+          }, </span>
+          <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
+          <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
+          <br/>
+          <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
+          <span>${streamStat.audioSampleRate},</span>
+          <span>${streamStat.audioChannelLayout},</span>
+          <span>channels&#58; ${streamStat.audioChannels}</span>`;
+    }
+
+    return '';
+  };
+
+  const getFileName = (currentFile) =>
+    currentFile.name ? currentFile.name : currentFile.fileId;
+
+  const getFileDownloadProgress = (currentFile) => {
+    let value =
+      currentFile?.downloadState &&
+      currentFile.downloadState.currentProgress !==
+        currentFile.downloadState.maxProgress
+        ? (currentFile.downloadState.currentProgress /
+            currentFile.downloadState.maxProgress) *
+          100
+        : 0;
+
+    return value < 0 || value >= 100 ? undefined : value;
+  };
+
+  async function moveUp() {
+    try {
+      await moveInputInDirectionMutation({
+        variables: {
+          restream_id: restream_id,
+          input_id: input.id,
+          direction: 'UP',
+        },
+      });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function moveDown() {
+    try {
+      await moveInputInDirectionMutation({
+        variables: {
+          restream_id: restream_id,
+          input_id: input.id,
+          direction: 'DOWN',
+        },
+      });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
 
 </script>
 
@@ -119,6 +192,82 @@
         isError={!!endpoint.streamStat?.error}
         url={input_url}
       />
+
+      {#if !isFailover}
+        <!-- Do not display UP button on endpoint at the 1st position. Display confirm dialog for endpoint at the second position -->
+        {#if show_move_up}
+          {#if show_up_confirmation}
+            <Confirm let:confirm>
+              <button
+                class="uk-button-default arrows"
+                data-testid="move-input-up"
+                title="Move up"
+                on:click={() => confirm(moveUp)}
+                ><span>↑</span>
+              </button>
+              <span slot="title">Move up</span>
+              <span slot="description"
+                >Move this endpoint up and replace primary endpoint.
+              </span>
+              <span slot="confirm">Move up</span>
+            </Confirm>
+          {:else}
+            <button
+              class="uk-button-default arrows"
+              data-testid="move-input-up"
+              title="Move up"
+              on:click={moveUp}
+              ><span>↑</span>
+            </button>
+          {/if}
+        {:else}
+          <button
+            style="border:none"
+            class="uk-button-default arrows"
+            data-testid="move-input-up"
+            title=""
+            ><span>&nbsp&nbsp</span>
+          </button>
+        {/if}
+
+        <!-- Do not display DOWN button on endpoint on the last position. Display confirm dialog for endpoint at the first position -->
+        {#if show_move_down}
+          {#if !show_move_up}
+            <Confirm let:confirm>
+              <button
+                class="uk-button-default arrows"
+                data-testid="move-input-down"
+                title="Move down"
+                on:click={() => confirm(moveDown)}
+                ><span>↓</span>
+              </button>
+              <span slot="title">Move down</span>
+              <span slot="description"
+                >Move this endpoint down. Note, this endpoint is primary, it
+                will be replaced by the following endpoint.
+              </span>
+              <span slot="confirm">Move down</span>
+            </Confirm>
+          {:else}
+            <button
+              class="uk-button-default arrows"
+              data-testid="move-input-down"
+              title="Move down"
+              on:click={moveDown}
+              ><span>↓</span>
+            </button>
+          {/if}
+        {:else}
+          <button
+            style="border:none"
+            class="uk-button-default arrows"
+            data-testid="move-input-down"
+            title=""
+            ><span>&nbsp&nbsp</span>
+          </button>
+        {/if}
+      {/if}
+
       {#if with_label}
         <InputEndpointLabel {endpoint} {restream_id} {input} {show_controls} />
       {/if}
@@ -141,4 +290,8 @@
     .endpoint-status-icon
       flex-shrink: 0
       margin-right: 5px
+
+    .arrows
+      width: 22px
 </style>
+

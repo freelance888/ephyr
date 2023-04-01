@@ -6,7 +6,7 @@ use std::{
 };
 
 use derive_more::{Deref, Display, Into};
-use ephyr_log::log;
+use ephyr_log::{tracing, Instrument};
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
@@ -20,6 +20,7 @@ use crate::{
     stream_statistics::StreamStatistics,
 };
 use chrono::Utc;
+use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
 use std::{
@@ -88,6 +89,7 @@ impl FileManager {
     }
 
     /// Command processing
+    #[instrument(skip_all, name = "file_manager::handle_commands")]
     pub fn handle_commands(&self) {
         let commands: Vec<FileCommand> =
             self.state.file_commands.lock_mut().drain(..).collect();
@@ -184,7 +186,7 @@ impl FileManager {
             {
                 let file_path = self.file_root_dir.join(disk_file.file_name());
                 let _ = std::fs::remove_file(file_path).map_err(|err| {
-                    log::error!("Can not delete file. {}", err);
+                    tracing::error!("Can not delete file. {}", err);
                 });
             }
         });
@@ -234,7 +236,7 @@ impl FileManager {
             .find(|file| &file.file_id == file_id)
             .map_or_else(
                 || {
-                    log::error!(
+                    tracing::error!(
                         "Could not find file \
                              with the provided id: {}",
                         file_id
@@ -364,14 +366,22 @@ impl FileManager {
             }
             .await
             .map_err(|err| {
-                log::error!("Could not download file {}: {}", &file_id, err);
+                tracing::error!(
+                    "Could not download file {}: {}",
+                    &file_id,
+                    err
+                );
                 state
                     .files
                     .lock_mut()
                     .iter_mut()
                     .find(|file| file.file_id == file_id)
                     .map_or_else(
-                        || log::error!("Could not set the file state to error"),
+                        || {
+                            tracing::error!(
+                                "Could not set the file state to error"
+                            );
+                        },
                         |val| {
                             val.state = FileState::DownloadError;
                             val.error = Some(err);
@@ -504,15 +514,18 @@ impl FileManager {
 /// Update stream info for downloaded file
 fn update_stream_info(file_id: FileId, url: String, state: State) {
     drop(tokio::spawn(
-        AssertUnwindSafe(async move {
-            let result = stream_probe(url).await;
-            state
-                .set_file_stream_info(&file_id, result)
-                .unwrap_or_else(|e| log::error!("{}", e));
-        })
+        AssertUnwindSafe(
+            async move {
+                let result = stream_probe(url).await;
+                state
+                    .set_file_stream_info(&file_id, result)
+                    .unwrap_or_else(|e| tracing::error!("{}", e));
+            }
+            .in_current_span(),
+        )
         .catch_unwind()
         .map_err(move |p| {
-            log::crit!("Can not fetch stream info: {}", display_panic(&p),);
+            tracing::warn!("Can not fetch stream info: {}", display_panic(&p),);
         }),
     ));
 }

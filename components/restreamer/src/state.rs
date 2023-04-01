@@ -26,11 +26,10 @@ pub use self::{
     settings::Settings,
 };
 
-use std::{future::Future, mem, panic::AssertUnwindSafe, path::Path};
-
+use actix_web::http::StatusCode;
 use anyhow::anyhow;
 use derive_more::{Display, From, Into};
-use ephyr_log::log;
+use ephyr_log::tracing;
 use futures::{
     future::TryFutureExt as _,
     sink,
@@ -40,9 +39,11 @@ use futures_signals::signal::{Mutable, SignalExt as _};
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar};
 use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
+use std::{future::Future, mem, panic::AssertUnwindSafe, path::Path};
 use tokio::{fs, io::AsyncReadExt as _};
 
 use crate::{
+    api::graphql,
     broadcaster::DashboardCommand,
     console_logger::ConsoleMessage,
     display_panic,
@@ -134,7 +135,7 @@ impl State {
                 serde_json::to_vec(&persisted_state)
                     .expect("Failed to serialize server state"),
             )
-            .map_err(|e| log::error!("Failed to persist server state: {e}"))
+            .map_err(|e| tracing::error!("Failed to persist server state: {e}"))
         };
         let persist_state2 = persist_state1.clone();
         let persist_state3 = persist_state1.clone();
@@ -228,7 +229,7 @@ impl State {
             )
             .catch_unwind()
             .map_err(move |p| {
-                log::crit!(
+                tracing::error!(
                     "Panicked executing `{}` hook of state: {}",
                     name,
                     display_panic(&p),
@@ -385,6 +386,72 @@ impl State {
             .input
             .find_mut(id)
             .map(Input::disable)
+    }
+
+    /// Moves this [`Input`] in given direction.
+    ///
+    /// This may affect the order and priority of endpoints.
+    /// E.g. if the second endpoint is moved up, it will become the new primary.
+    ///
+    /// Returns `true` if the move was successful, or `false` if not.
+    /// # Errors
+    ///
+    /// If [`Restream`] or [`Input`] was not found
+    /// If the move cannot be performed
+    ///     (trying to go UP from the first position or down from the last)
+    pub fn move_input_in_direction(
+        &self,
+        input_id: InputId,
+        restream_id: RestreamId,
+        direction: Direction,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut restreams = self.restreams.lock_mut();
+
+        let restreamer = restreams
+            .iter_mut()
+            .find(|r| r.id == restream_id)
+            .ok_or_else(|| {
+                graphql::Error::new("RESTREAM_NOT_FOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&format!("Restream {restream_id} not found"))
+            })?;
+
+        if let Some(InputSrc::Failover(s)) = restreamer.input.src.as_mut() {
+            let current_index =
+                s.inputs.iter().position(|r| r.id == input_id).ok_or_else(
+                    || {
+                        graphql::Error::new("INPUT_NOT_FOUND")
+                            .status(StatusCode::BAD_REQUEST)
+                            .message(&format!("Intput {input_id} not found"))
+                    },
+                )?;
+
+            if direction == Direction::Up && current_index == 0 {
+                return Err(graphql::Error::new("INPUT_INDEX_OUT_OF_BOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message("Cannot move UP the first input"));
+            }
+
+            if direction == Direction::Down
+                && current_index + 1 > s.inputs.len() - 1
+            {
+                return Err(graphql::Error::new("INPUT_INDEX_OUT_OF_BOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message("Cannot move DOWN the last input."));
+            }
+
+            let new_index = match direction {
+                Direction::Up => current_index - 1,
+                Direction::Down => current_index + 1,
+            };
+
+            let moved_input = s.inputs.remove(current_index);
+            s.inputs.insert(new_index, moved_input);
+
+            return Ok(Some(true));
+        }
+
+        Ok(Some(false))
     }
 
     /// Sets label on [`Input`] with the given `id` in
@@ -770,14 +837,13 @@ impl State {
             .fold(HashMap::new(), |mut stat, restream| {
                 let item =
                     restream.input.endpoints.iter().find(|e| e.is_rtmp());
-                match item {
-                    Some(main_input) => {
-                        Self::update_stat(&mut stat, main_input.status);
-                    }
-                    None => log::error!(
+                if let Some(main_input) = item {
+                    Self::update_stat(&mut stat, main_input.status);
+                } else {
+                    tracing::error!(
                         "Main endpoint not found for {} input",
                         restream.input.id
-                    ),
+                    );
                 };
 
                 stat
@@ -953,4 +1019,14 @@ pub enum Status {
 
     /// Failed recently
     Unstable,
+}
+
+/// Direction
+#[derive(Clone, Copy, Debug, Eq, GraphQLEnum, PartialEq)]
+pub enum Direction {
+    /// Up
+    Up,
+
+    /// Down
+    Down,
 }

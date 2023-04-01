@@ -15,6 +15,7 @@
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
+  import { isFullGDrivePath, showError } from '../utils/util';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -47,15 +48,43 @@
       isDownloading: x.file?.state === FILE_DOWNLOADING
     }))
     : [];
+
   let googleDriveFolderId = '';
+  let isValidFolderIdInput = true;
 
   async function loadPlaylist(folderId) {
-    const variables = { id: restreamId, folder_id: folderId };
-    try {
-      await getPlaylistFromDrive({ variables });
-      googleDriveFolderId = '';
-    } catch (e) {
-      showError(e.message);
+    if (isValidFolderIdInput) {
+      const variables = { id: restreamId, folder_id: folderId };
+      try {
+        await getPlaylistFromDrive({ variables });
+        googleDriveFolderId = '';
+      } catch (e) {
+        showError(e.message);
+      }
+    } else {
+      showError(`Google Folder Id: ${folderId} is incorrect`);
+    }
+  }
+
+  function fetchFolderId(id) {
+    return isFullGDrivePath(id)
+      ? id.match(/(?<folderId>(?<=folders\/)[\S]+)/)?.groups?.folderId
+      : id;
+  }
+
+  function handleInputFolderId(event) {
+    const stringWithFolderId = event.target.value;
+    if (!stringWithFolderId) return;
+    googleDriveFolderId = fetchFolderId(stringWithFolderId);
+    validateFileIdInput();
+  }
+
+  function validateFileIdInput() {
+    if (!isValidFolderIdInput) {
+      setTimeout(() => {
+        googleDriveFolderId = '';
+        isValidFolderIdInput = true;
+      }, 3000);
     }
   }
 
@@ -116,8 +145,10 @@
       <input
         id="gdrive"
         bind:value={googleDriveFolderId}
+        on:input={handleInputFolderId}
         class="google-drive-link uk-input uk-form-small uk-flex-1"
         type="text"
+        disabled={!isValidFolderIdInput}
         placeholder="ID of Google Drive folder"
       />
 

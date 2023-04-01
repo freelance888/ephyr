@@ -1,4 +1,4 @@
-use std::{mem, path::Path};
+use std::{fmt::Display, mem, path::Path};
 
 use derive_more::{Deref, Display, From, Into};
 use juniper::{GraphQLObject, GraphQLScalar, GraphQLUnion};
@@ -21,6 +21,15 @@ pub enum InputSrc {
 
     /// Multiple local endpoints forming a failover source.
     Failover(FailoverInputSrc),
+}
+
+impl Display for InputSrc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InputSrc::Remote(src) => write!(f, "InputSrc::Remote({src})"),
+            InputSrc::Failover(src) => write!(f, "InputSrc::Failover({src})"),
+        }
+    }
 }
 
 impl InputSrc {
@@ -97,6 +106,12 @@ pub struct RemoteInputSrc {
     pub label: Option<Label>,
 }
 
+impl Display for RemoteInputSrc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RemoteInputSrc({})", self.url.path())
+    }
+}
+
 /// Failover source of multiple `Input`s to pull a live stream by an `Input`
 /// from.
 #[derive(
@@ -109,6 +124,12 @@ pub struct FailoverInputSrc {
     /// back to the second one, and so on. Once the first source is restored,
     /// we pool from it once again.
     pub inputs: Vec<Input>,
+}
+
+impl Display for FailoverInputSrc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FailoverInputSrc({})", self.inputs.len())
+    }
 }
 
 /// [`Url`] of a [`RemoteInputSrc`].
