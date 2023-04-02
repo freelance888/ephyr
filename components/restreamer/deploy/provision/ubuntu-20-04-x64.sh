@@ -17,6 +17,7 @@
 # 9. EPHYR_RESTREAMER_JAEGER_AGENT_PORT: Set the port of the Jaeger agent if you want to send traces to Jaeger.
 # 10. EPHYR_RESTREAMER_JAEGER_SERVICE_NAME: Set the Jaeger service name for the Ephyr-restreamer traces. Default is the hostname of the machine.
 # 11. CLEAR_STATE_ON_RESTART: Clear `state.json` each restart of Ephyr-restreamer. Default is '0'.
+# 12. ALLOWED_IPS: Set allowed IP addresses to access server. Default is '*'.
 #
 # Example usage:
 #   EPHYR_VER=latest WITH_INITIAL_UPGRADE=1 ./install_ephyr_restreamer.sh
@@ -62,8 +63,12 @@ function login_to_registry_if_required() {
 }
 
 function setup_firewall_rules() {
+  # If ALLOWED_IPS is not set, use an empty array to allow all IPs
+  local ALLOWED_IPS=(${ALLOWED_IPS:-"*"})
+
   # If provider require firewalld instead of ufw (Oracle for example)
   local WITH_FIREWALLD=${WITH_FIREWALLD:-0}
+  local ALLOWED_PORTS=("80" "8000" "443" "1935" "3000")
 
   if [ "$WITH_FIREWALLD" == "1" ]; then
     # Install and setup firewalld, if required.
@@ -71,17 +76,45 @@ function setup_firewall_rules() {
     systemctl unmask firewalld.service
     systemctl enable firewalld.service
     systemctl start firewalld.service
-    firewall-cmd --zone=public --permanent \
-                  --add-port=80/tcp --add-port=1935/tcp --add-port=8000/tcp
+
+    firewall-cmd --zone=public --permanent --add-port="22/tcp"
+
+    if [ "${#ALLOWED_IPS[@]}" == "*" ]; then
+      for port in "${ALLOWED_PORTS[@]}"; do
+        firewall-cmd --zone=public --permanent --add-port="${port}/tcp"
+      done
+    else
+      for ip in "${ALLOWED_IPS[@]}"; do
+        for port in "${ALLOWED_PORTS[@]}"; do
+          firewall-cmd --permanent --zone=public --add-rich-rule="rule family='ipv4' source address='$ip' port port='$port' protocol='tcp' accept"
+        done
+      done
+    fi
     firewall-cmd --reload
   else
     # Open default ports
     apt-get -yq install ufw
-    ufw allow 80/tcp
-    ufw allow 8000/tcp
-    ufw allow 1935/tcp
+    ufw --force reset
+
+    ufw allow 22
+    ufw default deny incoming
+    ufw default allow outgoing
+
+    if [ "${ALLOWED_IPS}" == "*" ]; then
+      for port in "${ALLOWED_PORTS[@]}"; do
+        ufw allow "${port}/tcp"
+      done
+    else
+      for ip in "${ALLOWED_IPS[@]}"; do
+        for port in "${ALLOWED_PORTS[@]}"; do
+          ufw allow from "$ip" to any port "$port"
+        done
+      done
+    fi
+    ufw --force enable
   fi
 }
+
 
 function setup_runtime_config {
   local ENV_FILE_PATH="$1"
