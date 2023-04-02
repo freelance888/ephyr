@@ -16,6 +16,7 @@
 # 8. EPHYR_RESTREAMER_JAEGER_AGENT_IP: Set the IP address of the Jaeger agent if you want to send traces to Jaeger.
 # 9. EPHYR_RESTREAMER_JAEGER_AGENT_PORT: Set the port of the Jaeger agent if you want to send traces to Jaeger.
 # 10. EPHYR_RESTREAMER_JAEGER_SERVICE_NAME: Set the Jaeger service name for the Ephyr-restreamer traces. Default is the hostname of the machine.
+# 11. CLEAR_STATE_ON_RESTART: Clear `state.json` each restart of Ephyr-restreamer. Default is '0'.
 #
 # Example usage:
 #   EPHYR_VER=latest WITH_INITIAL_UPGRADE=1 ./install_ephyr_restreamer.sh
@@ -106,10 +107,10 @@ function setup_runtime_config {
 }
 
 #################### SETUP ####################
+CLEAR_EPHYR_STATE_ON_RESTART=${CLEAR_EPHYR_STATE_ON_RESTART:-0}
 EPHYR_CLI_ARGS=${EPHYR_CLI_ARGS:-''}
 EPHYR_VER=$(get_ephyr_version)
 REGISTRY_URL=${REGISTRY_URL:-'docker.io'}
-
 EPHYR_CONTAINER_NAME="ephyr-restreamer"
 EPHYR_IMAGE_NAME="${REGISTRY_URL}/allatra/ephyr"
 EPHYR_IMAGE_TAG="restreamer${EPHYR_VER}"
@@ -143,6 +144,9 @@ cat <<EOF > /usr/local/bin/run-ephyr-restreamer.sh
 
 set -e
 
+clear_state_on_restart=$CLEAR_EPHYR_STATE_ON_RESTART
+state_path=$EPHYR_CONFIG_STATE_PATH
+
 # Detect directory for DVR.
 ephyr_www_dir="/var/www/ephyr-restreamer"
 do_volume="\$(set +e; find /mnt/volume_* -type d | head -1 | tr -d '\n')"
@@ -161,11 +165,15 @@ mkdir -p "\$ephyr_www_dir/"
 echo "EPHYR_IMAGE_TAG=\$EPHYR_IMAGE_TAG"
 echo "EPHYR_CLI_ARGS=\$EPHYR_CLI_ARGS"
 
+if [[ \$clear_state_on_restart == "1" ]]; then
+  rm \$state_path && touch \$state_path
+fi
+
 # Run Docker service
 /usr/bin/docker run \
   --network=host \
   -v $EPHYR_CONFIG_SRS_PATH:/usr/local/srs/conf/srs.conf \
-  -v $EPHYR_CONFIG_STATE_PATH:$EPHYR_RESTREAMER_STATE_PATH \
+  -v \$state_path:$EPHYR_RESTREAMER_STATE_PATH \
   -v \$ephyr_www_dir/:/var/www/srs/ \
   --env-file $EPHYR_CONFIG_RUNTIME_ENV \
   --name=$EPHYR_CONTAINER_NAME \
