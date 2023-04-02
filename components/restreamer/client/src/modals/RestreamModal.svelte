@@ -155,9 +155,14 @@
   };
 
   const fetchFileId = (id) => {
-    return isFullGDrivePath(id)
-      ? id.match(/(?<fileId>(?<=file\/d\/).{33})\//)?.groups?.fileId
-      : id;
+    if (isFullGDrivePath(id)) {
+      const result = id.match(/file\/d\/([^\/]+)/);
+      if (result) {
+        return result[1];
+      }
+    }
+
+    return id;
   };
 
   const handleInputFileId = (event) => {
