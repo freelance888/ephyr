@@ -20,7 +20,7 @@
 # 12. ALLOWED_IPS: Set allowed IP addresses to access server. Default is '*'.
 #
 # Example usage:
-#   EPHYR_VER=latest WITH_INITIAL_UPGRADE=1 ./install_ephyr_restreamer.sh
+#   EPHYR_VER=latest WITH_INITIAL_UPGRADE=1 ./ubuntu-20-04-x64.sh
 
 
 set -e
