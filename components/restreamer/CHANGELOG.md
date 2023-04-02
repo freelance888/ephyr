@@ -12,6 +12,8 @@ All user visible changes to this project will be documented in this file. This p
 - Deploy:
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
     - Add Jaeger envs: EPHYR_RESTREAMER_JAEGER_AGENT_IP, EPHYR_RESTREAMER_JAEGER_AGENT_PORT ([#284]);
+    - Add `ALLOWED_IPS` option to set allowed IP addresses to access server ([#352]);
+    - Add `CLEAR_STATE_ON_RESTART` option that clears state after restart if set([#352]);
 - CI:
   - Configure dependabot ([#244]);
 - Dashboard:
@@ -26,7 +28,7 @@ All user visible changes to this project will be documented in this file. This p
   - Video playback for file Input ([#166], [#297]);
   - Display stream info for file-backup endpoint ([#322]);
   - Auto conversion of Google Drive links to Id's ([#313], [#321]);
-  - Ability to re-order input endpoints ([#345]);
+  - Ability to re-order input endpoints ([#346], [#345]);
 - General
   - Show number of cores on server instance ([#227], [#254]);
   - Google Drive API key to Ephyr server ([#168], [#297]);
@@ -62,6 +64,7 @@ All user visible changes to this project will be documented in this file. This p
 [#260]: /../../issues/260
 [#313]: /../../issues/313
 [#323]: /../../issues/323
+[#346]: /../../issues/346
 
 [#239]: /../../pull/239
 [#244]: /../../pull/244
@@ -77,6 +80,7 @@ All user visible changes to this project will be documented in this file. This p
 [#322]: /../../pull/322
 [#341]: /../../pull/341
 [#345]: /../../pull/345
+[#352]: /../../pull/352
 
 
 
