@@ -514,8 +514,10 @@ impl State {
         }
 
         let new_output = Output::new(spec);
+        let id = new_output.id;
         outputs.push(new_output);
-        Ok(Some(new_output.id.clone()))
+
+        Ok(Some(id))
     }
 
     /// Edits an [`Output`] with the given `spec` identified by the given `id`
@@ -547,11 +549,11 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        outputs
+        let _ = outputs
             .iter_mut()
             .find(|o| o.id == id)
             .map(|o| o.apply(spec, true));
+
         Ok(id.into())
     }
 

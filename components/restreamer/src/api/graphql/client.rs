@@ -710,17 +710,17 @@ impl MutationsRoot {
             enabled: false,
         };
 
-        #[allow(clippy::option_if_let_else)] // due to consuming `spec`
-        Ok(if let Some(id) = id {
+        let result = if let Some(id) = id {
             context.state().edit_output(restream_id, id, spec)
         } else {
             context.state().add_output(restream_id, spec)
-        }
-        .map_err(|e| {
+        };
+
+        result.map_err(|e| {
             graphql::Error::new("DUPLICATE_OUTPUT_URL")
                 .status(StatusCode::CONFLICT)
                 .message(&e)
-        })?
+        })
     }
 
     /// Removes an `Output` by its `id` from the specified `Restream`.
