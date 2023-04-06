@@ -4,7 +4,11 @@
 //! [FFmpeg]: https://ffmpeg.org
 
 use derive_more::From;
-use ephyr_log::{tracing, tracing::instrument, ParsedMsg};
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument},
+    ChildCapture, ParsedMsg, Span,
+};
 use libc::pid_t;
 use nix::{
     sys::{signal, signal::Signal},
@@ -460,16 +464,16 @@ impl RestreamerKind {
                 tokio::time::sleep(Duration::from_millis(1)).await;
                 signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
                     .expect("Failed to kill process");
-            }, //.in_current_span(),
+            }
+            .in_current_span(),
         );
 
-        // let out = process
-        //     .capture_logs_and_wait_for_output(
-        //         tracing::info_span!(parent: Span::current(), "ffmpeg_proc"),
-        //         parse_ffmpeg_log_line,
-        //     )
-        //     .await?;
-        let out = process.wait_with_output().await?;
+        let out = process
+            .capture_logs_and_wait_for_output(
+                tracing::info_span!(parent: Span::current(), "ffmpeg_proc"),
+                parse_ffmpeg_log_line,
+            )
+            .await?;
         kill_task.abort();
 
         let status_code = out.status.code();

@@ -49,7 +49,6 @@ impl FileRestreamer {
         cmd: &mut Command,
         repeat: bool,
     ) -> io::Result<()> {
-        let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         match self.from_url.scheme() {
             "file" => {
                 let _ = cmd.arg("-re");
