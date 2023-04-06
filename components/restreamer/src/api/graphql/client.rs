@@ -634,7 +634,7 @@ impl MutationsRoot {
                                  rather than creating a new one.")]
         id: Option<OutputId>,
         context: &Context,
-    ) -> Result<Option<bool>, graphql::Error> {
+    ) -> Result<Option<OutputId>, graphql::Error> {
         if mixins.len() > 5 {
             return Err(graphql::Error::new("TOO_MUCH_MIXIN_URLS")
                 .status(StatusCode::BAD_REQUEST)
@@ -721,7 +721,6 @@ impl MutationsRoot {
                 .status(StatusCode::CONFLICT)
                 .message(&e)
         })?
-        .map(|_| true))
     }
 
     /// Removes an `Output` by its `id` from the specified `Restream`.

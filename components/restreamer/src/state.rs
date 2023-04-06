@@ -498,7 +498,7 @@ impl State {
         &self,
         restream_id: RestreamId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -513,8 +513,9 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", o.dst));
         }
 
-        outputs.push(Output::new(spec));
-        Ok(Some(()))
+        let new_output = Output::new(spec);
+        outputs.push(new_output);
+        Ok(Some(new_output.id.clone()))
     }
 
     /// Edits an [`Output`] with the given `spec` identified by the given `id`
@@ -531,7 +532,7 @@ impl State {
         restream_id: RestreamId,
         id: OutputId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -547,10 +548,11 @@ impl State {
         }
 
         #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        Ok(outputs
+        outputs
             .iter_mut()
             .find(|o| o.id == id)
-            .map(|o| o.apply(spec, true)))
+            .map(|o| o.apply(spec, true));
+        Ok(id.into())
     }
 
     /// Removes an [`Output`] with the given `id` from the specified
