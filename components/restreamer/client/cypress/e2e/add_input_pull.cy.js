@@ -1,4 +1,4 @@
-describe('ADD PULL INPUT', () => {
+describe('ADD PULL INPUT', { testIsolation: false },() => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
