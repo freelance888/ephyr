@@ -11,7 +11,7 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 - Deploy:
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
-    - Add Jaeger envs: EPHYR_RESTREAMER_JAEGER_AGENT_IP, EPHYR_RESTREAMER_JAEGER_AGENT_PORT ([#284]);
+    - Add OpenTelemetry collector envs: `EPHYR_RESTREAMER_OTLP_COLLECTOR_IP`, `EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT` ([#284]);
     - Add `ALLOWED_IPS` option to set allowed IP addresses to access server ([#352]);
     - Add `CLEAR_STATE_ON_RESTART` option that clears state after restart if set([#352]);
 - CI:
@@ -44,7 +44,7 @@ All user visible changes to this project will be documented in this file. This p
 ### Miscellaneous
 - Logging:
   - `slog` replaced with `tracing` ([#284]);
-  - Jaeger tracing exporter ([#271], [#284]);
+  - Support of OpenTelemetry traces collector witch used by Jaeger, Prometheus and etc ([#271], [#284]);
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
   - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]);

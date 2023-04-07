@@ -146,33 +146,41 @@ pub struct Opts {
     )]
     pub file_root: PathBuf,
 
-    /// Port of Jaeger to send traces.
+    /// IP address of [OpenTelemetry] collector server to send logs to.
+    ///
+    /// [OpenTelemetry]: https://OpenTelemetry.io
     #[structopt(
         long,
-        env = "EPHYR_RESTREAMER_JAEGER_AGENT_IP",
-        help = "IP of Jaeger to send traces",
-        long_help = "Uses for aggregation of traces for Jaeger"
+        env = "EPHYR_RESTREAMER_OTLP_COLLECTOR_IP",
+        help = "IP of OTLP collector to send traces",
+        long_help = "Uses for aggregation of traces for OTLP collector"
     )]
-    pub jaeger_agent_ip: Option<IpAddr>,
+    pub otlp_collector_ip: Option<IpAddr>,
 
-    /// Port of Jaeger to send traces.
+    /// Port of [OpenTelemetry] collector server to send logs to.
+    ///
+    /// In our case as we send data with gRPC so port is typically `4317`.
+    ///
+    /// [OpenTelemetry]: https://OpenTelemetry.io
     #[structopt(
         long,
-        env = "EPHYR_RESTREAMER_JAEGER_AGENT_PORT",
-        help = "Port of Jaeger to send traces",
-        long_help = "Uses for aggregation of traces for Jaeger"
+        env = "EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT",
+        help = "Port of OTLP collector to send traces",
+        long_help = "Uses for aggregation of traces for OTLP collector"
     )]
-    pub jaeger_agent_port: Option<u16>,
+    pub otlp_collector_port: Option<u16>,
 
-    /// Service name for Jaeger to send traces.
+    /// Service name to collect traces to [OpenTelemetry] collector.
+    ///
+    /// [OpenTelemetry]: https://OpenTelemetry.io
     #[structopt(
         long,
-        env = "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME",
+        env = "EPHYR_RESTREAMER_SERVICE_NAME",
         default_value = "ephyr-restreamer",
-        help = "Service name for Jaeger to send traces",
-        long_help = "Uses for aggregation of traces for Jaeger"
+        help = "Service name to collect traces to OTLP collector",
+        long_help = "Uses for aggregation of traces for OTLP collector"
     )]
-    pub jaeger_service_name: String,
+    pub service_name: String,
 }
 
 impl Opts {
