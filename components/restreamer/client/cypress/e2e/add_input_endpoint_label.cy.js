@@ -1,4 +1,4 @@
-describe('CHECK INPUT ENDPOINT LABEL', { testIsolation: false },() => {
+describe('CHECK INPUT ENDPOINT LABEL', { testIsolation: false }, () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();

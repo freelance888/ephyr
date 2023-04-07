@@ -1,4 +1,4 @@
-describe('ADD BACKUP INPUT', { testIsolation: false },() => {
+describe('ADD BACKUP INPUT', { testIsolation: false }, () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();

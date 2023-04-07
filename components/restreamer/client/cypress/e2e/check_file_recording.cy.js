@@ -1,4 +1,4 @@
-describe('CHECK FILE RECORDING', { testIsolation: false },() => {
+describe('CHECK FILE RECORDING', { testIsolation: false }, () => {
   const COMMON_WAIT_TIME = 10000;
 
   before(() => {

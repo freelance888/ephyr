@@ -1,4 +1,4 @@
-describe('ADD SINGLE INPUT', { testIsolation: false },() => {
+describe('ADD SINGLE INPUT', { testIsolation: false }, () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();

@@ -1,4 +1,4 @@
-describe('CHECK STREAMING STATE', { testIsolation: false },() => {
+describe('CHECK STREAMING STATE', { testIsolation: false }, () => {
   const COMMON_WAIT_TIME = 10000;
 
   before(() => {

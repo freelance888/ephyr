@@ -1,4 +1,4 @@
-describe('ADD MIXIN OUTPUT', { testIsolation: false },() => {
+describe('ADD MIXIN OUTPUT', { testIsolation: false }, () => {
   before(() => {
     cy.visit('/');
     cy.deleteAllInputs();
