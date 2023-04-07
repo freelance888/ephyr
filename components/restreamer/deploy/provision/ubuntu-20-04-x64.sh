@@ -13,9 +13,9 @@
 # 5. EPHYR_CLI_ARGS: Set any additional CLI arguments for the Ephyr-restreamer Docker container.
 # 6. WITH_INITIAL_UPGRADE: Set to '1' if the system requires a full update before installing (e.g., for Selectel). Default is '0'.
 # 7. WITH_FIREWALLD: Set to '1' if the system requires firewalld instead of ufw (e.g., for Oracle). Default is '0'.
-# 8. EPHYR_RESTREAMER_JAEGER_AGENT_IP: Set the IP address of the Jaeger agent if you want to send traces to Jaeger.
-# 9. EPHYR_RESTREAMER_JAEGER_AGENT_PORT: Set the port of the Jaeger agent if you want to send traces to Jaeger.
-# 10. EPHYR_RESTREAMER_JAEGER_SERVICE_NAME: Set the Jaeger service name for the Ephyr-restreamer traces. Default is the hostname of the machine.
+# 8. EPHYR_RESTREAMER_OTLP_COLLECTOR_IP: Set the IP address of [OTLP] collector server to send logs to.
+# 9. EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT: Set the port of [OTLP] collector server to send logs to.
+# 10. EPHYR_RESTREAMER_SERVICE_NAME: Set the service name to collect traces to [OTLP] collector.. Default is the hostname of the machine.
 # 11. CLEAR_STATE_ON_RESTART: Clear `state.json` each restart of Ephyr-restreamer. Default is '0'.
 # 12. ALLOWED_IPS: Set allowed IP addresses to access server. Default is '*'.
 #
@@ -120,20 +120,21 @@ function setup_runtime_config {
   local ENV_FILE_PATH="$1"
   local STATE_PATH="$2"
 
-  # If want to send traces to Jaeger
-  local EPHYR_RESTREAMER_JAEGER_AGENT_IP=${EPHYR_RESTREAMER_JAEGER_AGENT_IP:-0}
-  local EPHYR_RESTREAMER_JAEGER_AGENT_PORT=${EPHYR_RESTREAMER_JAEGER_AGENT_PORT:-0}
-  local EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=${EPHYR_RESTREAMER_JAEGER_SERVICE_NAME:-0}
+  # If want to send traces to OpenTelemetry collector
+  local EPHYR_RESTREAMER_OTLP_COLLECTOR_IP=${EPHYR_RESTREAMER_OTLP_COLLECTOR_IP:-0}
+  local EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT=${EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT:-0}
+  local EPHYR_RESTREAMER_SERVICE_NAME=${EPHYR_RESTREAMER_SERVICE_NAME:-0}
 
   # Set environment for docker only if variables set.
-  if [[ "$EPHYR_RESTREAMER_JAEGER_SERVICE_NAME" != "0" ]]; then
-    echo "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=${EPHYR_RESTREAMER_JAEGER_SERVICE_NAME}" > "$ENV_FILE_PATH"
+  if [[ "$EPHYR_RESTREAMER_SERVICE_NAME" != "0" ]]; then
+    echo "EPHYR_RESTREAMER_SERVICE_NAME=${EPHYR_RESTREAMER_SERVICE_NAME}" > "$ENV_FILE_PATH"
   else
-    echo "EPHYR_RESTREAMER_JAEGER_SERVICE_NAME=$(hostname)" > "$ENV_FILE_PATH"
+    echo "EPHYR_RESTREAMER_SERVICE_NAME=$(hostname)" > "$ENV_FILE_PATH"
   fi
-  if [[ "$EPHYR_RESTREAMER_JAEGER_AGENT_IP" != "0" && "$EPHYR_RESTREAMER_JAEGER_AGENT_PORT" != "0" ]]; then
-    echo "EPHYR_RESTREAMER_JAEGER_AGENT_IP=${EPHYR_RESTREAMER_JAEGER_AGENT_IP}" >> "$ENV_FILE_PATH"
-    echo "EPHYR_RESTREAMER_JAEGER_AGENT_PORT=${EPHYR_RESTREAMER_JAEGER_AGENT_PORT}" >> "$ENV_FILE_PATH"
+
+  if [[ "$EPHYR_RESTREAMER_OTLP_COLLECTOR_IP" != "0" && "$EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT" != "0" ]]; then
+    echo "EPHYR_RESTREAMER_OTLP_COLLECTOR_IP=${EPHYR_RESTREAMER_OTLP_COLLECTOR_IP}" >> "$ENV_FILE_PATH"
+    echo "EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT=${EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT}" >> "$ENV_FILE_PATH"
   fi
 
   echo "EPHYR_RESTREAMER_STATE_PATH=${STATE_PATH}" >> "$ENV_FILE_PATH"
