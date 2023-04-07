@@ -24,10 +24,10 @@ jobs:
           profile: minimal
           toolchain: stable
           components: clippy
+      - uses: ./.github/actions/install-protobuf
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
-
       - run: cargo lint
 
   rustfmt:
@@ -42,6 +42,7 @@ jobs:
           profile: minimal
           toolchain: nightly
           components: rustfmt
+      - uses: ./.github/actions/install-protobuf
 
       - run: make cargo.fmt check=yes
 
@@ -115,6 +116,7 @@ jobs:
           profile: minimal
           toolchain: stable
         if: ${{ matrix.if }}
+      - uses: ./.github/actions/install-protobuf
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -139,6 +141,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - uses: ./.github/actions/install-protobuf
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
@@ -179,6 +182,7 @@ jobs:
           profile: minimal
           toolchain: stable
         if: ${{ matrix.if }}
+      - uses: ./.github/actions/install-protobuf
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -186,7 +190,7 @@ jobs:
         if: ${{ matrix.if
                 && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
-      - run: cargo doc -p ephyr-${{ matrix.component }} --all-features
+      - run: cargo doc -p ephyr-${{ matrix.component }} --all-features --no-deps
         env:
           LIBOPUS_STATIC: 1
         if: ${{ matrix.if }}

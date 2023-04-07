@@ -11,7 +11,7 @@ FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS build-ephyr
 RUN apt-get update \
  && apt-get install -yq curl \
  && DEBIAN_FRONTEND=noninteractive apt-get install -yq pkg-config \
- && apt-get install -yq build-essential automake gcc libtool make libssl-dev
+ && apt-get install -yq build-essential automake gcc libtool make libssl-dev protobuf-compiler
 
 # Install Rust.
 WORKDIR /tmp/rust/
