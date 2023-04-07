@@ -11,6 +11,7 @@
     "build:dev": "yarn build",
     "build:prod": "cross-env NODE_ENV=production yarn build",
     "cypress": "cypress open --config watchForFileChanges=false --env host=$($npm_package_config_get_ip_command)",
+    "cypress:open": "cypress open --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
     "cypress:host": "cypress open --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
     "cypress:run": "cypress run --browser chrome --headless --env host=$($npm_package_config_get_ip_command)",
     "cypress:run:ci": "cypress run --config baseUrl=http://$npm_package_config_cypress_host --env host=$npm_package_config_cypress_host",
