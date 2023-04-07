@@ -24,10 +24,13 @@ jobs:
           profile: minimal
           toolchain: stable
           components: clippy
-      - uses: ./.github/actions/install-protobuf
+      - uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
+
       - run: cargo lint
 
   rustfmt:
@@ -42,7 +45,9 @@ jobs:
           profile: minimal
           toolchain: nightly
           components: rustfmt
-      - uses: ./.github/actions/install-protobuf
+      - uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - run: make cargo.fmt check=yes
 
@@ -116,7 +121,9 @@ jobs:
           profile: minimal
           toolchain: stable
         if: ${{ matrix.if }}
-      - uses: ./.github/actions/install-protobuf
+      - uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -141,7 +148,9 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: ./.github/actions/install-protobuf
+      - uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
         if: ${{ !contains(github.event.head_commit.message, '[fresh ci]') }}
@@ -182,7 +191,9 @@ jobs:
           profile: minimal
           toolchain: stable
         if: ${{ matrix.if }}
-      - uses: ./.github/actions/install-protobuf
+      - uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
         with:
