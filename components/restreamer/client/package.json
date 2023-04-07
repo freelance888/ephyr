@@ -39,7 +39,7 @@
     "copy-webpack-plugin": "^11.0",
     "cross-env": "^7.0",
     "css-loader": "^6.7",
-    "cypress": "^8.7",
+    "cypress": "^12.9",
     "graphql-tag": "^2.12",
     "html-webpack-plugin": "^5.5.0",
     "lodash.clonedeep": "^4.5",
