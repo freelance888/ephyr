@@ -69,9 +69,14 @@
   }
 
   function fetchFolderId(id) {
-    return isFullGDrivePath(id)
-      ? id.match(/(?<folderId>(?<=folders\/)[\S]+)/)?.groups?.folderId
-      : id;
+    if (isFullGDrivePath(id)) {
+      const result = id.match(/folders\/([^\/]+)/);
+      if (result) {
+        return result[1];
+      }
+    }
+
+    return id;
   }
 
   function handleInputFolderId(event) {
