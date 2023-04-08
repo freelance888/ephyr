@@ -15,6 +15,7 @@
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
   import { isFullGDrivePath, showError } from '../utils/util';
+  import PlaylistStatus from './common/PlaylistStatus.svelte';
 
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -162,6 +163,7 @@
           >Load files</span
         >
       </button>
+      <PlaylistStatus files={queue} />
     </div>
     <div
       class="playlist-items"
