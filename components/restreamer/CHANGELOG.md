@@ -22,6 +22,7 @@ All user visible changes to this project will be documented in this file. This p
   - Indication if password is added to the server into Dashboard ([#162], [#297]);
 - Output:
   - Option to record audio-only files ([#239]);
+  - Return output identity after adding ([#358]);
 - Input:
   - Display input streams info ([#170], [#266]);
   - Display file name in file-backup endpoint ([#175], [#297]);
@@ -66,6 +67,7 @@ All user visible changes to this project will be documented in this file. This p
 [#323]: /../../issues/323
 [#346]: /../../issues/346
 
+[#358]: /../../pull/358
 [#239]: /../../pull/239
 [#244]: /../../pull/244
 [#254]: /../../pull/254
