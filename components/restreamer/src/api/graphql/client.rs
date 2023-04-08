@@ -154,7 +154,7 @@ impl MutationsRoot {
                                  rather than creating a new one.")]
         id: Option<RestreamId>,
         context: &Context,
-    ) -> Result<Option<bool>, graphql::Error> {
+    ) -> Result<Option<RestreamId>, graphql::Error> {
         let backups = match backup_inputs.clone() {
             None => Vec::new(),
             Some(b) => b,
@@ -244,22 +244,22 @@ impl MutationsRoot {
             max_files_in_playlist,
         };
 
-        #[allow(clippy::option_if_let_else)] // due to consuming `spec`
-        Ok(if let Some(id) = id {
+        let result = if let Some(id) = id {
             context.state().edit_restream(id, spec)
         } else {
-            context.state().add_restream(spec).map(Some)
-        }
-        .tap(|_| {
-            let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileCommand::FileAddedOrRemoved);
-        })
-        .map_err(|e| {
-            graphql::Error::new("DUPLICATE_RESTREAM_KEY")
-                .status(StatusCode::CONFLICT)
-                .message(&e)
-        })?
-        .map(|_| true))
+            context.state().add_restream(spec)
+        };
+
+        result
+            .tap(|_| {
+                let mut commands = context.state().file_commands.lock_mut();
+                commands.push(FileCommand::FileAddedOrRemoved);
+            })
+            .map_err(|e| {
+                graphql::Error::new("DUPLICATE_RESTREAM_KEY")
+                    .status(StatusCode::CONFLICT)
+                    .message(&e)
+            })
     }
 
     /// Force download file from Google Drive by it's id
