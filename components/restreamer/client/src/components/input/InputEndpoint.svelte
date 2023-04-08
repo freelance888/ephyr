@@ -26,9 +26,10 @@
   export let input;
   export let input_url;
   export let restream_id;
+  export let files;
+
   export let with_label;
   export let show_controls;
-  export let files;
   export let show_move_up;
   export let show_move_down;
   export let show_up_confirmation;

@@ -1236,6 +1236,7 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
+    /// Subscribes to updates of all `File`'s happening on this server
     async fn files(
         context: &Context,
     ) -> BoxStream<'static, Vec<LocalFileInfo>> {
@@ -1248,6 +1249,52 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
+    /// Subscribes to updates of specific file
+    async fn file(
+        id: FileId,
+        context: &Context,
+    ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        context
+            .state()
+            .files
+            .signal_cloned()
+            .filter_map(move |files| files.into_iter().find(|f| f.id == id))
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of currently playing file in playlist
+    async fn currently_playing_file(
+        id: RestreamId,
+        context: &Context,
+    ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        context
+            .state()
+            .restreams
+            .signal_cloned()
+            .filter_map(move |restreams| {
+                restreams.into_iter().find(|r| r.id == id).and_then(|r| {
+                    if let Some(playing_file) =
+                        r.playlist.currently_playing_file
+                    {
+                        context
+                            .state()
+                            .files
+                            .lock_mut()
+                            .into_iter()
+                            .find(|f| f.file_id == playing_file.file_id)
+                    } else {
+                        None
+                    }
+                })
+            })
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of specific restream
     async fn restream(
         id: RestreamId,
         context: &Context,
@@ -1256,7 +1303,9 @@ impl SubscriptionsRoot {
             .state()
             .restreams
             .signal_cloned()
-            .filter_map(move |vec| vec.into_iter().find(|r| r.id == id))
+            .filter_map(move |restreams| {
+                restreams.into_iter().find(|r| r.id == id)
+            })
             .dedupe_cloned()
             .to_stream()
             .boxed()
