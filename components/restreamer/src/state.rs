@@ -274,15 +274,20 @@ impl State {
     /// # Errors
     ///
     /// If this [`State`] has a [`Restream`] with such `key` already.
-    pub fn add_restream(&self, spec: spec::v1::Restream) -> anyhow::Result<()> {
+    pub fn add_restream(
+        &self,
+        spec: spec::v1::Restream,
+    ) -> anyhow::Result<Option<RestreamId>> {
         let mut restreams = self.restreams.lock_mut();
 
         if restreams.iter().any(|r| r.key == spec.key) {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        restreams.push(Restream::new(spec));
-        Ok(())
+        let new_restream = Restream::new(spec);
+        let id = new_restream.id;
+        restreams.push(new_restream);
+        Ok(Some(id))
     }
 
     /// Edits a [`Restream`] with the given `spec` identified by the given `id`
@@ -298,18 +303,19 @@ impl State {
         &self,
         id: RestreamId,
         spec: spec::v1::Restream,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<RestreamId>> {
         let mut restreams = self.restreams.lock_mut();
 
         if restreams.iter().any(|r| r.key == spec.key && r.id != id) {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        Ok(restreams
+        let _ = restreams
             .iter_mut()
             .find(|r| r.id == id)
-            .map(|r| r.apply(spec, false)))
+            .map(|r| r.apply(spec, false));
+
+        Ok(Some(id))
     }
 
     /// Removes a [`Restream`] with the given `id` from this [`State`].
@@ -498,7 +504,7 @@ impl State {
         &self,
         restream_id: RestreamId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -513,8 +519,11 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", o.dst));
         }
 
-        outputs.push(Output::new(spec));
-        Ok(Some(()))
+        let new_output = Output::new(spec);
+        let id = new_output.id;
+        outputs.push(new_output);
+
+        Ok(Some(id))
     }
 
     /// Edits an [`Output`] with the given `spec` identified by the given `id`
@@ -531,7 +540,7 @@ impl State {
         restream_id: RestreamId,
         id: OutputId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -546,11 +555,12 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        Ok(outputs
+        let _ = outputs
             .iter_mut()
             .find(|o| o.id == id)
-            .map(|o| o.apply(spec, true)))
+            .map(|o| o.apply(spec, true));
+
+        Ok(id.into())
     }
 
     /// Removes an [`Output`] with the given `id` from the specified
