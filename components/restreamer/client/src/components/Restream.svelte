@@ -15,6 +15,7 @@
     TuneDelay,
     TuneSidechain,
     TuneVolume,
+    CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
@@ -40,6 +41,7 @@
   } from '../utils/streamInfo.util';
   import EqualizereIcon from './svg/EqualizereIcon.svelte';
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
+  import FileInfo from './common/FileInfo.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -53,7 +55,6 @@
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
-  export let files;
   export let isFullView = false;
 
   let outputMutations = {
@@ -64,6 +65,17 @@
     TuneDelay,
     TuneSidechain,
   };
+
+  const playingFile = subscribe(CurrentlyPlayingFile, {
+    variables: { id: value.id },
+    errorPolicy: 'all',
+  });
+
+  $: {
+    console.log('PLAYLIST_FILE: ', currentlyPlayingFile);
+  }
+
+  $: currentlyPlayingFile = $playingFile.data?.currentlyPlayingFile;
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -309,7 +321,6 @@
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
-      {files}
       with_label={false}
       show_controls={showControls}
     />
@@ -320,7 +331,6 @@
           restream_id={value.id}
           restream_key={value.key}
           value={input}
-          {files}
           with_label={true}
           show_controls={showControls}
           show_move_up={failoverInputsCount > 1 && index !== 0}
@@ -329,6 +339,12 @@
             index !== failoverInputsCount - 1}
         />
       {/each}
+      {#if currentlyPlayingFile}
+        <span class='playlist-file-icon'>
+          <PlaylistIcon />
+        </span>
+        <FileInfo file={currentlyPlayingFile} />
+      {/if}
     {/if}
 
     <div class="uk-grid uk-grid-small">
@@ -423,6 +439,12 @@
 
     .info-icon
       font-size: 16px
+
+    .playlist-file-icon
+      color: var(--success-color)
+      :global(svg)
+        width: 16px
+        height: 16px
 
     .playlist-icon
       &.is-playing

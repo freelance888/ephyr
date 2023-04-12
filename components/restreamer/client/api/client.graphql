@@ -25,17 +25,7 @@ subscription ServerInfo {
 
 subscription Files {
     files {
-        fileId
-        name
-        state
-        error
-        downloadState {
-            maxProgress
-            currentProgress
-        }
-        streamStat {
-            ...streamStat
-        }
+        ...localFileInfo
     }
 }
 
@@ -50,6 +40,18 @@ subscription SingleRestream($id: RestreamId!) {
     restream(id: $id) {
         ...restreamBasic
         ...restreamPlaylist
+    }
+}
+
+subscription SingleFile($id: FileId!) {
+    file(id: $id) {
+        ...localFileInfo
+    }
+}
+
+subscription CurrentlyPlayingFile($id: RestreamId!) {
+    currentlyPlayingFile(id: $id) {
+        ...localFileInfo
     }
 }
 
@@ -362,4 +364,18 @@ fragment streamStat on StreamStatistics {
     videoWidth
     bitRate
     error
+}
+
+fragment localFileInfo on LocalFileInfo {
+    fileId
+    name
+    state
+    error
+    downloadState {
+    maxProgress
+    currentProgress
+    }
+    streamStat {
+    ...streamStat
+    }
 }

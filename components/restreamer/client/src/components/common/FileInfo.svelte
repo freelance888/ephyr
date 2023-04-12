@@ -9,6 +9,7 @@
   import { FILE_LOCAL, FILE_PENDING } from '../../utils/constants';
 
   export let file;
+  export let showDownloadLink;
   export let classList;
 
   $: fileDownloadProgress = getDownloadProgress(file);
@@ -79,13 +80,15 @@
           isError={!!file.streamStat?.error}
         />
       {/if}
-      <button
-        class="download-btn url-action-btn uk-button uk-button-link  uk-margin-small-left"
-        on:click|preventDefault={confirm(() => downloadFile())}
-      >
+      {#if showDownloadLink}
+        <button
+          class="download-btn url-action-btn uk-button uk-button-link  uk-margin-small-left"
+          on:click|preventDefault={confirm(() => downloadFile())}
+        >
         Download
         <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
-      </button>
+        </button>
+      {/if}
     </div>
     <span slot="title">Download file <code>{fileName}</code></span>
     <span slot="description"

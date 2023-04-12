@@ -81,7 +81,6 @@
       <Restream
         public_host={$info.data.info.publicHost}
         value={restream}
-        {files}
         isFullView="true"
         globalOutputsFilters={[]}
       />

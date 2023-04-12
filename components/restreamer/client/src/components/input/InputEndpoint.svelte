@@ -16,9 +16,9 @@
     ONLINE,
   } from '../../utils/constants';
 
-  import { MoveInputInDirection } from '../../../api/client.graphql';
+  import { MoveInputInDirection, SingleFile } from '../../../api/client.graphql';
   import { showError } from '../../utils/util';
-  import { mutation } from 'svelte-apollo';
+  import { mutation, subscribe } from 'svelte-apollo';
 
   const moveInputInDirectionMutation = mutation(MoveInputInDirection);
 
@@ -26,7 +26,6 @@
   export let input;
   export let input_url;
   export let restream_id;
-  export let files;
 
   export let with_label;
   export let show_controls;
@@ -34,10 +33,15 @@
   export let show_move_down;
   export let show_up_confirmation;
 
+  const backupFile = subscribe(SingleFile, {
+    variables: { id: endpoint.fileId },
+    errorPolicy: 'all',
+  });
+
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  $: currentFile = searchFile(files);
+  $: currentFile = $backupFile?.data?.file;
   $: isFile = endpoint.kind === ENDPOINT_KIND_FILE;
 
   $: isFileError = currentFile?.state === FILE_DOWNLOAD_ERROR;
@@ -53,12 +57,10 @@
     ? currentFile?.state === FILE_LOCAL
     : endpoint.status === ONLINE;
 
-  const searchFile = (allFiles) => {
-    return allFiles
-      ? allFiles.find((val) => val.fileId === endpoint.fileId)
-      : undefined;
-  };
-
+  // $: {
+  //   console.log('CURRENT_FILE: ', $backupFile?.data?.file)
+  // }
+  //
   async function moveUp() {
     try {
       await moveInputInDirectionMutation({

@@ -1258,7 +1258,9 @@ impl SubscriptionsRoot {
             .state()
             .files
             .signal_cloned()
-            .filter_map(move |files| files.into_iter().find(|f| f.id == id))
+            .filter_map(move |files| {
+                files.into_iter().find(|f| f.file_id == id)
+            })
             .dedupe_cloned()
             .to_stream()
             .boxed()
@@ -1269,6 +1271,8 @@ impl SubscriptionsRoot {
         id: RestreamId,
         context: &Context,
     ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        let files = context.state().files.get_cloned();
+
         context
             .state()
             .restreams
@@ -1278,10 +1282,8 @@ impl SubscriptionsRoot {
                     if let Some(playing_file) =
                         r.playlist.currently_playing_file
                     {
-                        context
-                            .state()
-                            .files
-                            .lock_mut()
+                        files
+                            .clone()
                             .into_iter()
                             .find(|f| f.file_id == playing_file.file_id)
                     } else {
