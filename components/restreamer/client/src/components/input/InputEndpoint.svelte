@@ -194,7 +194,7 @@
             <div class="uk-flex uk-flex-middle">
               <a
                 href="/"
-                class="file-name "
+                class="file-name"
                 on:click|preventDefault={confirm(() => downloadFile())}
               >
                 {getFileName(currentFile)}
