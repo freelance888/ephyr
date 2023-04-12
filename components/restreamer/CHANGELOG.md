@@ -23,6 +23,7 @@ All user visible changes to this project will be documented in this file. This p
 - Output:
   - Option to record audio-only files ([#239]);
   - Return output identity after adding ([#358]);
+  - Return restream identity after adding ([#358]);
 - Input:
   - Display input streams info ([#170], [#266]);
   - Display file name in file-backup endpoint ([#175], [#297]);
