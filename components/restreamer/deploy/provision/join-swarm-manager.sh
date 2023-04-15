@@ -25,6 +25,13 @@ set -e
 SWARM_MANAGER_TOKEN=$1
 SWARM_MANAGER_IP_ADDRESS=$2
 
+# Check if SWARM_MANAGER_TOKEN and SWARM_MANAGER_IP_ADDRESS are provided
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "Error: SWARM_MANAGER_TOKEN and SWARM_MANAGER_IP_ADDRESS must be provided."
+  echo "Usage: ./join-swarm-manager.sh <SWARM_MANAGER_TOKEN> <SWARM_MANAGER_IP_ADDRESS>"
+  exit 1
+fi
+
 function update_and_install_docker() {
   apt-get -qy update
   curl -sL https://get.docker.com | bash -s
