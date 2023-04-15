@@ -15,7 +15,6 @@
     TuneDelay,
     TuneSidechain,
     TuneVolume,
-    CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
@@ -39,7 +38,7 @@
     getEndpointsWithDiffStreams,
     getEndpointsWithStreamsErrors,
   } from '../utils/streamInfo.util';
-  import EqualizereIcon from './svg/EqualizereIcon.svelte';
+  import EqualizerIcon from './svg/EqualizerIcon.svelte';
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
   import FileInfo from './common/FileInfo.svelte';
 
@@ -66,16 +65,7 @@
     TuneSidechain,
   };
 
-  const playingFile = subscribe(CurrentlyPlayingFile, {
-    variables: { id: value.id },
-    errorPolicy: 'all',
-  });
-
-  $: {
-    console.log('PLAYLIST_FILE: ', currentlyPlayingFile);
-  }
-
-  $: currentlyPlayingFile = $playingFile.data?.currentlyPlayingFile;
+  $: currentlyPlayingFile = value.playlist?.currentlyPlayingFile;
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -251,7 +241,7 @@
           hidden={!hasVideos || isFullView}
         >
           {#if isPlaylistPlaying}
-            <EqualizereIcon />
+            <EqualizerIcon />
           {:else}
             <PlaylistIcon />
           {/if}
@@ -340,10 +330,14 @@
         />
       {/each}
       {#if currentlyPlayingFile}
-        <span class='playlist-file-icon'>
-          <PlaylistIcon />
-        </span>
-        <FileInfo file={currentlyPlayingFile} />
+        <div class='uk-flex uk-flex-middle currently-playing-file'>
+          <div class='playlist-file-icon'>
+            <EqualizerIcon/>
+          </div>
+          <div class='file-info'>
+            <FileInfo file={currentlyPlayingFile} />
+          </div>
+        </div>
       {/if}
     {/if}
 
@@ -439,6 +433,13 @@
 
     .info-icon
       font-size: 16px
+
+    .currently-playing-file
+      margin-top: 4px
+      margin-left: 40px
+
+      .file-info
+        margin-left: 6px
 
     .playlist-file-icon
       color: var(--success-color)

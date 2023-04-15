@@ -3816,33 +3816,6 @@
             "deprecationReason": null
           },
           {
-            "name": "currentlyPlayingFile",
-            "description": "Subscribes to updates of currently playing file in playlist",
-            "args": [
-              {
-                "name": "id",
-                "description": null,
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              }
-            ],
-            "type": {
-              "kind": "OBJECT",
-              "name": "LocalFileInfo",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
             "name": "restream",
             "description": "Subscribes to updates of specific restream",
             "args": [

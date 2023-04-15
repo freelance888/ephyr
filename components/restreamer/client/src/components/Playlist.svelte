@@ -29,10 +29,6 @@
   export let playlist;
   export let files = [];
 
-  $: {
-    console.log('PLAYLIST: ', playlist);
-  }
-
   $: queue = playlist
     ? playlist.queue
         .map((x) => ({
@@ -302,7 +298,7 @@
   .item-icon
     padding-right: 4px
     padding-left: 4px
-    font-size: 32px
+    font-size: 28px
     &.can-be-started
       cursor: pointer
     .file-icon

@@ -46,7 +46,7 @@
 
   $: isFileError = currentFile?.state === FILE_DOWNLOAD_ERROR;
 
-  $: alertDanger = isFile ? isFileError : endpoint.status === OFFLINE;
+  $: alertDanger = isFile ? isFileError || !input.enabled : endpoint.status === OFFLINE;
 
   $: alertWarning = isFile
     ? currentFile?.state === FILE_PENDING ||
@@ -57,10 +57,6 @@
     ? currentFile?.state === FILE_LOCAL
     : endpoint.status === ONLINE;
 
-  // $: {
-  //   console.log('CURRENT_FILE: ', $backupFile?.data?.file)
-  // }
-  //
   async function moveUp() {
     try {
       await moveInputInDirectionMutation({
@@ -102,7 +98,7 @@
       {#if isFile}
         <span
           ><i
-            class="fas fa-file"
+            class="fas fa-arrow-right"
             title="Serves live {endpoint.kind} stream"
           /></span
         >
@@ -241,6 +237,7 @@
       {/if}
     {/if}
   </div>
+
 </template>
 
 <style lang="stylus">

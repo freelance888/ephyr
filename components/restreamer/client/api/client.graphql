@@ -49,12 +49,6 @@ subscription SingleFile($id: FileId!) {
     }
 }
 
-subscription CurrentlyPlayingFile($id: RestreamId!) {
-    currentlyPlayingFile(id: $id) {
-        ...localFileInfo
-    }
-}
-
 query DvrFiles($id: OutputId!) {
     dvrFiles(id: $id)
 }

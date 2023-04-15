@@ -1266,36 +1266,6 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    /// Subscribes to updates of currently playing file in playlist
-    async fn currently_playing_file(
-        id: RestreamId,
-        context: &Context,
-    ) -> BoxStream<'static, Option<LocalFileInfo>> {
-        let files = context.state().files.get_cloned();
-
-        context
-            .state()
-            .restreams
-            .signal_cloned()
-            .filter_map(move |restreams| {
-                restreams.into_iter().find(|r| r.id == id).and_then(|r| {
-                    if let Some(playing_file) =
-                        r.playlist.currently_playing_file
-                    {
-                        files
-                            .clone()
-                            .into_iter()
-                            .find(|f| f.file_id == playing_file.file_id)
-                    } else {
-                        None
-                    }
-                })
-            })
-            .dedupe_cloned()
-            .to_stream()
-            .boxed()
-    }
-
     /// Subscribes to updates of specific restream
     async fn restream(
         id: RestreamId,

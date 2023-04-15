@@ -120,14 +120,12 @@
   progress::-webkit-progress-value
     background: var(--warning-color);
 
-
   progress::-moz-progress-bar
     background: var(--warning-color);
 
   .download-percents
     font-size: smaller
     margin: 0 4px
-
 
   .file-was-downloaded
     color: var(--success-color)
