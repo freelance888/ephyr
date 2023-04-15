@@ -433,7 +433,10 @@ impl FileManager {
                         .files
                         .lock_mut()
                         .iter_mut()
-                        .find(|file| &file.file_id == file_id)
+                        .find(|file| {
+                            &file.file_id == file_id
+                                || file.state == FileState::DownloadCanceled
+                        })
                         .ok_or_else(|| {
                             "File is no longer in the required \
                                         files, canceling download."
@@ -607,11 +610,16 @@ pub enum FileState {
 
     /// The file is downloading
     Downloading,
+
     /// File is downloaded and saved in the directory provided
     /// as parameter at startup
     Local,
+
     /// Error was encountered during the download
     DownloadError,
+
+    /// Download was canceled
+    DownloadCanceled,
 }
 
 /// Download progress indication

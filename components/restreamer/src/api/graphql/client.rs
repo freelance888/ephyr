@@ -368,6 +368,20 @@ impl MutationsRoot {
         Some(true)
     }
 
+    fn cancel_playlist_download(
+        restream_id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
+        Some(true)
+    }
+
+    fn cancel_file_download(
+        file_id: FileId,
+        context: &Context,
+    ) -> Option<bool> {
+        Some(true)
+    }
+
     fn stop_playing_file_from_playlist(
         restream_id: RestreamId,
         context: &Context,
@@ -1260,6 +1274,36 @@ impl SubscriptionsRoot {
             .signal_cloned()
             .filter_map(move |files| {
                 files.into_iter().find(|f| f.file_id == id)
+            })
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of currently playing file in playlist
+    async fn currently_playing_file(
+        id: RestreamId,
+        context: &Context,
+    ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        let files = context.state().files.get_cloned();
+
+        context
+            .state()
+            .restreams
+            .signal_cloned()
+            .filter_map(move |restreams| {
+                restreams.into_iter().find(|r| r.id == id).and_then(|r| {
+                    if let Some(playing_file) =
+                        r.playlist.currently_playing_file
+                    {
+                        files
+                            .clone()
+                            .into_iter()
+                            .find(|f| f.file_id == playing_file.file_id)
+                    } else {
+                        None
+                    }
+                })
             })
             .dedupe_cloned()
             .to_stream()

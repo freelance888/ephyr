@@ -15,6 +15,7 @@
     TuneDelay,
     TuneSidechain,
     TuneVolume,
+    CurrentlyPlayingFile
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
@@ -65,7 +66,10 @@
     TuneSidechain,
   };
 
-  $: currentlyPlayingFile = value.playlist?.currentlyPlayingFile;
+  const playingFile = subscribe(CurrentlyPlayingFile, {
+    variables: { id: value.id },
+    errorPolicy: 'all',
+  });
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -99,6 +103,12 @@
   $: failoverInputsCount = value.input.src?.inputs?.length ?? 0;
 
   let openRestreamModal = false;
+
+  $: currentlyPlayingFile = isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+
+  $: {
+    console.log('CURRENTLY_PLAYING_FILE: ', currentlyPlayingFile)
+  }
 
   async function removeRestream() {
     try {
