@@ -666,6 +666,60 @@
             "deprecationReason": null
           },
           {
+            "name": "cancelPlaylistDownload",
+            "description": null,
+            "args": [
+              {
+                "name": "restreamId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "RestreamId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "cancelFileDownload",
+            "description": null,
+            "args": [
+              {
+                "name": "fileId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "FileId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "stopPlayingFileFromPlaylist",
             "description": null,
             "args": [
@@ -4202,6 +4256,12 @@
           {
             "name": "DOWNLOAD_ERROR",
             "description": "Error was encountered during the download",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "DOWNLOAD_CANCELED",
+            "description": "Download was canceled",
             "isDeprecated": false,
             "deprecationReason": null
           }

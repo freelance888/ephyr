@@ -14,7 +14,7 @@ use tap::prelude::*;
 use crate::{
     cli::Opts,
     display_panic,
-    file_manager::api_response::ErrorResponse,
+    file_manager::api_response::{get_gdrive_result, ErrorResponse},
     state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
@@ -196,7 +196,10 @@ impl FileManager {
     /// if not add it to the queue
     pub fn need_file(&self, file_id: &FileId, file_name: Option<String>) {
         let mut all_files = self.state.files.lock_mut();
-        if !all_files.iter().any(|file| &file.file_id == file_id) {
+        if !all_files
+            .iter()
+            .any(|file| &file.file_id == file_id && file.state != FileState::DownloadError)
+        {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
                 name: file_name,
@@ -214,20 +217,20 @@ impl FileManager {
         file_id: &FileId,
         api_key: &'a str,
         state: &'a State,
-    ) -> Result<(), &'static str> {
-        let filename = reqwest::get(
+    ) -> Result<(), String> {
+        let response = reqwest::get(
             format!(
                 "https://www.googleapis.com/drive/v3/files/{file_id}?
                 fields=name&key={api_key}&{GDRIVE_PUBLIC_PARAMS}"
             )
             .as_str(),
         )
-        .await
-        .map_err(|_err| "No valid response from the API")?
-        .json::<api_response::FileNameResponse>()
-        .await
-        .map_err(|_err| "Could not parse the JSON received from the API")?
-        .name;
+        .await;
+
+        let filename =
+            get_gdrive_result::<api_response::FileNameResponse>(response)
+                .await?
+                .name;
 
         state
             .files
@@ -241,7 +244,7 @@ impl FileManager {
                              with the provided id: {}",
                         file_id
                     );
-                    Err("Could not find the provided file ID")
+                    Err("Could not find the provided file ID".to_string())
                 },
                 |file_info| {
                     file_info.name = Some(filename);
@@ -268,16 +271,18 @@ impl FileManager {
                 let client = reqwest::ClientBuilder::new()
                     .connection_verbose(false)
                     .build()
-                    .map_err(|_err| {
-                        "Could not create a reqwest Client".to_string()
+                    .map_err(|err| {
+                        format!("Could not create a reqwest Client: {err}")
                     })?;
 
                 // Get file name from the API
                 if file_name.is_none() {
                     Self::update_file_info(&file_id, &api_key, &state)
                         .await
-                        .map_err(|_err| {
-                            "Could not get file info for the file".to_string()
+                        .map_err(|err| {
+                            format!(
+                                "Could not get file info for the file: {err}"
+                            )
                         })?;
                 } else {
                     state
@@ -287,9 +292,7 @@ impl FileManager {
                         .find(|file| file.file_id == file_id)
                         .map(|file_info| file_info.name = file_name)
                         .ok_or_else(|| {
-                            "Could not find file with the \
-                             provided file ID"
-                                .to_string()
+                            format!("Could not find file with the provided file ID: {file_id}")
                         })?;
                 }
 
@@ -318,7 +321,7 @@ impl FileManager {
                                         r.error.code, r.error.message
                                     )
                                 })
-                                .map_err(|e| format!("Unknown error {e}"))?);
+                                .map_err(|e| format!("Status: {status}. Unknown error {e}"))?);
                         }
 
                         let error_response = response.text().await;
@@ -435,7 +438,7 @@ impl FileManager {
                         .iter_mut()
                         .find(|file| {
                             &file.file_id == file_id
-                                || file.state == FileState::DownloadCanceled
+                                && file.state != FileState::DownloadError
                         })
                         .ok_or_else(|| {
                             "File is no longer in the required \
@@ -617,9 +620,6 @@ pub enum FileState {
 
     /// Error was encountered during the download
     DownloadError,
-
-    /// Download was canceled
-    DownloadCanceled,
 }
 
 /// Download progress indication

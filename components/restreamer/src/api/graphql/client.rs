@@ -28,7 +28,8 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{
-        get_video_list_from_gdrive_folder, FileCommand, FileId, LocalFileInfo,
+        get_video_list_from_gdrive_folder, FileCommand, FileId, FileState,
+        LocalFileInfo,
     },
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
@@ -372,7 +373,32 @@ impl MutationsRoot {
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
-        Some(true)
+        let restream = context
+            .state()
+            .restreams
+            .get_cloned()
+            .into_iter()
+            .find(|r| r.id == restream_id);
+
+        let mut found = false;
+        if let Some(r) = restream {
+            context.state().files.lock_mut().iter_mut().for_each(|f| {
+                r.playlist
+                    .queue
+                    .iter()
+                    .find(|pf| pf.file_id == f.file_id)
+                    .is_some()
+                    .then(|| {
+                        if f.state == FileState::Downloading {
+                            f.state = FileState::DownloadError;
+                            f.error = Some("Download was canceled".to_string());
+                            found = true
+                        }
+                    });
+            });
+        }
+
+        Some(found)
     }
 
     fn cancel_file_download(
@@ -500,6 +526,14 @@ impl MutationsRoot {
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(mut playlist_files) = result {
+            if playlist_files.is_empty() {
+                let err = "No files in playlist. Probably there is no public access to the playlist";
+                tracing::error!(err);
+                return Err(graphql::Error::new("GDRIVE_API_ERROR")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&err));
+            }
+
             playlist_files.sort_by_key(|x| x.name.clone());
             context
                 .state()

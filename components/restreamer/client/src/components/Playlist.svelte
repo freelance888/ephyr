@@ -7,6 +7,7 @@
     PlayFileFromPlaylist,
     SetPlaylist,
     StopPlayingFileFromPlaylist,
+    CancelPlaylistDownload
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
@@ -17,6 +18,7 @@
   import { isFullGDrivePath, showError } from '../utils/util';
   import PlaylistStatus from './common/PlaylistStatus.svelte';
 
+  const cancelPlaylistDownload = mutation(CancelPlaylistDownload);
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
@@ -61,6 +63,15 @@
       }
     } else {
       showError(`Google Folder Id: ${folderId} is incorrect`);
+    }
+  }
+
+  async function stopPlaylistDownload() {
+    try {
+      const variables = { id: restreamId };
+      await cancelPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
     }
   }
 
@@ -143,6 +154,7 @@
 
 <template>
   <div class="playlist">
+    <button on:click={() => stopPlaylistDownload()}>Cancel download</button>
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
       <input
@@ -219,7 +231,7 @@
                 {/if}
               </span>
               {#if item.file}
-                <FileInfo file={item.file} classList="uk-margin-small-left" />
+                <FileInfo file={item.file} showDownloadLink={true} classList="uk-margin-small-left" />
               {/if}
             </div>
           </Confirm>

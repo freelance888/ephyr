@@ -117,6 +117,10 @@ mutation GetPlaylistFromGdrive($id: RestreamId!, $folder_id: String!) {
     getPlaylistFromGdrive(restreamId: $id, folderId: $folder_id)
 }
 
+mutation CancelPlaylistDownload($id: RestreamId!) {
+    cancelPlaylistDownload(restreamId: $id)
+}
+
 mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
     enableInput(id: $input_id, restreamId: $restream_id)
 }
