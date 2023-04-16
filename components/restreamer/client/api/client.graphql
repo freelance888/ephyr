@@ -121,6 +121,10 @@ mutation CancelPlaylistDownload($id: RestreamId!) {
     cancelPlaylistDownload(restreamId: $id)
 }
 
+mutation RestartPlaylistDownload($id: RestreamId!) {
+    restartPlaylistDownload(restreamId: $id)
+}
+
 mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
     enableInput(id: $input_id, restreamId: $restream_id)
 }

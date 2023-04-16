@@ -389,9 +389,41 @@ impl MutationsRoot {
                     .find(|pf| pf.file_id == f.file_id)
                     .is_some()
                     .then(|| {
-                        if f.state == FileState::Downloading {
+                        if f.state != FileState::Local {
                             f.state = FileState::DownloadError;
                             f.error = Some("Download was canceled".to_string());
+                            found = true
+                        }
+                    });
+            });
+        }
+
+        Some(found)
+    }
+
+    fn restart_playlist_download(
+        restream_id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
+        let restream = context
+            .state()
+            .restreams
+            .get_cloned()
+            .into_iter()
+            .find(|r| r.id == restream_id);
+
+        let mut found = false;
+        if let Some(r) = restream {
+            context.state().files.lock_mut().iter_mut().for_each(|f| {
+                r.playlist
+                    .queue
+                    .iter()
+                    .find(|pf| pf.file_id == f.file_id)
+                    .is_some()
+                    .then(|| {
+                        if f.state != FileState::Local {
+                            f.state = FileState::Waiting;
+                            f.error = None;
                             found = true
                         }
                     });
@@ -404,8 +436,23 @@ impl MutationsRoot {
     fn cancel_file_download(
         file_id: FileId,
         context: &Context,
-    ) -> Option<bool> {
-        Some(true)
+    ) -> Option<bool>
+    {
+        context.state()
+            .files
+            .lock_mut()
+            .iter_mut()
+            .find_map(|f| (f.file_id == file_id)
+                .then(|| {
+                    if f.state != FileState::Local {
+                        f.state = FileState::DownloadError;
+                        f.error = Some("Download was canceled".to_string());
+                        true
+                    } else {
+                        false
+                    }
+                })
+            )
     }
 
     fn stop_playing_file_from_playlist(

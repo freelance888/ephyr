@@ -6,7 +6,7 @@
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
-  import { FILE_LOCAL, FILE_PENDING } from '../../utils/constants';
+  import { FILE_DOWNLOADING, FILE_LOCAL, FILE_PENDING } from '../../utils/constants';
 
   export let file;
   export let showDownloadLink;
@@ -17,6 +17,8 @@
   $: downloadErrorMessage = file?.error && sanitizeTooltip(file?.error);
 
   $: fileName = file.name ? file.name : file.fileId;
+
+  $: isDownloading = file.status === FILE_DOWNLOADING;
 
   const downloadFileMutation = mutation(DownloadFile);
   async function downloadFile() {
@@ -81,13 +83,24 @@
         />
       {/if}
       {#if showDownloadLink}
-        <button
-          class="download-btn url-action-btn uk-button uk-button-link  uk-margin-small-left"
-          on:click|preventDefault={confirm(() => downloadFile())}
-        >
-        Download
-        <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
+        {#if isDownloading}
+          <button
+            class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
+            on:click|preventDefault={confirm(() => downloadFile())}
+          >
+            Cancel download
+            <i class="uk-icon" uk-icon="icon: ban; ratio: 0.8" />&nbsp;
+          </button>
+        {:else}
+          <button
+            class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
+            on:click|preventDefault={confirm(() => downloadFile())}
+          >
+          Download
+          <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
         </button>
+
+        {/if}
       {/if}
     </div>
     <span slot="title">Download file <code>{fileName}</code></span>

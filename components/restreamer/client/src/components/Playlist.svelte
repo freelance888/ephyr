@@ -7,7 +7,8 @@
     PlayFileFromPlaylist,
     SetPlaylist,
     StopPlayingFileFromPlaylist,
-    CancelPlaylistDownload
+    CancelPlaylistDownload,
+    RestartPlaylistDownload
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
@@ -18,6 +19,7 @@
   import { isFullGDrivePath, showError } from '../utils/util';
   import PlaylistStatus from './common/PlaylistStatus.svelte';
 
+  const restartPlaylistDownload = mutation(RestartPlaylistDownload);
   const cancelPlaylistDownload = mutation(CancelPlaylistDownload);
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
@@ -70,6 +72,15 @@
     try {
       const variables = { id: restreamId };
       await cancelPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function startPlaylistDownload() {
+    try {
+      const variables = { id: restreamId };
+      await restartPlaylistDownload({ variables });
     } catch (e) {
       showError(e.message);
     }
@@ -155,6 +166,7 @@
 <template>
   <div class="playlist">
     <button on:click={() => stopPlaylistDownload()}>Cancel download</button>
+    <button on:click={() => startPlaylistDownload()}>Restart download</button>
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
       <input
