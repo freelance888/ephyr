@@ -1,6 +1,6 @@
 {
   "name": "ephyr-restreamer",
-  "version": "0.7.0+dev",
+  "version": "0.7.0",
   "private": true,
   "config": {
     "get_ip_command": "curl http://api.ipify.org",
