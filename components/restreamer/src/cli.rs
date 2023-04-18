@@ -2,7 +2,6 @@
 
 use std::{fmt, net::IpAddr, path::PathBuf, str::FromStr as _};
 
-use anyhow::anyhow;
 use ephyr_log::tracing;
 use structopt::StructOpt;
 
@@ -129,11 +128,19 @@ pub struct Opts {
     #[structopt(
         short,
         long,
-        parse(try_from_str = Self::parse_log_level),
-        help = "Logs verbosity level: \
-                OFF | ERRO | WARN | INFO | DEBG | TRCE"
+        parse(try_from_str = tracing::Level::from_str),
+        help = "Logs verbosity level: INFO | DEBUG | TRACE"
     )]
     pub verbose: Option<tracing::Level>,
+
+    /// Logs format for displaying.
+    #[structopt(
+        short,
+        long,
+        env = "EPHYR_RESTREAMER_LOG_FORMAT",
+        help = "Logs format: JSON | COMPACT"
+    )]
+    pub log_format: Option<ephyr_log::LogFormat>,
 
     /// Path for local video files.
     #[structopt(
@@ -191,29 +198,6 @@ impl Opts {
     #[must_use]
     pub fn from_args() -> Self {
         <Self as StructOpt>::from_args()
-    }
-
-    /// Parses [`tracing::Level`] from the given string.
-    ///
-    /// This function is required, because [`tracing::Level`]'s [`FromStr`]
-    /// implementation returns `()`, which is not [`Display`] as [`StructOpt`]
-    /// requires.
-    ///
-    /// # Errors
-    ///
-    /// If [`tracing::Level`] failed to parse from the string.
-    ///
-    /// [`Display`]: std::fmt::Display
-    /// [`FromStr`]: std::str::FromStr
-    pub fn parse_log_level(lvl: &str) -> Result<tracing::Level, anyhow::Error> {
-        #[allow(clippy::map_err_ignore)]
-        tracing::Level::from_str(lvl).map_err(|_| {
-            anyhow!(
-                "'{}' is invalid verbosity level, allowed levels are: \
-                 OFF | CRIT | ERRO | WARN | INFO | DEBG | TRCE",
-                lvl,
-            )
-        })
     }
 }
 

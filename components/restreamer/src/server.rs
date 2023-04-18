@@ -31,6 +31,7 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
     TelemetryConfig::new(cfg.verbose)
         .otlp_endpoint(cfg.otlp_collector_ip, cfg.otlp_collector_port)
         .service_name(cfg.service_name.clone())
+        .log_format(cfg.log_format.clone())
         .init();
 
     if cfg.public_host.is_none() {
