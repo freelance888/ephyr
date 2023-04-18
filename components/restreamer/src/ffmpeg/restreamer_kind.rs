@@ -14,10 +14,12 @@ use nix::{
     sys::{signal, signal::Signal},
     unistd::Pid,
 };
+use regex::Regex;
 use std::{
     convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
     path::Path, time::Duration,
 };
+use structopt::lazy_static::lazy_static;
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -37,20 +39,22 @@ use crate::{
 ///
 /// [FFmpeg]: https://ffmpeg.org
 fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
-    let parsed: Vec<_> = line
-        .rsplit(']')
-        .map(|t| t.trim_start_matches([' ', '[']))
-        .collect();
-    // parsed contains data: (msg, level_log)
-    if parsed.len() >= 2 {
-        ParsedMsg {
-            message: parsed[0],
-            level: parsed[1],
-        }
+    lazy_static! {
+        static ref RE: Regex = Regex::new(concat!(
+            r"^(?:.*\s)?\[(?P<level>",
+            r"(?:info|debug|error|fatal|panic|quiet|warning|verbose))\]",
+            r"(?P<msg>.*)$",
+        ))
+        .unwrap();
+    }
+    if let Some(captures) = RE.captures(line) {
+        let message = captures.name("msg").unwrap().as_str();
+        let level = captures.name("level").unwrap().as_str();
+        ParsedMsg { message, level }
     } else {
         ParsedMsg {
             message: line,
-            level: "error",
+            level: "warn",
         }
     }
 }
