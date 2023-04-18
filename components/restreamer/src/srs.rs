@@ -60,7 +60,7 @@ fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
     lazy_static! {
         static ref RE: Regex = Regex::new(concat!(
             r".*\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]",
-            r"\[(?P<level>(?:VERBOSE|INFO|TRACE|WARN|ERROR))\]",
+            r"\[(?P<level>(?i)(?:verbose|info|trace|warn|error))\]",
             r"(?:\[\d+\])?(?:\[\w+\])?(?:\[\d+\])?",
             r"(\s(?P<msg>.*))?$"
         ))

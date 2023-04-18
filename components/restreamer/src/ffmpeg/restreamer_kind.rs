@@ -41,7 +41,7 @@ use crate::{
 fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
     lazy_static! {
         static ref RE: Regex = Regex::new(concat!(
-            r"^(?:.*\s)?\[(?P<level>",
+            r"^(?:.*\s)?\[(?P<level>(?i)",
             r"(?:info|debug|error|fatal|panic|quiet|warning|verbose))\]",
             r"(?P<msg>.*)$",
         ))
