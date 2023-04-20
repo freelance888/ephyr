@@ -352,9 +352,7 @@ impl RestreamerKind {
 
     fn setup_logger(cmd: &mut Command) {
         let loglevel_prefix = "repeat+level";
-        let _ = match tracing::level_filters::LevelFilter::current()
-            .into_level()
-        {
+        _ = match tracing::level_filters::LevelFilter::current().into_level() {
             Some(tracing::Level::DEBUG | tracing::Level::TRACE) => cmd.args([
                 "-hide_banner",
                 "-loglevel",
@@ -447,7 +445,7 @@ impl RestreamerKind {
         let process = cmd.spawn()?;
 
         // To avoid instant resolve on await for `kill_rx`
-        let _ = *kill_rx.borrow_and_update();
+        _ = *kill_rx.borrow_and_update();
 
         let pid: pid_t = process
             .id()
@@ -458,7 +456,7 @@ impl RestreamerKind {
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(
             async move {
-                let _ = kill_rx.changed().await;
+                _ = kill_rx.changed().await;
                 tracing::debug!("Signal for FFmpeg received");
                 // It is necessary to send the signal two times and wait after
                 // sending the first one to correctly close all ffmpeg processes

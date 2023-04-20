@@ -49,20 +49,20 @@ impl FileRestreamer {
         cmd: &mut Command,
         repeat: bool,
     ) -> io::Result<()> {
-        let _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
+        _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         match self.from_url.scheme() {
             "file" => {
-                let _ = cmd.arg("-re");
+                _ = cmd.arg("-re");
                 if repeat {
-                    let _ = cmd.args(["-stream_loop", "-1"]);
+                    _ = cmd.args(["-stream_loop", "-1"]);
                 }
             }
 
             _ => unimplemented!(),
         };
-        let _ = cmd.args(["-i", self.from_url.as_str()]);
+        _ = cmd.args(["-i", self.from_url.as_str()]);
 
-        let _ = match self.to_url.scheme() {
+        _ = match self.to_url.scheme() {
             "file"
                 if Path::new(self.to_url.path()).extension()
                     == Some("flv".as_ref()) =>

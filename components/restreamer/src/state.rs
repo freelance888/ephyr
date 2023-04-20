@@ -101,7 +101,7 @@ impl State {
         let file = file.as_ref();
 
         let mut contents = vec![];
-        let _ = fs::OpenOptions::new()
+        _ = fs::OpenOptions::new()
             .write(true)
             .create(true)
             .read(true)
@@ -310,7 +310,7 @@ impl State {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        let _ = restreams
+        _ = restreams
             .iter_mut()
             .find(|r| r.id == id)
             .map(|r| r.apply(spec, false));
@@ -555,7 +555,7 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        let _ = outputs
+        _ = outputs
             .iter_mut()
             .find(|o| o.id == id)
             .map(|o| o.apply(spec, true));
@@ -808,7 +808,7 @@ impl State {
                     {
                         // For file - populate statistics from [`LocalFileInfo`]
                         if let Some(file_id) = e.file_id.clone() {
-                            let _ = files.iter().find_map(|f| {
+                            _ = files.iter().find_map(|f| {
                                 (f.file_id == file_id).then(|| {
                                     e.stream_stat = f.stream_stat.clone();
                                 })
@@ -938,7 +938,7 @@ impl State {
         if let Some(x) = stat.get_mut(&status) {
             *x += 1;
         } else {
-            let _ = stat.insert(status, 1);
+            _ = stat.insert(status, 1);
         }
     }
 

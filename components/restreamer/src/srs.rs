@@ -124,7 +124,7 @@ impl Server {
         dvr::Storage { root_path: dvr_dir }.set_global()?;
 
         let mut cmd = Command::new(bin_path);
-        let _ = cmd
+        _ = cmd
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -137,7 +137,7 @@ impl Server {
             async move {
                 loop {
                     let cmd = &mut cmd;
-                    let _ = AssertUnwindSafe(async move {
+                    _ = AssertUnwindSafe(async move {
                         let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;

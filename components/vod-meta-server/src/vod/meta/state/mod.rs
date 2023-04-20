@@ -1751,7 +1751,7 @@ mod spec {
 
                 // Prefill initial position.
                 let at = Utc.ymd(2020, 9, 12).and_hms(22, 0, 0);
-                let _ = pl.schedule_nginx_vod_module_set(Some(at), 1);
+                _ = pl.schedule_nginx_vod_module_set(Some(at), 1);
 
                 assert_eq!(
                     pl.initial,

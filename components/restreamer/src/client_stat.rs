@@ -147,7 +147,7 @@ impl ClientJob {
             loop {
                 let client_id = &id;
                 let state1 = &state.clone();
-                let _ =
+                _ =
                     AssertUnwindSafe(
                         async move {
                             Self::fetch_client_stat(client_id, state1).await

@@ -191,12 +191,12 @@ impl MixingRestreamer {
             volume = orig_volume.display_as_fraction(),
             port = self.orig_zmq_port,
         ));
-        let _ = cmd.args(["-i", self.from_url.as_str()]);
+        _ = cmd.args(["-i", self.from_url.as_str()]);
 
         for (n, mixin) in self.mixins.iter().enumerate() {
             let mut extra_filters = String::new();
 
-            let _ = match mixin.url.scheme() {
+            _ = match mixin.url.scheme() {
                 "ts" => {
                     extra_filters.push_str("aresample=async=1,");
                     cmd.args(["-thread_queue_size", "512"])
@@ -220,7 +220,7 @@ impl MixingRestreamer {
             };
 
             if !mixin.delay.is_zero() {
-                let _ = write!(
+                _ = write!(
                     extra_filters,
                     "adelay@{mixin_id}=delays={delay}:all=1,",
                     mixin_id = mixin.id,
@@ -296,12 +296,12 @@ impl MixingRestreamer {
             "FFmpeg FILTER COMPLEX: {:?}",
             &filter_complex.join(";")
         );
-        let _ = cmd
+        _ = cmd
             .args(["-filter_complex", &filter_complex.join(";")])
             .args(["-map", "[out]"])
             .args(["-max_muxing_queue_size", "50000000"]);
 
-        let _ = match self.to_url.scheme() {
+        _ = match self.to_url.scheme() {
             "file" => match Path::new(self.to_url.path())
                 .extension()
                 .and_then(OsStr::to_str)
@@ -377,7 +377,7 @@ impl MixingRestreamer {
                 "Start copying from FIFO",
             );
             // To avoid instant resolve on await for `kill_rx`
-            let _ = *kill_rx.borrow_and_update();
+            _ = *kill_rx.borrow_and_update();
 
             // Initialize copying future to fed it into select
             let mut src = input.lock().await;
@@ -389,7 +389,7 @@ impl MixingRestreamer {
             loop {
                 tokio::select! {
                     r = &mut copying => {
-                        let _ = r.map_err(|e|
+                        _ = r.map_err(|e|
                             tracing::error!("Failed to write into FIFO: {}", e)
                         );
                         break;
@@ -401,7 +401,7 @@ impl MixingRestreamer {
                 }
             }
             // Clean up FIFO file
-            let _ = std::fs::remove_file(fifo_path)
+            _ = std::fs::remove_file(fifo_path)
                 .map_err(|e| tracing::error!("Failed to remove FIFO: {}", e));
 
             Ok(())
@@ -410,7 +410,7 @@ impl MixingRestreamer {
         for m in &self.mixins {
             // FIFO should be created before open
             if !m.get_fifo_path().exists() {
-                let _ = create_fifo(m.get_fifo_path(), 0o777).map_err(|e| {
+                _ = create_fifo(m.get_fifo_path(), 0o777).map_err(|e| {
                     tracing::error!("Failed to create FIFO: {}", e);
                 });
             }

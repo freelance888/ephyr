@@ -165,7 +165,7 @@ impl FileManager {
                 .any(|f| OsString::from(&f.file_id.0) == disk_file.file_name())
             {
                 let file_path = self.file_root_dir.join(disk_file.file_name());
-                let _ = std::fs::remove_file(file_path).map_err(|err| {
+                _ = std::fs::remove_file(file_path).map_err(|err| {
                     tracing::error!("Can not delete file. {}", err);
                 });
             }
@@ -239,7 +239,7 @@ impl FileManager {
         let state = self.state.clone();
         let file_id = id.clone();
         drop(tokio::spawn(async move {
-            let _ = async {
+            _ = async {
                 let api_key = state
                     .settings
                     .lock_mut()
@@ -262,7 +262,7 @@ impl FileManager {
                             "Could not get file info for the file".to_string()
                         })?;
                 } else {
-                    let _ = state
+                    _ = state
                         .files
                         .lock_mut()
                         .iter_mut()

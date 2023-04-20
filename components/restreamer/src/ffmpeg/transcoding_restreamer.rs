@@ -68,28 +68,28 @@ impl TranscodingRestreamer {
         match self.from_url.scheme() {
             "http" | "https" | "rtmp" | "rtmps" => (),
             "file" => {
-                let _ = cmd.arg("-re").args(["-stream_loop", "-1"]);
+                _ = cmd.arg("-re").args(["-stream_loop", "-1"]);
             }
             _ => unimplemented!(),
         }
 
-        let _ = cmd.args(["-i", self.from_url.as_str()]);
+        _ = cmd.args(["-i", self.from_url.as_str()]);
 
         if let Some(val) = self.vcodec.as_ref() {
-            let _ = cmd.args(["-c:v", val]);
+            _ = cmd.args(["-c:v", val]);
         }
         if let Some(val) = self.vpreset.as_ref() {
-            let _ = cmd.args(["-preset", val]);
+            _ = cmd.args(["-preset", val]);
         }
         if let Some(val) = self.vprofile.as_ref() {
-            let _ = cmd.args(["-profile:v", val]);
+            _ = cmd.args(["-profile:v", val]);
         }
 
         if let Some(val) = self.acodec.as_ref() {
-            let _ = cmd.args(["-c:a", val]);
+            _ = cmd.args(["-c:a", val]);
         }
 
-        let _ = match self.to_url.scheme() {
+        _ = match self.to_url.scheme() {
             "rtmp" | "rtmps" => cmd.args(["-f", "flv"]),
             _ => unimplemented!(),
         }

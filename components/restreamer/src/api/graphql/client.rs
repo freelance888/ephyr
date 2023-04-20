@@ -274,7 +274,7 @@ impl MutationsRoot {
         restreams.iter_mut().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs.clone().iter_mut().for_each(|input| {
-                    let _ = input
+                    _ = input
                         .clone()
                         .endpoints
                         .iter_mut()

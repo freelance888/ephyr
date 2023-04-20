@@ -252,7 +252,7 @@ impl<'de> Deserialize<'de> for Input {
 
             let mut unique_urls = HashSet::new();
             let mut unique_keys = HashSet::with_capacity(1);
-            let _ = unique_keys.insert(&raw.key);
+            _ = unique_keys.insert(&raw.key);
             ensure_srcs_unique(src, &mut unique_urls, &mut unique_keys)
                 .map_err(D::Error::custom)?;
         }

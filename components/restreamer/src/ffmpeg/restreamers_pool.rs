@@ -96,7 +96,7 @@ impl RestreamersPool {
                 }
             };
             for o in &r.outputs {
-                let _ = self.apply_output(&input_url, o, &mut new_pool);
+                _ = self.apply_output(&input_url, o, &mut new_pool);
             }
         }
 

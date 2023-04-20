@@ -263,7 +263,7 @@ async fn refill_state_with_cache_files(
         Ok(())
     }
 
-    let _ = time::interval(period)
+    _ = time::interval(period)
         .then(move |_| {
             log::debug!(
                 "Refilling vod::meta::State with vod::file::cache triggered",
@@ -297,7 +297,7 @@ async fn refill_state_with_cache_files(
 /// Runs job, which periodically (with the given `period`) refreshes
 /// [`state::Playlist::initial`] positions in the given `state`.
 async fn refresh_initial_positions(state: state::Manager, period: Duration) {
-    let _ = time::interval(period)
+    _ = time::interval(period)
         .then(move |_| {
             log::debug!(
                 "Refreshing vod::meta::state::Playlist::initial positions",
