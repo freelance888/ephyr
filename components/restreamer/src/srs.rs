@@ -20,7 +20,9 @@ use ephyr_log::{
     ChildCapture, ParsedMsg,
 };
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
+use regex::Regex;
 use smart_default::SmartDefault;
+use structopt::lazy_static::lazy_static;
 use tokio::{fs, process::Command};
 
 use crate::{api, display_panic, dvr};
@@ -55,20 +57,24 @@ pub struct Server {
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log#log-format
 fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
-    let parsed: Vec<_> = line
-        .rsplit(']')
-        .map(|t| t.trim_start_matches([' ', '[']))
-        .collect();
-    // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
-    if parsed.len() == 5 {
-        ParsedMsg {
-            message: parsed[0],
-            level: parsed[3],
-        }
+    lazy_static! {
+        static ref RE: Regex = Regex::new(concat!(
+            r".*\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]",
+            r"\[(?P<level>(?i)(?:verbose|info|trace|warn|error))\]",
+            r"(?:\[\d+\])?(?:\[\w+\])?(?:\[\d+\])?",
+            r"(?:\[[^]]+\])?",
+            r"(\s(?P<msg>.*))?$"
+        ))
+        .unwrap();
+    }
+    if let Some(captures) = RE.captures(line) {
+        let message = captures.name("msg").unwrap().as_str().trim_start();
+        let level = captures.name("level").unwrap().as_str().trim();
+        ParsedMsg { message, level }
     } else {
         ParsedMsg {
             message: line,
-            level: "error",
+            level: "warn",
         }
     }
 }

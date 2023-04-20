@@ -26,7 +26,7 @@ use opentelemetry::{
     KeyValue,
 };
 use opentelemetry_otlp::WithExportConfig;
-use std::net::IpAddr;
+use std::{net::IpAddr, str::FromStr};
 use tracing::level_filters::LevelFilter;
 pub use tracing::{self, Level, Span};
 pub use tracing_actix_web;
@@ -34,6 +34,26 @@ pub use tracing_futures::Instrument;
 pub use tracing_log::log;
 use tracing_log::LogTracer;
 use tracing_subscriber::{fmt, layer::SubscriberExt, Layer, Registry};
+
+/// Log display format type for use in layer
+#[derive(Clone, Debug)]
+pub enum LogFormat {
+    /// Use `fmt::layer().compact()` layer
+    COMPACT,
+    /// Use `fmt::layer().json()` layer
+    JSON,
+}
+
+impl FromStr for LogFormat {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "compact" => Ok(LogFormat::COMPACT),
+            "json" => Ok(LogFormat::JSON),
+            _ => Err(format!("Invalid log format: {s}")),
+        }
+    }
+}
 
 /// Allow to configure the tracing.
 #[derive(Clone, Debug)]
@@ -48,6 +68,8 @@ pub struct TelemetryConfig {
     pub service_name: Option<String>,
     /// Logging level
     pub level: LevelFilter,
+    /// Logging output format
+    pub log_format: LogFormat,
 }
 
 impl TelemetryConfig {
@@ -61,6 +83,7 @@ impl TelemetryConfig {
             level: LevelFilter::from(level.unwrap_or(Level::INFO)),
             otlp_endpoint: None,
             service_name: None,
+            log_format: LogFormat::COMPACT,
         }
     }
 
@@ -88,6 +111,13 @@ impl TelemetryConfig {
         self
     }
 
+    /// Set log output format.
+    #[must_use]
+    pub fn log_format(mut self, log_type: Option<LogFormat>) -> Self {
+        self.log_format = log_type.unwrap_or(LogFormat::COMPACT);
+        self
+    }
+
     /// Initialize the logging and telemetry.
     /// If [`TelemetryConfig.otlp_endpoint`] is set,
     /// the telemetry will be sent to [Opentelemetry] collector.
@@ -103,7 +133,10 @@ impl TelemetryConfig {
         };
         let service_name = self.service_name.unwrap_or("unknown".into());
 
-        let mut layers = vec![fmt::layer().compact().boxed()];
+        let mut layers = match self.log_format {
+            LogFormat::COMPACT => vec![fmt::layer().compact().boxed()],
+            LogFormat::JSON => vec![fmt::layer().json().boxed()],
+        };
 
         if let Some(endpoint) = self.otlp_endpoint {
             let otlp_exporter = opentelemetry_otlp::new_exporter()
