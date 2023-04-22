@@ -97,6 +97,10 @@ mutation DownloadFile($fileId: FileId!) {
     downloadFile(fileId: $fileId)
 }
 
+mutation CancelFileDownload($fileId: FileId!) {
+    cancelFileDownload(fileId: $fileId)
+}
+
 mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
 }

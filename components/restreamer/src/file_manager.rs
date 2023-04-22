@@ -44,10 +44,7 @@ pub enum FileCommand {
     /// specific [`FileId`].
     /// File will be waiting until the queue has capacity
     /// to download file
-    NeedDownloadFile(FileId),
-
-    /// Start download process for specific [`FileId`]
-    StartDownloadFile(FileId),
+    NeedDownloadFiles(Vec<FileId>),
 }
 
 /// Identity of file on `Google Drive`.
@@ -97,23 +94,14 @@ impl FileManager {
         commands.iter().for_each(|c| match c {
             FileCommand::ListOfFilesChanged => self.check_files(),
 
-            FileCommand::NeedDownloadFile(file_id) => {
+            FileCommand::NeedDownloadFiles(file_ids) => {
                 let mut files = self.state.files.lock_mut();
-                files.retain(|file| &file.file_id != file_id);
+                files.retain(|file| !file_ids.contains(&file.file_id));
                 drop(files);
                 self.sync_with_state();
-                self.need_file(file_id, None);
-            }
-
-            FileCommand::StartDownloadFile(file_id) => {
-                let _ = self.state.files.lock_mut().iter_mut().find_map(|f| {
-                    (f.file_id == *file_id).then(|| {
-                        f.stream_stat = None;
-                        f.state = FileState::Pending;
-                        f.error = None;
-                        self.download_file(&f.file_id, f.clone().name);
-                    })
-                });
+                for file_id in file_ids {
+                    self.need_file(file_id, None);
+                }
             }
         });
     }
@@ -198,7 +186,7 @@ impl FileManager {
         let mut all_files = self.state.files.lock_mut();
         if !all_files
             .iter()
-            .any(|file| &file.file_id == file_id && file.state != FileState::DownloadError)
+            .any(|file| &file.file_id == file_id)
         {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
@@ -405,115 +393,112 @@ impl FileManager {
         // Try opening the target file where the downloaded
         // bytes will be written
         let file_path = format!("{root_dir}/{}", &file_id);
-        if let Ok(file) = std::fs::OpenOptions::new()
+        let file = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
             .open(file_path.clone())
-        {
-            let mut writer = BufWriter::new(file);
-            let mut last_update = Utc::now();
+            .map_err(|err| format!("Can't create file: {}", err))?;
 
-            let mut current: NetworkByteSize = NetworkByteSize(0);
-            // Download loop for updating the progress
-            while let Some(bytes) = response.chunk().await.unwrap_or(None) {
-                // If there is a problem with writing the downloaded
-                // bytes to a file stop the download and print error
-                if writer.write_all(&bytes).is_err() {
-                    return Err("Could not write received bytes to \
-                                     a file, aborting download."
-                        .to_string());
-                }
+        let mut writer = BufWriter::new(file);
+        let mut last_update = Utc::now();
 
-                current.0 += bytes.len() as u64;
-                // Update download progress in the FileInfo,
-                // but only each 400ms
-                if Utc::now()
-                    .signed_duration_since(last_update)
-                    .num_milliseconds()
-                    > 400
-                {
-                    state
-                        .files
-                        .lock_mut()
-                        .iter_mut()
-                        .find(|file| {
-                            &file.file_id == file_id
-                                && file.state != FileState::DownloadError
-                        })
-                        .ok_or_else(|| {
-                            "File is no longer in the required \
-                                        files, canceling download."
-                                .to_string()
-                        })?
-                        .download_state
-                        .as_mut()
-                        .ok_or_else(|| {
-                            "The file does not have a \
-                                        download state."
-                                .to_string()
-                        })?
-                        .current_progress = current;
-                    last_update = Utc::now();
-                }
+        let mut current: NetworkByteSize = NetworkByteSize(0);
+        // Download loop for updating the progress
+        while let Some(bytes) = response.chunk().await.unwrap_or(None) {
+            // If there is a problem with writing the downloaded
+            // bytes to a file stop the download and print error
+            if writer.write_all(&bytes).is_err() {
+                return Err("Could not write received bytes to a file, aborting download."
+                    .to_string());
             }
-            writer.flush().map_err(|_err| {
-                "Could not write all downloaded bytes to the file.".to_string()
-            })?;
 
-            state
-                .files
-                .lock_mut()
-                .iter_mut()
-                .find(|file| &file.file_id == file_id)
-                .ok_or_else(|| {
-                    "File is no longer in the required \
-                                files, canceling download."
-                        .to_string()
-                })?
-                .pipe_borrow_mut(|file| {
-                    // The download state should be definitely
-                    // present at this point
-                    file.download_state.as_mut().unwrap().current_progress =
-                        current;
-                    file.state = FileState::Local;
-                    update_stream_info(
-                        file_id.clone(),
-                        file_path.clone(),
-                        state.clone(),
-                    );
-                });
-
-            // set the endpoints with this file ID to Online, this
-            // also sends the update to Restrams to restart the
-            // ffmpeg processes without this the ffmpeg won't get
-            // notified that the file has become available
-            state.restreams.lock_mut().iter_mut().for_each(|restream| {
-                if let Some(InputSrc::Failover(input_src)) =
-                    restream.input.src.as_mut()
-                {
-                    input_src.inputs.iter_mut().for_each(|failover| {
-                        failover
-                            .endpoints
-                            .iter_mut()
-                            .filter(|endpoint| {
-                                endpoint.kind == InputEndpointKind::File
-                                    && endpoint.file_id.is_some()
-                                    && endpoint
-                                        .file_id
-                                        .as_ref()
-                                        .unwrap()
-                                        .eq(file_id)
-                            })
-                            .for_each(|endpoint| {
-                                endpoint.status = Status::Online;
-                            });
-                    });
-                }
-            });
-            Ok(())
-        } else {
-            Err("Could not create a file with writing privileges.".to_string())
+            current.0 += bytes.len() as u64;
+            // Update download progress in the FileInfo,
+            // but only each 400ms
+            if Utc::now()
+                .signed_duration_since(last_update)
+                .num_milliseconds()
+                > 400
+            {
+                state
+                    .files
+                    .lock_mut()
+                    .iter_mut()
+                    .find(|file| {
+                        &file.file_id == file_id
+                            && file.state != FileState::DownloadError
+                    })
+                    .ok_or_else(|| {
+                        "File is no longer in the required
+                                    files, canceling download."
+                            .to_string()
+                    })?
+                    .download_state
+                    .as_mut()
+                    .ok_or_else(|| {
+                        "The file does not have a \
+                                    download state."
+                            .to_string()
+                    })?
+                    .current_progress = current;
+                last_update = Utc::now();
+            }
         }
+        writer.flush().map_err(|_err| {
+            "Could not write all downloaded bytes to the file.".to_string()
+        })?;
+
+        state
+            .files
+            .lock_mut()
+            .iter_mut()
+            .find(|file| &file.file_id == file_id)
+            .ok_or_else(|| {
+                "File is no longer in the required \
+                            files, canceling download."
+                    .to_string()
+            })?
+            .pipe_borrow_mut(|file| {
+                // The download state should be definitely
+                // present at this point
+                file.download_state.as_mut().unwrap().current_progress =
+                    current;
+                file.state = FileState::Local;
+                update_stream_info(
+                    file_id.clone(),
+                    file_path.clone(),
+                    state.clone(),
+                );
+            });
+
+        // set the endpoints with this file ID to Online, this
+        // also sends the update to Restrams to restart the
+        // ffmpeg processes without this the ffmpeg won't get
+        // notified that the file has become available
+        state.restreams.lock_mut().iter_mut().for_each(|restream| {
+            if let Some(InputSrc::Failover(input_src)) =
+                restream.input.src.as_mut()
+            {
+                input_src.inputs.iter_mut().for_each(|failover| {
+                    failover
+                        .endpoints
+                        .iter_mut()
+                        .filter(|endpoint| {
+                            endpoint.kind == InputEndpointKind::File
+                                && endpoint.file_id.is_some()
+                                && endpoint
+                                    .file_id
+                                    .as_ref()
+                                    .unwrap()
+                                    .eq(file_id)
+                        })
+                        .for_each(|endpoint| {
+                            endpoint.status = Status::Online;
+                        });
+                });
+            }
+        });
+        Ok(())
     }
 }
 

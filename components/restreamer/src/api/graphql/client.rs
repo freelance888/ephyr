@@ -289,7 +289,7 @@ impl MutationsRoot {
         });
 
         let mut commands = context.state().file_commands.lock_mut();
-        commands.push(FileCommand::NeedDownloadFile(file_id));
+        commands.push(FileCommand::NeedDownloadFiles(vec![file_id]));
 
         Some(true)
     }
@@ -421,7 +421,7 @@ impl MutationsRoot {
                     .find(|pf| pf.file_id == f.file_id)
                     .is_some()
                     .then(|| {
-                        if f.state != FileState::Local {
+                        if f.state == FileState::DownloadError {
                             f.state = FileState::Waiting;
                             f.error = None;
                             found = true

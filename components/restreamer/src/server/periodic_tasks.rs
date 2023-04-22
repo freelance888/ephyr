@@ -8,6 +8,7 @@ use crate::{
     display_panic,
     file_manager::{FileCommand, FileState},
     state::{InputEndpointKind, InputSrc, ServerInfo, Status},
+    types::UNumber,
     State,
 };
 use ephyr_log::{tracing, tracing::instrument};
@@ -194,16 +195,25 @@ fn start_pending_downloads(state: &State) {
         })
         .count();
 
-    let allowed_to_add = 3 - files_in_queue_count;
+    let allowed_to_add = state
+        .settings
+        .get_cloned()
+        .max_files_in_playlist
+        .unwrap_or(UNumber(3))
+        .0 as usize
+        - files_in_queue_count;
+
     if allowed_to_add > 0 {
-        let mut commands = state.file_commands.lock_mut();
-        files
+        let file_ids = files
             .iter()
             .filter(|f| f.state == FileState::Waiting)
-            .take(allowed_to_add)
-            .for_each(|f| {
-                commands
-                    .push(FileCommand::StartDownloadFile(f.file_id.clone()));
-            });
+            .take(allowed_to_add.into())
+            .map(|f| f.file_id.clone())
+            .collect();
+
+        state
+            .file_commands
+            .lock_mut()
+            .push(FileCommand::NeedDownloadFiles(file_ids));
     }
 }

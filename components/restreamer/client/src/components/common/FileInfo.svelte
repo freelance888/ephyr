@@ -1,6 +1,6 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
-  import { DownloadFile } from '../../../api/client.graphql';
+  import { DownloadFile, CancelFileDownload } from '../../../api/client.graphql';
   import { sanitizeTooltip, showError } from '../../utils/util';
 
   import Confirm from './Confirm.svelte';
@@ -18,12 +18,21 @@
 
   $: fileName = file.name ? file.name : file.fileId;
 
-  $: isDownloading = file.status === FILE_DOWNLOADING;
+  $: isDownloading = file.state === FILE_DOWNLOADING;
 
   const downloadFileMutation = mutation(DownloadFile);
   async function downloadFile() {
     try {
       await downloadFileMutation({ variables: { fileId: file.fileId } });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  const cancelFileDownload = mutation(CancelFileDownload);
+  async function stopDownloadFile() {
+    try {
+      await cancelFileDownload({ variables: { fileId: file.fileId } });
     } catch (e) {
       showError(e.message);
     }
@@ -86,9 +95,9 @@
         {#if isDownloading}
           <button
             class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
-            on:click|preventDefault={confirm(() => downloadFile())}
+            on:click|preventDefault={confirm(() => stopDownloadFile())}
           >
-            Cancel download
+            Cancel
             <i class="uk-icon" uk-icon="icon: ban; ratio: 0.8" />&nbsp;
           </button>
         {:else}
