@@ -2,15 +2,6 @@
 //!
 //! [SRS]: https://github.com/ossrs/srs
 
-use std::{
-    borrow::Borrow,
-    ops::Deref,
-    panic::AssertUnwindSafe,
-    path::{Path, PathBuf},
-    process::Stdio,
-    sync::Arc,
-};
-
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
@@ -22,8 +13,17 @@ use ephyr_log::{
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use regex::Regex;
 use smart_default::SmartDefault;
+use std::{
+    borrow::Borrow,
+    ops::Deref,
+    panic::AssertUnwindSafe,
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+    time::Duration,
+};
 use structopt::lazy_static::lazy_static;
-use tokio::{fs, process::Command};
+use tokio::{fs, process::Command, sync::Mutex, time};
 
 use crate::{api, display_panic, dvr};
 
@@ -133,14 +133,27 @@ impl Server {
             .arg("-c")
             .arg(&conf_path);
 
-        let (spawner, abort_handle) = future::abortable(
+        if let Err(err) = kill_process_by_name("srs").await {
+            tracing::error!("Failed to kill existing SRS processes: {}", err);
+        }
+
+        let pid = Arc::new(Mutex::new(None::<u32>));
+        let (spawner, abort_handle) = future::abortable({
+            let pid_handle = Arc::clone(&pid);
+
             async move {
                 loop {
+                    let pid_handle = pid_handle.clone();
                     let cmd = &mut cmd;
                     _ = AssertUnwindSafe(async move {
                         let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;
+
+                        let pid_value = process.id();
+                        let mut pid_lock = pid_handle.lock().await;
+                        *pid_lock = pid_value; // Update the stored PID
+
                         let out = process
                             .capture_logs_and_wait_for_output(
                                 tracing::info_span!(
@@ -172,12 +185,12 @@ impl Server {
                     });
                 }
             }
-            .in_current_span(),
-        );
+            .in_current_span()
+        });
 
         let srv = Self {
             conf_path,
-            _process: Arc::new(ServerProcess(abort_handle)),
+            _process: Arc::new(ServerProcess { pid, abort_handle }),
         };
 
         // Pre-create SRS conf file.
@@ -215,12 +228,34 @@ impl Server {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 #[derive(Clone, Debug)]
-struct ServerProcess(future::AbortHandle);
+struct ServerProcess {
+    pid: Arc<Mutex<Option<u32>>>,
+    abort_handle: future::AbortHandle,
+}
 
 impl Drop for ServerProcess {
     #[inline]
+    #[allow(clippy::cast_possible_wrap)]
     fn drop(&mut self) {
-        self.0.abort();
+        let abort_for_future = self.abort_handle.clone();
+        let pid_for_future = self.pid.clone();
+
+        drop(tokio::spawn(async move {
+            if let Some(pid) = pid_for_future.as_ref().lock().await.take() {
+                if let Err(err) = nix::sys::signal::kill(
+                    nix::unistd::Pid::from_raw(pid as i32),
+                    nix::sys::signal::Signal::SIGTERM,
+                ) {
+                    tracing::error!(
+                        "Failed to send SIGTERM to process {}: {}",
+                        pid,
+                        err
+                    );
+                }
+            }
+            time::sleep(Duration::from_secs(5)).await;
+            abort_for_future.abort();
+        }));
     }
 }
 
@@ -366,3 +401,38 @@ impl From<tracing::Level> for LogLevel {
 #[as_ref(forward)]
 #[display(fmt = "{}", "_0.display()")]
 pub struct DisplayablePath(PathBuf);
+
+/// Send SIGTERM signal to provided process name.
+async fn kill_process_by_name(process_name: &str) -> Result<(), anyhow::Error> {
+    // Find the PIDs of the running processes with process_name using `pgrep`
+    let output = Command::new("pgrep")
+        .arg(process_name)
+        .output()
+        .await
+        .map_err(|e| anyhow!("Failed to execute pgrep: {e}"))?;
+
+    if !output.status.success() {
+        // No running process with process_name
+        return Ok(());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let pids: Vec<i32> = stdout
+        .lines()
+        .filter_map(|line| line.parse::<i32>().ok())
+        .collect();
+
+    // Send SIGTERM to each process
+    for pid in pids {
+        if let Err(err) = nix::sys::signal::kill(
+            nix::unistd::Pid::from_raw(pid),
+            nix::sys::signal::Signal::SIGTERM,
+        ) {
+            return Err(anyhow!(
+                "Failed to send SIGTERM to process {pid}: {err}"
+            ));
+        }
+    }
+
+    Ok(())
+}
