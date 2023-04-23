@@ -60,8 +60,8 @@
     "ts-node": "^10.9",
     "typedoc": "^0.24",
     "typescript": "^5.0",
-    "webpack": "^5.77",
+    "webpack": "^5.79",
     "webpack-cli": "^5.0",
-    "webpack-dev-server": "^4.10"
+    "webpack-dev-server": "^4.13"
   }
 }
