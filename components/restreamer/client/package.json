@@ -62,6 +62,6 @@
     "typescript": "^5.0",
     "webpack": "^5.79",
     "webpack-cli": "^5.0",
-    "webpack-dev-server": "^4.10"
+    "webpack-dev-server": "^4.13"
   }
 }
