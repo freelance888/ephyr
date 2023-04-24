@@ -165,8 +165,38 @@
 
 <template>
   <div class="playlist">
-    <button on:click={() => stopPlaylistDownload()}>Cancel download</button>
-    <button on:click={() => startPlaylistDownload()}>Restart download</button>
+    <div class="uk-flex uk-flex-middle uk-margin-bottom playlist-toolbar">
+      <PlaylistStatus files={queue} />
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-default uk-margin-auto-left"
+          data-testid="start-all-outputs"
+          title="Start all not completed downloads of files in playlist"
+          on:click={() => confirm(startPlaylistDownload)}
+        ><span>Reload all</span>
+        </button>
+        <span slot="title">Restart downloads</span>
+        <span slot="description"
+        >This will restart all not complete downloads of files in playlist.
+          </span>
+        <span slot="confirm">Restart downloads</span>
+      </Confirm>
+
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-default"
+          data-testid="stop-all-outputs"
+          title="Stop all downloads of all files in playlist"
+          on:click={() => confirm(stopPlaylistDownload)}
+          value=""><span>Cancel all</span></button
+        >
+        <span slot="title">Cancel all active downloads</span>
+        <span slot="description"
+        >This will stop active downloads of files in playlist.
+          </span>
+        <span slot="confirm">Cancel downloads</span>
+      </Confirm>
+    </div>
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
       <input
@@ -185,10 +215,10 @@
         on:click={() => loadPlaylist(googleDriveFolderId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
-          >Load files</span
-        >
+      >Load files</span
+      >
       </button>
-      <PlaylistStatus files={queue} />
+
     </div>
     <div
       class="playlist-items"
@@ -287,6 +317,9 @@
 
   .playlist
     padding: 16px
+
+  .playlist-toolbar
+    gap: 4px
 
   .playlist-items
     margin-top: 8px

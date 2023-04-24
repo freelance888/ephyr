@@ -22,7 +22,7 @@
 
 <template>
   <div
-    class="uk-flex"
+    class="uk-flex status-container"
     class:bg-ready={done}
     class:bg-error={filesState?.DOWNLOAD_ERROR}
   >
@@ -30,12 +30,12 @@
       <div class="status-item status-ready">Playlist is ready</div>
     {:else}
       <div class="status-item">pending: {filesState?.WAITING}</div>
-      <hr class="uk-divider-vertical" />
+      <hr class="divider-vertical" />
       <div class="status-item">downloading: {filesState?.DOWNLOADING}</div>
-      <hr class="uk-divider-vertical" />
+      <hr class="divider-vertical" />
       <div class="status-item">local: {filesState?.LOCAL}</div>
       {#if filesState?.DOWNLOAD_ERROR > 0}
-        <hr class="uk-divider-vertical" />
+        <hr class="divider-vertical" />
         <div class="status-item">error: {filesState?.DOWNLOAD_ERROR}</div>
       {/if}
     {/if}
@@ -43,9 +43,8 @@
 </template>
 
 <style lang="stylus">
-
-    .uk-flex
-        margin-left: 10px
+    .status-container
+        text-transform: uppercase;
         align-items: center
         background: #eee
         max-height: 2em
@@ -64,7 +63,9 @@
     .bg-error 
         background: #edd
 
-    .uk-divider-vertical
+    .divider-vertical
         height: 25px
+        width: 1px
+        background: white
 
 </style>

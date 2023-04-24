@@ -112,11 +112,11 @@
         {/if}
       {/if}
     </div>
-    <span slot="title">Download file <code>{fileName}</code></span>
+    <span slot="title">{isDownloading ? "Cancel download" : "Download file"} <code>{fileName}</code></span>
     <span slot="description"
-      >Current file fill be removed and download process will be started</span
+      >{ isDownloading ? "Download process will be stopped" : "Current file fill be removed and download process will be started" }</span
     >
-    <span slot="confirm">Start download</span>
+    <span slot="confirm">{isDownloading ? "Stop download" : "Start download"}</span>
   </Confirm>
 </template>
 
