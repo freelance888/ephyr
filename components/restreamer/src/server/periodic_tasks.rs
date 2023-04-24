@@ -198,7 +198,7 @@ fn start_pending_downloads(state: &State) {
     let allowed_to_add = state
         .settings
         .get_cloned()
-        .max_files_in_playlist
+        .max_downloading_files
         .unwrap_or(UNumber(3))
         .0 as usize
         - files_in_queue_count;

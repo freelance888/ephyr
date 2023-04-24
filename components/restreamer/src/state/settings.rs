@@ -34,7 +34,7 @@ pub struct Settings {
     /// Max number of files allowed in [`Restream`]'s playlist
     ///
     /// [`Restream`]: crate::state::Restream
-    pub max_files_in_playlist: Option<UNumber>,
+    pub max_downloading_files: Option<UNumber>,
 }
 
 impl Settings {
@@ -47,7 +47,7 @@ impl Settings {
             enable_confirmation: self.enable_confirmation,
             title: self.title.clone(),
             google_api_key: self.google_api_key.clone(),
-            max_files_in_playlist: self.max_files_in_playlist,
+            max_downloading_files: self.max_downloading_files,
         }
     }
 
@@ -58,7 +58,7 @@ impl Settings {
         self.delete_confirmation = new.delete_confirmation;
         self.enable_confirmation = new.enable_confirmation;
         self.google_api_key = new.google_api_key;
-        self.max_files_in_playlist = new.max_files_in_playlist;
+        self.max_downloading_files = new.max_downloading_files;
     }
 }
 
@@ -71,7 +71,7 @@ impl Default for Settings {
             delete_confirmation: Some(true),
             enable_confirmation: Some(true),
             google_api_key: None,
-            max_files_in_playlist: None,
+            max_downloading_files: None,
         }
     }
 }

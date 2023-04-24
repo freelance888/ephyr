@@ -17,7 +17,6 @@ export class RestreamModel {
   pullUrl: string = '';
   withHls: boolean = false;
   fileId: string = '';
-  maxFilesInPlaylist: string = '';
 
   backups: BackupModel[] = [];
 
@@ -62,7 +61,6 @@ export class RestreamModel {
     this.isPull = !!pullUrl;
     this.pullUrl = sanitizeUrl(pullUrl ?? '');
     this.withHls = withHls;
-    this.maxFilesInPlaylist = value.maxFilesInPlaylist ?? '';
   }
 
   removeBackup(index: number): void {

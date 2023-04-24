@@ -142,9 +142,6 @@ impl MutationsRoot {
         description = "Google drive file ID for failover file endpoint."
         )]
         file_id: Option<FileId>,
-        #[graphql(description = "Override for global maximum for files in \
-                                 playlist")]
-        max_files_in_playlist: Option<UNumber>,
         #[graphql(
         description = "Indicator whether the `Restream` should have an \
             additional endpoint for serving a live stream via HLS.",
@@ -241,8 +238,7 @@ impl MutationsRoot {
                 src: input_src,
                 enabled: true,
             },
-            outputs: vec![],
-            max_files_in_playlist,
+            outputs: vec![]
         };
 
         #[allow(clippy::option_if_let_else)] // due to consuming `spec`
@@ -1156,7 +1152,7 @@ impl MutationsRoot {
         #[graphql(description = "Google API key for google drive access")]
         google_api_key: Option<String>,
         #[graphql(description = "Maximum number of files in playlist")]
-        max_files_in_playlist: Option<UNumber>,
+        max_downloading_files: Option<UNumber>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -1172,7 +1168,7 @@ impl MutationsRoot {
         settings.delete_confirmation = delete_confirmation;
         settings.enable_confirmation = enable_confirmation;
         settings.google_api_key = google_api_key;
-        settings.max_files_in_playlist = max_files_in_playlist;
+        settings.max_downloading_files = max_downloading_files;
         Ok(true)
     }
 }
@@ -1196,7 +1192,7 @@ impl QueriesRoot {
             delete_confirmation: settings.delete_confirmation,
             enable_confirmation: settings.enable_confirmation,
             google_api_key: settings.google_api_key,
-            max_files_in_playlist: settings.max_files_in_playlist,
+            max_downloading_files: settings.max_downloading_files,
         }
     }
 
@@ -1306,7 +1302,7 @@ impl SubscriptionsRoot {
                 delete_confirmation: h.delete_confirmation,
                 enable_confirmation: h.enable_confirmation,
                 google_api_key: h.google_api_key,
-                max_files_in_playlist: h.max_files_in_playlist,
+                max_downloading_files: h.max_downloading_files,
             })
             .to_stream()
             .boxed()
@@ -1451,5 +1447,5 @@ pub struct Info {
     /// Max number of files allowed in [Restream]'s playlist
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
-    pub max_files_in_playlist: Option<UNumber>,
+    pub max_downloading_files: Option<UNumber>,
 }

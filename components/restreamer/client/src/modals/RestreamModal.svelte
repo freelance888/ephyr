@@ -54,10 +54,6 @@
         });
       }
 
-      if (current.maxFilesInPlaylist ?? '' !== previous.maxFilesInPlaylist) {
-        changed ||= true;
-      }
-
       if (current.fileId !== previous.fileId) {
         changed ||= true;
       }
@@ -102,10 +98,6 @@
         restream.fileId = fileId;
         variables.file_id = fileId;
       }
-    }
-
-    if (restream.maxFilesInPlaylist) {
-      variables.max_files_in_playlist = restream.maxFilesInPlaylist;
     }
 
     try {
@@ -273,9 +265,6 @@
               />
             {/each}
           </ul>
-        </div>
-
-        <div class="uk-section uk-section-xsmall">
           <div
             class="uk-position-relative"
             class:question-pointer={!hasApiKey}
@@ -299,22 +288,6 @@
               class="clear-file-id uk-position-absolute"
               uk-close
               on:click={() => ($restreamStore.fileId = '')}
-            />
-          </div>
-          <div
-            class="uk-alert uk-position-relative"
-            class:question-pointer={!hasApiKey}
-            uk-tooltip={fileIdToolTip}
-          >
-            Max number of files in a playlist.
-            <input
-              class="uk-input uk-width-1-4 files-limit uk-position-absolute"
-              type="number"
-              min="2"
-              step="1"
-              bind:value={$restreamStore.maxFilesInPlaylist}
-              placeholder="Files limit"
-              disabled={!hasApiKey}
             />
           </div>
         </div>
@@ -368,11 +341,6 @@
   .backups-section
     padding-top: 10px;
     padding-bottom: 0;
-
-  .files-limit
-    top: 50%;
-    transform: translateY(-50%);
-    right 10px;
 
   .clear-file-id
     top: 50%

@@ -466,16 +466,6 @@
                 "defaultValue": null
               },
               {
-                "name": "maxFilesInPlaylist",
-                "description": "Override for global maximum for files in playlist",
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "UNumber",
-                  "ofType": null
-                },
-                "defaultValue": null
-              },
-              {
                 "name": "withHls",
                 "description": "Indicator whether the `Restream` should have an additional endpoint for serving a live stream via HLS.",
                 "type": {
@@ -1753,7 +1743,7 @@
                 "defaultValue": null
               },
               {
-                "name": "maxFilesInPlaylist",
+                "name": "maxDownloadingFiles",
                 "description": "Maximum number of files in playlist",
                 "type": {
                   "kind": "SCALAR",
@@ -3314,7 +3304,7 @@
             "deprecationReason": null
           },
           {
-            "name": "maxFilesInPlaylist",
+            "name": "maxDownloadingFiles",
             "description": "Max number of files allowed in [Restream]'s playlist\nThis value can be overwritten by the similar setting\non a particular [Restream]",
             "args": [],
             "type": {
@@ -4185,18 +4175,6 @@
                 "name": "Playlist",
                 "ofType": null
               }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "maxFilesInPlaylist",
-            "description": "Max number of files allowed in a playlist",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "UNumber",
-              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null

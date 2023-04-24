@@ -7,7 +7,7 @@ subscription Info {
         passwordHash
         passwordOutputHash
         googleApiKey
-        maxFilesInPlaylist
+        maxDownloadingFiles
     }
 }
 
@@ -79,7 +79,6 @@ mutation SetRestream(
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
     $file_id: FileId
-    $max_files_in_playlist: UNumber
 ) {
     setRestream(
         key: $key
@@ -89,7 +88,6 @@ mutation SetRestream(
         fileId: $file_id
         withHls: $with_hls
         id: $id
-        maxFilesInPlaylist: $max_files_in_playlist
     )
 }
 
@@ -265,14 +263,14 @@ mutation SetSettings(
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
     $googleApiKey: String
-    $maxFilesInPlaylist: UNumber
+    $maxDownloadingFiles: UNumber
 ) {
     setSettings(
         title: $title
         deleteConfirmation: $deleteConfirmation
         enableConfirmation: $enableConfirmation
         googleApiKey: $googleApiKey
-        maxFilesInPlaylist: $maxFilesInPlaylist
+        maxDownloadingFiles: $maxDownloadingFiles
     )
 }
 
@@ -322,7 +320,6 @@ fragment restreamBasic on Restream {
         enabled
     }
     ...restreamOutputs
-    maxFilesInPlaylist
 }
 
 fragment restreamPlaylist on Restream {
