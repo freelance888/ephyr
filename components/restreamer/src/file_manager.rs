@@ -45,6 +45,9 @@ pub enum FileCommand {
     /// File will be waiting until the queue has capacity
     /// to download file
     NeedDownloadFiles(Vec<FileId>),
+
+    /// Start download process for specific [`FileId`]
+    StartDownloadFile(Vec<FileId>),
 }
 
 /// Identity of file on `Google Drive`.
@@ -102,6 +105,14 @@ impl FileManager {
                 for file_id in file_ids {
                     self.need_file(file_id, None);
                 }
+            }
+
+            FileCommand::StartDownloadFile(file_ids) => {
+                self.state.files.lock_mut().iter()
+                    .filter(|f| file_ids.iter().any(|id| f.file_id == *id))
+                    .for_each(|f| {
+                        self.download_file(&f.file_id, f.clone().name);
+                    })
             }
         });
     }

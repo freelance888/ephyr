@@ -149,7 +149,7 @@
     </div>
 
     {#if isFile && currentFile}
-      <FileInfo file={currentFile} />
+      <FileInfo file={currentFile} showDownloadLink={true}/>
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}

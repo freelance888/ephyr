@@ -187,7 +187,7 @@ fn sync_stream_info(state: &State) {
 
 /// Controls the number of simultaneous downloads in queue
 fn start_pending_downloads(state: &State) {
-    let files = state.files.lock_mut();
+    let mut files = state.files.lock_mut();
     let files_in_queue_count = files
         .iter()
         .filter(|f| {
@@ -205,15 +205,20 @@ fn start_pending_downloads(state: &State) {
 
     if allowed_to_add > 0 {
         let file_ids = files
-            .iter()
+            .iter_mut()
             .filter(|f| f.state == FileState::Waiting)
             .take(allowed_to_add.into())
-            .map(|f| f.file_id.clone())
+            .map(|f| {
+                f.stream_stat = None;
+                f.state = FileState::Pending;
+                f.error = None;
+                f.file_id.clone()
+            })
             .collect();
 
         state
             .file_commands
             .lock_mut()
-            .push(FileCommand::NeedDownloadFiles(file_ids));
+            .push(FileCommand::StartDownloadFile(file_ids));
     }
 }
