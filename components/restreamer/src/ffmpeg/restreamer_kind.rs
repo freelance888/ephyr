@@ -10,10 +10,6 @@ use ephyr_log::{
     ChildCapture, ParsedMsg,
 };
 use libc::pid_t;
-use nix::{
-    sys::{signal, signal::Signal},
-    unistd::Pid,
-};
 use regex::Regex;
 use std::{
     convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
@@ -32,6 +28,7 @@ use crate::{
         transcoding_restreamer::TranscodingRestreamer,
     },
     file_manager::{FileId, FileState, LocalFileInfo},
+    proc::kill_process,
     state::{self, RestreamKey, State, Status},
 };
 
@@ -460,11 +457,9 @@ impl RestreamerKind {
                 tracing::debug!("Signal for FFmpeg received");
                 // It is necessary to send the signal two times and wait after
                 // sending the first one to correctly close all ffmpeg processes
-                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                    .expect("Failed to kill process");
+                kill_process(pid).expect("Failed to kill process");
                 tokio::time::sleep(Duration::from_millis(1)).await;
-                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                    .expect("Failed to kill process");
+                kill_process(pid).expect("Failed to kill process");
             }
             .in_current_span(),
         );
