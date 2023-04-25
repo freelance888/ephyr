@@ -2,6 +2,10 @@
 //!
 //! [SRS]: https://github.com/ossrs/srs
 
+use crate::{
+    api, display_panic, dvr,
+    proc::{kill_process, kill_process_by_name},
+};
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
@@ -24,8 +28,6 @@ use std::{
 };
 use structopt::lazy_static::lazy_static;
 use tokio::{fs, process::Command, sync::Mutex, time};
-
-use crate::{api, display_panic, dvr};
 
 /// [SRS] server spawnable as a separate process.
 ///
@@ -242,17 +244,10 @@ impl Drop for ServerProcess {
 
         drop(tokio::spawn(async move {
             if let Some(pid) = pid_for_future.as_ref().lock().await.take() {
-                if let Err(err) = nix::sys::signal::kill(
-                    nix::unistd::Pid::from_raw(pid as i32),
-                    nix::sys::signal::Signal::SIGTERM,
-                ) {
-                    tracing::error!(
-                        "Failed to send SIGTERM to process {}: {}",
-                        pid,
-                        err
-                    );
-                }
-            }
+                _ = kill_process(pid as i32).map_err(|err| {
+                    tracing::error!("Failed to kill SRS process: {err}");
+                });
+            };
             time::sleep(Duration::from_secs(5)).await;
             abort_for_future.abort();
         }));
@@ -401,38 +396,3 @@ impl From<tracing::Level> for LogLevel {
 #[as_ref(forward)]
 #[display(fmt = "{}", "_0.display()")]
 pub struct DisplayablePath(PathBuf);
-
-/// Send SIGTERM signal to provided process name.
-async fn kill_process_by_name(process_name: &str) -> Result<(), anyhow::Error> {
-    // Find the PIDs of the running processes with process_name using `pgrep`
-    let output = Command::new("pgrep")
-        .arg(process_name)
-        .output()
-        .await
-        .map_err(|e| anyhow!("Failed to execute pgrep: {e}"))?;
-
-    if !output.status.success() {
-        // No running process with process_name
-        return Ok(());
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let pids: Vec<i32> = stdout
-        .lines()
-        .filter_map(|line| line.parse::<i32>().ok())
-        .collect();
-
-    // Send SIGTERM to each process
-    for pid in pids {
-        if let Err(err) = nix::sys::signal::kill(
-            nix::unistd::Pid::from_raw(pid),
-            nix::sys::signal::Signal::SIGTERM,
-        ) {
-            return Err(anyhow!(
-                "Failed to send SIGTERM to process {pid}: {err}"
-            ));
-        }
-    }
-
-    Ok(())
-}
