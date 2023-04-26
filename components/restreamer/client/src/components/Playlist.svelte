@@ -173,7 +173,7 @@
           data-testid="start-all-outputs"
           title="Start all not completed downloads of files in playlist"
           on:click={() => confirm(startPlaylistDownload)}
-        ><span>Reload all</span>
+        ><span>Download all</span>
         </button>
         <span slot="title">Restart downloads</span>
         <span slot="description"
@@ -188,7 +188,7 @@
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in playlist"
           on:click={() => confirm(stopPlaylistDownload)}
-          value=""><span>Cancel all</span></button
+          value=""><span>Stop downloads</span></button
         >
         <span slot="title">Cancel all active downloads</span>
         <span slot="description"

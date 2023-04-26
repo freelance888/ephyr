@@ -388,6 +388,7 @@ impl MutationsRoot {
                         if f.state != FileState::Local {
                             f.state = FileState::DownloadError;
                             f.download_state = None;
+                            f.stream_stat = None;
                             f.error = Some("Download was canceled".to_string());
                             found = true
                         }

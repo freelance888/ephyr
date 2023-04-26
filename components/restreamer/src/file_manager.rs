@@ -19,7 +19,7 @@ use crate::{
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
 };
-use chrono::Utc;
+use chrono::{Local, Utc};
 use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
@@ -27,6 +27,7 @@ use std::{
     borrow::BorrowMut, ffi::OsString, panic::AssertUnwindSafe,
     result::Result::Err,
 };
+use std::fs::DirEntry;
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
@@ -168,27 +169,44 @@ impl FileManager {
 
     /// Sync files on disks with files in state
     fn sync_with_state(&self) {
-        let files = self.state.files.lock_mut();
-        let disk_files = std::fs::read_dir(self.file_root_dir.as_path())
+        let are_files_the_same = |f: &LocalFileInfo, de: &DirEntry|
+            OsString::from(&f.file_id.0) == de.file_name();
+
+        let mut files = self.state.files.lock_mut();
+        let disk_files: Vec<_> = std::fs::read_dir(self.file_root_dir.as_path())
             .expect("Cannot read the provided file root directory")
             .filter_map(Result::ok)
             .filter(|entry| match entry.file_type() {
                 // Returns only files, skips directories
                 Ok(file_type) => file_type.is_file(),
                 _ => false,
-            });
+            }).collect();
 
-        disk_files.for_each(|disk_file| {
+        /// Find files on disk that do not have corresponding file in state and delete them
+        disk_files.iter().for_each(|df| {
             if !files
                 .iter()
-                .any(|f| OsString::from(&f.file_id.0) == disk_file.file_name())
+                .any(|f| are_files_the_same(f, df))
             {
-                let file_path = self.file_root_dir.join(disk_file.file_name());
+                let file_path = self.file_root_dir.join(df.file_name());
                 let _ = std::fs::remove_file(file_path).map_err(|err| {
                     tracing::error!("Can not delete file. {}", err);
                 });
             }
         });
+
+        /// Find files in state that do not have corresponding file on disk
+        /// and set their state to [`FileState::DownloadError`]
+        files.iter_mut()
+            .filter(|f| f.state != FileState::Waiting)
+            .for_each(|f| {
+                if !disk_files.iter().any(|df| are_files_the_same(f, df)) {
+                    f.state = FileState::DownloadError;
+                    f.download_state = None;
+                    f.stream_stat = None;
+                    f.error = Some("There is no file on disk.".to_string());
+                }
+        })
     }
 
     /// Checks if the provided file ID already exists in the file list,
