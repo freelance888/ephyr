@@ -12,7 +12,12 @@ All user visible changes to this project will be documented in this file. This p
 ### Fixed
 - Proper kill SRS server during restart ([#374]);
 
+### Miscellaneous
+- Update [FFmpeg] to 6.0  ([#375]);
+
+
 [#374]: /../../pull/374
+[#375]: /../../pull/375
 
 
 
