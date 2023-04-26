@@ -2,15 +2,10 @@
 //!
 //! [SRS]: https://github.com/ossrs/srs
 
-use std::{
-    borrow::Borrow,
-    ops::Deref,
-    panic::AssertUnwindSafe,
-    path::{Path, PathBuf},
-    process::Stdio,
-    sync::Arc,
+use crate::{
+    api, display_panic, dvr,
+    proc::{kill_process, kill_process_by_name},
 };
-
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
@@ -22,10 +17,17 @@ use ephyr_log::{
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use regex::Regex;
 use smart_default::SmartDefault;
+use std::{
+    borrow::Borrow,
+    ops::Deref,
+    panic::AssertUnwindSafe,
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+    time::Duration,
+};
 use structopt::lazy_static::lazy_static;
-use tokio::{fs, process::Command};
-
-use crate::{api, display_panic, dvr};
+use tokio::{fs, process::Command, sync::Mutex, time};
 
 /// [SRS] server spawnable as a separate process.
 ///
@@ -133,14 +135,27 @@ impl Server {
             .arg("-c")
             .arg(&conf_path);
 
-        let (spawner, abort_handle) = future::abortable(
+        if let Err(err) = kill_process_by_name("srs").await {
+            tracing::error!("Failed to kill existing SRS processes: {}", err);
+        }
+
+        let pid = Arc::new(Mutex::new(None::<u32>));
+        let (spawner, abort_handle) = future::abortable({
+            let pid_handle = Arc::clone(&pid);
+
             async move {
                 loop {
+                    let pid_handle = pid_handle.clone();
                     let cmd = &mut cmd;
                     _ = AssertUnwindSafe(async move {
                         let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;
+
+                        let pid_value = process.id();
+                        let mut pid_lock = pid_handle.lock().await;
+                        *pid_lock = pid_value; // Update the stored PID
+
                         let out = process
                             .capture_logs_and_wait_for_output(
                                 tracing::info_span!(
@@ -172,12 +187,12 @@ impl Server {
                     });
                 }
             }
-            .in_current_span(),
-        );
+            .in_current_span()
+        });
 
         let srv = Self {
             conf_path,
-            _process: Arc::new(ServerProcess(abort_handle)),
+            _process: Arc::new(ServerProcess { pid, abort_handle }),
         };
 
         // Pre-create SRS conf file.
@@ -215,12 +230,27 @@ impl Server {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 #[derive(Clone, Debug)]
-struct ServerProcess(future::AbortHandle);
+struct ServerProcess {
+    pid: Arc<Mutex<Option<u32>>>,
+    abort_handle: future::AbortHandle,
+}
 
 impl Drop for ServerProcess {
     #[inline]
+    #[allow(clippy::cast_possible_wrap)]
     fn drop(&mut self) {
-        self.0.abort();
+        let abort_for_future = self.abort_handle.clone();
+        let pid_for_future = self.pid.clone();
+
+        drop(tokio::spawn(async move {
+            if let Some(pid) = pid_for_future.as_ref().lock().await.take() {
+                _ = kill_process(pid as i32).map_err(|err| {
+                    tracing::error!("Failed to kill SRS process: {err}");
+                });
+            };
+            time::sleep(Duration::from_secs(5)).await;
+            abort_for_future.abort();
+        }));
     }
 }
 

@@ -9,7 +9,14 @@ All user visible changes to this project will be documented in this file. This p
 
 [Diff](/../../compare/restreamer-v0.7.0...restreamer-v0.8.0)
 
-TBA
+### Fixed
+- Proper kill SRS server during restart ([#374]);
+
+[#374]: /../../pull/374
+
+
+
+
 
 ## [0.7.0] · 17-04-2023
 [0.7.0]: /../../tree/restreamer-v0.7.0
