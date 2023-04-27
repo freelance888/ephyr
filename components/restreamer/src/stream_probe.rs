@@ -26,7 +26,7 @@ pub async fn stream_probe(url: String) -> anyhow::Result<StreamInfo> {
     ];
 
     // Default args.
-    let _ = cmd
+    _ = cmd
         .args([
             "-v",
             "quiet",

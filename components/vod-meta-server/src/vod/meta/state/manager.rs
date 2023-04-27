@@ -41,7 +41,7 @@ impl Manager {
         let file = file.as_ref();
 
         let mut contents = vec![];
-        let _ = fs::OpenOptions::new()
+        _ = fs::OpenOptions::new()
             .write(true)
             .create(true)
             .read(true)

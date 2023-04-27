@@ -3,7 +3,27 @@ Ephyr re-streamer changelog
 
 All user visible changes to this project will be documented in this file. This project uses [Semantic Versioning 2.0.0].
 
-## [0.7.0] · Unreleased
+
+## [0.8.0] · Unreleased
+[0.8.0]: /../../tree/restreamer-v0.8.0
+
+[Diff](/../../compare/restreamer-v0.7.0...restreamer-v0.8.0)
+
+### Fixed
+- Proper kill SRS server during restart ([#374]);
+
+### Miscellaneous
+- Update [FFmpeg] to 6.0  ([#375]);
+
+
+[#374]: /../../pull/374
+[#375]: /../../pull/375
+
+
+
+
+
+## [0.7.0] · 17-04-2023
 [0.7.0]: /../../tree/restreamer-v0.7.0
 
 [Diff](/../../compare/restreamer-v0.6.0...restreamer-v0.7.0)
@@ -11,41 +31,47 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 - Deploy:
     - Open ports 80, 8000 and 1935 ports by default ([#267]);
-    - Add Jaeger envs: EPHYR_RESTREAMER_JAEGER_AGENT_IP, EPHYR_RESTREAMER_JAEGER_AGENT_PORT ([#284]);
+    - Add OpenTelemetry collector envs: `EPHYR_RESTREAMER_OTLP_COLLECTOR_IP`, `EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT` ([#284], [#355]);
+    - Add `ALLOWED_IPS` option to set allowed IP addresses to access server ([#352]);
+    - Add `CLEAR_STATE_ON_RESTART` option that clears state after restart if set([#352]).
 - CI:
   - Configure dependabot ([#244]);
+  - Configure OpenAI reviewer ([#350]);
+  - Combine prs workflow ([#355]).
 - Dashboard:
   - "Start All" / "Stop All" buttons on dashboard ([#241], [#296]);
   - Display of last sent Command\Error onto Dashboard ([#220], [#297]);
-  - Indication if password is added to the server into Dashboard ([#162], [#297]);
+  - Indication if password is added to the server into Dashboard ([#162], [#297]).
 - Output:
   - Option to record audio-only files ([#239]);
+  - Return output identity after adding ([#358]);
+  - Return restream identity after adding ([#358]).
 - Input:
   - Display input streams info ([#170], [#266]);
   - Display file name in file-backup endpoint ([#175], [#297]);
   - Video playback for file Input ([#166], [#297]);
   - Display stream info for file-backup endpoint ([#322]);
   - Auto conversion of Google Drive links to Id's ([#313], [#321]);
-  - Ability to re-order input endpoints ([#345]);
+  - Ability to re-order input endpoints ([#346], [#345]).
 - General
   - Show number of cores on server instance ([#227], [#254]);
   - Google Drive API key to Ephyr server ([#168], [#297]);
   - `filter_by` GET parameter ([#260], [#319]);
-  - Protect Google API key with stars ([#323], [#341]);
+  - Protect Google API key with stars ([#323], [#341]).
 
 ### Fixed
 - Deploy:
   - State disappears after restart ([#235], [#267]);
-  - Not possible to write DVR on local disk ([#236], [#267]);
-- Inconsistency in Restreamer - key and label validation ([#253], [#302]);
+  - Not possible to write DVR on local disk ([#236], [#267]).
+- Inconsistency in Restreamer - key and label validation ([#253], [#302]).
 
 ### Miscellaneous
 - Logging:
   - `slog` replaced with `tracing` ([#284]);
-  - Jaeger tracing exporter ([#271], [#284]);
+  - Support of OpenTelemetry traces collector witch used by Jaeger, Prometheus and etc ([#271], [#284]).
 - Server updates:
   - [SRS] server updated to v4.0-r4 ([#244]);
-  - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]);
+  - [SRS] and [FFmpeg] logs go through `tracing`  ([#284]).
 
 [#162]: /../../issues/162
 [#166]: /../../issues/166
@@ -62,7 +88,9 @@ All user visible changes to this project will be documented in this file. This p
 [#260]: /../../issues/260
 [#313]: /../../issues/313
 [#323]: /../../issues/323
+[#346]: /../../issues/346
 
+[#358]: /../../pull/358
 [#239]: /../../pull/239
 [#244]: /../../pull/244
 [#254]: /../../pull/254
@@ -77,6 +105,9 @@ All user visible changes to this project will be documented in this file. This p
 [#322]: /../../pull/322
 [#341]: /../../pull/341
 [#345]: /../../pull/345
+[#350]: /../../pull/350
+[#352]: /../../pull/352
+[#355]: /../../pull/355
 
 
 

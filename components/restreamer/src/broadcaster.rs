@@ -123,7 +123,7 @@ impl Broadcaster {
     {
         drop(tokio::spawn(
             async move {
-                let _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
+                _ = AssertUnwindSafe(command.unwrap_or_else(|e| {
                     let error_message =
                         format!("Error sending command for client. {e}");
                     tracing::error!(error_message);

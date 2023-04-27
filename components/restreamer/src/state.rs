@@ -101,7 +101,7 @@ impl State {
         let file = file.as_ref();
 
         let mut contents = vec![];
-        let _ = fs::OpenOptions::new()
+        _ = fs::OpenOptions::new()
             .write(true)
             .create(true)
             .read(true)
@@ -274,15 +274,20 @@ impl State {
     /// # Errors
     ///
     /// If this [`State`] has a [`Restream`] with such `key` already.
-    pub fn add_restream(&self, spec: spec::v1::Restream) -> anyhow::Result<()> {
+    pub fn add_restream(
+        &self,
+        spec: spec::v1::Restream,
+    ) -> anyhow::Result<Option<RestreamId>> {
         let mut restreams = self.restreams.lock_mut();
 
         if restreams.iter().any(|r| r.key == spec.key) {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        restreams.push(Restream::new(spec));
-        Ok(())
+        let new_restream = Restream::new(spec);
+        let id = new_restream.id;
+        restreams.push(new_restream);
+        Ok(Some(id))
     }
 
     /// Edits a [`Restream`] with the given `spec` identified by the given `id`
@@ -298,18 +303,19 @@ impl State {
         &self,
         id: RestreamId,
         spec: spec::v1::Restream,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<RestreamId>> {
         let mut restreams = self.restreams.lock_mut();
 
         if restreams.iter().any(|r| r.key == spec.key && r.id != id) {
             return Err(anyhow!("Restream.key '{}' is used already", spec.key));
         }
 
-        #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        Ok(restreams
+        _ = restreams
             .iter_mut()
             .find(|r| r.id == id)
-            .map(|r| r.apply(spec, false)))
+            .map(|r| r.apply(spec, false));
+
+        Ok(Some(id))
     }
 
     /// Removes a [`Restream`] with the given `id` from this [`State`].
@@ -498,7 +504,7 @@ impl State {
         &self,
         restream_id: RestreamId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -513,8 +519,11 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", o.dst));
         }
 
-        outputs.push(Output::new(spec));
-        Ok(Some(()))
+        let new_output = Output::new(spec);
+        let id = new_output.id;
+        outputs.push(new_output);
+
+        Ok(Some(id))
     }
 
     /// Edits an [`Output`] with the given `spec` identified by the given `id`
@@ -531,7 +540,7 @@ impl State {
         restream_id: RestreamId,
         id: OutputId,
         spec: spec::v1::Output,
-    ) -> anyhow::Result<Option<()>> {
+    ) -> anyhow::Result<Option<OutputId>> {
         let mut restreams = self.restreams.lock_mut();
 
         let outputs = if let Some(r) =
@@ -546,11 +555,12 @@ impl State {
             return Err(anyhow!("Output.dst '{}' is used already", spec.dst));
         }
 
-        #[allow(clippy::manual_find_map)] // due to consuming `spec`
-        Ok(outputs
+        _ = outputs
             .iter_mut()
             .find(|o| o.id == id)
-            .map(|o| o.apply(spec, true)))
+            .map(|o| o.apply(spec, true));
+
+        Ok(id.into())
     }
 
     /// Removes an [`Output`] with the given `id` from the specified
@@ -785,6 +795,36 @@ impl State {
         Some(true)
     }
 
+    /// Syncronize stream statistics
+    pub fn sync_stream_info(&self) {
+        let files = self.files.lock_mut();
+        let mut restreams = self.restreams.lock_mut();
+        restreams.iter_mut().for_each(|r| {
+            if let Some(InputSrc::Failover(s)) = &mut r.input.src {
+                for mut e in
+                    s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
+                {
+                    if e.kind == InputEndpointKind::File && e.file_id.is_some()
+                    {
+                        // For file - populate statistics from [`LocalFileInfo`]
+                        if let Some(file_id) = e.file_id.clone() {
+                            _ = files.iter().find_map(|f| {
+                                (f.file_id == file_id).then(|| {
+                                    e.stream_stat = f.stream_stat.clone();
+                                })
+                            });
+                        }
+                    } else if e.stream_stat.is_some()
+                        && e.status == Status::Offline
+                    {
+                        // For stream - clear statistics if stream is offline
+                        e.stream_stat = None;
+                    }
+                }
+            }
+        });
+    }
+
     /// Updates info about stream for [`InputEndpoint`]
     ///
     /// # Errors
@@ -898,7 +938,7 @@ impl State {
         if let Some(x) = stat.get_mut(&status) {
             *x += 1;
         } else {
-            let _ = stat.insert(status, 1);
+            _ = stat.insert(status, 1);
         }
     }
 

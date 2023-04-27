@@ -3,9 +3,33 @@ Ephyr re-streamer
 
 [Changelog](CHANGELOG.md)
 
+Simple web application allowing to forward [RTMP] streams in a similar way as [facecast.io] does. It uses [SRS] to accept [RTMP] streams and [FFmpeg] to forward them.
+
+## Deployment
 🚀 Deploy to [DigitalOcean][101] ([ru][102]), [Hetzner Cloud][111] ([ru][112]), [Oracle Cloud][121] ([ru][122]), [VScale\Selectel (ru)][123].
 
-Simple web application allowing to forward [RTMP] streams in a similar way as [facecast.io] does. It uses [SRS] to accept [RTMP] streams and [FFmpeg] to forward them.
+### Deploy script options
+This script automates the setup and configuration of Ephyr-restreamer on a Linux system.
+It installs Docker, sets up the firewall, and creates the required directories and configuration files.
+The script also installs the Ephyr-restreamer executor and a SystemD service to manage the Ephyr-restreamer Docker container.
+
+You can customize the script behavior by setting the following environment variables before running the script:
+
+1. `EPHYR_VER`: Set the Ephyr-restreamer version. Default is '0.6.0'. Set to 'latest' for the latest version.
+2. `REGISTRY_URL`: Set the Docker registry URL. Default is 'docker.io'.
+3. `REGISTRY_USER`: Set the Docker registry username if using a custom registry.
+4. `REGISTRY_PASSWORD`: Set the Docker registry password if using a custom registry.
+5. `EPHYR_CLI_ARGS`: Set any additional CLI arguments for the Ephyr-restreamer Docker container.
+6. `WITH_INITIAL_UPGRADE`: Set to '1' if the system requires a full update before installing (e.g., for Selectel). Default is '0'.
+7. `WITH_FIREWALLD`: Set to '1' if the system requires firewalld instead of ufw (e.g., for Oracle). Default is '0'.
+8. `EPHYR_RESTREAMER_OTLP_COLLECTOR_IP`: Set the IP address of [OpenTelemetry] collector server to send logs to.
+9. `EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT`: Set the port of [OpenTelemetry] collector server to send logs to.
+10. `EPHYR_RESTREAMER_SERVICE_NAME`: Set the service name to collect traces to [OpenTelemetry] collector. Default is the hostname of the machine.
+11. `CLEAR_STATE_ON_RESTART`: Clear `state.json` each restart of Ephyr-restreamer. Default is '0'.
+12. `ALLOWED_IPS`: Set allowed IP addresses to access server. Default is '*'.
+
+Example usage:
+  `EPHYR_VER=latest WITH_INITIAL_UPGRADE=1 ./ubuntu-20-04-x64.sh`
 
 
 ## Contributing
@@ -31,6 +55,7 @@ As for any pre-built image usage, it is the image user's responsibility to ensur
 [FFmpeg]: https://ffmpeg.org
 [RTMP]: https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol
 [SRS]: https://github.com/ossrs/srs
+[OpenTelemetry]: https://opentelemetry.io
 
 [101]: docs/deploy_digitalocean_EN.md
 [102]: docs/deploy_digitalocean_RU.md

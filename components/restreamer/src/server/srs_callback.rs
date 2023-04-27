@@ -210,8 +210,7 @@ fn on_start(
         // careful here to not accidentally kick the client by creating a
         // temporary binding.
         if !endpoint.srs_player_ids.contains(&req.client_id) {
-            let _ =
-                endpoint.srs_player_ids.insert(req.client_id.clone().into());
+            _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
         }
         tracing::info!(actor = %endpoint.id, "Playing stopped");
     }
@@ -287,7 +286,7 @@ fn on_stop(
         endpoint.status = Status::Offline;
         tracing::info!(actor = %endpoint.id, "Publishing stopped");
     } else {
-        let _ = endpoint.srs_player_ids.remove(&req.client_id);
+        _ = endpoint.srs_player_ids.remove(&req.client_id);
         tracing::info!(actor = %endpoint.id, "Playing stopped");
     }
     Ok(())
@@ -362,7 +361,7 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     // careful here to not accidentally kick the client by creating a
     // temporary binding.
     if !endpoint.srs_player_ids.contains(&req.client_id) {
-        let _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
+        _ = endpoint.srs_player_ids.insert(req.client_id.clone().into());
     }
     Ok(())
 }

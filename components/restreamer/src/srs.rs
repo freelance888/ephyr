@@ -2,15 +2,10 @@
 //!
 //! [SRS]: https://github.com/ossrs/srs
 
-use std::{
-    borrow::Borrow,
-    ops::Deref,
-    panic::AssertUnwindSafe,
-    path::{Path, PathBuf},
-    process::Stdio,
-    sync::Arc,
+use crate::{
+    api, display_panic, dvr,
+    proc::{kill_process, kill_process_by_name},
 };
-
 use anyhow::anyhow;
 use askama::Template;
 use derive_more::{AsRef, Deref, Display, From, Into};
@@ -20,10 +15,19 @@ use ephyr_log::{
     ChildCapture, ParsedMsg,
 };
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
+use regex::Regex;
 use smart_default::SmartDefault;
-use tokio::{fs, process::Command};
-
-use crate::{api, display_panic, dvr};
+use std::{
+    borrow::Borrow,
+    ops::Deref,
+    panic::AssertUnwindSafe,
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+    time::Duration,
+};
+use structopt::lazy_static::lazy_static;
+use tokio::{fs, process::Command, sync::Mutex, time};
 
 /// [SRS] server spawnable as a separate process.
 ///
@@ -55,20 +59,24 @@ pub struct Server {
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://ossrs.io/lts/en-us/docs/v4/doc/log#log-format
 fn parse_srs_log_line(line: &str) -> ParsedMsg<'_> {
-    let parsed: Vec<_> = line
-        .rsplit(']')
-        .map(|t| t.trim_start_matches([' ', '[']))
-        .collect();
-    // parsed contains data: (msg, source_id, srs_pid, level_log, date_log)
-    if parsed.len() == 5 {
-        ParsedMsg {
-            message: parsed[0],
-            level: parsed[3],
-        }
+    lazy_static! {
+        static ref RE: Regex = Regex::new(concat!(
+            r".*\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\]",
+            r"\[(?P<level>(?i)(?:verbose|info|trace|warn|error))\]",
+            r"(?:\[\d+\])?(?:\[\w+\])?(?:\[\d+\])?",
+            r"(?:\[[^]]+\])?",
+            r"(\s(?P<msg>.*))?$"
+        ))
+        .unwrap();
+    }
+    if let Some(captures) = RE.captures(line) {
+        let message = captures.name("msg").unwrap().as_str().trim_start();
+        let level = captures.name("level").unwrap().as_str().trim();
+        ParsedMsg { message, level }
     } else {
         ParsedMsg {
             message: line,
-            level: "error",
+            level: "warn",
         }
     }
 }
@@ -118,7 +126,7 @@ impl Server {
         dvr::Storage { root_path: dvr_dir }.set_global()?;
 
         let mut cmd = Command::new(bin_path);
-        let _ = cmd
+        _ = cmd
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -127,14 +135,27 @@ impl Server {
             .arg("-c")
             .arg(&conf_path);
 
-        let (spawner, abort_handle) = future::abortable(
+        if let Err(err) = kill_process_by_name("srs").await {
+            tracing::error!("Failed to kill existing SRS processes: {}", err);
+        }
+
+        let pid = Arc::new(Mutex::new(None::<u32>));
+        let (spawner, abort_handle) = future::abortable({
+            let pid_handle = Arc::clone(&pid);
+
             async move {
                 loop {
+                    let pid_handle = pid_handle.clone();
                     let cmd = &mut cmd;
-                    let _ = AssertUnwindSafe(async move {
+                    _ = AssertUnwindSafe(async move {
                         let process = cmd.spawn().map_err(|e| {
                             tracing::error!("Cannot start SRS server: {e}");
                         })?;
+
+                        let pid_value = process.id();
+                        let mut pid_lock = pid_handle.lock().await;
+                        *pid_lock = pid_value; // Update the stored PID
+
                         let out = process
                             .capture_logs_and_wait_for_output(
                                 tracing::info_span!(
@@ -166,12 +187,12 @@ impl Server {
                     });
                 }
             }
-            .in_current_span(),
-        );
+            .in_current_span()
+        });
 
         let srv = Self {
             conf_path,
-            _process: Arc::new(ServerProcess(abort_handle)),
+            _process: Arc::new(ServerProcess { pid, abort_handle }),
         };
 
         // Pre-create SRS conf file.
@@ -209,12 +230,27 @@ impl Server {
 ///
 /// [SRS]: https://github.com/ossrs/srs
 #[derive(Clone, Debug)]
-struct ServerProcess(future::AbortHandle);
+struct ServerProcess {
+    pid: Arc<Mutex<Option<u32>>>,
+    abort_handle: future::AbortHandle,
+}
 
 impl Drop for ServerProcess {
     #[inline]
+    #[allow(clippy::cast_possible_wrap)]
     fn drop(&mut self) {
-        self.0.abort();
+        let abort_for_future = self.abort_handle.clone();
+        let pid_for_future = self.pid.clone();
+
+        drop(tokio::spawn(async move {
+            if let Some(pid) = pid_for_future.as_ref().lock().await.take() {
+                _ = kill_process(pid as i32).map_err(|err| {
+                    tracing::error!("Failed to kill SRS process: {err}");
+                });
+            };
+            time::sleep(Duration::from_secs(5)).await;
+            abort_for_future.abort();
+        }));
     }
 }
 

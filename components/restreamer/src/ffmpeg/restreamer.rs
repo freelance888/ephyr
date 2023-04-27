@@ -90,7 +90,7 @@ impl Restreamer {
                     let mut cmd = Command::new(ffmpeg_path.as_ref());
                     let kill_rx_for_ffmpeg = kill_rx.clone();
 
-                    let _ = AssertUnwindSafe(
+                    _ = AssertUnwindSafe(
                         async move {
                             Self::change_status(
                                 time_of_fail,
@@ -168,7 +168,7 @@ impl Restreamer {
                     };
 
                     if let RestreamerKind::File(_) = kind {
-                        let _ = state
+                        _ = state
                             .restreams
                             .lock_mut()
                             .iter_mut()
@@ -231,7 +231,7 @@ impl Drop for Restreamer {
     fn drop(&mut self) {
         // Send notification to kill FFMPEG with SIGTERM
         tracing::debug!("Send signal to FFmpeg's");
-        let _ = self.kill_tx.send(RestreamerStatus::Finished);
+        _ = self.kill_tx.send(RestreamerStatus::Finished);
 
         // If FFmpeg wasn't killed kill it with SIGKILL
         let abort_for_future = self.abort_if_hanged.clone();

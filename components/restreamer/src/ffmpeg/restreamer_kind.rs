@@ -10,14 +10,12 @@ use ephyr_log::{
     ChildCapture, ParsedMsg, Span,
 };
 use libc::pid_t;
-use nix::{
-    sys::{signal, signal::Signal},
-    unistd::Pid,
-};
+use regex::Regex;
 use std::{
     convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
     path::Path, time::Duration,
 };
+use structopt::lazy_static::lazy_static;
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
@@ -30,6 +28,7 @@ use crate::{
         transcoding_restreamer::TranscodingRestreamer,
     },
     file_manager::{FileId, FileState, LocalFileInfo},
+    proc::kill_process,
     state::{self, RestreamKey, State, Status},
 };
 
@@ -38,20 +37,22 @@ use crate::{
 /// [FFmpeg]: https://ffmpeg.org
 #[allow(dead_code)]
 fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
-    let parsed: Vec<_> = line
-        .rsplit(']')
-        .map(|t| t.trim_start_matches([' ', '[']))
-        .collect();
-    // parsed contains data: (msg, level_log)
-    if parsed.len() >= 2 {
-        ParsedMsg {
-            message: parsed[0],
-            level: parsed[1],
-        }
+    lazy_static! {
+        static ref RE: Regex = Regex::new(concat!(
+            r"^(?:.*\s)?\[(?P<level>(?i)",
+            r"(?:info|debug|error|fatal|panic|quiet|warning|verbose))\]",
+            r"(?P<msg>.*)$",
+        ))
+        .unwrap();
+    }
+    if let Some(captures) = RE.captures(line) {
+        let message = captures.name("msg").unwrap().as_str();
+        let level = captures.name("level").unwrap().as_str();
+        ParsedMsg { message, level }
     } else {
         ParsedMsg {
             message: line,
-            level: "error",
+            level: "warn",
         }
     }
 }
@@ -349,9 +350,7 @@ impl RestreamerKind {
 
     fn setup_logger(cmd: &mut Command) {
         let loglevel_prefix = "repeat+level";
-        let _ = match tracing::level_filters::LevelFilter::current()
-            .into_level()
-        {
+        _ = match tracing::level_filters::LevelFilter::current().into_level() {
             Some(tracing::Level::DEBUG | tracing::Level::TRACE) => cmd.args([
                 "-hide_banner",
                 "-loglevel",
@@ -444,7 +443,7 @@ impl RestreamerKind {
         let process = cmd.spawn()?;
 
         // To avoid instant resolve on await for `kill_rx`
-        let _ = *kill_rx.borrow_and_update();
+        _ = *kill_rx.borrow_and_update();
 
         let pid: pid_t = process
             .id()
@@ -455,15 +454,13 @@ impl RestreamerKind {
         // Task that sends SIGTERM if async stop of ffmpeg was invoked
         let kill_task = tokio::spawn(
             async move {
-                let _ = kill_rx.changed().await;
+                _ = kill_rx.changed().await;
                 tracing::debug!("Signal for FFmpeg received");
                 // It is necessary to send the signal two times and wait after
                 // sending the first one to correctly close all ffmpeg processes
-                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                    .expect("Failed to kill process");
+                kill_process(pid).expect("Failed to kill process");
                 tokio::time::sleep(Duration::from_millis(1)).await;
-                signal::kill(Pid::from_raw(pid), Signal::SIGTERM)
-                    .expect("Failed to kill process");
+                kill_process(pid).expect("Failed to kill process");
             }
             .in_current_span(),
         );

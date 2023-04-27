@@ -38,7 +38,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
         loop {
             let state = &state;
 
-            let _ = AssertUnwindSafe(async {
+            _ = AssertUnwindSafe(async {
                 let sys = System::new();
 
                 let mut info = ServerInfo::default();

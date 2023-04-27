@@ -131,7 +131,7 @@ impl Manager {
         dst: PathBuf,
         tmp: PathBuf,
     ) {
-        let _ = downloads
+        _ = downloads
             .map(move |url| {
                 let dst = dst.clone();
                 let tmp = tmp.clone();
@@ -251,7 +251,7 @@ impl Manager {
         }
         let mut tmp_file = tmp_file.unwrap();
 
-        let _ = io::copy(&mut resp, &mut tmp_file).await.map_err(|e| {
+        _ = io::copy(&mut resp, &mut tmp_file).await.map_err(|e| {
             anyhow!(
                 "Failed to download into '{}' file: {}",
                 tmp_path.display(),
@@ -292,7 +292,7 @@ impl Manager {
         if fs::rename(&tmp_path, &dst_path).await.is_err() {
             // If moving file has failed (due to moving onto another physical
             // disk, for example), then try to copy and delete it explicitly.
-            let _ = fs::copy(&tmp_path, &dst_path).await.map_err(|e| {
+            _ = fs::copy(&tmp_path, &dst_path).await.map_err(|e| {
                 anyhow!(
                     "Failed to move downloaded file from '{}' to '{}': {}",
                     tmp_path.display(),

@@ -216,7 +216,7 @@ impl AsyncRead for Input {
         if self.cursor >= self.frame.len() {
             // `time::Interval` stream never returns `None`, so we can omit
             // checking it to be finished.
-            let _ = ready!(Pin::new(&mut self.ticker).poll_tick(cx));
+            _ = ready!(Pin::new(&mut self.ticker).poll_tick(cx));
 
             self.cursor = 0;
             self.frame.fill(0.0);
@@ -589,13 +589,13 @@ fn spawn_disconnect(mut conn: Connection) {
                 async move {
                     // First, we should check whether `Connection` is
                     // established at all.
-                    let _ = conn.get_state()?;
+                    _ = conn.get_state()?;
 
                     // Then initiate disconnection by sending an appropriate
                     // packet.
                     conn.disconnect(DisconnectOptions::default())?;
                     // And wait until it's done.
-                    let _ = conn.events().map(Ok).forward(sink::drain()).await;
+                    _ = conn.events().map(Ok).forward(sink::drain()).await;
 
                     Ok(())
                 }

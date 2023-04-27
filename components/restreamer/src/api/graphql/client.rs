@@ -152,7 +152,7 @@ impl MutationsRoot {
                                  rather than creating a new one.")]
         id: Option<RestreamId>,
         context: &Context,
-    ) -> Result<Option<bool>, graphql::Error> {
+    ) -> Result<Option<RestreamId>, graphql::Error> {
         let backups = match backup_inputs.clone() {
             None => Vec::new(),
             Some(b) => b,
@@ -241,22 +241,22 @@ impl MutationsRoot {
             outputs: vec![]
         };
 
-        #[allow(clippy::option_if_let_else)] // due to consuming `spec`
-        Ok(if let Some(id) = id {
+        let result = if let Some(id) = id {
             context.state().edit_restream(id, spec)
         } else {
-            context.state().add_restream(spec).map(Some)
-        }
+            context.state().add_restream(spec)
+        };
+
+        result
             .tap(|_| {
                 let mut commands = context.state().file_commands.lock_mut();
-                commands.push(FileCommand::ListOfFilesChanged);
+                commands.push(FileCommand::FileAddedOrRemoved);
             })
             .map_err(|e| {
                 graphql::Error::new("DUPLICATE_RESTREAM_KEY")
                     .status(StatusCode::CONFLICT)
                     .message(&e)
-            })?
-            .map(|_| true))
+            })
     }
 
     /// Force download file from Google Drive by it's id
@@ -271,7 +271,7 @@ impl MutationsRoot {
         restreams.iter_mut().for_each(|restream| {
             if let Some(InputSrc::Failover(fo)) = &restream.input.src {
                 fo.inputs.clone().iter_mut().for_each(|input| {
-                    let _ = input
+                    _ = input
                         .clone()
                         .endpoints
                         .iter_mut()
@@ -736,7 +736,7 @@ impl MutationsRoot {
                                  rather than creating a new one.")]
         id: Option<OutputId>,
         context: &Context,
-    ) -> Result<Option<bool>, graphql::Error> {
+    ) -> Result<Option<OutputId>, graphql::Error> {
         if mixins.len() > 5 {
             return Err(graphql::Error::new("TOO_MUCH_MIXIN_URLS")
                 .status(StatusCode::BAD_REQUEST)
@@ -812,18 +812,17 @@ impl MutationsRoot {
             enabled: false,
         };
 
-        #[allow(clippy::option_if_let_else)] // due to consuming `spec`
-        Ok(if let Some(id) = id {
+        let result = if let Some(id) = id {
             context.state().edit_output(restream_id, id, spec)
         } else {
             context.state().add_output(restream_id, spec)
-        }
-            .map_err(|e| {
-                graphql::Error::new("DUPLICATE_OUTPUT_URL")
-                    .status(StatusCode::CONFLICT)
-                    .message(&e)
-            })?
-            .map(|_| true))
+        };
+
+        result.map_err(|e| {
+            graphql::Error::new("DUPLICATE_OUTPUT_URL")
+                .status(StatusCode::CONFLICT)
+                .message(&e)
+        })
     }
 
     /// Removes an `Output` by its `id` from the specified `Restream`.

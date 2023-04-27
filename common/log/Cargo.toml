@@ -7,14 +7,13 @@ publish = false
 
 [dependencies]
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter","registry"]}
+tracing-subscriber = { version = "0.3", features = ["env-filter","registry","json"]}
 tracing-log = "0.1"
 tracing-appender = "0.2"
 tracing-futures = "0.2"
 tracing-actix-web = { version= "0.7", features = ["tracing-opentelemetry_0_18_pkg"] }
-tokio = { version = "1.23", features = ["fs", "io-util", "process", "sync", "macros","rt-multi-thread"] }
+tokio = { version = "1.23", features = ["fs", "io-util", "process", "sync", "macros"] }
 async-trait = "0.1"
 tracing-opentelemetry = { version = "0.18", features = ["metrics"] }
-opentelemetry = { version = "0.18", features = ["rt-tokio", "metrics"] }
-opentelemetry-jaeger = { version = "0.17", features = ["rt-tokio", "reqwest_collector_client"] }
-tracing-bunyan-formatter = "0.3.6"
+opentelemetry = { version = "0.18", features = ["metrics"] }
+opentelemetry-otlp = { version = "0.11", features = ["grpc-tonic", "trace", "metrics"] }

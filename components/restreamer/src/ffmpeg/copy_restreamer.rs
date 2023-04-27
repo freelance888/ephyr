@@ -54,7 +54,7 @@ impl CopyRestreamer {
         &self,
         cmd: &mut Command,
     ) -> io::Result<()> {
-        let _ = match self.from_url.scheme() {
+        _ = match self.from_url.scheme() {
             "http" | "https"
                 if Path::new(self.from_url.path()).extension()
                     == Some("m3u8".as_ref()) =>
@@ -68,7 +68,7 @@ impl CopyRestreamer {
         }
         .args(["-i", self.from_url.as_str()]);
 
-        let _ = match self.to_url.scheme() {
+        _ = match self.to_url.scheme() {
             "file" => match Path::new(self.to_url.path())
                 .extension()
                 .and_then(OsStr::to_str)
