@@ -168,13 +168,13 @@
     <div class="uk-flex uk-flex-middle uk-margin-bottom playlist-toolbar">
       <PlaylistStatus files={queue} />
       <Confirm let:confirm>
-        <button
-          class="uk-button uk-button-default uk-margin-auto-left"
+        <a
+          class="uk-text-uppercase uk-text-small uk-margin-auto-left"
           data-testid="start-all-outputs"
           title="Start all not completed downloads of files in playlist"
           on:click={() => confirm(startPlaylistDownload)}
         ><span>Download all</span>
-        </button>
+        </a>
         <span slot="title">Restart downloads</span>
         <span slot="description"
         >This will restart all not complete downloads of files in playlist.
@@ -183,12 +183,12 @@
       </Confirm>
 
       <Confirm let:confirm>
-        <button
-          class="uk-button uk-button-default"
+        <a
+          class="uk-text-uppercase uk-text-small uk-margin-left"
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in playlist"
           on:click={() => confirm(stopPlaylistDownload)}
-          value=""><span>Stop downloads</span></button
+          value=""><span>Stop downloads</span></a
         >
         <span slot="title">Cancel all active downloads</span>
         <span slot="description"
