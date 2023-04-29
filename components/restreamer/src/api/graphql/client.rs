@@ -39,7 +39,7 @@ use url::Url;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
-RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
+    RootNode<'static, QueriesRoot, MutationsRoot, SubscriptionsRoot>;
 
 /// Constructs and returns new [`Schema`], ready for use.
 #[inline]
@@ -70,13 +70,13 @@ impl MutationsRoot {
         #[graphql(desc = "JSON spec obtained with `export` query.")]
         spec: String,
         #[graphql(
-        description = "Indicator whether the `spec` should replace \
+            description = "Indicator whether the `spec` should replace \
                            existing definitions.",
-        default = false
+            default = false
         )]
         replace: bool,
         #[graphql(
-        description = "Optional ID of a concrete `Restream` to apply \
+            description = "Optional ID of a concrete `Restream` to apply \
                            the `spec` to without touching other `Restream`s."
         )]
         restream_id: Option<RestreamId>,
@@ -139,13 +139,13 @@ impl MutationsRoot {
             Vec<BackupInput>,
         >,
         #[graphql(
-        description = "Google drive file ID for failover file endpoint."
+            description = "Google drive file ID for failover file endpoint."
         )]
         file_id: Option<FileId>,
         #[graphql(
-        description = "Indicator whether the `Restream` should have an \
-            additional endpoint for serving a live stream via HLS.",
-        default = false
+            description = "Indicator whether the `Restream` should have an \
+                additional endpoint for serving a live stream via HLS.",
+            default = false
         )]
         with_hls: bool,
         #[graphql(description = "ID of the `Restream` to be updated \
@@ -175,36 +175,36 @@ impl MutationsRoot {
                         src: src.map(spec::v1::InputSrc::RemoteUrl),
                         enabled: true,
                     }]
-                        .into_iter()
-                        .chain(backups.into_iter().map(|b| spec::v1::Input {
-                            id: None,
-                            key: b.key,
-                            endpoints: vec![spec::v1::InputEndpoint {
-                                kind: InputEndpointKind::Rtmp,
-                                label: None,
-                                file_id: None,
-                            }],
-                            src: b.src.map(spec::v1::InputSrc::RemoteUrl),
-                            enabled: true,
-                        }))
-                        .chain(
-                            file_id
-                                .map_or_else(Vec::new, |id| {
-                                    vec![spec::v1::Input {
-                                        id: None,
-                                        key: InputKey::new("file_backup").unwrap(),
-                                        endpoints: vec![spec::v1::InputEndpoint {
-                                            kind: InputEndpointKind::File,
-                                            label: None,
-                                            file_id: Some(id),
-                                        }],
-                                        src: None,
-                                        enabled: true,
-                                    }]
-                                })
-                                .into_iter(),
-                        )
-                        .collect(),
+                    .into_iter()
+                    .chain(backups.into_iter().map(|b| spec::v1::Input {
+                        id: None,
+                        key: b.key,
+                        endpoints: vec![spec::v1::InputEndpoint {
+                            kind: InputEndpointKind::Rtmp,
+                            label: None,
+                            file_id: None,
+                        }],
+                        src: b.src.map(spec::v1::InputSrc::RemoteUrl),
+                        enabled: true,
+                    }))
+                    .chain(
+                        file_id
+                            .map_or_else(Vec::new, |id| {
+                                vec![spec::v1::Input {
+                                    id: None,
+                                    key: InputKey::new("file_backup").unwrap(),
+                                    endpoints: vec![spec::v1::InputEndpoint {
+                                        kind: InputEndpointKind::File,
+                                        label: None,
+                                        file_id: Some(id),
+                                    }],
+                                    src: None,
+                                    enabled: true,
+                                }]
+                            })
+                            .into_iter(),
+                    )
+                    .collect(),
                 )),
             )
         } else {
@@ -238,7 +238,7 @@ impl MutationsRoot {
                 src: input_src,
                 enabled: true,
             },
-            outputs: vec![]
+            outputs: vec![],
         };
 
         let result = if let Some(id) = id {
@@ -250,7 +250,7 @@ impl MutationsRoot {
         result
             .tap(|_| {
                 let mut commands = context.state().file_commands.lock_mut();
-                commands.push(FileCommand::FileAddedOrRemoved);
+                commands.push(FileCommand::ListOfFilesChanged);
             })
             .map_err(|e| {
                 graphql::Error::new("DUPLICATE_RESTREAM_KEY")
@@ -262,7 +262,7 @@ impl MutationsRoot {
     /// Force download file from Google Drive by it's id
     fn download_file(
         #[graphql(
-        description = "ID of the file from `Google Drive` to be downloaded."
+            description = "ID of the file from `Google Drive` to be downloaded."
         )]
         file_id: FileId,
         context: &Context,
@@ -379,7 +379,7 @@ impl MutationsRoot {
         let mut found = false;
         if let Some(r) = restream {
             context.state().files.lock_mut().iter_mut().for_each(|f| {
-                r.playlist
+                _ = r.playlist
                     .queue
                     .iter()
                     .find(|pf| pf.file_id == f.file_id)
@@ -412,18 +412,22 @@ impl MutationsRoot {
 
         let mut found = false;
         if let Some(r) = restream {
-            let file_ids: Vec<FileId> = context.state().files.lock_mut().iter_mut()
+            let file_ids: Vec<FileId> = context
+                .state()
+                .files
+                .lock_mut()
+                .iter_mut()
                 .filter(|f| f.state == FileState::DownloadError)
-                .filter(|f| r.playlist
-                    .queue
-                    .iter()
-                    .any(|pf| pf.file_id == f.file_id)
-                )
+                .filter(|f| {
+                    r.playlist.queue.iter().any(|pf| pf.file_id == f.file_id)
+                })
                 .map(|f| f.file_id.clone())
                 .collect();
 
             if !file_ids.is_empty() {
-                context.state().file_commands
+                context
+                    .state()
+                    .file_commands
                     .lock_mut()
                     .push(FileCommand::NeedDownloadFiles(file_ids));
 
@@ -437,24 +441,19 @@ impl MutationsRoot {
     fn cancel_file_download(
         file_id: FileId,
         context: &Context,
-    ) -> Option<bool>
-    {
-        context.state()
-            .files
-            .lock_mut()
-            .iter_mut()
-            .find_map(|f| (f.file_id == file_id)
-                .then(|| {
-                    if f.state != FileState::Local {
-                        f.state = FileState::DownloadError;
-                        f.download_state = None;
-                        f.error = Some("Download was canceled".to_string());
-                        true
-                    } else {
-                        false
-                    }
-                })
-            )
+    ) -> Option<bool> {
+        context.state().files.lock_mut().iter_mut().find_map(|f| {
+            (f.file_id == file_id).then(|| {
+                if f.state != FileState::Local {
+                    f.state = FileState::DownloadError;
+                    f.download_state = None;
+                    f.error = Some("Download was canceled".to_string());
+                    true
+                } else {
+                    false
+                }
+            })
+        })
     }
 
     fn stop_playing_file_from_playlist(
@@ -576,7 +575,9 @@ impl MutationsRoot {
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(mut playlist_files) = result {
             if playlist_files.is_empty() {
-                let err = "No files in playlist. Probably there is no public access to the playlist";
+                let err = "No files in playlist. \
+                    Probably there is no public access to the playlist";
+
                 tracing::error!(err);
                 return Err(graphql::Error::new("GDRIVE_API_ERROR")
                     .status(StatusCode::BAD_REQUEST)
@@ -622,7 +623,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Input` to be enabled.")]
         id: InputId,
         #[graphql(
-        description = "ID of the `Restream` to enable the `Input` in."
+            description = "ID of the `Restream` to enable the `Input` in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -643,7 +644,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Input` to be disabled.")]
         id: InputId,
         #[graphql(
-        description = "ID of the `Restream` to disable the `Input` in."
+            description = "ID of the `Restream` to disable the `Input` in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -663,7 +664,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Input` to be streamed.")]
         id: InputId,
         #[graphql(
-        description = "ID of the `Restream` to stream the `Input` in."
+            description = "ID of the `Restream` to stream the `Input` in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -710,26 +711,26 @@ impl MutationsRoot {
     /// always returns `true`.
     fn set_output(
         #[graphql(
-        description = "ID of the `Restream` to add a new `Output` to."
+            description = "ID of the `Restream` to add a new `Output` to."
         )]
         restream_id: RestreamId,
         #[graphql(
-        description = "Destination URL to re-stream a live stream onto.\
-                           \n\n\
-                           At the moment only [RTMP] and [Icecast] are \
-                           supported.\
-                           \n\n\
-                           [Icecast]: https://icecast.org\n\
-                           [RTMP]: https://en.wikipedia.org/wiki/\
-                                   Real-Time_Messaging_Protocol"
+            description = "Destination URL to re-stream a live stream onto.\
+                               \n\n\
+                               At the moment only [RTMP] and [Icecast] are \
+                               supported.\
+                               \n\n\
+                               [Icecast]: https://icecast.org\n\
+                               [RTMP]: https://en.wikipedia.org/wiki/\
+                                       Real-Time_Messaging_Protocol"
         )]
         dst: OutputDstUrl,
         #[graphql(description = "Optional label to add a new `Output` with.")]
         label: Option<Label>,
         preview_url: Option<Url>,
         #[graphql(
-        description = "Optional `MixinSrcUrl`s to mix into this `Output`.",
-        default = Vec::new(),
+            description = "Optional `MixinSrcUrl`s to mix into this `Output`.",
+            default = Vec::new(),
         )]
         mixins: Vec<MixinSrcUrl>,
         #[graphql(description = "ID of the `Output` to be updated \
@@ -758,8 +759,8 @@ impl MutationsRoot {
                 return Err(graphql::Error::new(
                     "TOO_MUCH_TEAMSPEAK_MIXIN_URLS",
                 )
-                    .status(StatusCode::BAD_REQUEST)
-                    .message("Maximum 3 TeamSpeak URLs are allowed"));
+                .status(StatusCode::BAD_REQUEST)
+                .message("Maximum 3 TeamSpeak URLs are allowed"));
             }
         }
 
@@ -835,7 +836,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Output` to be removed.")]
         id: OutputId,
         #[graphql(
-        description = "ID of the `Restream` to remove the `Output` from."
+            description = "ID of the `Restream` to remove the `Output` from."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -856,7 +857,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Output` to be enabled.")]
         id: OutputId,
         #[graphql(
-        description = "ID of the `Restream` to enable the `Output` in."
+            description = "ID of the `Restream` to enable the `Output` in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -877,7 +878,7 @@ impl MutationsRoot {
         #[graphql(description = "ID of the `Output` to be disabled.")]
         id: OutputId,
         #[graphql(
-        description = "ID of the `Restream` to disable the `Output` in."
+            description = "ID of the `Restream` to disable the `Output` in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -897,7 +898,7 @@ impl MutationsRoot {
     /// `Restream` doesn't exist.
     fn enable_all_outputs(
         #[graphql(
-        description = "ID of the `Restream` to enable all `Output`s in."
+            description = "ID of the `Restream` to enable all `Output`s in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -917,7 +918,7 @@ impl MutationsRoot {
     /// `Restream` doesn't exist.
     fn disable_all_outputs(
         #[graphql(
-        description = "ID of the `Restream` to disable all `Output`s in."
+            description = "ID of the `Restream` to disable all `Output`s in."
         )]
         restream_id: RestreamId,
         context: &Context,
@@ -960,7 +961,7 @@ impl MutationsRoot {
     /// doesn't exist.
     fn tune_volume(
         #[graphql(
-        description = "ID of the `Restream` to tune the `Output` in."
+            description = "ID of the `Restream` to tune the `Output` in."
         )]
         restream_id: RestreamId,
         #[graphql(description = "ID of the tuned `Output`.")]
@@ -993,7 +994,7 @@ impl MutationsRoot {
     /// exist.
     fn tune_delay(
         #[graphql(
-        description = "ID of the `Restream` to tune the the `Mixin` in."
+            description = "ID of the `Restream` to tune the the `Mixin` in."
         )]
         restream_id: RestreamId,
         #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
@@ -1019,7 +1020,7 @@ impl MutationsRoot {
     /// or `Mixin` doesn't exist.
     fn tune_sidechain(
         #[graphql(
-        description = "ID of the `Restream` to tune the the `Mixin` in."
+            description = "ID of the `Restream` to tune the the `Mixin` in."
         )]
         restream_id: RestreamId,
         #[graphql(description = "ID of the `Output` of the tuned `Mixin`.")]
@@ -1044,8 +1045,7 @@ impl MutationsRoot {
     /// `false` if nothing changes.
     async fn remove_dvr_file(
         #[graphql(
-        description = "Relative path of the recorded file to be removed.\
-                           \n\n \
+            description = "Relative path of the recorded file to be removed.\
                            Use the exact value returned by `Query.dvrFiles`."
         )]
         path: String,
@@ -1117,7 +1117,7 @@ impl MutationsRoot {
                 &rand::thread_rng().gen::<[u8; 32]>(),
                 &HASH_CFG,
             )
-                .unwrap()
+            .unwrap()
         });
 
         let mut settings = context.state().settings.lock_mut();
@@ -1145,8 +1145,8 @@ impl MutationsRoot {
                                  of inputs and outputs")]
         delete_confirmation: Option<bool>,
         #[graphql(
-        description = "Whether do we need to confirm enabling/disabling \
-                           of inputs or outputs"
+            description = "Whether do we need to confirm enabling/disabling \
+                               of inputs or outputs"
         )]
         enable_confirmation: Option<bool>,
         #[graphql(description = "Google API key for google drive access")]
@@ -1231,7 +1231,7 @@ impl QueriesRoot {
     /// [SRS]: https://github.com/ossrs/srs
     async fn dvr_files(
         #[graphql(
-        description = "ID of the `Output` to return recorded files of."
+            description = "ID of the `Output` to return recorded files of."
         )]
         id: OutputId,
     ) -> Vec<String> {
@@ -1245,10 +1245,10 @@ impl QueriesRoot {
     /// this server at the moment.
     fn export(
         #[graphql(
-        description = "IDs of `Restream`s to be exported. \n\n \
-                           If empty, then all the `Restream`s \
-                           will be exported.",
-        default = Vec::new(),
+            description = "IDs of `Restream`s to be exported. \n\n \
+                               If empty, then all the `Restream`s \
+                               will be exported.",
+            default = Vec::new(),
         )]
         ids: Vec<RestreamId>,
         context: &Context,
@@ -1269,7 +1269,7 @@ impl QueriesRoot {
                     settings: Some(settings),
                     restreams,
                 }
-                    .into();
+                .into();
                 serde_json::to_string(&spec).map_err(|e| {
                     anyhow!("Failed to JSON-serialize spec: {e}").into()
                 })

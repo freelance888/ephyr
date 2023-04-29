@@ -24,10 +24,9 @@ use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
 use std::{
-    borrow::BorrowMut, ffi::OsString, panic::AssertUnwindSafe,
+    borrow::BorrowMut, ffi::OsString, fs::DirEntry, panic::AssertUnwindSafe,
     result::Result::Err,
 };
-use std::fs::DirEntry;
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
@@ -108,13 +107,15 @@ impl FileManager {
                 }
             }
 
-            FileCommand::StartDownloadFile(file_ids) => {
-                self.state.files.lock_mut().iter()
-                    .filter(|f| file_ids.iter().any(|id| f.file_id == *id))
-                    .for_each(|f| {
-                        self.download_file(&f.file_id, f.clone().name);
-                    })
-            }
+            FileCommand::StartDownloadFile(file_ids) => self
+                .state
+                .files
+                .lock_mut()
+                .iter()
+                .filter(|f| file_ids.iter().any(|id| f.file_id == *id))
+                .for_each(|f| {
+                    self.download_file(&f.file_id, f.clone().name);
+                }),
         });
     }
 
@@ -169,25 +170,26 @@ impl FileManager {
 
     /// Sync files on disks with files in state
     fn sync_with_state(&self) {
-        let are_files_the_same = |f: &LocalFileInfo, de: &DirEntry|
-            OsString::from(&f.file_id.0) == de.file_name();
+        let are_files_the_same = |f: &LocalFileInfo, de: &DirEntry| {
+            OsString::from(&f.file_id.0) == de.file_name()
+        };
 
         let mut files = self.state.files.lock_mut();
-        let disk_files: Vec<_> = std::fs::read_dir(self.file_root_dir.as_path())
-            .expect("Cannot read the provided file root directory")
-            .filter_map(Result::ok)
-            .filter(|entry| match entry.file_type() {
-                // Returns only files, skips directories
-                Ok(file_type) => file_type.is_file(),
-                _ => false,
-            }).collect();
+        let disk_files: Vec<_> =
+            std::fs::read_dir(self.file_root_dir.as_path())
+                .expect("Cannot read the provided file root directory")
+                .filter_map(Result::ok)
+                .filter(|entry| match entry.file_type() {
+                    // Returns only files, skips directories
+                    Ok(file_type) => file_type.is_file(),
+                    _ => false,
+                })
+                .collect();
 
-        /// Find files on disk that do not have corresponding file in state and delete them
+        /// Find files on disk that do not have corresponding files
+        /// in state and delete them
         disk_files.iter().for_each(|df| {
-            if !files
-                .iter()
-                .any(|f| are_files_the_same(f, df))
-            {
+            if !files.iter().any(|f| are_files_the_same(f, df)) {
                 let file_path = self.file_root_dir.join(df.file_name());
                 let _ = std::fs::remove_file(file_path).map_err(|err| {
                     tracing::error!("Can not delete file. {}", err);
@@ -197,7 +199,8 @@ impl FileManager {
 
         /// Find files in state that do not have corresponding file on disk
         /// and set their state to [`FileState::DownloadError`]
-        files.iter_mut()
+        files
+            .iter_mut()
             .filter(|f| f.state != FileState::Waiting)
             .for_each(|f| {
                 if !disk_files.iter().any(|df| are_files_the_same(f, df)) {
@@ -206,17 +209,14 @@ impl FileManager {
                     f.stream_stat = None;
                     f.error = Some("There is no file on disk.".to_string());
                 }
-        })
+            })
     }
 
     /// Checks if the provided file ID already exists in the file list,
     /// if not add it to the queue
     pub fn need_file(&self, file_id: &FileId, file_name: Option<String>) {
         let mut all_files = self.state.files.lock_mut();
-        if !all_files
-            .iter()
-            .any(|file| &file.file_id == file_id)
-        {
+        if !all_files.iter().any(|file| &file.file_id == file_id) {
             let new_file = LocalFileInfo {
                 file_id: file_id.clone(),
                 name: file_name,
@@ -309,7 +309,10 @@ impl FileManager {
                         .find(|file| file.file_id == file_id)
                         .map(|file_info| file_info.name = file_name)
                         .ok_or_else(|| {
-                            format!("Could not find file with the provided file ID: {file_id}")
+                            format!(
+                                "Could not find file with the \
+                            provided file ID: {file_id}"
+                            )
                         })?;
                 }
 
@@ -338,7 +341,11 @@ impl FileManager {
                                         r.error.code, r.error.message
                                     )
                                 })
-                                .map_err(|e| format!("Status: {status}. Unknown error {e}"))?);
+                                .map_err(|e| {
+                                    format!(
+                                        "Status: {status}. Unknown error {e}"
+                                    )
+                                })?);
                         }
 
                         let error_response = response.text().await;
@@ -437,7 +444,8 @@ impl FileManager {
             // If there is a problem with writing the downloaded
             // bytes to a file stop the download and print error
             if writer.write_all(&bytes).is_err() {
-                return Err("Could not write received bytes to a file, aborting download."
+                return Err("Could not write received bytes to a file,\
+                    aborting download."
                     .to_string());
             }
 
