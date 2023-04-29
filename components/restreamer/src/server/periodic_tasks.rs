@@ -36,7 +36,7 @@ pub async fn run(state: State) -> Result<(), Failure> {
         loop {
             let state = &state;
 
-            let _ = AssertUnwindSafe(async {
+            _ = AssertUnwindSafe(async {
                 // Update server's statistics
                 update_server_statistics(state, &mut tx_last, &mut rx_last)
                     .await;
@@ -169,7 +169,7 @@ fn sync_stream_info(state: &State) {
                 if e.kind == InputEndpointKind::File && e.file_id.is_some() {
                     // For file - populate statistics from [`LocalFileInfo`]
                     if let Some(file_id) = e.file_id.clone() {
-                        let _ = files.iter().find_map(|f| {
+                        _ = files.iter().find_map(|f| {
                             (f.file_id == file_id).then(|| {
                                 e.stream_stat = f.stream_stat.clone();
                             })
@@ -207,7 +207,7 @@ fn start_pending_downloads(state: &State) {
         let file_ids = files
             .iter_mut()
             .filter(|f| f.state == FileState::Waiting)
-            .take(allowed_to_add.into())
+            .take(allowed_to_add)
             .map(|f| {
                 f.stream_stat = None;
                 f.state = FileState::Pending;

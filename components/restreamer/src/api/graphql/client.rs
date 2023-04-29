@@ -382,15 +382,14 @@ impl MutationsRoot {
                 _ = r.playlist
                     .queue
                     .iter()
-                    .find(|pf| pf.file_id == f.file_id)
-                    .is_some()
+                    .any(|pf| pf.file_id == f.file_id)
                     .then(|| {
                         if f.state != FileState::Local {
                             f.state = FileState::DownloadError;
                             f.download_state = None;
                             f.stream_stat = None;
                             f.error = Some("Download was canceled".to_string());
-                            found = true
+                            found = true;
                         }
                     });
             });
@@ -444,13 +443,13 @@ impl MutationsRoot {
     ) -> Option<bool> {
         context.state().files.lock_mut().iter_mut().find_map(|f| {
             (f.file_id == file_id).then(|| {
-                if f.state != FileState::Local {
+                if f.state == FileState::Local {
+                    false
+                } else {
                     f.state = FileState::DownloadError;
                     f.download_state = None;
                     f.error = Some("Download was canceled".to_string());
                     true
-                } else {
-                    false
                 }
             })
         })

@@ -168,33 +168,33 @@
     <div class="uk-flex uk-flex-middle uk-margin-bottom playlist-toolbar">
       <PlaylistStatus files={queue} />
       <Confirm let:confirm>
-        <a
-          class="uk-text-uppercase uk-text-small uk-margin-auto-left"
+        <button
+          class="uk-button uk-button-default uk-button-small uk-margin-auto-left"
           data-testid="start-all-outputs"
-          title="Start all not completed downloads of files in playlist"
+          title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
-        ><span>Download all</span>
-        </a>
-        <span slot="title">Restart downloads</span>
+        ><span>Start downloads</span>
+        </button>
+        <span slot="title">Start downloads</span>
         <span slot="description"
         >This will restart all not complete downloads of files in playlist.
           </span>
-        <span slot="confirm">Restart downloads</span>
+        <span slot="confirm">Start downloads</span>
       </Confirm>
 
       <Confirm let:confirm>
-        <a
-          class="uk-text-uppercase uk-text-small uk-margin-left"
+        <button
+          class="uk-button uk-button-default uk-button-small"
           data-testid="stop-all-outputs"
-          title="Stop all downloads of all files in playlist"
+          title="Stop all downloads of all files in the playlist"
           on:click={() => confirm(stopPlaylistDownload)}
-          value=""><span>Stop downloads</span></a
+          value=""><span>Stop downloads</span></button
         >
-        <span slot="title">Cancel all active downloads</span>
+        <span slot="title">Stop all active downloads</span>
         <span slot="description"
         >This will stop active downloads of files in playlist.
           </span>
-        <span slot="confirm">Cancel downloads</span>
+        <span slot="confirm">Stop downloads</span>
       </Confirm>
     </div>
     <div class="google-drive-dir uk-flex">

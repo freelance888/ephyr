@@ -66,8 +66,7 @@
               uk-tooltip={downloadErrorMessage}
             />
           {:else if file.state === FILE_LOCAL}
-            <span>
-              <i class="fa fa-check file-was-downloaded" />
+            <span class='file-was-downloaded' uk-icon="icon: check">
             </span>
           {/if}
         </div>

@@ -49,14 +49,11 @@
         background: #eee
         max-height: 2em
         border-radius: 0.4em
+        font-size: 14px
 
     .status-item
-        font-size: 14px
-        padding: 0 20px 
+        padding: 8px 20px
 
-    .status-ready 
-        font-size: 16px
-    
     .bg-ready
         background: #ded
     

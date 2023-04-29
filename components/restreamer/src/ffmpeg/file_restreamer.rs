@@ -1,4 +1,4 @@
-use std::{path::Path, process::Stdio};
+use std::path::Path;
 
 use tokio::{io, process::Command};
 use url::Url;
@@ -49,7 +49,6 @@ impl FileRestreamer {
         cmd: &mut Command,
         repeat: bool,
     ) -> io::Result<()> {
-        _ = cmd.stderr(Stdio::inherit()).args(["-loglevel", "debug"]);
         match self.from_url.scheme() {
             "file" => {
                 _ = cmd.arg("-re");

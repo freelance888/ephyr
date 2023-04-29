@@ -188,14 +188,14 @@ impl FileManager {
 
         // Find files on disk that do not have corresponding files
         // in state and delete them
-        disk_files.iter().for_each(|df| {
+        for df in &disk_files {
             if !files.iter().any(|f| are_files_the_same(f, df)) {
                 let file_path = self.file_root_dir.join(df.file_name());
-                let _ = std::fs::remove_file(file_path).map_err(|err| {
+                _ = std::fs::remove_file(file_path).map_err(|err| {
                     tracing::error!("Can not delete file. {}", err);
                 });
             }
-        });
+        }
 
         // Find files in state that do not have corresponding file on disk
         // and set their state to [`FileState::DownloadError`]
@@ -209,7 +209,7 @@ impl FileManager {
                     f.stream_stat = None;
                     f.error = Some("There is no file on disk.".to_string());
                 }
-            })
+            });
     }
 
     /// Checks if the provided file ID already exists in the file list,
@@ -277,7 +277,7 @@ impl FileManager {
         let state = self.state.clone();
         let file_id = id.clone();
         drop(tokio::spawn(async move {
-            let _ = async {
+            _ = async {
                 let api_key = state
                     .settings
                     .lock_mut()
@@ -433,7 +433,7 @@ impl FileManager {
             .create_new(true)
             .write(true)
             .open(file_path.clone())
-            .map_err(|err| format!("Can't create file: {}", err))?;
+            .map_err(|err| format!("Can't create file: {err}"))?;
 
         let mut writer = BufWriter::new(file);
         let mut last_update = Utc::now();
