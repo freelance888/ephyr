@@ -19,7 +19,7 @@ use crate::{
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
 };
-use chrono::{Local, Utc};
+use chrono::Utc;
 use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
 use reqwest::{Response, StatusCode};
@@ -186,8 +186,8 @@ impl FileManager {
                 })
                 .collect();
 
-        /// Find files on disk that do not have corresponding files
-        /// in state and delete them
+        // Find files on disk that do not have corresponding files
+        // in state and delete them
         disk_files.iter().for_each(|df| {
             if !files.iter().any(|f| are_files_the_same(f, df)) {
                 let file_path = self.file_root_dir.join(df.file_name());
@@ -197,8 +197,8 @@ impl FileManager {
             }
         });
 
-        /// Find files in state that do not have corresponding file on disk
-        /// and set their state to [`FileState::DownloadError`]
+        // Find files in state that do not have corresponding file on disk
+        // and set their state to [`FileState::DownloadError`]
         files
             .iter_mut()
             .filter(|f| f.state != FileState::Waiting)
