@@ -79,7 +79,7 @@
     margin-right: 3px
 
   .fa-volume-mute
-    color: #f0506e
+    color: var(--danger-color)
 
   .volume
     padding-left: 17px

@@ -27,7 +27,7 @@
   }
 
   function onEmptyGooleApiKey() {
-    if (!info.googleApiKey) info.maxFilesInPlaylist = null;
+    if (!info.googleApiKey) info.maxDownloadingFiles = null;
   }
 </script>
 
@@ -81,12 +81,12 @@
           type="number"
           min="2"
           step="1"
-          bind:value={info.maxFilesInPlaylist}
+          bind:value={info.maxDownloadingFiles}
           placeholder="Files limit"
           disabled={!info.googleApiKey}
           uk-tooltip={fileIdToolTip}
         />
-        <div class="uk-alert">Max amount of files in a playlist.</div>
+        <div class="uk-alert">Maximum number of concurrent downloads</div>
       </fieldset>
 
       <button class="uk-button uk-button-primary" on:click={submit_change}

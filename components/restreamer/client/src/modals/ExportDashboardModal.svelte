@@ -65,7 +65,6 @@
 
   async function addHosts() {
     const newHosts = JSON.parse(get(hostsJson));
-    console.log(newHosts);
     for (const host of newHosts) {
       await addClientMutation({ variables: { client_id: host } });
     }

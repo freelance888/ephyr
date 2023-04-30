@@ -6,8 +6,8 @@
 use derive_more::From;
 use ephyr_log::{
     tracing,
-    tracing::{instrument, Instrument, Span},
-    ChildCapture, ParsedMsg,
+    tracing::{instrument, Instrument},
+    ChildCapture, ParsedMsg, Span,
 };
 use libc::pid_t;
 use regex::Regex;
@@ -35,6 +35,7 @@ use crate::{
 /// Parse [FFmpeg] log line.
 ///
 /// [FFmpeg]: https://ffmpeg.org
+#[allow(dead_code)]
 fn parse_ffmpeg_log_line(line: &str) -> ParsedMsg<'_> {
     lazy_static! {
         static ref RE: Regex = Regex::new(concat!(
@@ -251,7 +252,7 @@ impl RestreamerKind {
         let from_url =
             playlist.currently_playing_file.as_ref().and_then(|file| {
                 if let Ok(from_url) = Url::from_file_path(
-                    file_root.join(&file.file_id),
+                    file_root.join(file.file_id.to_string()),
                 )
                 .map_err(|_| {
                     tracing::error!(

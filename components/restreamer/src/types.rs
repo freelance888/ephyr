@@ -31,7 +31,7 @@ impl Drop for DroppableAbortHandle {
 #[derive(
     Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, GraphQLScalar,
 )]
-pub struct UNumber(u16);
+pub struct UNumber(pub u16);
 
 impl TryFrom<i32> for UNumber {
     type Error = std::num::TryFromIntError;

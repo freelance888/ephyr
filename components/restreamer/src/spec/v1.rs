@@ -66,7 +66,7 @@ pub struct Settings {
     pub google_api_key: Option<String>,
 
     /// Max number of files allowed in [Restream]'s playlist.
-    pub max_files_in_playlist: Option<UNumber>,
+    pub max_downloading_files: Option<UNumber>,
 }
 
 /// Shareable (exportable and importable) specification of a
@@ -86,9 +86,6 @@ pub struct Restream {
 
     /// [`Input`] that a live stream is received from.
     pub input: Input,
-
-    /// Max number of files allowed in [Restream]'s playlist
-    pub max_files_in_playlist: Option<UNumber>,
 
     /// [`Output`]s that a live stream is re-streamed to.
     #[serde(

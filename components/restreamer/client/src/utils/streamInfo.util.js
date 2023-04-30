@@ -60,3 +60,24 @@ export const getEndpointsWithDiffStreams = (input) => {
 
   return false;
 };
+
+export const formatStreamInfo = (streamStat, title = '') => {
+  if (streamStat) {
+    return streamStat.error
+      ? streamStat.error
+      : `<span><strong>${title}</strong></span>
+          <br/>
+          <span><strong>video</strong>&#58; ${
+            streamStat.videoCodecName
+          }, </span>
+          <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
+          <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
+          <br/>
+          <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
+          <span>${streamStat.audioSampleRate},</span>
+          <span>${streamStat.audioChannelLayout},</span>
+          <span>channels&#58; ${streamStat.audioChannels}</span>`;
+  }
+
+  return '';
+};

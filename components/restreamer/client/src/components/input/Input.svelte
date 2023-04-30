@@ -18,7 +18,6 @@
   export let restream_id;
   export let restream_key;
   export let value;
-  export let files;
   export let with_label;
   export let show_controls;
   export let show_move_up;
@@ -76,7 +75,6 @@
           input={value}
           input_url={getInputUrl(endpoint)}
           {restream_id}
-          {files}
           {with_label}
           {show_controls}
           {show_move_up}

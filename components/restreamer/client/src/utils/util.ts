@@ -88,7 +88,7 @@ export function isFullStreamPage(): boolean {
 }
 
 export const getFullStreamUrl = (restreamId: string) => {
-  return `/${FullStreamPage}?tran_restream_id=${restreamId}`;
+  return `/${FullStreamPage}?restream-id=${restreamId}`;
 };
 
 /**
@@ -138,6 +138,8 @@ export const isFailoverInput = (input: any) => {
 export const escapeRegExp = (str: string) => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 };
+
+export const sanitizeTooltip = (message) => message.replaceAll(':', ' - ');
 
 export const isFullGDrivePath = (id: string): boolean => {
   return id.startsWith('https://drive.google.com');

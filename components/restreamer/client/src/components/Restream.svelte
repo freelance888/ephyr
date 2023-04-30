@@ -15,6 +15,7 @@
     TuneDelay,
     TuneSidechain,
     TuneVolume,
+    CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
@@ -37,7 +38,10 @@
   import {
     getEndpointsWithDiffStreams,
     getEndpointsWithStreamsErrors,
-  } from '../utils/input.util';
+  } from '../utils/streamInfo.util';
+  import EqualizerIcon from './svg/EqualizerIcon.svelte';
+  import PlaylistIcon from './svg/PlaylistIcon.svelte';
+  import FileInfo from './common/FileInfo.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -51,7 +55,6 @@
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
-  export let files;
   export let isFullView = false;
 
   let outputMutations = {
@@ -62,6 +65,11 @@
     TuneDelay,
     TuneSidechain,
   };
+
+  const playingFile = subscribe(CurrentlyPlayingFile, {
+    variables: { id: value.id },
+    errorPolicy: 'all',
+  });
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -84,6 +92,8 @@
 
   $: hasVideos = value.playlist && value.playlist.queue.length > 0;
 
+  $: isPlaylistPlaying = value.playlist.currentlyPlayingFile;
+
   $: showControls = false;
 
   $: streamsErrorsTooltip = getStreamErrorTooltip(value.input);
@@ -93,6 +103,13 @@
   $: failoverInputsCount = value.input.src?.inputs?.length ?? 0;
 
   let openRestreamModal = false;
+
+  $: currentlyPlayingFile =
+    isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+
+  $: {
+    console.log('CURRENTLY_PLAYING_FILE: ', currentlyPlayingFile);
+  }
 
   async function removeRestream() {
     try {
@@ -216,13 +233,30 @@
       </span>
     {/if}
 
-    <div class="uk-float-right uk-flex uk-flex-bottom">
-      <div class="uk-flex">
+    <div class="uk-float-right uk-flex uk-flex-middle">
+      <a
+        href={getFullStreamUrl(value.id)}
+        hidden={isFullView}
+        target="_blank"
+        rel="noreferrer"
+        class="uk-text-uppercase uk-text-small uk-margin-right"
+        title="Open Full Stream Page"
+      >
+        Full view
+      </a>
+      <div class="uk-flex uk-flex-middle">
         <span
-          class="item-icon uk-icon uk-margin-right"
+          class="playlist-icon uk-margin-right"
+          class:is-playing={isPlaylistPlaying}
+          aria-hidden="true"
           hidden={!hasVideos || isFullView}
-          uk-icon="icon: youtube; ratio: 1.5"
-        />
+        >
+          {#if isPlaylistPlaying}
+            <EqualizerIcon />
+          {:else}
+            <PlaylistIcon />
+          {/if}
+        </span>
         {#if value.outputs && value.outputs.length > 0}
           <span class="total">
             {#each statusesList as status (status)}
@@ -288,7 +322,6 @@
       restream_id={value.id}
       restream_key={value.key}
       value={value.input}
-      {files}
       with_label={false}
       show_controls={showControls}
     />
@@ -299,7 +332,6 @@
           restream_id={value.id}
           restream_key={value.key}
           value={input}
-          {files}
           with_label={true}
           show_controls={showControls}
           show_move_up={failoverInputsCount > 1 && index !== 0}
@@ -308,6 +340,16 @@
             index !== failoverInputsCount - 1}
         />
       {/each}
+      {#if currentlyPlayingFile}
+        <div class="uk-flex uk-flex-middle currently-playing-file">
+          <div class="playlist-file-icon">
+            <EqualizerIcon />
+          </div>
+          <div class="file-info">
+            <FileInfo file={currentlyPlayingFile} />
+          </div>
+        </div>
+      {/if}
     {/if}
 
     <div class="uk-grid uk-grid-small">
@@ -403,4 +445,23 @@
     .info-icon
       font-size: 16px
 
+    .currently-playing-file
+      margin-top: 4px
+      margin-left: 40px
+
+      .file-info
+        margin-left: 6px
+
+    .playlist-file-icon
+      color: var(--success-color)
+      :global(svg)
+        width: 16px
+        height: 16px
+
+    .playlist-icon
+      &.is-playing
+        color: var(--success-color)
+      :global(svg)
+        width: 24px
+        height: 24px
 </style>

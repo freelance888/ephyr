@@ -12,7 +12,6 @@ use uuid::Uuid;
 use crate::{
     spec,
     state::{Input, Label, Output, Playlist, PlaylistId},
-    types::UNumber,
 };
 
 /// Re-stream of a live stream from one `Input` to many `Output`s.
@@ -36,9 +35,6 @@ pub struct Restream {
     /// Playlist for this restream
     pub playlist: Playlist,
 
-    /// Max number of files allowed in a playlist
-    pub max_files_in_playlist: Option<UNumber>,
-
     /// `Input` that a live stream is received from.
     pub input: Input,
 
@@ -56,7 +52,6 @@ impl Restream {
             id: RestreamId::random(),
             key: spec.key,
             label: spec.label,
-            max_files_in_playlist: spec.max_files_in_playlist,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
             playlist: Playlist {
@@ -75,7 +70,6 @@ impl Restream {
     pub fn apply(&mut self, new: spec::v1::Restream, replace: bool) {
         self.key = new.key;
         self.label = new.label;
-        self.max_files_in_playlist = new.max_files_in_playlist;
         self.input.apply(new.input);
         if replace {
             let mut olds = mem::replace(
@@ -116,7 +110,6 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
-            max_files_in_playlist: self.max_files_in_playlist,
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }

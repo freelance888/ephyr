@@ -7,7 +7,7 @@ subscription Info {
         passwordHash
         passwordOutputHash
         googleApiKey
-        maxFilesInPlaylist
+        maxDownloadingFiles
     }
 }
 
@@ -25,17 +25,7 @@ subscription ServerInfo {
 
 subscription Files {
     files {
-        fileId
-        name
-        state
-        error
-        downloadState {
-            maxProgress
-            currentProgress
-        }
-        streamStat {
-            ...streamStat
-        }
+        ...localFileInfo
     }
 }
 
@@ -46,19 +36,22 @@ subscription State {
     }
 }
 
-subscription TranslationRestream($id: RestreamId!) {
+subscription SingleRestream($id: RestreamId!) {
     restream(id: $id) {
-        restream {
-            ...restreamBasic
-            ...restreamPlaylist
-        }
-        parent {
-            restream {
-                id
-                ...restreamOutputs
-            }
-            outputId
-        }
+        ...restreamBasic
+        ...restreamPlaylist
+    }
+}
+
+subscription SingleFile($id: FileId!) {
+    file(id: $id) {
+        ...localFileInfo
+    }
+}
+
+subscription CurrentlyPlayingFile($id: RestreamId!) {
+    currentlyPlayingFile(id: $id) {
+        ...localFileInfo
     }
 }
 
@@ -86,7 +79,6 @@ mutation SetRestream(
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
     $file_id: FileId
-    $max_files_in_playlist: UNumber
 ) {
     setRestream(
         key: $key
@@ -96,7 +88,6 @@ mutation SetRestream(
         fileId: $file_id
         withHls: $with_hls
         id: $id
-        maxFilesInPlaylist: $max_files_in_playlist
     )
 }
 
@@ -104,15 +95,19 @@ mutation DownloadFile($fileId: FileId!) {
     downloadFile(fileId: $fileId)
 }
 
+mutation CancelFileDownload($fileId: FileId!) {
+    cancelFileDownload(fileId: $fileId)
+}
+
 mutation RemoveRestream($id: RestreamId!) {
     removeRestream(id: $id)
 }
 
-mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [String!]!) {
+mutation SetPlaylist($restreamId: RestreamId!, $fileIds: [FileId!]!) {
     setPlaylist(restreamId: $restreamId, playlist: $fileIds)
 }
 
-mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: String!) {
+mutation PlayFileFromPlaylist($restreamId: RestreamId!, $file_id: FileId!) {
     playFileFromPlaylist(restreamId: $restreamId, fileId: $file_id)
 }
 
@@ -122,6 +117,14 @@ mutation StopPlayingFileFromPlaylist($restreamId: RestreamId!) {
 
 mutation GetPlaylistFromGdrive($id: RestreamId!, $folder_id: String!) {
     getPlaylistFromGdrive(restreamId: $id, folderId: $folder_id)
+}
+
+mutation CancelPlaylistDownload($id: RestreamId!) {
+    cancelPlaylistDownload(restreamId: $id)
+}
+
+mutation RestartPlaylistDownload($id: RestreamId!) {
+    restartPlaylistDownload(restreamId: $id)
 }
 
 mutation EnableInput($restream_id: RestreamId!, $input_id: InputId!) {
@@ -260,14 +263,14 @@ mutation SetSettings(
     $deleteConfirmation: Boolean!
     $enableConfirmation: Boolean!
     $googleApiKey: String
-    $maxFilesInPlaylist: UNumber
+    $maxDownloadingFiles: UNumber
 ) {
     setSettings(
         title: $title
         deleteConfirmation: $deleteConfirmation
         enableConfirmation: $enableConfirmation
         googleApiKey: $googleApiKey
-        maxFilesInPlaylist: $maxFilesInPlaylist
+        maxDownloadingFiles: $maxDownloadingFiles
     )
 }
 
@@ -317,7 +320,6 @@ fragment restreamBasic on Restream {
         enabled
     }
     ...restreamOutputs
-    maxFilesInPlaylist
 }
 
 fragment restreamPlaylist on Restream {
@@ -371,4 +373,18 @@ fragment streamStat on StreamStatistics {
     videoWidth
     bitRate
     error
+}
+
+fragment localFileInfo on LocalFileInfo {
+    fileId
+    name
+    state
+    error
+    downloadState {
+        maxProgress
+        currentProgress
+    }
+    streamStat {
+        ...streamStat
+    }
 }

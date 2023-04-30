@@ -7,31 +7,61 @@
     PlayFileFromPlaylist,
     SetPlaylist,
     StopPlayingFileFromPlaylist,
+    CancelPlaylistDownload,
+    RestartPlaylistDownload,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
+  import FileInfo from './common/FileInfo.svelte';
+  import {
+    FILE_DOWNLOADING,
+    FILE_LOCAL,
+    FILE_PENDING,
+    FILE_WAITING,
+  } from '../utils/constants';
+  import FileIcon from './svg/FileIcon.svelte';
+  import PlayIcon from './svg/PlayIcon.svelte';
+  import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
   import { isFullGDrivePath, showError } from '../utils/util';
+  import PlaylistStatus from './common/PlaylistStatus.svelte';
 
+  const restartPlaylistDownload = mutation(RestartPlaylistDownload);
+  const cancelPlaylistDownload = mutation(CancelPlaylistDownload);
   const getPlaylistFromDrive = mutation(GetPlaylistFromGdrive);
   const setPlaylist = mutation(SetPlaylist);
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
   const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist);
 
-  let dragDisabled = true;
   const flipDurationMs = 200;
 
   export let restreamId;
   export let playlist;
+  export let files = [];
+
+  $: dragDisabled = true;
 
   $: queue = playlist
-    ? playlist.queue.map((x) => ({
-        id: x.fileId,
-        name: x.name,
-        isPlaying: playlist.currentlyPlayingFile
-          ? playlist.currentlyPlayingFile.fileId === x.fileId
-          : false,
-        wasPlayed: x.wasPlayed,
-      }))
+    ? playlist.queue
+        .map((x) => ({
+          id: x.fileId,
+          name: x.name ?? x.fileId,
+          isPlaying: playlist.currentlyPlayingFile
+            ? playlist.currentlyPlayingFile.fileId === x.fileId
+            : false,
+          file: files.find((f) => f.fileId === x.fileId),
+          wasPlayed: x.wasPlayed,
+        }))
+        .map((x) => ({
+          ...x,
+          isLocal: x.file?.state === FILE_LOCAL,
+          isDownloading: [
+            FILE_DOWNLOADING,
+            FILE_PENDING,
+            FILE_WAITING,
+          ].includes(x.file?.state),
+        }))
     : [];
+
+  $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
   let googleDriveFolderId = '';
   let isValidFolderIdInput = true;
@@ -47,6 +77,24 @@
       }
     } else {
       showError(`Google Folder Id: ${folderId} is incorrect`);
+    }
+  }
+
+  async function stopPlaylistDownload() {
+    try {
+      const variables = { id: restreamId };
+      await cancelPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function startPlaylistDownload() {
+    try {
+      const variables = { id: restreamId };
+      await restartPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
     }
   }
 
@@ -129,6 +177,38 @@
 
 <template>
   <div class="playlist">
+    <div class="uk-flex uk-flex-middle uk-margin-bottom playlist-toolbar">
+      <PlaylistStatus files={queue} />
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-default uk-button-small uk-margin-auto-left"
+          data-testid="start-all-outputs"
+          title="Start all incomplete downloads of files in the playlist"
+          on:click={() => confirm(startPlaylistDownload)}
+          ><span>Start downloads</span>
+        </button>
+        <span slot="title">Start downloads</span>
+        <span slot="description"
+          >This will restart all not complete downloads of files in playlist.
+        </span>
+        <span slot="confirm">Start downloads</span>
+      </Confirm>
+
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-default uk-button-small"
+          data-testid="stop-all-outputs"
+          title="Stop all downloads of all files in the playlist"
+          on:click={() => confirm(stopPlaylistDownload)}
+          value=""><span>Stop downloads</span></button
+        >
+        <span slot="title">Stop all active downloads</span>
+        <span slot="description"
+          >This will stop active downloads of files in playlist.
+        </span>
+        <span slot="confirm">Stop downloads</span>
+      </Confirm>
+    </div>
     <div class="google-drive-dir uk-flex">
       <label for="gdrive">Add files from Google Drive</label>
       <input
@@ -166,10 +246,10 @@
         <div class="item uk-card uk-card-default">
           <span
             class="item-drag-zone uk-icon"
+            class:uk-invisible={hasDownloadingFiles}
             uk-icon="table"
             on:mousedown={startDrag}
           />
-
           <Confirm let:confirm>
             <span slot="title"
               >{item.isPlaying ? 'Stop' : 'Start'} playing file</span
@@ -178,18 +258,39 @@
             <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
-              class="item-name uk-height-1-1 uk-width-1-1"
+              class="item-file uk-height-1-1 uk-width-1-1 uk-flex uk-flex-middle"
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
-              on:click={() => confirm(() => startStopPlaying(item.id))}
             >
               <span
-                class="item-icon uk-icon"
-                uk-icon={item.isPlaying
-                  ? 'icon: future; ratio: 2.5'
-                  : 'icon: youtube; ratio: 2.5'}
-              />
-              <span>{item.name}</span>
+                class="item-icon"
+                class:can-be-started={item.isLocal}
+                on:click={() =>
+                  item.isLocal
+                    ? confirm(() => startStopPlaying(item.id))
+                    : undefined}
+              >
+                {#if !item.isLocal}
+                  <span
+                    class="file-icon"
+                    class:is-downloading={item.isDownloading}
+                  >
+                    <!-- Inline svg prevents duplicating fa icons during drag & drop -->
+                    <FileIcon />
+                  </span>
+                {:else if item.isPlaying}
+                  <PlayIcon />
+                {:else}
+                  <StopPlayingIcon />
+                {/if}
+              </span>
+              {#if item.file}
+                <FileInfo
+                  file={item.file}
+                  showDownloadLink={true}
+                  classList="uk-margin-small-left"
+                />
+              {/if}
             </div>
           </Confirm>
           <Confirm let:confirm>
@@ -201,6 +302,7 @@
             <button
               type="button"
               class="uk-close"
+              class:uk-hidden={hasDownloadingFiles}
               uk-close
               on:click={() => confirm(() => deleteFile(item.id))}
             />
@@ -233,6 +335,9 @@
   .playlist
     padding: 16px
 
+  .playlist-toolbar
+    gap: 4px
+
   .playlist-items
     margin-top: 8px
 
@@ -252,7 +357,6 @@
 
     &:hover
       background-color: #f8f8f8
-      cursor: pointer
 
       .uk-close
         display: block
@@ -268,12 +372,22 @@
   .item-icon
     padding-right: 4px
     padding-left: 4px
+    font-size: 28px
+    &.can-be-started
+      cursor: pointer
+    .file-icon
+      :global(svg)
+        font-size: 28px
+        vertical-align: baseline
 
-  .item-name
+    .is-downloading
+      color: var(--warning-color)
+
+  .item-file
     flex: 1
-    padding: 8px
     &.is-playing
-      font-weight: 700
+      .item-icon
+        color: var(--success-color)
 
     &.is-finished
       opacity: 0.4

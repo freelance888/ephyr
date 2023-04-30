@@ -2,11 +2,26 @@
   import Confirm from '../common/Confirm.svelte';
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
-  import { mutation } from 'svelte-apollo';
-  import { DownloadFile } from '../../../api/client.graphql';
-  import { showError } from '../../utils/util';
+  import FileInfo from '../common/FileInfo.svelte';
+  import { formatStreamInfo } from '../../utils/streamInfo.util';
+  import {
+    ENDPOINT_KIND_FILE,
+    ENDPOINT_KIND_RTMP,
+    FILE_DOWNLOAD_ERROR,
+    FILE_DOWNLOADING,
+    FILE_LOCAL,
+    FILE_PENDING,
+    INITIALIZING,
+    OFFLINE,
+    ONLINE,
+  } from '../../utils/constants';
 
-  import { MoveInputInDirection } from '../../../api/client.graphql';
+  import {
+    MoveInputInDirection,
+    SingleFile,
+  } from '../../../api/client.graphql';
+  import { showError } from '../../utils/util';
+  import { mutation, subscribe } from 'svelte-apollo';
 
   const moveInputInDirectionMutation = mutation(MoveInputInDirection);
 
@@ -14,87 +29,38 @@
   export let input;
   export let input_url;
   export let restream_id;
+
   export let with_label;
   export let show_controls;
-  export let files;
   export let show_move_up;
   export let show_move_down;
   export let show_up_confirmation;
 
+  const backupFile = subscribe(SingleFile, {
+    variables: { id: endpoint.fileId },
+    errorPolicy: 'all',
+  });
+
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
   $: isFailover = !!input.src && input.src.__typename === 'FailoverInputSrc';
 
-  $: currentFile = searchFile($files.data);
-  $: isFile = endpoint.kind === 'FILE';
+  $: currentFile = $backupFile?.data?.file;
+  $: isFile = endpoint.kind === ENDPOINT_KIND_FILE;
 
-  $: alertDanger = isFile ? isFileError : endpoint.status === 'OFFLINE';
+  $: isFileError = currentFile?.state === FILE_DOWNLOAD_ERROR;
+
+  $: alertDanger = isFile
+    ? isFileError || !input.enabled
+    : endpoint.status === OFFLINE;
 
   $: alertWarning = isFile
-    ? currentFile?.state === 'PENDING' || currentFile?.state === 'DOWNLOADING'
-    : endpoint.status === 'INITIALIZING';
+    ? currentFile?.state === FILE_PENDING ||
+      currentFile?.state === FILE_DOWNLOADING
+    : endpoint.status === INITIALIZING;
 
   $: alertSuccess = isFile
-    ? currentFile?.state === 'LOCAL'
-    : endpoint.status === 'ONLINE';
-
-  $: fileDownloadProgress = getFileDownloadProgress(currentFile);
-
-  $: isFileError = currentFile?.state === 'DOWNLOAD_ERROR';
-
-  $: fileErrorMessage = currentFile?.error;
-
-  const downloadFileMutation = mutation(DownloadFile);
-
-  async function downloadFile() {
-    try {
-      await downloadFileMutation({ variables: { fileId: currentFile.fileId } });
-    } catch (e) {
-      showError(e.message);
-    }
-  }
-
-  const searchFile = (allFiles) => {
-    return allFiles?.files
-      ? allFiles.files.find((val) => val.fileId === endpoint.fileId)
-      : undefined;
-  };
-
-  const formatStreamInfo = (streamStat) => {
-    if (streamStat) {
-      return streamStat.error
-        ? streamStat.error
-        : `<span><strong>${input.key}</strong></span>
-          <br/>
-          <span><strong>video</strong>&#58; ${
-            streamStat.videoCodecName
-          }, </span>
-          <span>${streamStat.videoWidth}x${streamStat.videoHeight},</span>
-          <span>${streamStat.videoRFrameRate?.replace('/1', '')} FPS</span>
-          <br/>
-          <span><strong>audio</strong>&#58; ${streamStat.audioCodecName},</span>
-          <span>${streamStat.audioSampleRate},</span>
-          <span>${streamStat.audioChannelLayout},</span>
-          <span>channels&#58; ${streamStat.audioChannels}</span>`;
-    }
-
-    return '';
-  };
-
-  const getFileName = (currentFile) =>
-    currentFile.name ? currentFile.name : currentFile.fileId;
-
-  const getFileDownloadProgress = (currentFile) => {
-    let value =
-      currentFile?.downloadState &&
-      currentFile.downloadState.currentProgress !==
-        currentFile.downloadState.maxProgress
-        ? (currentFile.downloadState.currentProgress /
-            currentFile.downloadState.maxProgress) *
-          100
-        : 0;
-
-    return value < 0 || value >= 100 ? undefined : value;
-  };
+    ? currentFile?.state === FILE_LOCAL
+    : endpoint.status === ONLINE;
 
   async function moveUp() {
     try {
@@ -137,12 +103,12 @@
       {#if isFile}
         <span
           ><i
-            class="fas fa-file"
+            class="fas fa-arrow-right"
             title="Serves live {endpoint.kind} stream"
           /></span
         >
-      {:else if isFailover || endpoint.kind !== 'RTMP'}
-        {#if endpoint.status === 'ONLINE'}
+      {:else if isFailover || endpoint.kind !== ENDPOINT_KIND_RTMP}
+        {#if endpoint.status === ONLINE}
           <span
             ><i
               class="fas fa-circle"
@@ -151,7 +117,7 @@
                 : ''}live {endpoint.kind} stream"
             /></span
           >
-        {:else if endpoint.status === 'INITIALIZING'}
+        {:else if endpoint.status === INITIALIZING}
           <span
             ><i
               class="fas fa-dot-circle"
@@ -188,52 +154,7 @@
     </div>
 
     {#if isFile && currentFile}
-      <Confirm let:confirm>
-        <div class="uk-flex uk-flex-middle">
-          <div class="uk-flex uk-flex-column">
-            <div class="uk-flex uk-flex-middle">
-              <a
-                href="/"
-                class="file-name"
-                on:click|preventDefault={confirm(() => downloadFile())}
-              >
-                {getFileName(currentFile)}
-              </a>
-              {#if isFileError}
-                <span
-                  class="info-icon has-error"
-                  uk-icon="icon: info; ratio: 0.7"
-                  uk-tooltip={fileErrorMessage}
-                />
-              {/if}
-            </div>
-
-            <div class="uk-flex uk-flex-middle">
-              {#if fileDownloadProgress}
-                <progress
-                  class="uk-progress"
-                  value={fileDownloadProgress}
-                  max="100"
-                />
-                <span class="uk-display-inline-block download-percents"
-                  >{fileDownloadProgress.toFixed(0)}</span
-                >%
-              {/if}
-            </div>
-          </div>
-          <Url
-            streamInfo={formatStreamInfo(endpoint.streamStat)}
-            isError={!!endpoint.streamStat?.error}
-          />
-        </div>
-        <span slot="title"
-          >Download file <code>{getFileName(currentFile)}</code></span
-        >
-        <span slot="description"
-          >Current file fill be removed and download process will be started</span
-        >
-        <span slot="confirm">Start download</span>
-      </Confirm>
+      <FileInfo file={currentFile} showDownloadLink={true} />
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
@@ -339,30 +260,6 @@
       flex-shrink: 0
       margin-right: 5px
 
-    .file-name
-      color: var(--primary-text-color)
-      padding-right: 6px
-
-  .uk-progress
-    height: 3px;
-    margin-bottom: 0
-    margin-top: 0
-    background-color: #fff
-
-  progress::-webkit-progress-value {
-    background: var(--warning-color);
-  }
-
-  progress::-moz-progress-bar {
-    background: var(--warning-color);
-  }
-
-  .download-percents {
-    font-size: smaller
-    margin: 0 4px
-  }
-
     .arrows
-         width: 22px
-
+      width: 22px
 </style>

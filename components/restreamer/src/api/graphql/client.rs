@@ -5,10 +5,12 @@
 use std::collections::HashSet;
 
 use actix_web::http::StatusCode;
+
 use anyhow::anyhow;
 use ephyr_log::tracing;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
+use itertools::Itertools;
 use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
 use rand::Rng as _;
@@ -28,7 +30,8 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{
-        get_video_list_from_gdrive_folder, FileCommand, FileId, LocalFileInfo,
+        get_video_list_from_gdrive_folder, FileCommand, FileId, FileState,
+        LocalFileInfo,
     },
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
@@ -141,12 +144,9 @@ impl MutationsRoot {
             description = "Google drive file ID for failover file endpoint."
         )]
         file_id: Option<FileId>,
-        #[graphql(description = "Override for global maximum for files in \
-                                 playlist")]
-        max_files_in_playlist: Option<UNumber>,
         #[graphql(
             description = "Indicator whether the `Restream` should have an \
-            additional endpoint for serving a live stream via HLS.",
+                additional endpoint for serving a live stream via HLS.",
             default = false
         )]
         with_hls: bool,
@@ -241,7 +241,6 @@ impl MutationsRoot {
                 enabled: true,
             },
             outputs: vec![],
-            max_files_in_playlist,
         };
 
         let result = if let Some(id) = id {
@@ -253,7 +252,7 @@ impl MutationsRoot {
         result
             .tap(|_| {
                 let mut commands = context.state().file_commands.lock_mut();
-                commands.push(FileCommand::FileAddedOrRemoved);
+                commands.push(FileCommand::ListOfFilesChanged);
             })
             .map_err(|e| {
                 graphql::Error::new("DUPLICATE_RESTREAM_KEY")
@@ -288,7 +287,7 @@ impl MutationsRoot {
         });
 
         let mut commands = context.state().file_commands.lock_mut();
-        commands.push(FileCommand::ForceDownloadFile(file_id));
+        commands.push(FileCommand::NeedDownloadFiles(vec![file_id]));
 
         Some(true)
     }
@@ -341,31 +340,169 @@ impl MutationsRoot {
         context.state().disable_restream(id)
     }
 
+    /// Set playlist to [`Restream`]
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if restream was found by `restream_id` and
+    /// playlist was set to it
     fn set_playlist(
         restream_id: RestreamId,
-        playlist: Vec<String>,
+        playlist: Vec<FileId>,
         context: &Context,
-    ) -> Option<bool> {
-        context.state().restreams.lock_mut().iter_mut().find_map(
-            |restream| {
-                (restream.id == restream_id).then(|| {
-                    restream.playlist.queue = playlist
-                        .iter()
-                        .filter_map(|order_id| {
-                            restream
-                                .playlist
-                                .queue
-                                .iter()
-                                .find(|f| f.file_id == *order_id)
-                        })
-                        .cloned()
-                        .collect();
+    ) -> Result<bool, graphql::Error> {
+        // Checks whether the list of files contains duplicates and if so
+        // reject setting playlist
+        if playlist.iter().unique().count() != playlist.len() {
+            return Err(graphql::Error::new("DUPLICATES_IN_PLAYLIST")
+                .status(StatusCode::BAD_REQUEST)
+                .message(
+                    "Can't set playlist. Playlist contains duplicated values",
+                ));
+        }
+
+        let mut found = false;
+        if let Some(r) = context
+            .state()
+            .restreams
+            .lock_mut()
+            .iter_mut()
+            .find(|r| r.id == restream_id)
+        {
+            if let Some(currently_playing_file) =
+                r.clone().playlist.currently_playing_file
+            {
+                if !playlist.contains(&currently_playing_file.file_id) {
+                    return Err(graphql::Error::new("CAN_NOT_REMOVE_FILE")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message("Can't remove currently playing file"));
+                }
+            }
+
+            r.playlist.queue = playlist
+                .iter()
+                .filter_map(|order_id| {
+                    r.playlist.queue.iter().find(|f| f.file_id == *order_id)
                 })
-            },
-        )?;
-        Some(true)
+                .cloned()
+                .collect();
+
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
+
+            found = true;
+        }
+
+        Ok(found)
     }
 
+    /// Cancels all active downloads in playlist
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if at least one download was canceled
+    fn cancel_playlist_download(
+        restream_id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
+        let restream = context
+            .state()
+            .restreams
+            .get_cloned()
+            .into_iter()
+            .find(|r| r.id == restream_id);
+
+        let mut found = false;
+        if let Some(r) = restream {
+            context.state().files.lock_mut().iter_mut().for_each(|f| {
+                _ = r
+                    .playlist
+                    .queue
+                    .iter()
+                    .any(|pf| pf.file_id == f.file_id)
+                    .then(|| {
+                        if f.state != FileState::Local {
+                            f.state = FileState::DownloadError;
+                            f.download_state = None;
+                            f.stream_stat = None;
+                            f.error = Some("Download was canceled".to_string());
+                            found = true;
+                        }
+                    });
+            });
+        }
+
+        Some(found)
+    }
+
+    /// Restarts downloads that has state `FileState::DownloadError`
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if at least one file was put in download queue
+    fn restart_playlist_download(
+        restream_id: RestreamId,
+        context: &Context,
+    ) -> Option<bool> {
+        let restream = context
+            .state()
+            .restreams
+            .get_cloned()
+            .into_iter()
+            .find(|r| r.id == restream_id);
+
+        let mut found = false;
+        if let Some(r) = restream {
+            let file_ids: Vec<FileId> = context
+                .state()
+                .files
+                .lock_mut()
+                .iter_mut()
+                .filter(|f| f.state == FileState::DownloadError)
+                .filter(|f| {
+                    r.playlist.queue.iter().any(|pf| pf.file_id == f.file_id)
+                })
+                .map(|f| f.file_id.clone())
+                .collect();
+
+            if !file_ids.is_empty() {
+                context
+                    .state()
+                    .file_commands
+                    .lock_mut()
+                    .push(FileCommand::NeedDownloadFiles(file_ids));
+
+                found = true;
+            }
+        }
+
+        Some(found)
+    }
+
+    /// Cancels download of a specified file
+    ///
+    /// ### Result
+    ///
+    /// Return `true` if download process was canceled
+    fn cancel_file_download(
+        file_id: FileId,
+        context: &Context,
+    ) -> Option<bool> {
+        context.state().files.lock_mut().iter_mut().find_map(|f| {
+            (f.file_id == file_id).then(|| {
+                if f.state == FileState::Local {
+                    false
+                } else {
+                    f.state = FileState::DownloadError;
+                    f.download_state = None;
+                    f.error = Some("Download was canceled".to_string());
+                    true
+                }
+            })
+        })
+    }
+
+    /// Stops playing the currently playing file in the playlist
     fn stop_playing_file_from_playlist(
         restream_id: RestreamId,
         context: &Context,
@@ -384,10 +521,10 @@ impl MutationsRoot {
         Some(true)
     }
 
-    /// Starts playing the provided file from playlist
+    /// Start playing the file with the provided "FileId" from the playlist
     fn play_file_from_playlist(
         restream_id: RestreamId,
-        file_id: String,
+        file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         context
@@ -414,7 +551,7 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_play_file(
-        #[graphql(description = "file identity")] file_id: String,
+        #[graphql(description = "file identity")] file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -441,7 +578,7 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_stop_playing_file(
-        #[graphql(description = "file identity")] file_id: String,
+        #[graphql(description = "file identity")] file_id: FileId,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -484,6 +621,16 @@ impl MutationsRoot {
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
         if let Ok(mut playlist_files) = result {
+            if playlist_files.is_empty() {
+                let err = "No files in playlist. \
+                    Probably there is no public access to the playlist";
+
+                tracing::error!(err);
+                return Err(graphql::Error::new("GDRIVE_API_ERROR")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&err));
+            }
+
             playlist_files.sort_by_key(|x| x.name.clone());
             context
                 .state()
@@ -497,6 +644,9 @@ impl MutationsRoot {
                 })?
                 .playlist
                 .apply(playlist_files);
+
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
 
             Ok(Some(true))
         } else {
@@ -613,13 +763,13 @@ impl MutationsRoot {
         restream_id: RestreamId,
         #[graphql(
             description = "Destination URL to re-stream a live stream onto.\
-                           \n\n\
-                           At the moment only [RTMP] and [Icecast] are \
-                           supported.\
-                           \n\n\
-                           [Icecast]: https://icecast.org\n\
-                           [RTMP]: https://en.wikipedia.org/wiki/\
-                                   Real-Time_Messaging_Protocol"
+                               \n\n\
+                               At the moment only [RTMP] and [Icecast] are \
+                               supported.\
+                               \n\n\
+                               [Icecast]: https://icecast.org\n\
+                               [RTMP]: https://en.wikipedia.org/wiki/\
+                                       Real-Time_Messaging_Protocol"
         )]
         dst: OutputDstUrl,
         #[graphql(description = "Optional label to add a new `Output` with.")]
@@ -943,7 +1093,6 @@ impl MutationsRoot {
     async fn remove_dvr_file(
         #[graphql(
             description = "Relative path of the recorded file to be removed.\
-                           \n\n \
                            Use the exact value returned by `Query.dvrFiles`."
         )]
         path: String,
@@ -993,7 +1142,7 @@ impl MutationsRoot {
                 None => {
                     return Err(graphql::Error::new("NO_OLD_PASSWORD")
                         .status(StatusCode::FORBIDDEN)
-                        .message("Old password required for this action"))
+                        .message("Old password required for this action"));
                 }
                 Some(pass) => {
                     if !argon2::verify_encoded(hash, pass.as_bytes()).unwrap() {
@@ -1044,13 +1193,13 @@ impl MutationsRoot {
         delete_confirmation: Option<bool>,
         #[graphql(
             description = "Whether do we need to confirm enabling/disabling \
-                           of inputs or outputs"
+                               of inputs or outputs"
         )]
         enable_confirmation: Option<bool>,
         #[graphql(description = "Google API key for google drive access")]
         google_api_key: Option<String>,
         #[graphql(description = "Maximum number of files in playlist")]
-        max_files_in_playlist: Option<UNumber>,
+        max_downloading_files: Option<UNumber>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         // Validate title
@@ -1066,7 +1215,7 @@ impl MutationsRoot {
         settings.delete_confirmation = delete_confirmation;
         settings.enable_confirmation = enable_confirmation;
         settings.google_api_key = google_api_key;
-        settings.max_files_in_playlist = max_files_in_playlist;
+        settings.max_downloading_files = max_downloading_files;
         Ok(true)
     }
 }
@@ -1090,7 +1239,7 @@ impl QueriesRoot {
             delete_confirmation: settings.delete_confirmation,
             enable_confirmation: settings.enable_confirmation,
             google_api_key: settings.google_api_key,
-            max_files_in_playlist: settings.max_files_in_playlist,
+            max_downloading_files: settings.max_downloading_files,
         }
     }
 
@@ -1144,8 +1293,8 @@ impl QueriesRoot {
     fn export(
         #[graphql(
             description = "IDs of `Restream`s to be exported. \n\n \
-                           If empty, then all the `Restream`s \
-                           will be exported.",
+                               If empty, then all the `Restream`s \
+                               will be exported.",
             default = Vec::new(),
         )]
         ids: Vec<RestreamId>,
@@ -1200,7 +1349,7 @@ impl SubscriptionsRoot {
                 delete_confirmation: h.delete_confirmation,
                 enable_confirmation: h.enable_confirmation,
                 google_api_key: h.google_api_key,
-                max_files_in_playlist: h.max_files_in_playlist,
+                max_downloading_files: h.max_downloading_files,
             })
             .to_stream()
             .boxed()
@@ -1230,6 +1379,7 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
+    /// Subscribes to updates of all `File`'s happening on this server
     async fn files(
         context: &Context,
     ) -> BoxStream<'static, Vec<LocalFileInfo>> {
@@ -1242,39 +1392,64 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    async fn restream(
+    /// Subscribes to updates of specific file
+    async fn file(
+        id: FileId,
+        context: &Context,
+    ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        context
+            .state()
+            .files
+            .signal_cloned()
+            .filter_map(move |files| {
+                files.into_iter().find(|f| f.file_id == id)
+            })
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of currently playing file in playlist
+    async fn currently_playing_file(
         id: RestreamId,
         context: &Context,
-    ) -> BoxStream<'static, Option<RestreamWithParent>> {
-        let public_host = context.config().public_host.clone().unwrap();
+    ) -> BoxStream<'static, Option<LocalFileInfo>> {
+        let files = context.state().files.get_cloned();
+
         context
             .state()
             .restreams
             .signal_cloned()
-            .filter_map(move |vec| {
-                let restream = vec.iter().find(|r| r.id == id);
-                let parent = restream.and_then(|restream| {
-                    vec.iter().find_map(|r| {
-                        r.outputs
-                            .iter()
-                            .find(|o| {
-                                o.dst
-                                    .is_address_of_restream(
-                                        &restream.key,
-                                        &public_host,
-                                    )
-                                    .unwrap_or(false)
-                            })
-                            .map(|out| RestreamParent {
-                                restream: r.clone(),
-                                output_id: out.id,
-                            })
-                    })
-                });
-                restream.map(|r| RestreamWithParent {
-                    restream: r.clone(),
-                    parent,
+            .filter_map(move |restreams| {
+                restreams.into_iter().find(|r| r.id == id).and_then(|r| {
+                    if let Some(playing_file) =
+                        r.playlist.currently_playing_file
+                    {
+                        files
+                            .clone()
+                            .into_iter()
+                            .find(|f| f.file_id == playing_file.file_id)
+                    } else {
+                        None
+                    }
                 })
+            })
+            .dedupe_cloned()
+            .to_stream()
+            .boxed()
+    }
+
+    /// Subscribes to updates of specific restream
+    async fn restream(
+        id: RestreamId,
+        context: &Context,
+    ) -> BoxStream<'static, Option<Restream>> {
+        context
+            .state()
+            .restreams
+            .signal_cloned()
+            .filter_map(move |restreams| {
+                restreams.into_iter().find(|r| r.id == id)
             })
             .dedupe_cloned()
             .to_stream()
@@ -1319,25 +1494,5 @@ pub struct Info {
     /// Max number of files allowed in [Restream]'s playlist
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
-    pub max_files_in_playlist: Option<UNumber>,
-}
-
-/// Restream with its source output if it has any
-#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
-pub struct RestreamWithParent {
-    /// Restream info
-    restream: Restream,
-
-    /// Restream parent if it has any
-    parent: Option<RestreamParent>,
-}
-
-/// Restream parent which contains output that streams to the current restream
-#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
-pub struct RestreamParent {
-    /// parent restream
-    restream: Restream,
-
-    /// output ID of the parent restream output that streams to the child
-    output_id: OutputId,
+    pub max_downloading_files: Option<UNumber>,
 }
