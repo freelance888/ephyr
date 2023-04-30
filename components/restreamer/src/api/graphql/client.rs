@@ -10,8 +10,8 @@ use anyhow::anyhow;
 use ephyr_log::tracing;
 use futures::{stream::BoxStream, StreamExt};
 use futures_signals::signal::SignalExt as _;
-use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use itertools::Itertools;
+use juniper::{graphql_object, graphql_subscription, GraphQLObject, RootNode};
 use once_cell::sync::Lazy;
 use rand::Rng as _;
 use tap::Tap;
@@ -351,41 +351,46 @@ impl MutationsRoot {
         playlist: Vec<FileId>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
-
         // Checks whether the list of files contains duplicates and if so
         // reject setting playlist
         if playlist.iter().unique().count() != playlist.len() {
             return Err(graphql::Error::new("DUPLICATES_IN_PLAYLIST")
                 .status(StatusCode::BAD_REQUEST)
-                .message("Can't set playlist. Playlist contains duplicated values"));
+                .message(
+                    "Can't set playlist. Playlist contains duplicated values",
+                ));
         }
 
         let mut found = false;
-        if let Some(r) = context.state()
+        if let Some(r) = context
+            .state()
             .restreams
             .lock_mut()
             .iter_mut()
-            .find(|r| r.id == restream_id) {
-                if let Some(currently_playing_file) = r.clone().playlist.currently_playing_file {
-                    if !playlist.contains(&currently_playing_file.file_id) {
-                        return Err(graphql::Error::new("CAN_NOT_REMOVE_FILE")
-                            .status(StatusCode::BAD_REQUEST)
-                            .message("Can't remove currently playing file"));
-                    }
+            .find(|r| r.id == restream_id)
+        {
+            if let Some(currently_playing_file) =
+                r.clone().playlist.currently_playing_file
+            {
+                if !playlist.contains(&currently_playing_file.file_id) {
+                    return Err(graphql::Error::new("CAN_NOT_REMOVE_FILE")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message("Can't remove currently playing file"));
                 }
+            }
 
-                r.playlist.queue = playlist
-                    .iter()
-                    .filter_map(|order_id| {
-                        r.playlist.queue.iter().find(|f| f.file_id == *order_id)
-                    })
-                    .cloned()
-                    .collect();
+            r.playlist.queue = playlist
+                .iter()
+                .filter_map(|order_id| {
+                    r.playlist.queue.iter().find(|f| f.file_id == *order_id)
+                })
+                .cloned()
+                .collect();
 
-                let mut commands = context.state().file_commands.lock_mut();
-                commands.push(FileCommand::ListOfFilesChanged);
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
 
-                found = true;
+            found = true;
         }
 
         Ok(found)
@@ -410,7 +415,8 @@ impl MutationsRoot {
         let mut found = false;
         if let Some(r) = restream {
             context.state().files.lock_mut().iter_mut().for_each(|f| {
-                _ = r.playlist
+                _ = r
+                    .playlist
                     .queue
                     .iter()
                     .any(|pf| pf.file_id == f.file_id)
