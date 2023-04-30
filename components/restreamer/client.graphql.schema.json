@@ -492,7 +492,7 @@
             ],
             "type": {
               "kind": "SCALAR",
-              "name": "Boolean",
+              "name": "RestreamId",
               "ofType": null
             },
             "isDeprecated": false,
@@ -608,7 +608,7 @@
           },
           {
             "name": "setPlaylist",
-            "description": null,
+            "description": "Set playlist to [`Restream`]\n\n### Result\n\nReturns `true` if restream was found by `restream_id` and\nplaylist was set to it",
             "args": [
               {
                 "name": "restreamId",
@@ -648,16 +648,20 @@
               }
             ],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
             "name": "cancelPlaylistDownload",
-            "description": null,
+            "description": "Cancels all active downloads in playlist\n\n### Result\n\nReturns `true` if at least one download was canceled",
             "args": [
               {
                 "name": "restreamId",
@@ -684,7 +688,7 @@
           },
           {
             "name": "restartPlaylistDownload",
-            "description": null,
+            "description": "Restarts downloads that has state `FileState::DownloadError`\n\n### Result\n\nReturns `true` if at least one file was put in download queue",
             "args": [
               {
                 "name": "restreamId",
@@ -711,7 +715,7 @@
           },
           {
             "name": "cancelFileDownload",
-            "description": null,
+            "description": "Cancels download of a specified file\n\n### Result\n\nReturn `true` if download process was canceled",
             "args": [
               {
                 "name": "fileId",
@@ -738,7 +742,7 @@
           },
           {
             "name": "stopPlayingFileFromPlaylist",
-            "description": null,
+            "description": "Stops playing the currently playing file in the playlist",
             "args": [
               {
                 "name": "restreamId",
@@ -765,7 +769,7 @@
           },
           {
             "name": "playFileFromPlaylist",
-            "description": "Starts playing the provided file from playlist",
+            "description": "Start playing the file with the provided \"FileId\" from the playlist",
             "args": [
               {
                 "name": "restreamId",
@@ -1188,7 +1192,7 @@
             ],
             "type": {
               "kind": "SCALAR",
-              "name": "Boolean",
+              "name": "OutputId",
               "ofType": null
             },
             "isDeprecated": false,
@@ -1626,7 +1630,7 @@
             "args": [
               {
                 "name": "path",
-                "description": "Relative path of the recorded file to be removed.\n\n Use the exact value returned by `Query.dvrFiles`.",
+                "description": "Relative path of the recorded file to be removed.Use the exact value returned by `Query.dvrFiles`.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
