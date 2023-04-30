@@ -1498,6 +1498,7 @@ dependencies = [
  "humantime",
  "humantime-serde",
  "interprocess",
+ "itertools",
  "juniper",
  "juniper_actix",
  "juniper_graphql_ws",

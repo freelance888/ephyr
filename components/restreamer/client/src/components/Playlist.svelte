@@ -8,11 +8,16 @@
     SetPlaylist,
     StopPlayingFileFromPlaylist,
     CancelPlaylistDownload,
-    RestartPlaylistDownload
+    RestartPlaylistDownload,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
-  import { FILE_DOWNLOADING, FILE_LOCAL } from '../utils/constants';
+  import {
+    FILE_DOWNLOADING,
+    FILE_LOCAL,
+    FILE_PENDING,
+    FILE_WAITING,
+  } from '../utils/constants';
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
@@ -26,12 +31,13 @@
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
   const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist);
 
-  let dragDisabled = true;
   const flipDurationMs = 200;
 
   export let restreamId;
   export let playlist;
   export let files = [];
+
+  $: dragDisabled = true;
 
   $: queue = playlist
     ? playlist.queue
@@ -47,9 +53,15 @@
         .map((x) => ({
           ...x,
           isLocal: x.file?.state === FILE_LOCAL,
-          isDownloading: x.file?.state === FILE_DOWNLOADING,
+          isDownloading: [
+            FILE_DOWNLOADING,
+            FILE_PENDING,
+            FILE_WAITING,
+          ].includes(x.file?.state),
         }))
     : [];
+
+  $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
   let googleDriveFolderId = '';
   let isValidFolderIdInput = true;
@@ -173,12 +185,12 @@
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
-        ><span>Start downloads</span>
+          ><span>Start downloads</span>
         </button>
         <span slot="title">Start downloads</span>
         <span slot="description"
-        >This will restart all not complete downloads of files in playlist.
-          </span>
+          >This will restart all not complete downloads of files in playlist.
+        </span>
         <span slot="confirm">Start downloads</span>
       </Confirm>
 
@@ -192,8 +204,8 @@
         >
         <span slot="title">Stop all active downloads</span>
         <span slot="description"
-        >This will stop active downloads of files in playlist.
-          </span>
+          >This will stop active downloads of files in playlist.
+        </span>
         <span slot="confirm">Stop downloads</span>
       </Confirm>
     </div>
@@ -215,10 +227,9 @@
         on:click={() => loadPlaylist(googleDriveFolderId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
-      >Load files</span
-      >
+          >Load files</span
+        >
       </button>
-
     </div>
     <div
       class="playlist-items"
@@ -235,6 +246,7 @@
         <div class="item uk-card uk-card-default">
           <span
             class="item-drag-zone uk-icon"
+            class:uk-invisible={hasDownloadingFiles}
             uk-icon="table"
             on:mousedown={startDrag}
           />
@@ -273,7 +285,11 @@
                 {/if}
               </span>
               {#if item.file}
-                <FileInfo file={item.file} showDownloadLink={true} classList="uk-margin-small-left" />
+                <FileInfo
+                  file={item.file}
+                  showDownloadLink={true}
+                  classList="uk-margin-small-left"
+                />
               {/if}
             </div>
           </Confirm>
@@ -286,6 +302,7 @@
             <button
               type="button"
               class="uk-close"
+              class:uk-hidden={hasDownloadingFiles}
               uk-close
               on:click={() => confirm(() => deleteFile(item.id))}
             />

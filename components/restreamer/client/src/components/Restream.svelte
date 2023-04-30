@@ -15,7 +15,7 @@
     TuneDelay,
     TuneSidechain,
     TuneVolume,
-    CurrentlyPlayingFile
+    CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
   import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
@@ -104,10 +104,11 @@
 
   let openRestreamModal = false;
 
-  $: currentlyPlayingFile = isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+  $: currentlyPlayingFile =
+    isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
 
   $: {
-    console.log('CURRENTLY_PLAYING_FILE: ', currentlyPlayingFile)
+    console.log('CURRENTLY_PLAYING_FILE: ', currentlyPlayingFile);
   }
 
   async function removeRestream() {
@@ -340,11 +341,11 @@
         />
       {/each}
       {#if currentlyPlayingFile}
-        <div class='uk-flex uk-flex-middle currently-playing-file'>
-          <div class='playlist-file-icon'>
-            <EqualizerIcon/>
+        <div class="uk-flex uk-flex-middle currently-playing-file">
+          <div class="playlist-file-icon">
+            <EqualizerIcon />
           </div>
-          <div class='file-info'>
+          <div class="file-info">
             <FileInfo file={currentlyPlayingFile} />
           </div>
         </div>

@@ -381,10 +381,10 @@ fragment localFileInfo on LocalFileInfo {
     state
     error
     downloadState {
-    maxProgress
-    currentProgress
+        maxProgress
+        currentProgress
     }
     streamStat {
-    ...streamStat
+        ...streamStat
     }
 }

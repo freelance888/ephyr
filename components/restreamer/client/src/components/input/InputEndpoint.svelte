@@ -16,7 +16,10 @@
     ONLINE,
   } from '../../utils/constants';
 
-  import { MoveInputInDirection, SingleFile } from '../../../api/client.graphql';
+  import {
+    MoveInputInDirection,
+    SingleFile,
+  } from '../../../api/client.graphql';
   import { showError } from '../../utils/util';
   import { mutation, subscribe } from 'svelte-apollo';
 
@@ -46,7 +49,9 @@
 
   $: isFileError = currentFile?.state === FILE_DOWNLOAD_ERROR;
 
-  $: alertDanger = isFile ? isFileError || !input.enabled : endpoint.status === OFFLINE;
+  $: alertDanger = isFile
+    ? isFileError || !input.enabled
+    : endpoint.status === OFFLINE;
 
   $: alertWarning = isFile
     ? currentFile?.state === FILE_PENDING ||
@@ -149,7 +154,7 @@
     </div>
 
     {#if isFile && currentFile}
-      <FileInfo file={currentFile} showDownloadLink={true}/>
+      <FileInfo file={currentFile} showDownloadLink={true} />
     {:else}
       <Url
         streamInfo={formatStreamInfo(endpoint.streamStat)}
@@ -237,7 +242,6 @@
       {/if}
     {/if}
   </div>
-
 </template>
 
 <style lang="stylus">

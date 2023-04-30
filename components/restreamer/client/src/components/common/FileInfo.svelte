@@ -1,12 +1,19 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
-  import { DownloadFile, CancelFileDownload } from '../../../api/client.graphql';
+  import {
+    DownloadFile,
+    CancelFileDownload,
+  } from '../../../api/client.graphql';
   import { sanitizeTooltip, showError } from '../../utils/util';
 
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
-  import { FILE_DOWNLOADING, FILE_LOCAL, FILE_PENDING } from '../../utils/constants';
+  import {
+    FILE_DOWNLOADING,
+    FILE_LOCAL,
+    FILE_PENDING,
+  } from '../../utils/constants';
 
   export let file;
   export let showDownloadLink;
@@ -66,8 +73,7 @@
               uk-tooltip={downloadErrorMessage}
             />
           {:else if file.state === FILE_LOCAL}
-            <span class='file-was-downloaded' uk-icon="icon: check">
-            </span>
+            <span class="file-was-downloaded" uk-icon="icon: check" />
           {/if}
         </div>
 
@@ -104,18 +110,27 @@
             class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
             on:click|preventDefault={confirm(() => downloadFile())}
           >
-          Download
-          <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
-        </button>
-
+            Download
+            <i
+              class="uk-icon"
+              uk-icon="icon: cloud-download; ratio: 0.8"
+            />&nbsp;
+          </button>
         {/if}
       {/if}
     </div>
-    <span slot="title">{isDownloading ? "Cancel download" : "Download file"} <code>{fileName}</code></span>
-    <span slot="description"
-      >{ isDownloading ? "Download process will be stopped" : "Current file fill be removed and download process will be started" }</span
+    <span slot="title"
+      >{isDownloading ? 'Cancel download' : 'Download file'}
+      <code>{fileName}</code></span
     >
-    <span slot="confirm">{isDownloading ? "Stop download" : "Start download"}</span>
+    <span slot="description"
+      >{isDownloading
+        ? 'Download process will be stopped'
+        : 'Current file fill be removed and download process will be started'}</span
+    >
+    <span slot="confirm"
+      >{isDownloading ? 'Stop download' : 'Start download'}</span
+    >
   </Confirm>
 </template>
 
