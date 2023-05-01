@@ -1,5 +1,5 @@
 //! Module for running periodic tasks
-use std::time::Duration;
+use std::future::Future;
 use systemstat::{Platform, System};
 use tokio::time;
 
@@ -11,10 +11,53 @@ use crate::{
     types::UNumber,
     State,
 };
+use anyhow::anyhow;
 use ephyr_log::{tracing, tracing::instrument};
 use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
+
+async fn run_periodic<F, Fut>(
+    state: State,
+    interval: time::Duration,
+    mut func: F,
+) where
+    F: FnMut(State) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<(), anyhow::Error>> + Send,
+{
+    let spawner = async move {
+        let mut interval = time::interval(interval);
+        loop {
+            _ = interval.tick().await;
+
+            let result = AssertUnwindSafe(async { func(state.clone()).await })
+                .catch_unwind()
+                .await;
+
+            match result {
+                Ok(r) => match r {
+                    Ok(_) => {}
+                    Err(err) => {
+                        tracing::error!(
+                            "An error: `{err}` occurred while running \
+                            periodic task. Stopping task."
+                        );
+                        break;
+                    }
+                },
+                Err(p) => {
+                    tracing::error!(
+                        "Panicked while running periodic task: {}",
+                        display_panic(&p),
+                    );
+                    break;
+                }
+            }
+        }
+    };
+
+    drop(tokio::spawn(spawner));
+}
 
 /// Runs periodic tasks
 ///
@@ -27,37 +70,32 @@ use std::panic::AssertUnwindSafe;
 /// run in `future::try_join3`
 #[instrument(skip_all, name = "statistics::run")]
 pub async fn run(state: State) -> Result<(), Failure> {
-    // we use tx_last and rx_last to compute the delta
-    // (send/receive bytes last second)
-    let mut tx_last: f64 = 0.0;
-    let mut rx_last: f64 = 0.0;
+    run_periodic(
+        state.clone(),
+        time::Duration::from_secs(10),
+        |state| async move {
+            // we use tx_last and rx_last to compute the delta
+            // (send/receive bytes last second)
+            let mut tx_last: f64 = 0.0;
+            let mut rx_last: f64 = 0.0;
+            update_server_statistics(state, &mut tx_last, &mut rx_last).await
+        },
+    )
+    .await;
 
-    let spawner = async move {
-        loop {
-            let state = &state;
+    run_periodic(
+        state.clone(),
+        time::Duration::from_secs(2),
+        |state| async move { sync_stream_info(state) },
+    )
+    .await;
 
-            _ = AssertUnwindSafe(async {
-                // Update server's statistics
-                update_server_statistics(state, &mut tx_last, &mut rx_last)
-                    .await;
-
-                // Try to synchronize stream info
-                sync_stream_info(state);
-
-                start_pending_downloads(state);
-            })
-            .catch_unwind()
-            .await
-            .map_err(|p| {
-                tracing::error!(
-                    "Panicked while getting server statistics {}",
-                    display_panic(&p),
-                );
-            });
-        }
-    };
-
-    drop(tokio::spawn(spawner));
+    run_periodic(
+        state.clone(),
+        time::Duration::from_secs(2),
+        |state| async move { start_pending_downloads(state) },
+    )
+    .await;
 
     Ok(())
 }
@@ -65,15 +103,18 @@ pub async fn run(state: State) -> Result<(), Failure> {
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_possible_wrap)]
 #[allow(clippy::cast_precision_loss)]
+#[allow(clippy::unnecessary_wraps)]
+#[allow(clippy::needless_pass_by_value)]
 async fn update_server_statistics(
-    state: &State,
+    state: State,
     tx_last: &mut f64,
     rx_last: &mut f64,
-) {
+) -> Result<(), anyhow::Error> {
     let sys = System::new();
     if let Err(e) = sys.cpu_load_aggregate().and(sys.memory()) {
-        tracing::error!("Skip statistics. Failed to gather with error: {}", e);
-        return;
+        return Err(anyhow!(
+            "Skip statistics. Failed to gather with error: {e}"
+        ));
     }
     let mut info = ServerInfo::default();
 
@@ -85,7 +126,7 @@ async fn update_server_statistics(
             // Do not change delay time, since it is also used
             // further to compute network statistics
             // (bytes sent/received last second)
-            time::sleep(Duration::from_secs(1)).await;
+            time::sleep(time::Duration::from_secs(1)).await;
             let cpu_idle = cpu.done().map_or(0.0, |c| c.idle);
 
             // in percents
@@ -155,10 +196,13 @@ async fn update_server_statistics(
     }
 
     *state.server_info.lock_mut() = info;
+    Ok(())
 }
 
 /// Synchronize stream statistics
-fn sync_stream_info(state: &State) {
+#[allow(clippy::unnecessary_wraps)]
+#[allow(clippy::needless_pass_by_value)]
+fn sync_stream_info(state: State) -> Result<(), anyhow::Error> {
     let files = state.files.lock_mut();
     let mut restreams = state.restreams.lock_mut();
     restreams.iter_mut().for_each(|r| {
@@ -183,10 +227,13 @@ fn sync_stream_info(state: &State) {
             }
         }
     });
+    Ok(())
 }
 
 /// Controls the number of simultaneous downloads in queue
-fn start_pending_downloads(state: &State) {
+#[allow(clippy::unnecessary_wraps)]
+#[allow(clippy::needless_pass_by_value)]
+fn start_pending_downloads(state: State) -> Result<(), anyhow::Error> {
     let mut files = state.files.lock_mut();
     let files_in_queue_count = files
         .iter()
@@ -221,4 +268,5 @@ fn start_pending_downloads(state: &State) {
             .lock_mut()
             .push(FileCommand::StartDownloadFile(file_ids));
     }
+    Ok(())
 }
