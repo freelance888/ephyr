@@ -73,10 +73,6 @@
 
   $: playlist = restream?.playlist;
 
-  $: {
-    console.log('$restreamWithParent.data', $restreamWithParent.data)
-  }
-
 </script>
 
 <template>

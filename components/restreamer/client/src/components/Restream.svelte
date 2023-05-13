@@ -235,7 +235,7 @@
         hidden={isFullView}
         target="_blank"
         rel="noreferrer"
-        class="uk-text-uppercase uk-text-small full-view-link"
+        class="uk-text-uppercase full-view-link"
         title="Open Full Stream Page"
       >
         Full view
