@@ -63,6 +63,8 @@
 
   $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
+  $: hasFilesInPlaylist = Boolean(queue?.length > 0);
+
   let googleDriveFolderId = '';
   let isValidFolderIdInput = true;
 
@@ -181,7 +183,8 @@
       <PlaylistStatus files={queue} />
       <Confirm let:confirm>
         <button
-          class="uk-button uk-button-default uk-button-small uk-margin-auto-left"
+          class="uk-button uk-button-default uk-button-small uk-margin-auto-left start-download"
+          class:uk-invisible={!hasFilesInPlaylist}
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
@@ -196,7 +199,8 @@
 
       <Confirm let:confirm>
         <button
-          class="uk-button uk-button-default uk-button-small"
+          class="uk-button uk-button-default uk-button-small stop-download"
+          class:uk-invisible={!hasFilesInPlaylist}
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in the playlist"
           on:click={() => confirm(stopPlaylistDownload)}
@@ -223,7 +227,7 @@
 
       <button
         disabled={!googleDriveFolderId.trim()}
-        class="uk-button uk-button-primary uk-button-small uk-flex-none"
+        class="uk-button uk-button-primary uk-button-small uk-flex-none load-file"
         on:click={() => loadPlaylist(googleDriveFolderId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
@@ -334,6 +338,13 @@
 
   .playlist
     padding: 16px
+
+    &:hover
+      .start-download, .stop-download, .load-file
+        opacity: 1
+
+  .start-download, .stop-download, .load-file
+      opacity: 0
 
   .playlist-toolbar
     gap: 4px

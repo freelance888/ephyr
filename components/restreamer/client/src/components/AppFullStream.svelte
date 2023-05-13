@@ -8,9 +8,10 @@
     Info,
     RemoveOutput,
     ServerInfo,
-    SingleRestream,
+    RestreamWithParent,
     TuneDelay,
     TuneVolume,
+    TuneSidechain
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -18,6 +19,7 @@
   import OutputModal from '../modals/OutputModal.svelte';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
+  import Output from './Output.svelte';
 
   let outputMutations = {
     DisableOutput,
@@ -25,6 +27,7 @@
     RemoveOutput,
     TuneVolume,
     TuneDelay,
+    TuneSidechain,
   };
 
   const gqlClient = createGraphQlClient(
@@ -38,7 +41,7 @@
   const restreamId = urlParams.get('restream-id');
 
   let isOnline = false;
-  const singleRestream = subscribe(SingleRestream, {
+  const restreamWithParent = subscribe(RestreamWithParent, {
     variables: { id: restreamId.toString() },
     errorPolicy: 'all',
   });
@@ -50,29 +53,37 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info?.error;
-  $: isLoading = !isOnline || $singleRestream.loading;
-  $: canRenderMainComponent =
-    isOnline && $singleRestream.data && $info.data && $filesInfo?.data;
-  $: restreamError = $singleRestream?.error;
+  $: isLoading = !isOnline || $restreamWithParent.loading;
+  $: canRenderMainComponent = isOnline && $restreamWithParent?.data && $info?.data && $filesInfo?.data;
+
+  $: restreamError = $restreamWithParent?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
-  $: restream = canRenderMainComponent && $singleRestream?.data?.restream;
   $: filesError = $filesInfo?.error;
   $: files = (canRenderMainComponent && $filesInfo?.data?.files) || [];
 
-  $: translationYoutubeUrl =
-    canRenderMainComponent &&
-    restream.outputs
+  $: restream = canRenderMainComponent && $restreamWithParent.data?.restreamWithParent?.restream;
+  $: parentData = canRenderMainComponent && $restreamWithParent.data?.restreamWithParent?.parent;
+  $: parentRestreamOutput = canRenderMainComponent && parentData?.restream?.outputs?.find(
+      (o) => o.id === parentData.outputId
+    );
+
+  $: translationYoutubeUrl = canRenderMainComponent && restream?.outputs
       .filter((x) => isYoutubeVideo(x.previewUrl))
       .map((x) => x.previewUrl)[0];
 
   $: playlist = restream?.playlist;
+
+  $: {
+    console.log('$restreamWithParent.data', $restreamWithParent.data)
+  }
+
 </script>
 
 <template>
   <Shell
     {isLoading}
     {canRenderMainComponent}
-    error={restreamError || infoError | filesError}
+    error={restreamError || infoError || filesError}
     serverInfo={sInfo}
   >
     <div slot="main">
@@ -84,6 +95,17 @@
         isFullView="true"
         globalOutputsFilters={[]}
       />
+      {#if parentRestreamOutput && parentRestreamOutput.mixins?.length > 0}
+        <div class="section-title">Sound mixer</div>
+        <section class="uk-section uk-section-muted single-output">
+          <Output
+            restream_id={parentData.restream?.id}
+            value={parentRestreamOutput}
+            isReadOnly="true"
+            mutations={outputMutations}
+          />
+        </section>
+      {/if}
       <div class="section-title">Playlist</div>
       <section class="uk-section uk-section-muted uk-padding-remove">
         <Playlist restreamId={restream.id} {playlist} {files} />
@@ -104,6 +126,11 @@
     margin-bottom: 4px
     font-size: 1.2rem
     text-transform: uppercase
+
+  .single-output
+    padding: 16px
+    :global(.volume input)
+      width: 90% !important
 
   .video-player
     padding: 16px
