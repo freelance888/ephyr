@@ -36,10 +36,19 @@ subscription State {
     }
 }
 
-subscription SingleRestream($id: RestreamId!) {
-    restream(id: $id) {
-        ...restreamBasic
-        ...restreamPlaylist
+subscription RestreamWithParent($id: RestreamId!) {
+    restreamWithParent(id: $id) {
+        restream {
+            ...restreamBasic
+            ...restreamPlaylist
+        }
+        parent {
+            restream {
+                id
+                ...restreamOutputs
+            }
+            outputId
+        }
     }
 }
 
