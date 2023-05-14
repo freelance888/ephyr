@@ -206,15 +206,19 @@
         >
       </button>
       <Confirm let:confirm>
-        <a
-          class="uk-button-small start-download"
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-small-left start-download"
           class:uk-hidden={hasFilesInPlaylist && hasDownloadingFiles}
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
-        ><span>Start downloads</span>
-        </a>
-        <span slot="title">Start downloads</span>
+        >Start all downloads
+          <i
+            class="uk-icon"
+            uk-icon="icon: cloud-download; ratio: 0.8"
+          />&nbsp;
+        </button>
+        <span slot="title">Start all downloads</span>
         <span slot="description"
         >This will restart all not complete downloads of files in playlist.
         </span>
@@ -222,15 +226,16 @@
       </Confirm>
 
       <Confirm let:confirm>
-        <a
-          class="uk-text-uppercase uk-button-small stop-download"
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-small-left stop-download"
           class:uk-hidden={hasFilesInPlaylist && !hasDownloadingFiles}
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in the playlist"
           on:click={() => confirm(stopPlaylistDownload)}
-          value=""><span>Stop downloads</span></a
+          value="">Cancel all downloads <i class="uk-icon" uk-icon="icon: ban; ratio: 0.8" />&nbsp;
+        </button
         >
-        <span slot="title">Stop all active downloads</span>
+        <span slot="title">Cancel all active downloads</span>
         <span slot="description"
         >This will stop active downloads of files in playlist.
         </span>
