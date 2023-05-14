@@ -65,7 +65,6 @@
 
   $: hasFilesInPlaylist = Boolean(queue?.length > 0);
 
-
   let googleDriveFolderId = '';
   let isValidFolderIdInput = true;
 
@@ -96,6 +95,15 @@
     try {
       const variables = { id: restreamId };
       await restartPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function clearPlaylist() {
+    const variables = { restreamId, fileIds: [] };
+    try {
+      await setPlaylist({ variables });
     } catch (e) {
       showError(e.message);
     }
@@ -208,7 +216,7 @@
       <Confirm let:confirm>
         <button
           class="uk-button uk-button-link url-action-btn uk-margin-small-left start-download"
-          class:uk-hidden={hasFilesInPlaylist && hasDownloadingFiles}
+          class:uk-hidden={!hasFilesInPlaylist || hasDownloadingFiles}
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
@@ -228,7 +236,7 @@
       <Confirm let:confirm>
         <button
           class="uk-button uk-button-link url-action-btn uk-margin-small-left stop-download"
-          class:uk-hidden={hasFilesInPlaylist && !hasDownloadingFiles}
+          class:uk-hidden={!hasFilesInPlaylist || !hasDownloadingFiles}
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in the playlist"
           on:click={() => confirm(stopPlaylistDownload)}
@@ -240,6 +248,21 @@
         >This will stop active downloads of files in playlist.
         </span>
         <span slot="confirm">Stop downloads</span>
+      </Confirm>
+
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-auto-left clear-playlist"
+          class:uk-hidden={!hasFilesInPlaylist || hasDownloadingFiles}
+          data-testid="clear-playlist"
+          title="Clear playlist"
+          on:click={() => confirm(clearPlaylist)}
+          value="">Clear playlist
+        </button
+        >
+        <span slot="title">Clear all files in playlist</span>
+        <span slot="description">All files will be removed from playlist.</span>
+        <span slot="confirm">Clear playlist</span>
       </Confirm>
     </div>
     <div
@@ -347,11 +370,14 @@
     padding: 16px
 
     &:hover
-      .start-download, .stop-download, .load-file
+      .start-download, .stop-download, .load-file, .clear-playlist
         opacity: 1
 
-  .start-download, .stop-download, .load-file
+  .start-download, .stop-download, .load-file, .clear-playlist
       opacity: 0
+
+  .clear-playlist
+    color: var(--danger-color)
 
   .playlist-toolbar
     gap: 4px
