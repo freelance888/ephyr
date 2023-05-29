@@ -15,6 +15,7 @@ use crate::{
     cli::Opts,
     display_panic,
     file_manager::api_response::{get_gdrive_result, ErrorResponse},
+    spec,
     state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
@@ -611,12 +612,13 @@ pub struct PlaylistFileInfo {
     pub was_played: bool,
 }
 
-impl From<api_response::ExtendedFileInfoResponse> for PlaylistFileInfo {
+impl From<api_response::ExtendedFileInfoResponse>
+    for spec::v1::PlaylistFileInfo
+{
     fn from(file_response: api_response::ExtendedFileInfoResponse) -> Self {
-        PlaylistFileInfo {
+        spec::v1::PlaylistFileInfo {
             file_id: FileId(file_response.id),
             name: file_response.name,
-            was_played: false,
         }
     }
 }
@@ -701,7 +703,7 @@ impl NetworkByteSize {
 pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
-) -> Result<Vec<PlaylistFileInfo>, String> {
+) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
     let mut response =
         api_response::FileListResponse::retrieve_dir_content_from_api(
             api_key, folder_id,
@@ -711,7 +713,10 @@ pub async fn get_video_list_from_gdrive_folder(
     Ok(response
         .files
         .drain(..)
-        .map(PlaylistFileInfo::from)
+        .map(|x| spec::v1::PlaylistFileInfo {
+            file_id: FileId(x.id),
+            name: x.name,
+        })
         .collect())
 }
 

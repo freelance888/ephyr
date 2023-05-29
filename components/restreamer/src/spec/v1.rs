@@ -94,6 +94,9 @@ pub struct Restream {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub outputs: Vec<Output>,
+
+    /// Playlist for this restream
+    pub playlist: Playlist,
 }
 
 impl Restream {
@@ -439,4 +442,36 @@ pub struct BackupInput {
     /// URL to pull a live stream from for a backup endpoint.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub src: Option<state::InputSrcUrl>,
+}
+
+// Playlist
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct Playlist {
+    /// List of files in playlist
+    pub queue: Vec<PlaylistFileInfo>,
+}
+
+impl Playlist {
+    #[must_use]
+    pub fn new(playlist: state::Playlist) -> Playlist {
+        Self {
+            queue: playlist
+                .queue
+                .into_iter()
+                .map(|x| PlaylistFileInfo {
+                    name: x.name,
+                    file_id: x.file_id,
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlaylistFileInfo {
+    /// Google ID of this file
+    pub file_id: FileId,
+
+    /// Name of this file
+    pub name: String,
 }

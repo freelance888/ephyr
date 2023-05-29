@@ -54,11 +54,7 @@ impl Restream {
             label: spec.label,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
-            playlist: Playlist {
-                id: PlaylistId::random(),
-                queue: vec![],
-                currently_playing_file: None,
-            },
+            playlist: Playlist::new(spec.playlist),
         }
     }
 
@@ -110,6 +106,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
+            playlist: self.playlist.export(),
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }

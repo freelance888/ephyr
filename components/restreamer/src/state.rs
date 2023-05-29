@@ -1024,10 +1024,46 @@ pub struct Playlist {
 }
 
 impl Playlist {
+    #[must_use]
+    pub fn new(spec: spec::v1::Playlist) -> Playlist {
+        let mut playlist = Self {
+            id: PlaylistId::random(),
+            queue: vec![],
+            currently_playing_file: None,
+        };
+
+        playlist.apply(spec.queue);
+        playlist
+    }
+
     /// Apply new playlist to this one
-    pub fn apply(&mut self, queue: Vec<PlaylistFileInfo>) {
-        self.queue = queue;
+    pub fn apply(&mut self, queue: Vec<spec::v1::PlaylistFileInfo>) {
+        self.queue = queue
+            .into_iter()
+            .clone()
+            .map(|x| PlaylistFileInfo {
+                file_id: x.file_id,
+                name: x.name,
+                was_played: false,
+            })
+            .collect();
         self.currently_playing_file = None;
+    }
+
+    /// Exports this [`Playlist`] as a [`spec::v1::Playlist`].
+    #[must_use]
+    pub fn export(&self) -> spec::v1::Playlist {
+        spec::v1::Playlist {
+            queue: self
+                .queue
+                .clone()
+                .into_iter()
+                .map(|x| spec::v1::PlaylistFileInfo {
+                    name: x.name,
+                    file_id: x.file_id,
+                })
+                .collect(),
+        }
     }
 }
 
