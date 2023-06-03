@@ -1032,21 +1032,43 @@ impl Playlist {
             currently_playing_file: None,
         };
 
-        playlist.apply(spec.queue);
+        playlist.apply(spec.queue, true);
         playlist
     }
 
     /// Apply new playlist to this one
-    pub fn apply(&mut self, queue: Vec<spec::v1::PlaylistFileInfo>) {
-        self.queue = queue
-            .into_iter()
-            .clone()
-            .map(|x| PlaylistFileInfo {
-                file_id: x.file_id,
-                name: x.name,
-                was_played: false,
-            })
-            .collect();
+    pub fn apply(
+        &mut self,
+        queue_spec: Vec<spec::v1::PlaylistFileInfo>,
+        replace: bool,
+    ) {
+        if replace {
+            self.queue = queue_spec
+                .into_iter()
+                .clone()
+                .map(|x| PlaylistFileInfo {
+                    file_id: x.file_id,
+                    name: x.name,
+                    was_played: false,
+                })
+                .collect();
+        } else {
+            for spec::v1::PlaylistFileInfo { file_id, name } in queue_spec {
+                if self
+                    .queue
+                    .clone()
+                    .into_iter()
+                    .find(|x| x.file_id == file_id)
+                    .is_none()
+                {
+                    self.queue.push(PlaylistFileInfo {
+                        file_id,
+                        name,
+                        was_played: false,
+                    })
+                }
+            }
+        }
         self.currently_playing_file = None;
     }
 

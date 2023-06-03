@@ -644,7 +644,7 @@ impl MutationsRoot {
                         .message("Could not find restream with provided ID")
                 })?
                 .playlist
-                .apply(playlist_files);
+                .apply(playlist_files, true);
 
             let mut commands = context.state().file_commands.lock_mut();
             commands.push(FileCommand::ListOfFilesChanged);

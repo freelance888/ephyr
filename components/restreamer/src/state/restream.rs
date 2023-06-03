@@ -67,6 +67,7 @@ impl Restream {
         self.key = new.key;
         self.label = new.label;
         self.input.apply(new.input);
+        self.playlist.apply(new.playlist.queue, replace);
         if replace {
             let mut olds = mem::replace(
                 &mut self.outputs,
