@@ -1054,13 +1054,7 @@ impl Playlist {
                 .collect();
         } else {
             for spec::v1::PlaylistFileInfo { file_id, name } in queue_spec {
-                if self
-                    .queue
-                    .clone()
-                    .into_iter()
-                    .find(|x| x.file_id == file_id)
-                    .is_none()
-                {
+                if !self.queue.iter().any(|x| x.file_id == file_id) {
                     self.queue.push(PlaylistFileInfo {
                         file_id,
                         name,

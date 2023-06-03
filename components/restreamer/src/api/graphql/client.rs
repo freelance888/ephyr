@@ -87,7 +87,7 @@ impl MutationsRoot {
         let spec = serde_json::from_str::<Spec>(&spec)?.into_v1();
 
         Ok(if let Some(id) = restream_id {
-            let spec = (spec.restreams.len() == 1)
+            let mut spec = (spec.restreams.len() == 1)
                 .then(|| spec.restreams.into_iter().next())
                 .flatten()
                 .ok_or_else(|| {
@@ -97,6 +97,27 @@ impl MutationsRoot {
                             "JSON spec should contain exactly one Restream",
                         )
                 })?;
+
+            // If we import one input into another than we need to make imported key unique
+            let has_duplicate = context
+                .state()
+                .restreams
+                .lock_mut()
+                .iter_mut()
+                .any(|r| r.key == spec.key);
+
+            if has_duplicate {
+                if let Some(new_key) = RestreamKey::new(format!("{}1", spec.key)) {
+                    spec.key = new_key;
+                } else {
+                     return Err(graphql::Error::new("INVALID_SPEC")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message(
+                            "Can not make new RestreamKey unique. Try to fix it manually",
+                        ));
+                }
+            }
+
             #[allow(clippy::manual_find_map)]
             // due to moving `spec` inside closure
             context
