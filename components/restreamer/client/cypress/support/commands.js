@@ -174,7 +174,10 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "label": "File Record",
           "enabled": true
         }
-      ]
+      ],
+      "playlist": {
+        "queue": []
+      }
     },
     {
       "id": "7cea855f-c250-4378-9d49-ccc93d22d3d1",
@@ -192,6 +195,9 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "remote_url": "rtmp://${host}/en/primary"
         },
         "enabled": true
+      },
+      "playlist": {
+        "queue": []
       }
     },
     {
@@ -238,7 +244,10 @@ Cypress.Commands.add('importJsonConf', (host) => {
           "preview_url": "https://creativesociety.com/ru",
           "enabled": true
         }
-      ]
+      ],
+      "playlist": {
+        "queue": []
+      }
     },
     {
       "id": "399aefb2-e61e-46cf-a2fb-648bf252f4e6",
@@ -253,6 +262,9 @@ Cypress.Commands.add('importJsonConf', (host) => {
           }
         ],
         "enabled": true
+      },
+      "playlist": {
+        "queue": []
       }
     }
   ]
