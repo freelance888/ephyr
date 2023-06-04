@@ -1024,6 +1024,7 @@ pub struct Playlist {
 }
 
 impl Playlist {
+    /// Creates new [`Playlist`] from spec
     #[must_use]
     pub fn new(spec: spec::v1::Playlist) -> Playlist {
         let mut playlist = Self {
@@ -1045,7 +1046,6 @@ impl Playlist {
         if replace {
             self.queue = queue_spec
                 .into_iter()
-                .clone()
                 .map(|x| PlaylistFileInfo {
                     file_id: x.file_id,
                     name: x.name,
@@ -1059,7 +1059,7 @@ impl Playlist {
                         file_id,
                         name,
                         was_played: false,
-                    })
+                    });
                 }
             }
         }

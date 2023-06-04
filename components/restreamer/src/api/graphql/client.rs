@@ -103,7 +103,8 @@ impl MutationsRoot {
                         )
                 })?;
 
-            // If we import one input into another than we need to make imported key unique
+            // If we import one input into another than we need to make
+            // imported key unique
             let has_duplicate = context
                 .state()
                 .restreams
@@ -112,13 +113,16 @@ impl MutationsRoot {
                 .any(|r| r.key == spec.key);
 
             if has_duplicate {
-                if let Some(new_key) = RestreamKey::new(format!("{}1", spec.key)) {
+                if let Some(new_key) =
+                    RestreamKey::new(format!("{}1", spec.key))
+                {
                     spec.key = new_key;
                 } else {
-                     return Err(graphql::Error::new("INVALID_SPEC")
+                    return Err(graphql::Error::new("INVALID_SPEC")
                         .status(StatusCode::BAD_REQUEST)
                         .message(
-                            "Can not make new RestreamKey unique. Try to fix it manually",
+                            "Can not make new RestreamKey unique.\
+                             Try to fix it manually",
                         ));
                 }
             }

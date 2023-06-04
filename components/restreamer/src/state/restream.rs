@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     spec,
-    state::{Input, Label, Output, Playlist, PlaylistId},
+    state::{Input, Label, Output, Playlist},
 };
 
 /// Re-stream of a live stream from one `Input` to many `Output`s.

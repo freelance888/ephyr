@@ -444,7 +444,7 @@ pub struct BackupInput {
     pub src: Option<state::InputSrcUrl>,
 }
 
-// Playlist
+/// Shareable (exportable and importable) specification of a [`state::Playlist`]
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Playlist {
     /// List of files in playlist
@@ -452,6 +452,8 @@ pub struct Playlist {
 }
 
 impl Playlist {
+    /// Creates a new [`Playlist`] out of the given
+    /// [`state::Playlist`].
     #[must_use]
     pub fn new(playlist: state::Playlist) -> Playlist {
         Self {
@@ -467,6 +469,8 @@ impl Playlist {
     }
 }
 
+/// Shareable (exportable and importable) specification of a
+/// [`state::PlaylistFileInfo`]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlaylistFileInfo {
     /// Google ID of this file
