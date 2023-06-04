@@ -86,6 +86,11 @@ impl MutationsRoot {
     ) -> Result<Option<bool>, graphql::Error> {
         let spec = serde_json::from_str::<Spec>(&spec)?.into_v1();
 
+        let notify_list_of_files_changed = || {
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
+        };
+
         Ok(if let Some(id) = restream_id {
             let mut spec = (spec.restreams.len() == 1)
                 .then(|| spec.restreams.into_iter().next())
@@ -128,10 +133,12 @@ impl MutationsRoot {
                 .find(|r| r.id == id)
                 .map(|r| {
                     r.apply(spec, replace);
+                    notify_list_of_files_changed();
                     true
                 })
         } else {
             context.state().apply(spec, replace);
+            notify_list_of_files_changed();
             Some(true)
         })
     }
