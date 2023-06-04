@@ -184,7 +184,6 @@
     e.preventDefault();
     dragDisabled = false;
   }
-
 </script>
 
 <template>
@@ -220,15 +219,12 @@
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
           on:click={() => confirm(startPlaylistDownload)}
-        >Start all downloads
-          <i
-            class="uk-icon"
-            uk-icon="icon: cloud-download; ratio: 0.8"
-          />&nbsp;
+          >Start all downloads
+          <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
         </button>
         <span slot="title">Start all downloads</span>
         <span slot="description"
-        >This will restart all not complete downloads of files in playlist.
+          >This will restart all not complete downloads of files in playlist.
         </span>
         <span slot="confirm">Start downloads</span>
       </Confirm>
@@ -240,12 +236,15 @@
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in the playlist"
           on:click={() => confirm(stopPlaylistDownload)}
-          value="">Cancel all downloads <i class="uk-icon" uk-icon="icon: ban; ratio: 0.8" />&nbsp;
-        </button
-        >
+          value=""
+          >Cancel all downloads <i
+            class="uk-icon"
+            uk-icon="icon: ban; ratio: 0.8"
+          />&nbsp;
+        </button>
         <span slot="title">Cancel all active downloads</span>
         <span slot="description"
-        >This will stop active downloads of files in playlist.
+          >This will stop active downloads of files in playlist.
         </span>
         <span slot="confirm">Stop downloads</span>
       </Confirm>
@@ -257,9 +256,9 @@
           data-testid="clear-playlist"
           title="Clear playlist"
           on:click={() => confirm(clearPlaylist)}
-          value="">Clear playlist
-        </button
-        >
+          value=""
+          >Clear playlist
+        </button>
         <span slot="title">Clear all files in playlist</span>
         <span slot="description">All files will be removed from playlist.</span>
         <span slot="confirm">Clear playlist</span>

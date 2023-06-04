@@ -11,7 +11,7 @@
     RestreamWithParent,
     TuneDelay,
     TuneVolume,
-    TuneSidechain
+    TuneSidechain,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -54,25 +54,31 @@
 
   $: infoError = $info?.error;
   $: isLoading = !isOnline || $restreamWithParent.loading;
-  $: canRenderMainComponent = isOnline && $restreamWithParent?.data && $info?.data && $filesInfo?.data;
+  $: canRenderMainComponent =
+    isOnline && $restreamWithParent?.data && $info?.data && $filesInfo?.data;
 
   $: restreamError = $restreamWithParent?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
   $: filesError = $filesInfo?.error;
   $: files = (canRenderMainComponent && $filesInfo?.data?.files) || [];
 
-  $: restream = canRenderMainComponent && $restreamWithParent.data?.restreamWithParent?.restream;
-  $: parentData = canRenderMainComponent && $restreamWithParent.data?.restreamWithParent?.parent;
-  $: parentRestreamOutput = canRenderMainComponent && parentData?.restream?.outputs?.find(
-      (o) => o.id === parentData.outputId
-    );
+  $: restream =
+    canRenderMainComponent &&
+    $restreamWithParent.data?.restreamWithParent?.restream;
+  $: parentData =
+    canRenderMainComponent &&
+    $restreamWithParent.data?.restreamWithParent?.parent;
+  $: parentRestreamOutput =
+    canRenderMainComponent &&
+    parentData?.restream?.outputs?.find((o) => o.id === parentData.outputId);
 
-  $: translationYoutubeUrl = canRenderMainComponent && restream?.outputs
+  $: translationYoutubeUrl =
+    canRenderMainComponent &&
+    restream?.outputs
       .filter((x) => isYoutubeVideo(x.previewUrl))
       .map((x) => x.previewUrl)[0];
 
   $: playlist = restream?.playlist;
-
 </script>
 
 <template>
