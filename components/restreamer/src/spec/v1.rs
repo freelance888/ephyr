@@ -2,7 +2,6 @@
 //! application's [`State`].
 //!
 //! [`State`]: state::State
-
 use std::collections::HashSet;
 
 use crate::{file_manager::FileId, serde::is_false, state, types::UNumber};
@@ -470,7 +469,7 @@ impl Playlist {
 }
 
 /// Shareable (exportable and importable) specification of a
-/// [`state::PlaylistFileInfo`]
+/// [`PlaylistFileInfo`]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlaylistFileInfo {
     /// Google ID of this file
