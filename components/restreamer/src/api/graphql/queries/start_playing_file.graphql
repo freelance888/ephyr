@@ -1,0 +1,3 @@
+mutation StartPlayingFile($fileId: FileId!) {
+    broadcastPlayFile(fileId: $fileId)
+}

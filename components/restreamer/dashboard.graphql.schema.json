@@ -378,6 +378,18 @@
             "deprecationReason": null
           },
           {
+            "name": "removeAllClients",
+            "description": "Remove all [`Client`]s from dashboard",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "consoleClear",
             "description": "Remove all messages from console",
             "args": [],
