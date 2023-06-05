@@ -21,7 +21,7 @@ chrono = { version = "0.4", features = ["serde"] }
 ephyr-log = { version = "0.2", path = "../../common/log" }
 futures = "0.3"
 futures-signals = "0.3"
-graphql_client = "0.12"
+graphql_client = "0.13"
 itertools = "0.10.5"
 hex = "0.4"
 humantime = "2.1"
