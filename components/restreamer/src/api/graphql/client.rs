@@ -621,12 +621,11 @@ impl MutationsRoot {
             .lock_mut()
             .iter_mut()
             .for_each(|r| {
-                let found =
-                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
-
-                if found.is_some() {
-                    r.playlist.currently_playing_file = None;
-                    has_found = true;
+                if let Some(f) = r.playlist.currently_playing_file.clone() {
+                    if f.file_id == file_id {
+                        r.playlist.currently_playing_file = None;
+                        has_found = true;
+                    }
                 }
             });
 

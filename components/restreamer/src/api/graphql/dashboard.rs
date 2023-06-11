@@ -106,6 +106,17 @@ impl MutationsRoot {
         Ok(Some(true))
     }
 
+    /// Stop playing specific file on any of client
+    fn broadcast_stop_playing_file(
+        #[graphql(description = "File identity")] file_id: FileId,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::StopPlayingFile(file_id));
+
+        Ok(Some(true))
+    }
+
     /// Enables all `Output`s for all clients.
     fn enable_all_outputs_for_clients(
         context: &Context,
