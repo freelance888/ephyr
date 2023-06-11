@@ -131,6 +131,17 @@
         "possibleTypes": null
       },
       {
+        "kind": "SCALAR",
+        "name": "FileId",
+        "description": "Identity of file on `Google Drive`.",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "OBJECT",
         "name": "__InputValue",
         "description": null,
@@ -378,9 +389,75 @@
             "deprecationReason": null
           },
           {
+            "name": "removeAllClients",
+            "description": "Remove all [`Client`]s from dashboard",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "consoleClear",
             "description": "Remove all messages from console",
             "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "broadcastPlayFile",
+            "description": "Start playing specific file on any of client",
+            "args": [
+              {
+                "name": "fileId",
+                "description": "File identity",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "FileId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "broadcastStopPlayingFile",
+            "description": "Stop playing specific file on any of client",
+            "args": [
+              {
+                "name": "fileId",
+                "description": "File identity",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "FileId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",

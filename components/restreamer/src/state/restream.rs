@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     spec,
-    state::{Input, Label, Output, Playlist, PlaylistId},
+    state::{Input, Label, Output, Playlist},
 };
 
 /// Re-stream of a live stream from one `Input` to many `Output`s.
@@ -54,11 +54,7 @@ impl Restream {
             label: spec.label,
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
-            playlist: Playlist {
-                id: PlaylistId::random(),
-                queue: vec![],
-                currently_playing_file: None,
-            },
+            playlist: Playlist::new(spec.playlist),
         }
     }
 
@@ -71,6 +67,7 @@ impl Restream {
         self.key = new.key;
         self.label = new.label;
         self.input.apply(new.input);
+        self.playlist.apply(new.playlist.queue, replace);
         if replace {
             let mut olds = mem::replace(
                 &mut self.outputs,
@@ -110,6 +107,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
+            playlist: self.playlist.export(),
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }

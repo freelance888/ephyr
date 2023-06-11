@@ -107,10 +107,6 @@
   $: currentlyPlayingFile =
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
 
-  $: {
-    console.log('CURRENTLY_PLAYING_FILE: ', currentlyPlayingFile);
-  }
-
   async function removeRestream() {
     try {
       await removeRestreamMutation({ variables: { id: value.id } });
@@ -239,14 +235,14 @@
         hidden={isFullView}
         target="_blank"
         rel="noreferrer"
-        class="uk-text-uppercase uk-text-small uk-margin-right"
+        class="uk-text-uppercase full-view-link"
         title="Open Full Stream Page"
       >
         Full view
       </a>
       <div class="uk-flex uk-flex-middle">
         <span
-          class="playlist-icon uk-margin-right"
+          class="playlist-icon uk-margin-right uk-margin-small-left uk-flex uk-flex-middle"
           class:is-playing={isPlaylistPlaying}
           aria-hidden="true"
           hidden={!hasVideos || isFullView}
@@ -388,7 +384,7 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import, .uk-button-small
+      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link
         opacity: 1
 
     .uk-button-small
@@ -405,6 +401,11 @@
 
       &:hover
         opacity: 1
+
+    .full-view-link
+      font-size: 0.8rem
+      transition: opacity .3s ease
+      opacity: 0
 
     .edit-input, .export-import
       color: #666
@@ -462,6 +463,6 @@
       &.is-playing
         color: var(--success-color)
       :global(svg)
-        width: 24px
-        height: 24px
+        width: 20px
+        height: 20px
 </style>

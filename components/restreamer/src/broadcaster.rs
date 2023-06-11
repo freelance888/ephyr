@@ -3,6 +3,7 @@
 use crate::{
     console_logger::{ConsoleLogger, ConsoleMessageKind, ConsoleMessageSource},
     display_panic,
+    file_manager::FileId,
     state::ClientId,
     State,
 };
@@ -23,6 +24,12 @@ pub enum DashboardCommand {
     EnableAllOutputs(),
     /// Command for disabling all restreams' outputs
     DisableAllOutputs(),
+    /// Command for initiation playing specific file on any of registered
+    /// client
+    StartPlayingFile(FileId),
+    /// Command for stop playing specific file on any of registered
+    /// client
+    StopPlayingFile(FileId),
 }
 
 /// GraphQL mutation for enabling outputs
@@ -44,6 +51,26 @@ pub(crate) struct EnableAllOutputsOfRestreams;
 )]
 #[derive(Debug)]
 pub(crate) struct DisableAllOutputsOfRestreams;
+
+/// GraphQL mutation for start playing file
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "client.graphql.schema.json",
+    query_path = "src/api/graphql/queries/start_playing_file.graphql",
+    response_derives = "Debug"
+)]
+#[derive(Debug)]
+pub(crate) struct StartPlayingFile;
+
+/// GraphQL mutation for stop playing file
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "client.graphql.schema.json",
+    query_path = "src/api/graphql/queries/stop_playing_file.graphql",
+    response_derives = "Debug"
+)]
+#[derive(Debug)]
+pub(crate) struct StopPlayingFile;
 
 /// Broadcast [`DashboardCommand`] to clients
 #[derive(Debug, Default)]
@@ -77,10 +104,7 @@ impl Broadcaster {
             .filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
-                    self.handle_one_command(
-                        client.id.clone(),
-                        &command.clone(),
-                    );
+                    self.handle_one_command(client.id.clone(), command.clone());
                 }
             });
     }
@@ -88,7 +112,7 @@ impl Broadcaster {
     fn handle_one_command(
         &mut self,
         client_id: ClientId,
-        command: &DashboardCommand,
+        command: DashboardCommand,
     ) {
         match command {
             DashboardCommand::EnableAllOutputs() => {
@@ -108,6 +132,32 @@ impl Broadcaster {
                     state.clone(),
                     async move {
                         Self::request_disable_outputs(client_id, state).await
+                    },
+                );
+            }
+            DashboardCommand::StartPlayingFile(file_id) => {
+                let state = self.state.clone();
+                Self::try_to_run_command(
+                    client_id.clone(),
+                    state.clone(),
+                    async move {
+                        Self::request_start_playing_file(
+                            client_id, &file_id, state,
+                        )
+                        .await
+                    },
+                );
+            }
+            DashboardCommand::StopPlayingFile(file_id) => {
+                let state = self.state.clone();
+                Self::try_to_run_command(
+                    client_id.clone(),
+                    state.clone(),
+                    async move {
+                        Self::request_stop_playing_file(
+                            client_id, &file_id, state,
+                        )
+                        .await
                     },
                 );
             }
@@ -167,6 +217,62 @@ impl Broadcaster {
 
         let response: Response<ResponseData> = res.json().await?;
         tracing::info!(?response, "Enabling outputs on client",);
+
+        Self::handle_errors(&client_id, &state, response.errors);
+        Ok(())
+    }
+
+    async fn request_stop_playing_file(
+        client_id: ClientId,
+        file_id: &FileId,
+        state: State,
+    ) -> anyhow::Result<()> {
+        type Vars = <StopPlayingFile as GraphQLQuery>::Variables;
+        type ResponseData = <StopPlayingFile as GraphQLQuery>::ResponseData;
+
+        let request_body = StopPlayingFile::build_query(Vars {
+            file_id: file_id.clone(),
+        });
+
+        let request = reqwest::Client::builder().build().unwrap();
+
+        let url = format!("{client_id}api");
+        let res = request
+            .post(url.as_str())
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let response: Response<ResponseData> = res.json().await?;
+        tracing::info!(?response, "Stop playing file {file_id}",);
+
+        Self::handle_errors(&client_id, &state, response.errors);
+        Ok(())
+    }
+
+    async fn request_start_playing_file(
+        client_id: ClientId,
+        file_id: &FileId,
+        state: State,
+    ) -> anyhow::Result<()> {
+        type Vars = <StartPlayingFile as GraphQLQuery>::Variables;
+        type ResponseData = <StartPlayingFile as GraphQLQuery>::ResponseData;
+
+        let request_body = StartPlayingFile::build_query(Vars {
+            file_id: file_id.clone(),
+        });
+
+        let request = reqwest::Client::builder().build().unwrap();
+
+        let url = format!("{client_id}api");
+        let res = request
+            .post(url.as_str())
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let response: Response<ResponseData> = res.json().await?;
+        tracing::info!(?response, "Start playing file {file_id}",);
 
         Self::handle_errors(&client_id, &state, response.errors);
         Ok(())

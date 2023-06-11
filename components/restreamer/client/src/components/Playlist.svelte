@@ -63,6 +63,8 @@
 
   $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
+  $: hasFilesInPlaylist = Boolean(queue?.length > 0);
+
   let googleDriveFolderId = '';
   let isValidFolderIdInput = true;
 
@@ -93,6 +95,15 @@
     try {
       const variables = { id: restreamId };
       await restartPlaylistDownload({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function clearPlaylist() {
+    const variables = { restreamId, fileIds: [] };
+    try {
+      await setPlaylist({ variables });
     } catch (e) {
       showError(e.message);
     }
@@ -179,37 +190,8 @@
   <div class="playlist">
     <div class="uk-flex uk-flex-middle uk-margin-bottom playlist-toolbar">
       <PlaylistStatus files={queue} />
-      <Confirm let:confirm>
-        <button
-          class="uk-button uk-button-default uk-button-small uk-margin-auto-left"
-          data-testid="start-all-outputs"
-          title="Start all incomplete downloads of files in the playlist"
-          on:click={() => confirm(startPlaylistDownload)}
-          ><span>Start downloads</span>
-        </button>
-        <span slot="title">Start downloads</span>
-        <span slot="description"
-          >This will restart all not complete downloads of files in playlist.
-        </span>
-        <span slot="confirm">Start downloads</span>
-      </Confirm>
-
-      <Confirm let:confirm>
-        <button
-          class="uk-button uk-button-default uk-button-small"
-          data-testid="stop-all-outputs"
-          title="Stop all downloads of all files in the playlist"
-          on:click={() => confirm(stopPlaylistDownload)}
-          value=""><span>Stop downloads</span></button
-        >
-        <span slot="title">Stop all active downloads</span>
-        <span slot="description"
-          >This will stop active downloads of files in playlist.
-        </span>
-        <span slot="confirm">Stop downloads</span>
-      </Confirm>
     </div>
-    <div class="google-drive-dir uk-flex">
+    <div class="google-drive-dir uk-flex uk-flex-middle">
       <label for="gdrive">Add files from Google Drive</label>
       <input
         id="gdrive"
@@ -223,13 +205,64 @@
 
       <button
         disabled={!googleDriveFolderId.trim()}
-        class="uk-button uk-button-primary uk-button-small uk-flex-none"
+        class="uk-button uk-button-primary uk-button-small uk-flex-none load-file"
         on:click={() => loadPlaylist(googleDriveFolderId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
           >Load files</span
         >
       </button>
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-small-left start-download"
+          class:uk-hidden={!hasFilesInPlaylist || hasDownloadingFiles}
+          data-testid="start-all-outputs"
+          title="Start all incomplete downloads of files in the playlist"
+          on:click={() => confirm(startPlaylistDownload)}
+          >Start all downloads
+          <i class="uk-icon" uk-icon="icon: cloud-download; ratio: 0.8" />&nbsp;
+        </button>
+        <span slot="title">Start all downloads</span>
+        <span slot="description"
+          >This will restart all not complete downloads of files in playlist.
+        </span>
+        <span slot="confirm">Start downloads</span>
+      </Confirm>
+
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-small-left stop-download"
+          class:uk-hidden={!hasFilesInPlaylist || !hasDownloadingFiles}
+          data-testid="stop-all-outputs"
+          title="Stop all downloads of all files in the playlist"
+          on:click={() => confirm(stopPlaylistDownload)}
+          value=""
+          >Cancel all downloads <i
+            class="uk-icon"
+            uk-icon="icon: ban; ratio: 0.8"
+          />&nbsp;
+        </button>
+        <span slot="title">Cancel all active downloads</span>
+        <span slot="description"
+          >This will stop active downloads of files in playlist.
+        </span>
+        <span slot="confirm">Stop downloads</span>
+      </Confirm>
+
+      <Confirm let:confirm>
+        <button
+          class="uk-button uk-button-link url-action-btn uk-margin-auto-left clear-playlist"
+          class:uk-hidden={!hasFilesInPlaylist || hasDownloadingFiles}
+          data-testid="clear-playlist"
+          title="Clear playlist"
+          on:click={() => confirm(clearPlaylist)}
+          value=""
+          >Clear playlist
+        </button>
+        <span slot="title">Clear all files in playlist</span>
+        <span slot="description">All files will be removed from playlist.</span>
+        <span slot="confirm">Clear playlist</span>
+      </Confirm>
     </div>
     <div
       class="playlist-items"
@@ -334,6 +367,16 @@
 
   .playlist
     padding: 16px
+
+    &:hover
+      .start-download, .stop-download, .load-file, .clear-playlist
+        opacity: 1
+
+  .start-download, .stop-download, .load-file, .clear-playlist
+      opacity: 0
+
+  .clear-playlist
+    color: var(--danger-color)
 
   .playlist-toolbar
     gap: 4px

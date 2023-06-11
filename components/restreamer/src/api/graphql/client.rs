@@ -86,8 +86,13 @@ impl MutationsRoot {
     ) -> Result<Option<bool>, graphql::Error> {
         let spec = serde_json::from_str::<Spec>(&spec)?.into_v1();
 
+        let notify_list_of_files_changed = || {
+            let mut commands = context.state().file_commands.lock_mut();
+            commands.push(FileCommand::ListOfFilesChanged);
+        };
+
         Ok(if let Some(id) = restream_id {
-            let spec = (spec.restreams.len() == 1)
+            let mut spec = (spec.restreams.len() == 1)
                 .then(|| spec.restreams.into_iter().next())
                 .flatten()
                 .ok_or_else(|| {
@@ -97,6 +102,31 @@ impl MutationsRoot {
                             "JSON spec should contain exactly one Restream",
                         )
                 })?;
+
+            // If we import one input into another than we need to make
+            // imported key unique
+            let has_duplicate = context
+                .state()
+                .restreams
+                .lock_mut()
+                .iter_mut()
+                .any(|r| r.key == spec.key);
+
+            if has_duplicate {
+                if let Some(new_key) =
+                    RestreamKey::new(format!("{}1", spec.key))
+                {
+                    spec.key = new_key;
+                } else {
+                    return Err(graphql::Error::new("INVALID_SPEC")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message(
+                            "Can not make new RestreamKey unique.\
+                             Try to fix it manually",
+                        ));
+                }
+            }
+
             #[allow(clippy::manual_find_map)]
             // due to moving `spec` inside closure
             context
@@ -107,10 +137,12 @@ impl MutationsRoot {
                 .find(|r| r.id == id)
                 .map(|r| {
                     r.apply(spec, replace);
+                    notify_list_of_files_changed();
                     true
                 })
         } else {
             context.state().apply(spec, replace);
+            notify_list_of_files_changed();
             Some(true)
         })
     }
@@ -241,6 +273,7 @@ impl MutationsRoot {
                 enabled: true,
             },
             outputs: vec![],
+            playlist: spec::v1::Playlist { queue: vec![] },
         };
 
         let result = if let Some(id) = id {
@@ -588,12 +621,11 @@ impl MutationsRoot {
             .lock_mut()
             .iter_mut()
             .for_each(|r| {
-                let found =
-                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
-
-                if found.is_some() {
-                    r.playlist.currently_playing_file = None;
-                    has_found = true;
+                if let Some(f) = r.playlist.currently_playing_file.clone() {
+                    if f.file_id == file_id {
+                        r.playlist.currently_playing_file = None;
+                        has_found = true;
+                    }
                 }
             });
 
@@ -643,7 +675,7 @@ impl MutationsRoot {
                         .message("Could not find restream with provided ID")
                 })?
                 .playlist
-                .apply(playlist_files);
+                .apply(playlist_files, true);
 
             let mut commands = context.state().file_commands.lock_mut();
             commands.push(FileCommand::ListOfFilesChanged);
@@ -1439,17 +1471,39 @@ impl SubscriptionsRoot {
             .boxed()
     }
 
-    /// Subscribes to updates of specific restream
-    async fn restream(
+    async fn restream_with_parent(
         id: RestreamId,
         context: &Context,
-    ) -> BoxStream<'static, Option<Restream>> {
+    ) -> BoxStream<'static, Option<RestreamWithParent>> {
+        let public_host = context.config().public_host.clone().unwrap();
         context
             .state()
             .restreams
             .signal_cloned()
-            .filter_map(move |restreams| {
-                restreams.into_iter().find(|r| r.id == id)
+            .filter_map(move |vec| {
+                let restream = vec.iter().find(|r| r.id == id);
+                let parent = restream.and_then(|restream| {
+                    vec.iter().find_map(|r| {
+                        r.outputs
+                            .iter()
+                            .find(|o| {
+                                o.dst
+                                    .is_address_of_restream(
+                                        &restream.key,
+                                        &public_host,
+                                    )
+                                    .unwrap_or(false)
+                            })
+                            .map(|out| RestreamParent {
+                                restream: r.clone(),
+                                output_id: out.id,
+                            })
+                    })
+                });
+                restream.map(|r| RestreamWithParent {
+                    restream: r.clone(),
+                    parent,
+                })
             })
             .dedupe_cloned()
             .to_stream()
@@ -1495,4 +1549,24 @@ pub struct Info {
     /// This value can be overwritten by the similar setting
     /// on a particular [Restream]
     pub max_downloading_files: Option<UNumber>,
+}
+
+/// Restream with its source output if it has any
+#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
+pub struct RestreamWithParent {
+    /// Restream info
+    restream: Restream,
+
+    /// Restream parent if it has any
+    parent: Option<RestreamParent>,
+}
+
+/// Restream parent which contains output that streams to the current restream
+#[derive(Clone, Debug, GraphQLObject, PartialEq, Eq)]
+pub struct RestreamParent {
+    /// parent restream
+    restream: Restream,
+
+    /// output ID of the parent restream output that streams to the child
+    output_id: OutputId,
 }

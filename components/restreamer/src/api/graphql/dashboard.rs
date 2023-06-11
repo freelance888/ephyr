@@ -7,6 +7,7 @@ use crate::{
     api::graphql,
     broadcaster::DashboardCommand,
     console_logger::ConsoleMessage,
+    file_manager::FileId,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
@@ -76,12 +77,42 @@ impl MutationsRoot {
         }
     }
 
+    /// Remove all [`Client`]s from dashboard
+    fn remove_all_clients(
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        context.state().clients.lock_mut().clear();
+
+        Ok(Some(true))
+    }
+
     /// Remove all messages from console
     fn console_clear(
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
-        let mut console_log = context.state().console_log.lock_mut();
-        console_log.clear();
+        context.state().console_log.lock_mut().clear();
+
+        Ok(Some(true))
+    }
+
+    /// Start playing specific file on any of client
+    fn broadcast_play_file(
+        #[graphql(description = "File identity")] file_id: FileId,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::StartPlayingFile(file_id));
+
+        Ok(Some(true))
+    }
+
+    /// Stop playing specific file on any of client
+    fn broadcast_stop_playing_file(
+        #[graphql(description = "File identity")] file_id: FileId,
+        context: &Context,
+    ) -> Result<Option<bool>, graphql::Error> {
+        let mut commands = context.state().dashboard_commands.lock_mut();
+        commands.push(DashboardCommand::StopPlayingFile(file_id));
 
         Ok(Some(true))
     }

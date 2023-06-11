@@ -11,15 +11,31 @@ All user visible changes to this project will be documented in this file. This p
 
 ### Fixed
 - Proper kill SRS server during restart ([#374]);
+- Display download status of file from playlist ([#222],[#348])
+- Verify that files from Google Drive are completely downloaded ([#192], [#348])
+- Playlist api ([#178], [#348])
+- Export/import of playlist ([#386])
+- Export/Import of file backup ([#386])
+
+### Added
+- Dashboard:
+  - Remove all clients ([#386])
+  - Star/Stop playing file ([#386])
+- Playlist
+  - Status component ([#343], [#348])
 
 ### Miscellaneous
 - Update [FFmpeg] to 6.0  ([#375]);
 
+[#222]: /../../issues/222
+[#192]: /../../issues/192
+[#178]: /../../issues/178
+[#343]: /../../issues/343
 
+[#348]: /../../pull/348
 [#374]: /../../pull/374
 [#375]: /../../pull/375
-
-
+[#386]: /../../pull/386
 
 
 

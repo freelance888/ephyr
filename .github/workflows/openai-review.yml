@@ -27,6 +27,6 @@ jobs:
         with:
           debug: false
           review_comment_lgtm: false
-          summary_only: true
+          summarize: true
           path_filters: |
             !**/*.lock

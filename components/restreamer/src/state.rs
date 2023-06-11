@@ -1024,10 +1024,62 @@ pub struct Playlist {
 }
 
 impl Playlist {
+    /// Creates new [`Playlist`] from spec
+    #[must_use]
+    pub fn new(spec: spec::v1::Playlist) -> Playlist {
+        let mut playlist = Self {
+            id: PlaylistId::random(),
+            queue: vec![],
+            currently_playing_file: None,
+        };
+
+        playlist.apply(spec.queue, true);
+        playlist
+    }
+
     /// Apply new playlist to this one
-    pub fn apply(&mut self, queue: Vec<PlaylistFileInfo>) {
-        self.queue = queue;
+    pub fn apply(
+        &mut self,
+        queue_spec: Vec<spec::v1::PlaylistFileInfo>,
+        replace: bool,
+    ) {
+        if replace {
+            self.queue = queue_spec
+                .into_iter()
+                .map(|x| PlaylistFileInfo {
+                    file_id: x.file_id,
+                    name: x.name,
+                    was_played: false,
+                })
+                .collect();
+        } else {
+            for spec::v1::PlaylistFileInfo { file_id, name } in queue_spec {
+                if !self.queue.iter().any(|x| x.file_id == file_id) {
+                    self.queue.push(PlaylistFileInfo {
+                        file_id,
+                        name,
+                        was_played: false,
+                    });
+                }
+            }
+        }
         self.currently_playing_file = None;
+    }
+
+    /// Exports this [`Playlist`] as a [`spec::v1::Playlist`].
+    #[must_use]
+    pub fn export(&self) -> spec::v1::Playlist {
+        spec::v1::Playlist {
+            queue: self
+                .queue
+                .clone()
+                .into_iter()
+                .map(|x| spec::v1::PlaylistFileInfo {
+                    name: x.name,
+                    file_id: x.file_id,
+                })
+                .collect(),
+        }
     }
 }
 
