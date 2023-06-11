@@ -14,7 +14,15 @@ All user visible changes to this project will be documented in this file. This p
 - Display download status of file from playlist ([#222],[#348])
 - Verify that files from Google Drive are completely downloaded ([#192], [#348])
 - Playlist api ([#178], [#348])
-- Playlist status component ([#343], [#348])
+- Export/import of playlist ([#386])
+- Export/Import of file backup ([#386])
+
+### Added
+- Dashboard:
+  - Remove all clients ([#386])
+  - Star/Stop playing file ([#386])
+- Playlist
+  - Status component ([#343], [#348])
 
 ### Miscellaneous
 - Update [FFmpeg] to 6.0  ([#375]);
@@ -27,6 +35,7 @@ All user visible changes to this project will be documented in this file. This p
 [#348]: /../../pull/348
 [#374]: /../../pull/374
 [#375]: /../../pull/375
+[#386]: /../../pull/386
 
 
 
