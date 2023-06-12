@@ -23,6 +23,7 @@ All user visible changes to this project will be documented in this file. This p
   - Star/Stop playing file ([#386])
 - Playlist
   - Status component ([#343], [#348])
+  - Make playlist optional on import ([#405])
 
 ### Miscellaneous
 - Update [FFmpeg] to 6.0  ([#375]);
@@ -36,6 +37,7 @@ All user visible changes to this project will be documented in this file. This p
 [#374]: /../../pull/374
 [#375]: /../../pull/375
 [#386]: /../../pull/386
+[#405]: /../../pull/405
 
 
 
