@@ -95,7 +95,7 @@ pub struct Restream {
     pub outputs: Vec<Output>,
 
     /// Playlist for this restream
-    pub playlist: Playlist,
+    pub playlist: Option<Playlist>,
 }
 
 impl Restream {

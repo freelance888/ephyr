@@ -273,7 +273,7 @@ impl MutationsRoot {
                 enabled: true,
             },
             outputs: vec![],
-            playlist: spec::v1::Playlist { queue: vec![] },
+            playlist: Some(spec::v1::Playlist { queue: vec![] }),
         };
 
         let result = if let Some(id) = id {

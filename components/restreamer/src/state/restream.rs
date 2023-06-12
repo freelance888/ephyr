@@ -67,7 +67,11 @@ impl Restream {
         self.key = new.key;
         self.label = new.label;
         self.input.apply(new.input);
-        self.playlist.apply(new.playlist.queue, replace);
+
+        if let Some(p) = new.playlist {
+            self.playlist.apply(p.queue, replace);
+        }
+
         if replace {
             let mut olds = mem::replace(
                 &mut self.outputs,
@@ -107,7 +111,7 @@ impl Restream {
             id: Some(self.id),
             key: self.key.clone(),
             label: self.label.clone(),
-            playlist: self.playlist.export(),
+            playlist: Some(self.playlist.export()),
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
         }

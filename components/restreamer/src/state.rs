@@ -1026,14 +1026,17 @@ pub struct Playlist {
 impl Playlist {
     /// Creates new [`Playlist`] from spec
     #[must_use]
-    pub fn new(spec: spec::v1::Playlist) -> Playlist {
+    pub fn new(spec: Option<spec::v1::Playlist>) -> Playlist {
         let mut playlist = Self {
             id: PlaylistId::random(),
             queue: vec![],
             currently_playing_file: None,
         };
 
-        playlist.apply(spec.queue, true);
+        if let Some(s) = spec {
+            playlist.apply(s.queue, true);
+        }
+
         playlist
     }
 
