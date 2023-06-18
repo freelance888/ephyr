@@ -26,10 +26,10 @@ pub enum DashboardCommand {
     DisableAllOutputs(),
     /// Command for initiation playing specific file on any of registered
     /// client
-    StartPlayingFile(FileId),
+    StartPlayingFile(String),
     /// Command for stop playing specific file on any of registered
     /// client
-    StopPlayingFile(FileId),
+    StopPlayingFile(String),
 }
 
 /// GraphQL mutation for enabling outputs
@@ -101,7 +101,7 @@ impl Broadcaster {
             .clients
             .lock_mut()
             .iter()
-            .filter(|client| client.is_protected)
+            //.filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
                     self.handle_one_command(client.id.clone(), command.clone());
@@ -135,27 +135,31 @@ impl Broadcaster {
                     },
                 );
             }
-            DashboardCommand::StartPlayingFile(file_id) => {
+            DashboardCommand::StartPlayingFile(name_prefix) => {
                 let state = self.state.clone();
                 Self::try_to_run_command(
                     client_id.clone(),
                     state.clone(),
                     async move {
                         Self::request_start_playing_file(
-                            client_id, &file_id, state,
+                            client_id,
+                            name_prefix,
+                            state,
                         )
                         .await
                     },
                 );
             }
-            DashboardCommand::StopPlayingFile(file_id) => {
+            DashboardCommand::StopPlayingFile(name_prefix) => {
                 let state = self.state.clone();
                 Self::try_to_run_command(
                     client_id.clone(),
                     state.clone(),
                     async move {
                         Self::request_stop_playing_file(
-                            client_id, &file_id, state,
+                            client_id,
+                            name_prefix,
+                            state,
                         )
                         .await
                     },
@@ -224,14 +228,14 @@ impl Broadcaster {
 
     async fn request_stop_playing_file(
         client_id: ClientId,
-        file_id: &FileId,
+        name_prefix: String,
         state: State,
     ) -> anyhow::Result<()> {
         type Vars = <StopPlayingFile as GraphQLQuery>::Variables;
         type ResponseData = <StopPlayingFile as GraphQLQuery>::ResponseData;
 
         let request_body = StopPlayingFile::build_query(Vars {
-            file_id: file_id.clone(),
+            name_prefix: name_prefix.clone(),
         });
 
         let request = reqwest::Client::builder().build().unwrap();
@@ -244,7 +248,10 @@ impl Broadcaster {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        tracing::info!(?response, "Stop playing file {file_id}",);
+        tracing::info!(
+            ?response,
+            "Stop playing file starting with '{name_prefix}'",
+        );
 
         Self::handle_errors(&client_id, &state, response.errors);
         Ok(())
@@ -252,14 +259,14 @@ impl Broadcaster {
 
     async fn request_start_playing_file(
         client_id: ClientId,
-        file_id: &FileId,
+        name_prefix: String,
         state: State,
     ) -> anyhow::Result<()> {
         type Vars = <StartPlayingFile as GraphQLQuery>::Variables;
         type ResponseData = <StartPlayingFile as GraphQLQuery>::ResponseData;
 
         let request_body = StartPlayingFile::build_query(Vars {
-            file_id: file_id.clone(),
+            name_prefix: name_prefix.clone(),
         });
 
         let request = reqwest::Client::builder().build().unwrap();
@@ -272,7 +279,10 @@ impl Broadcaster {
             .await?;
 
         let response: Response<ResponseData> = res.json().await?;
-        tracing::info!(?response, "Start playing file {file_id}",);
+        tracing::info!(
+            ?response,
+            "Start playing file starting with '{name_prefix}'",
+        );
 
         Self::handle_errors(&client_id, &state, response.errors);
         Ok(())

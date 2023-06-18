@@ -111,7 +111,7 @@
 
   function fetchFolderId(id) {
     if (isFullGDrivePath(id)) {
-      const result = id.match(/folders\/([^\/]+)/);
+      const result = id.match(/folders\/([a-zA-Z0-9-_]+)/);
       if (result) {
         return result[1];
       }

@@ -584,7 +584,8 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_play_file(
-        #[graphql(description = "file identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -594,8 +595,11 @@ impl MutationsRoot {
             .lock_mut()
             .iter_mut()
             .for_each(|r| {
-                let found =
-                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
+                let found = r.playlist.queue.iter().find(|f| {
+                    f.name
+                        .to_lowercase()
+                        .starts_with(&name_prefix.to_lowercase())
+                });
 
                 if found.is_some() {
                     r.playlist.currently_playing_file = found.cloned();
@@ -611,7 +615,8 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_stop_playing_file(
-        #[graphql(description = "file identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -622,7 +627,10 @@ impl MutationsRoot {
             .iter_mut()
             .for_each(|r| {
                 if let Some(f) = r.playlist.currently_playing_file.clone() {
-                    if f.file_id == file_id {
+                    if f.name
+                        .to_lowercase()
+                        .starts_with(&name_prefix.to_lowercase())
+                    {
                         r.playlist.currently_playing_file = None;
                         has_found = true;
                     }
