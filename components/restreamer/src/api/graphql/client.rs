@@ -660,6 +660,7 @@ impl MutationsRoot {
             })?;
         let result =
             get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
+
         if let Ok(mut playlist_files) = result {
             if playlist_files.is_empty() {
                 let err = "No files in playlist. \
