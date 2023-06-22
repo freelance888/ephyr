@@ -15,9 +15,8 @@ use crate::{
     cli::Opts,
     display_panic,
     google_drive_api::{
-        get_gdrive_result, ErrorResponse, ExtendedFileInfoResponse,
-        FileListResponse, FileNameResponse, GoogleDriveApi,
-        GDRIVE_PUBLIC_PARAMS,
+        ErrorResponse, ExtendedFileInfoResponse, FileListResponse,
+        FileNameResponse, GoogleDriveApi, GDRIVE_PUBLIC_PARAMS,
     },
     spec,
     state::{InputEndpointKind, InputSrc, State, Status},
@@ -235,17 +234,10 @@ impl FileManager {
         api_key: &'a str,
         state: &'a State,
     ) -> Result<(), String> {
-        let response = reqwest::get(
-            format!(
-                "https://www.googleapis.com/drive/v3/files/{file_id}?
-                fields=name&key={api_key}&{GDRIVE_PUBLIC_PARAMS}"
-            )
-            .as_str(),
-        )
-        .await;
-
-        let filename =
-            get_gdrive_result::<FileNameResponse>(response).await?.name;
+        let filename = GoogleDriveApi::new(api_key)
+            .get_file_info(file_id.clone())
+            .await?
+            .name;
 
         state
             .files
@@ -698,14 +690,14 @@ pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
 ) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
-    let mut response =
-        GoogleDriveApi::get_dir_content(api_key, folder_id).await?;
+    let mut response = GoogleDriveApi::new(api_key)
+        .get_dir_content(folder_id)
+        .await?;
 
     Ok(response
         .files
         .into_iter()
         .filter(ExtendedFileInfoResponse::is_video)
-        .drain(..)
         .map(|x| spec::v1::PlaylistFileInfo {
             file_id: FileId(x.id),
             name: x.name,
