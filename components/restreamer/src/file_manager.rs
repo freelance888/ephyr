@@ -16,7 +16,8 @@ use crate::{
     display_panic,
     google_drive_api::{
         get_gdrive_result, ErrorResponse, ExtendedFileInfoResponse,
-        FileListResponse, FileNameResponse, GDRIVE_PUBLIC_PARAMS,
+        FileListResponse, FileNameResponse, GoogleDriveApi,
+        GDRIVE_PUBLIC_PARAMS,
     },
     spec,
     state::{InputEndpointKind, InputSrc, State, Status},
@@ -698,11 +699,12 @@ pub async fn get_video_list_from_gdrive_folder(
     folder_id: &str,
 ) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
     let mut response =
-        FileListResponse::retrieve_dir_content_from_api(api_key, folder_id)
-            .await?;
-    response.filter_only_video_files();
+        GoogleDriveApi::get_dir_content(api_key, folder_id).await?;
+
     Ok(response
         .files
+        .into_iter()
+        .filter(ExtendedFileInfoResponse::is_video)
         .drain(..)
         .map(|x| spec::v1::PlaylistFileInfo {
             file_id: FileId(x.id),
