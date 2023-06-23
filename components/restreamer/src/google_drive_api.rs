@@ -102,7 +102,9 @@ impl GoogleDriveApi {
                 let status = r.status();
                 if status == StatusCode::OK {
                     return r.json::<T>().await.map_err(error_parsing);
-                } else if status == 403 {
+                } else if vec![StatusCode::FORBIDDEN, StatusCode::NOT_FOUND]
+                    .contains(&status)
+                {
                     return Err(r
                         .json::<ErrorResponse>()
                         .await
