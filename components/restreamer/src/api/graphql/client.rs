@@ -30,9 +30,10 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{
-        get_video_list_from_gdrive_folder, FileCommand, FileId, FileState,
-        LocalFileInfo,
+        get_file_from_gdrive, get_video_list_from_gdrive_folder, FileCommand,
+        FileId, FileState, LocalFileInfo,
     },
+    google_drive_api::GoogleDriveApi,
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
     types::UNumber,
@@ -644,7 +645,7 @@ impl MutationsRoot {
     /// restream's playlist.
     async fn get_playlist_from_gdrive(
         restream_id: RestreamId,
-        folder_id: String,
+        id: String,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let api_key = context
@@ -658,10 +659,20 @@ impl MutationsRoot {
                     .status(StatusCode::UNAUTHORIZED)
                     .message("No API key")
             })?;
-        let result =
-            get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
+        let files_response =
+            get_video_list_from_gdrive_folder(&api_key, &id).await;
+        let file_response = get_file_from_gdrive(&api_key, &id).await;
 
-        if let Ok(mut playlist_files) = result {
+        let mut restreams = context.state().restreams.lock_mut();
+        let restream = restreams
+            .iter_mut()
+            .find(|r| r.id == restream_id)
+            .ok_or_else(|| {
+                graphql::Error::new("UNKNOWN_RESTREAM")
+                    .message("Could not find restream with provided ID")
+            })?;
+
+        if let Ok(mut playlist_files) = files_response {
             if playlist_files.is_empty() {
                 let err = "No files in playlist. \
                     Probably there is no public access to the playlist";
@@ -673,29 +684,25 @@ impl MutationsRoot {
             }
 
             playlist_files.sort_by_key(|x| x.name.clone());
-            context
-                .state()
-                .restreams
-                .lock_mut()
-                .iter_mut()
-                .find(|r| r.id == restream_id)
-                .ok_or_else(|| {
-                    graphql::Error::new("UNKNOWN_RESTREAM")
-                        .message("Could not find restream with provided ID")
-                })?
-                .playlist
-                .apply(playlist_files, true);
+            restream.playlist.apply(playlist_files, true);
 
             let mut commands = context.state().file_commands.lock_mut();
             commands.push(FileCommand::ListOfFilesChanged);
 
             Ok(Some(true))
         } else {
-            let err = result.err().unwrap();
-            tracing::error!(err);
-            Err(graphql::Error::new("GDRIVE_API_ERROR")
-                .status(StatusCode::BAD_REQUEST)
-                .message(&err))
+            match file_response {
+                Ok(f) => {
+                    restream.playlist.apply(vec![f], true);
+                    Ok(Some(true))
+                }
+                Err(e) => {
+                    tracing::error!(e);
+                    Err(graphql::Error::new("GDRIVE_API_ERROR")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message(&e))
+                }
+            }
         }
     }
 

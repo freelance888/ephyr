@@ -235,7 +235,7 @@ impl FileManager {
         state: &'a State,
     ) -> Result<(), String> {
         let filename = GoogleDriveApi::new(api_key)
-            .get_file_info(file_id.clone())
+            .get_file_info(file_id)
             .await?
             .name;
 
@@ -274,13 +274,6 @@ impl FileManager {
                     .clone()
                     .ok_or("No API key provided")?;
 
-                let client = reqwest::ClientBuilder::new()
-                    .connection_verbose(false)
-                    .build()
-                    .map_err(|err| {
-                        format!("Could not create a reqwest Client: {err}")
-                    })?;
-
                 // Get file name from the API
                 if file_name.is_none() {
                     Self::update_file_info(&file_id, &api_key, &state)
@@ -306,79 +299,65 @@ impl FileManager {
                 }
 
                 // Download the file contents
-                if let Ok(mut response) = client
-                    .get(
-                        format!(
-                            "https://www.googleapis.com/drive/v3/files/\
-                            {file_id}?alt=media&key={api_key}\
-                            &{GDRIVE_PUBLIC_PARAMS}"
-                        )
-                        .as_str(),
-                    )
-                    .send()
-                    .await
-                {
-                    let status = response.status();
-                    if status != StatusCode::OK {
-                        if status == 403 {
-                            return Err(response
-                                .json::<ErrorResponse>()
-                                .await
-                                .map(|r| {
-                                    format!(
-                                        "Http response: {} {}",
-                                        r.error.code, r.error.message
-                                    )
-                                })
-                                .map_err(|e| {
-                                    format!(
-                                        "Status: {status}. Unknown error {e}"
-                                    )
-                                })?);
-                        }
-
-                        let error_response = response.text().await;
-                        return Err(format!(
-                            "Can't download file. Http response: {} {}",
-                            status,
-                            error_response.unwrap_or_default(),
-                        ));
-                    }
-
-                    let total = response.content_length();
-                    // Create FileInfo Download state and set the state
-                    // to Downloading
-                    state
-                        .files
-                        .lock_mut()
-                        .iter_mut()
-                        .find(|file| file.file_id == file_id)
-                        .ok_or_else(|| {
-                            "Could not find file with the \
-                             provided file ID"
-                                .to_string()
-                        })?
-                        .pipe_borrow_mut(|val| {
-                            val.download_state = Some(DownloadState {
-                                max_progress: NetworkByteSize(total.unwrap()),
-                                current_progress: NetworkByteSize(0),
-                            });
-                            val.state = FileState::Downloading;
-                        });
-
-                    Self::download_and_write_bytes(
-                        &file_id,
-                        &root_dir,
-                        response.borrow_mut(),
-                        &state,
-                    )
+                let mut response = GoogleDriveApi::new(&api_key)
+                    .get_file_response(&file_id)
                     .await?;
 
-                    Ok(response.status().as_u16())
-                } else {
-                    Err("Could not send download request for the file"
-                        .to_string())
+                let status = response.status();
+                if status != StatusCode::OK {
+                    if status == 403 {
+                        return Err(response
+                            .json::<ErrorResponse>()
+                            .await
+                            .map(|r| {
+                                format!(
+                                    "Http response: {} {}",
+                                    r.error.code, r.error.message
+                                )
+                            })
+                            .map_err(|e| {
+                                format!("Status: {status}. Unknown error {e}")
+                            })?);
+                    }
+
+                    let error_response = response.text().await;
+                    return Err(format!(
+                        "Can't download file. Http response: {} {}",
+                        status,
+                        error_response.unwrap_or_default(),
+                    ));
                 }
+
+                let total = response.content_length();
+                // Create FileInfo Download state and set the state
+                // to Downloading
+                state
+                    .files
+                    .lock_mut()
+                    .iter_mut()
+                    .find(|file| file.file_id == file_id)
+                    .ok_or_else(|| {
+                        "Could not find file with the \
+                             provided file ID"
+                            .to_string()
+                    })?
+                    .pipe_borrow_mut(|val| {
+                        val.download_state = Some(DownloadState {
+                            max_progress: NetworkByteSize(total.unwrap()),
+                            current_progress: NetworkByteSize(0),
+                        });
+                        val.state = FileState::Downloading;
+                    });
+
+                Self::download_and_write_bytes(
+                    &file_id,
+                    &root_dir,
+                    response.borrow_mut(),
+                    &state,
+                )
+                .await?;
+
+                Ok(response.status().as_u16())
             }
             .await
             .map_err(|err| {
@@ -681,6 +660,20 @@ impl NetworkByteSize {
     }
 }
 
+pub async fn get_file_from_gdrive(
+    api_key: &str,
+    file_id: &str,
+) -> Result<spec::v1::PlaylistFileInfo, String> {
+    let file_info_response = GoogleDriveApi::new(&api_key)
+        .get_file_info(&FileId(file_id.to_string()))
+        .await?;
+
+    Ok(spec::v1::PlaylistFileInfo {
+        file_id: FileId(file_info_response.id),
+        name: file_info_response.name,
+    })
+}
+
 /// Retrieves list of video files from a Google drive folder
 ///
 /// # Errors
@@ -690,7 +683,7 @@ pub async fn get_video_list_from_gdrive_folder(
     api_key: &str,
     folder_id: &str,
 ) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
-    let mut response = GoogleDriveApi::new(api_key)
+    let response = GoogleDriveApi::new(api_key)
         .get_dir_content(folder_id)
         .await?;
 

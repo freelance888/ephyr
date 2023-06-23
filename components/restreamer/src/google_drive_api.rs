@@ -1,11 +1,11 @@
+use crate::file_manager::FileId;
+use reqwest::{Response, StatusCode};
+use serde::Deserialize;
+
 pub const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
 &includeItemsFromAllDrives=True\
 &includeTeamDriveItems=True";
-
-use crate::file_manager::FileId;
-use reqwest::{Response, StatusCode};
-use serde::Deserialize;
 
 /// Used to deserialize Google API call for the file details
 #[derive(Deserialize)]
@@ -14,6 +14,7 @@ pub struct FileNameResponse {
     pub name: String,
 }
 
+/// Represents an extended file information response from Google Drive API.
 #[derive(Deserialize, Debug)]
 pub struct ExtendedFileInfoResponse {
     pub id: String,
@@ -33,6 +34,7 @@ impl ExtendedFileInfoResponse {
     }
 }
 
+/// Represents the response from a file list request in Google Drive API.
 #[derive(Deserialize)]
 pub struct FileListResponse {
     // TODO fix this
@@ -55,7 +57,7 @@ impl GoogleDriveApi {
         }
     }
 
-    /// Get list of files from specific GDrive folder
+    /// Get the list of files from a specific GDrive folder.
     pub async fn get_dir_content(
         &self,
         dir_id: &str,
@@ -74,10 +76,10 @@ impl GoogleDriveApi {
         Self::get_result(response).await
     }
 
-    /// Get single file from GDrive
+    /// Get the details of a single file from GDrive.
     pub async fn get_file_info(
         &self,
-        file_id: FileId,
+        file_id: &FileId,
     ) -> Result<ExtendedFileInfoResponse, String> {
         let response = reqwest::get(
             format!(
@@ -91,21 +93,46 @@ impl GoogleDriveApi {
         Self::get_result(response).await
     }
 
+    pub async fn get_file_response(
+        &self,
+        file_id: &FileId,
+    ) -> Result<Response, String> {
+        let client = reqwest::ClientBuilder::new()
+            .connection_verbose(false)
+            .build()
+            .map_err(|err| {
+                format!("Could not create a reqwest Client: {err}")
+            })?;
+
+        Ok(client
+            .get(
+                format!(
+                    "https://www.googleapis.com/drive/v3/files/\
+                            {file_id}?alt=media&key={}\
+                            &{GDRIVE_PUBLIC_PARAMS}",
+                    self.api_key
+                )
+                .as_str(),
+            )
+            .send()
+            .await
+            .map_err(|err| {
+                format!("Could not send download request for the file")
+            })?)
+    }
+
     async fn get_result<T: for<'de> Deserialize<'de>>(
         response: reqwest::Result<Response>,
     ) -> Result<T, String> {
-        let error_parsing = |e| format!("Error parsing JSON result: {e}");
-
         match response {
-            Err(e) => Err(format!("No valid response from the API: {e}")),
+            Err(e) => Err(format!("No valid response from the API: {}", e)),
             Ok(r) => {
                 let status = r.status();
-                if status == StatusCode::OK {
-                    return r.json::<T>().await.map_err(error_parsing);
-                } else if vec![StatusCode::FORBIDDEN, StatusCode::NOT_FOUND]
-                    .contains(&status)
-                {
-                    return Err(r
+                match status {
+                    StatusCode::OK => r.json::<T>().await.map_err(|e| {
+                        format!("Error parsing JSON result: {}", e)
+                    }),
+                    StatusCode::FORBIDDEN | StatusCode::NOT_FOUND => Err(r
                         .json::<ErrorResponse>()
                         .await
                         .map(|x| {
@@ -114,25 +141,26 @@ impl GoogleDriveApi {
                                 x.error.code, x.error.message
                             )
                         })
-                        .map_err(error_parsing)?);
+                        .map_err(|e| {
+                            format!("Error parsing JSON result: {}", e)
+                        })?),
+                    _ => Err(r
+                        .text()
+                        .await
+                        .unwrap_or_else(|e| format!("Unknown error: {}", e))),
                 }
-
-                Err(r
-                    .text()
-                    .await
-                    .map_err(|e| format!("Unknown error: {e}"))?)
             }
         }
     }
 }
 
-///
+/// Represents the error response from Google Drive API.
 #[derive(Deserialize)]
 pub(crate) struct ErrorResponse {
     pub(crate) error: ErrorMessage,
 }
 
-///
+/// Represents an error message in the error response from Google Drive API.
 #[derive(Deserialize)]
 pub(crate) struct ErrorMessage {
     pub(crate) code: u16,
