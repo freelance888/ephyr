@@ -1959,7 +1959,7 @@
                 "defaultValue": null
               },
               {
-                "name": "folderId",
+                "name": "fileOrFolderId",
                 "description": null,
                 "type": {
                   "kind": "NON_NULL",

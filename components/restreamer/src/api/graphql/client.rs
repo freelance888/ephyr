@@ -645,7 +645,7 @@ impl MutationsRoot {
     /// restream's playlist.
     async fn get_playlist_from_gdrive(
         restream_id: RestreamId,
-        id: String,
+        file_or_folder_id: String,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let api_key = context
@@ -659,9 +659,12 @@ impl MutationsRoot {
                     .status(StatusCode::UNAUTHORIZED)
                     .message("No API key")
             })?;
+
         let files_response =
-            get_video_list_from_gdrive_folder(&api_key, &id).await;
-        let file_response = get_file_from_gdrive(&api_key, &id).await;
+            get_video_list_from_gdrive_folder(&api_key, &file_or_folder_id)
+                .await;
+        let file_response =
+            get_file_from_gdrive(&api_key, &file_or_folder_id).await;
 
         let mut restreams = context.state().restreams.lock_mut();
         let restream = restreams
@@ -672,38 +675,37 @@ impl MutationsRoot {
                     .message("Could not find restream with provided ID")
             })?;
 
-        if let Ok(mut playlist_files) = files_response {
-            if playlist_files.is_empty() {
-                let err = "No files in playlist. \
-                    Probably there is no public access to the playlist";
-
-                tracing::error!(err);
-                return Err(graphql::Error::new("GDRIVE_API_ERROR")
-                    .status(StatusCode::BAD_REQUEST)
-                    .message(&err));
-            }
-
-            playlist_files.sort_by_key(|x| x.name.clone());
-            restream.playlist.apply(playlist_files, true);
-
-            let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileCommand::ListOfFilesChanged);
-
-            Ok(Some(true))
+        if let Ok(mut file) = file_response {
+            restream.playlist.apply(vec![file], false);
         } else {
-            match file_response {
-                Ok(f) => {
-                    restream.playlist.apply(vec![f], true);
-                    Ok(Some(true))
+            match files_response {
+                Ok(mut playlist_files) => {
+                    if playlist_files.is_empty() {
+                        let err = "No video files found in the folder. \
+                    Probably there is no public access to that folder";
+
+                        tracing::error!(err);
+                        return Err(graphql::Error::new("GDRIVE_API_ERROR")
+                            .status(StatusCode::BAD_REQUEST)
+                            .message(&err));
+                    }
+
+                    playlist_files.sort_by_key(|x| x.name.clone());
+                    restream.playlist.apply(playlist_files, false);
                 }
-                Err(e) => {
-                    tracing::error!(e);
-                    Err(graphql::Error::new("GDRIVE_API_ERROR")
+                Err(err) => {
+                    tracing::error!(err);
+                    return Err(graphql::Error::new("GDRIVE_API_ERROR")
                         .status(StatusCode::BAD_REQUEST)
-                        .message(&e))
+                        .message(&err));
                 }
             }
         }
+
+        let mut commands = context.state().file_commands.lock_mut();
+        commands.push(FileCommand::ListOfFilesChanged);
+
+        Ok(Some(true))
     }
 
     /// Enables an `Input` by its `id`.

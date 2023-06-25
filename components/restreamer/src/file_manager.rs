@@ -668,10 +668,14 @@ pub async fn get_file_from_gdrive(
         .get_file_info(&FileId(file_id.to_string()))
         .await?;
 
-    Ok(spec::v1::PlaylistFileInfo {
-        file_id: FileId(file_info_response.id),
-        name: file_info_response.name,
-    })
+    if file_info_response.is_video() {
+        Ok(spec::v1::PlaylistFileInfo {
+            file_id: FileId(file_info_response.id),
+            name: file_info_response.name,
+        })
+    } else {
+        Err("This is not video file".to_string())
+    }
 }
 
 /// Retrieves list of video files from a Google drive folder

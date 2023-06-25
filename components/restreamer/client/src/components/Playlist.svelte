@@ -65,20 +65,20 @@
 
   $: hasFilesInPlaylist = Boolean(queue?.length > 0);
 
-  let googleDriveFolderId = '';
+  let googleDriveFolderOrFileId = '';
   let isValidFolderIdInput = true;
 
-  async function loadPlaylist(folderId) {
+  async function loadPlaylistOrFile(file_or_folder_id) {
     if (isValidFolderIdInput) {
-      const variables = { id: restreamId, folder_id: folderId };
+      const variables = { restreamId, file_or_folder_id };
       try {
         await getPlaylistFromDrive({ variables });
-        googleDriveFolderId = '';
+        googleDriveFolderOrFileId = '';
       } catch (e) {
         showError(e.message);
       }
     } else {
-      showError(`Google Folder Id: ${folderId} is incorrect`);
+      showError(`Google drive folder Id of file Id: ${file_or_folder_id} is incorrect`);
     }
   }
 
@@ -123,14 +123,14 @@
   function handleInputFolderId(event) {
     const stringWithFolderId = event.target.value;
     if (!stringWithFolderId) return;
-    googleDriveFolderId = fetchFolderId(stringWithFolderId);
+    googleDriveFolderOrFileId = fetchFolderId(stringWithFolderId);
     validateFileIdInput();
   }
 
   function validateFileIdInput() {
     if (!isValidFolderIdInput) {
       setTimeout(() => {
-        googleDriveFolderId = '';
+        googleDriveFolderOrFileId = '';
         isValidFolderIdInput = true;
       }, 3000);
     }
@@ -195,7 +195,7 @@
       <label for="gdrive">Add files from Google Drive</label>
       <input
         id="gdrive"
-        bind:value={googleDriveFolderId}
+        bind:value={googleDriveFolderOrFileId}
         on:input={handleInputFolderId}
         class="google-drive-link uk-input uk-form-small uk-flex-1"
         type="text"
@@ -204,9 +204,9 @@
       />
 
       <button
-        disabled={!googleDriveFolderId.trim()}
+        disabled={!googleDriveFolderOrFileId.trim()}
         class="uk-button uk-button-primary uk-button-small uk-flex-none load-file"
-        on:click={() => loadPlaylist(googleDriveFolderId)}
+        on:click={() => loadPlaylistOrFile(googleDriveFolderOrFileId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
           >Load files</span
