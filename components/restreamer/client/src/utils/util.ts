@@ -144,3 +144,25 @@ export const sanitizeTooltip = (message) => message.replaceAll(':', ' - ');
 export const isFullGDrivePath = (id: string): boolean => {
   return id.startsWith('https://drive.google.com');
 };
+
+export const getFileIdFromGDrive = (id) => {
+  if (isFullGDrivePath(id)) {
+    const result = id.match(/file\/d\/([^\/]+)/);
+    if (result) {
+      return result[1];
+    }
+  }
+
+  return id;
+};
+
+export const getFolderIdFromGDrive = (id) => {
+  if (isFullGDrivePath(id)) {
+    const result = id.match(/folders\/([a-zA-Z0-9-_]+)/);
+    if (result) {
+      return result[1];
+    }
+  }
+
+  return id;
+}

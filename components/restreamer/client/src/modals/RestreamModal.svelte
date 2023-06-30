@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
   import { SetRestream, Info } from '../../api/client.graphql';
-  import { isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
+  import { getFileIdFromGDrive, isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
@@ -93,7 +93,7 @@
     }
 
     if (restream.fileId) {
-      const fileId = fetchFileId(restream.fileId);
+      const fileId = getFileIdFromGDrive(restream.fileId);
       if (fileId) {
         restream.fileId = fileId;
         variables.file_id = fileId;
@@ -146,21 +146,10 @@
     });
   };
 
-  const fetchFileId = (id) => {
-    if (isFullGDrivePath(id)) {
-      const result = id.match(/file\/d\/([^\/]+)/);
-      if (result) {
-        return result[1];
-      }
-    }
-
-    return id;
-  };
-
   const handleInputFileId = (event) => {
     const stringWithFileId = event.target.value;
     if (!stringWithFileId) return;
-    $restreamStore.fileId = fetchFileId(stringWithFileId);
+    $restreamStore.fileId = getFileIdFromGDrive(stringWithFileId);
     validateFileIdInput();
   };
 

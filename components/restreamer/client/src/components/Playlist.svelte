@@ -21,7 +21,7 @@
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
-  import { isFullGDrivePath, showError } from '../utils/util';
+  import { getFileIdFromGDrive, getFolderIdFromGDrive, isFullGDrivePath, showError } from '../utils/util';
   import PlaylistStatus from './common/PlaylistStatus.svelte';
 
   const restartPlaylistDownload = mutation(RestartPlaylistDownload);
@@ -109,12 +109,15 @@
     }
   }
 
-  function fetchFolderId(id) {
+  function getGDriveFileOrFolderId(id) {
+    let fileOrFolderId = '';
+
     if (isFullGDrivePath(id)) {
-      const result = id.match(/folders\/([a-zA-Z0-9-_]+)/);
-      if (result) {
-        return result[1];
-      }
+      fileOrFolderId = getFolderIdFromGDrive(id);
+
+      return isFullGDrivePath(fileOrFolderId)
+        ? getFileIdFromGDrive(id)
+        : fileOrFolderId;
     }
 
     return id;
@@ -123,7 +126,7 @@
   function handleInputFolderId(event) {
     const stringWithFolderId = event.target.value;
     if (!stringWithFolderId) return;
-    googleDriveFolderOrFileId = fetchFolderId(stringWithFolderId);
+    googleDriveFolderOrFileId = getGDriveFileOrFolderId(stringWithFolderId);
     validateFileIdInput();
   }
 
