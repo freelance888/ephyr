@@ -469,6 +469,7 @@ impl FileManager {
                 file.download_state.as_mut().unwrap().current_progress =
                     current;
                 file.state = FileState::Local;
+                file.error = None;
                 update_stream_info(
                     file_id.clone(),
                     file_path.clone(),

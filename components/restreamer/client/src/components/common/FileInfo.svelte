@@ -12,7 +12,7 @@
   import {
     FILE_DOWNLOADING,
     FILE_LOCAL,
-    FILE_PENDING,
+    FILE_PENDING, FILE_WAITING
   } from '../../utils/constants';
 
   export let file;
@@ -25,7 +25,7 @@
 
   $: fileName = file.name ? file.name : file.fileId;
 
-  $: isDownloading = file.state === FILE_DOWNLOADING;
+  $: isDownloading = [FILE_DOWNLOADING, FILE_PENDING, FILE_WAITING].includes(file.state);
 
   const downloadFileMutation = mutation(DownloadFile);
   async function downloadFile() {

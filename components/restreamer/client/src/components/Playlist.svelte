@@ -3,21 +3,15 @@
   import { dndzone } from 'svelte-dnd-action';
 
   import {
+    CancelPlaylistDownload,
     GetPlaylistFromGdrive,
     PlayFileFromPlaylist,
-    SetPlaylist,
-    StopPlayingFileFromPlaylist,
-    CancelPlaylistDownload,
     RestartPlaylistDownload,
+    SetPlaylist,
+    StopPlayingFileFromPlaylist
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
-  import {
-    FILE_DOWNLOADING,
-    FILE_LOCAL,
-    FILE_PENDING,
-    FILE_WAITING,
-  } from '../utils/constants';
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
@@ -34,32 +28,10 @@
   const flipDurationMs = 200;
 
   export let restreamId;
-  export let playlist;
-  export let files = [];
+  export let queue;
+  export let currentlyPlayingFileId;
 
   $: dragDisabled = true;
-
-  $: queue = playlist
-    ? playlist.queue
-        .map((x) => ({
-          id: x.fileId,
-          name: x.name ?? x.fileId,
-          isPlaying: playlist.currentlyPlayingFile
-            ? playlist.currentlyPlayingFile.fileId === x.fileId
-            : false,
-          file: files.find((f) => f.fileId === x.fileId),
-          wasPlayed: x.wasPlayed,
-        }))
-        .map((x) => ({
-          ...x,
-          isLocal: x.file?.state === FILE_LOCAL,
-          isDownloading: [
-            FILE_DOWNLOADING,
-            FILE_PENDING,
-            FILE_WAITING,
-          ].includes(x.file?.state),
-        }))
-    : [];
 
   $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
@@ -155,10 +127,7 @@
 
   async function startStopPlaying(file_id) {
     try {
-      if (
-        playlist.currentlyPlayingFile &&
-        playlist.currentlyPlayingFile.fileId === file_id
-      ) {
+      if (currentlyPlayingFileId === file_id) {
         const variables = { restreamId };
         await stopPlayingFileFromPlaylist({ variables });
       } else {

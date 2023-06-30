@@ -7,11 +7,11 @@
     Files,
     Info,
     RemoveOutput,
-    ServerInfo,
     RestreamWithParent,
+    ServerInfo,
     TuneDelay,
-    TuneVolume,
     TuneSidechain,
+    TuneVolume
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -20,6 +20,8 @@
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
   import Output from './Output.svelte';
+  import { FILE_DOWNLOADING, FILE_LOCAL, FILE_PENDING, FILE_WAITING } from '../utils/constants';
+  import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
 
   let outputMutations = {
     DisableOutput,
@@ -79,6 +81,57 @@
       .map((x) => x.previewUrl)[0];
 
   $: playlist = restream?.playlist;
+
+  $: playlistQueue = playlist
+    ? playlist.queue
+      .map((x) => ({
+        id: x.fileId,
+        name: x.name ?? x.fileId,
+        isPlaying: playlist.currentlyPlayingFile
+          ? playlist.currentlyPlayingFile.fileId === x.fileId
+          : false,
+        file: files.find((f) => f.fileId === x.fileId),
+        wasPlayed: x.wasPlayed,
+      }))
+      .map((x) => ({
+        ...x,
+        isLocal: x.file?.state === FILE_LOCAL,
+        isDownloading: [
+          FILE_DOWNLOADING,
+          FILE_PENDING,
+          FILE_WAITING,
+        ].includes(x.file?.state),
+      }))
+    : [];
+
+  $: currentlyPlayingFileId = playlist?.currentlyPlayingFile?.fileId;
+
+  $: streamsErrorsTooltip = getStreamErrorTooltip(playlistQueue);
+
+  $: streamsDiffTooltip = '';
+
+
+  function getStreamErrorTooltip (queue) {
+    const filesNames = queue.filter(x => x.file?.error).map(x => x.name);
+    return filesNames?.length
+      ? `Can't get stream info from&colon; <br><strong>${filesNames.reduce((acc, cur) => acc += '<br>' + cur)}</strong>`
+      : '';
+  }
+
+  /*
+  const getStreamsDifferenceTooltip = (input) => {
+
+    const result = getEndpointsWithDiffStreams(input);
+    return result?.endpointsWithDiffStreams?.length
+      ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
+        result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'
+      } params ${
+        result.endpointsWithDiffStreams.length === 1 ? 'differs' : 'differ'
+      } from <strong>${result.firstEndpointKey}</strong> stream params`
+      : '';
+  };
+ */
+
 </script>
 
 <template>
@@ -108,9 +161,14 @@
           />
         </section>
       {/if}
-      <div class="section-title">Playlist</div>
+      <div>
+        <span class="section-title">Playlist</span>
+        {#if streamsErrorsTooltip || streamsDiffTooltip}
+          <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip}/>
+        {/if}
+      </div>
       <section class="uk-section uk-section-muted uk-padding-remove">
-        <Playlist restreamId={restream.id} {playlist} {files} />
+        <Playlist restreamId={restream.id} queue={playlistQueue} {currentlyPlayingFileId}/>
       </section>
       {#if translationYoutubeUrl}
         <div class="section-title">Watch translation</div>
