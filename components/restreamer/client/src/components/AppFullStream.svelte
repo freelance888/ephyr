@@ -20,8 +20,9 @@
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
   import Output from './Output.svelte';
-  import { FILE_DOWNLOADING, FILE_LOCAL, FILE_PENDING, FILE_WAITING } from '../utils/constants';
+  import { FILE_LOCAL, isDownloadingState } from '../utils/constants';
   import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
+  import { getPlaylistItemsWithDiffStreams } from '../utils/streamInfo.util'
 
   let outputMutations = {
     DisableOutput,
@@ -96,11 +97,7 @@
       .map((x) => ({
         ...x,
         isLocal: x.file?.state === FILE_LOCAL,
-        isDownloading: [
-          FILE_DOWNLOADING,
-          FILE_PENDING,
-          FILE_WAITING,
-        ].includes(x.file?.state),
+        isDownloading: isDownloadingState(x.file?.state),
       }))
     : [];
 
@@ -108,29 +105,25 @@
 
   $: streamsErrorsTooltip = getStreamErrorTooltip(playlistQueue);
 
-  $: streamsDiffTooltip = '';
+  $: streamsDiffTooltip = getStreamsDifferenceTooltip(playlistQueue);
 
+  const getStreamsDifferenceTooltip = (queue) => {
+    const result = getPlaylistItemsWithDiffStreams(queue);
 
-  function getStreamErrorTooltip (queue) {
+    console.log(result);
+
+    return Array.isArray(result)
+      ? `There are streams with different streams params&colon; <br>
+<strong>${result.join('<br>')}</strong>`
+      : '';
+  };
+
+  const getStreamErrorTooltip = (queue) => {
     const filesNames = queue.filter(x => x.file?.error).map(x => x.name);
     return filesNames?.length
       ? `Can't get stream info from&colon; <br><strong>${filesNames.reduce((acc, cur) => acc += '<br>' + cur)}</strong>`
       : '';
-  }
-
-  /*
-  const getStreamsDifferenceTooltip = (input) => {
-
-    const result = getEndpointsWithDiffStreams(input);
-    return result?.endpointsWithDiffStreams?.length
-      ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
-        result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'
-      } params ${
-        result.endpointsWithDiffStreams.length === 1 ? 'differs' : 'differ'
-      } from <strong>${result.firstEndpointKey}</strong> stream params`
-      : '';
   };
- */
 
 </script>
 
@@ -163,8 +156,11 @@
       {/if}
       <div>
         <span class="section-title">Playlist</span>
-        {#if streamsErrorsTooltip || streamsDiffTooltip}
-          <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip}/>
+        {#if streamsErrorsTooltip}
+          <StreamInfoDiffTooltip {streamsErrorsTooltip}/>
+        {/if}
+        {#if streamsDiffTooltip}
+          <StreamInfoDiffTooltip {streamsDiffTooltip}/>
         {/if}
       </div>
       <section class="uk-section uk-section-muted uk-padding-remove">

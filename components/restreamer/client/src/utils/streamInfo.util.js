@@ -22,6 +22,8 @@ export const hasEndpointsWithDiffStreams = (input) => {
   return !!getEndpointsWithDiffStreams(input)?.endpointsWithDiffStreams?.length;
 };
 
+const excludedProps = ['videoRFrameRate', 'bitRate'];
+
 export const getEndpointsWithDiffStreams = (input) => {
   if (isFailoverInput(input)) {
     const endpoints = input.src.inputs
@@ -60,6 +62,37 @@ export const getEndpointsWithDiffStreams = (input) => {
 
   return false;
 };
+
+export function getPlaylistItemsWithDiffStreams(queue) {
+  const filesWithStreamInfo = queue.filter(x => Boolean(x.file?.streamStat));
+  if (Array.isArray(filesWithStreamInfo) && filesWithStreamInfo.length > 0) {
+    const { name: firstFileNameWithStreamInfo, file: { streamStat: firstStreamStat } } = filesWithStreamInfo[0];
+
+    const filesWithDiffStreams = filesWithStreamInfo.slice(1)
+      .reduce(
+        (diffFiles, { name: currentFileName,  file: { streamStat:currentStreamStat } } = current) => {
+          if (
+            !isEqual(
+              omit(currentStreamStat, excludedProps),
+              omit(firstStreamStat, excludedProps)
+            )
+          ) {
+            diffFiles = [...diffFiles, currentFileName];
+          }
+
+          return diffFiles;
+        },
+        []
+      );
+
+    return filesWithDiffStreams.length > 0
+      ? [ firstFileNameWithStreamInfo, ...filesWithDiffStreams ]
+      : false;
+  }
+
+  return false;
+}
+
 
 export const formatStreamInfo = (streamStat, title = '') => {
   if (streamStat) {
