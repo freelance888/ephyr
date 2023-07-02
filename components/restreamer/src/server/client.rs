@@ -316,7 +316,9 @@ fn authorize(req: ServiceRequest) -> Result<ServiceRequest, Error> {
         settings.password_hash
     };
 
-    let Some(hash) = maybe_hash else { return Ok(req) };
+    let Some(hash) = maybe_hash else {
+        return Ok(req);
+    };
 
     let err = || {
         AuthenticationError::new(

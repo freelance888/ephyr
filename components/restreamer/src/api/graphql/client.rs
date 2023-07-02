@@ -33,7 +33,6 @@ use crate::{
         get_file_from_gdrive, get_video_list_from_gdrive_folder, FileCommand,
         FileId, FileState, LocalFileInfo,
     },
-    google_drive_api::GoogleDriveApi,
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
     types::UNumber,
@@ -663,7 +662,7 @@ impl MutationsRoot {
         let files_response =
             get_video_list_from_gdrive_folder(&api_key, &file_or_folder_id)
                 .await;
-        let file_response =
+        let single_file_response =
             get_file_from_gdrive(&api_key, &file_or_folder_id).await;
 
         let mut restreams = context.state().restreams.lock_mut();
@@ -675,7 +674,7 @@ impl MutationsRoot {
                     .message("Could not find restream with provided ID")
             })?;
 
-        if let Ok(mut file) = file_response {
+        if let Ok(file) = single_file_response {
             restream.playlist.apply(vec![file], false);
         } else {
             match files_response {

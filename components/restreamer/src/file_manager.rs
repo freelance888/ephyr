@@ -15,8 +15,7 @@ use crate::{
     cli::Opts,
     display_panic,
     google_drive_api::{
-        ErrorResponse, ExtendedFileInfoResponse, FileListResponse,
-        FileNameResponse, GoogleDriveApi, GDRIVE_PUBLIC_PARAMS,
+        ErrorResponse, ExtendedFileInfoResponse, GoogleDriveApi,
     },
     spec,
     state::{InputEndpointKind, InputSrc, State, Status},
@@ -661,11 +660,19 @@ impl NetworkByteSize {
     }
 }
 
+/// Retrieves file information from Google Drive given an API key and file ID.
+///
+/// # Errors
+///
+/// Returns an error message as a `String` in the following cases:
+///
+/// - If there is an issue with the Google Drive API request.
+/// - If the file is not a video.
 pub async fn get_file_from_gdrive(
     api_key: &str,
     file_id: &str,
 ) -> Result<spec::v1::PlaylistFileInfo, String> {
-    let file_info_response = GoogleDriveApi::new(&api_key)
+    let file_info_response = GoogleDriveApi::new(api_key)
         .get_file_info(&FileId(file_id.to_string()))
         .await?;
 

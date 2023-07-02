@@ -7,7 +7,6 @@ use crate::{
     api::graphql,
     broadcaster::DashboardCommand,
     console_logger::ConsoleMessage,
-    file_manager::FileId,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;

@@ -3,7 +3,6 @@
 use crate::{
     console_logger::{ConsoleLogger, ConsoleMessageKind, ConsoleMessageSource},
     display_panic,
-    file_manager::FileId,
     state::ClientId,
     State,
 };
@@ -101,7 +100,7 @@ impl Broadcaster {
             .clients
             .lock_mut()
             .iter()
-            //.filter(|client| client.is_protected)
+            .filter(|client| client.is_protected)
             .for_each(|client| {
                 for command in &commands {
                     self.handle_one_command(client.id.clone(), command.clone());
