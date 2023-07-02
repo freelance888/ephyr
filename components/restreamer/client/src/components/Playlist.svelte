@@ -132,13 +132,13 @@
     }
   }
 
-  async function startStopPlaying(file_id) {
+  async function startStopPlaying(fileId) {
     try {
-      if (currentlyPlayingFileId === file_id) {
+      if (currentlyPlayingFileId === fileId) {
         const variables = { restreamId };
         await stopPlayingFileFromPlaylist({ variables });
       } else {
-        const variables = { restreamId, file_id };
+        const variables = { restreamId, fileId };
         await playFileFromPlaylist({ variables });
       }
     } catch (e) {
