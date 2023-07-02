@@ -145,6 +145,12 @@ export const isFullGDrivePath = (id: string): boolean => {
   return id.startsWith('https://drive.google.com');
 };
 
+/**
+ * Extracts the file ID from a Google Drive URL or returns the given ID if it's not a full path.
+ *
+ * @param id - The input string, which can be a Google Drive URL or a file ID.
+ * @returns The extracted file ID if the input is a Google Drive URL, otherwise returns the original ID.
+ */
 export const getFileIdFromGDrive = (id) => {
   if (isFullGDrivePath(id)) {
     const result = id.match(/file\/d\/([^\/]+)/);
@@ -156,6 +162,12 @@ export const getFileIdFromGDrive = (id) => {
   return id;
 };
 
+/**
+ * Extracts the folder ID from a Google Drive URL or returns the given ID if it's not a full path.
+ *
+ * @param id - The input string, which can be a Google Drive URL or a folder ID.
+ * @returns The extracted folder ID if the input is a Google Drive URL, otherwise returns the original ID.
+ */
 export const getFolderIdFromGDrive = (id) => {
   if (isFullGDrivePath(id)) {
     const result = id.match(/folders\/([a-zA-Z0-9-_]+)/);

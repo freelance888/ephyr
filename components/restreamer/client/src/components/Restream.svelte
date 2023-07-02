@@ -163,7 +163,7 @@
   };
 
   const getStreamsDifferenceTooltip = (input) => {
-    const result = getEndpointsWithDiffStreams(input);
+    const result = getEndpointsWithDiffStreams(input, currentlyPlayingFile);
     return result?.endpointsWithDiffStreams?.length
       ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
           result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'

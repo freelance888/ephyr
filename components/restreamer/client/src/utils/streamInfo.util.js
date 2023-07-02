@@ -35,10 +35,11 @@ const excludedProps = ['videoRFrameRate', 'bitRate'];
  * Retrieves endpoints with different streams from a given input.
  *
  * @param {Object} input - The input object.
- * @returns {Object|boolean} - An object with the first endpoint key and an array of endpoints with different streams,
+ * @param {Object} currentlyPlayingFile - The currently playing file from the playlist.
+ * @returns {Object|boolean} - An object with the key of the first endpoint and an array of endpoints with different streams,
  *                            or `false` if there are no endpoints with stream statistics.
  */
-export const getEndpointsWithDiffStreams = (input) => {
+export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
   // Check if the input is considered a failover input
   if (isFailoverInput(input)) {
     // Extract endpoints from the input and filter out endpoints without stream statistics
@@ -58,7 +59,7 @@ export const getEndpointsWithDiffStreams = (input) => {
     const [[firstEndpointKey, { streamStat: firstStreamStat }], _] = endpoints;
 
     // Find endpoints with different streams compared to the first endpoint
-    const endpointsWithDiffStreams = endpoints
+    let endpointsWithDiffStreams = endpoints
       .slice(1)
       .reduce(
         (
@@ -80,6 +81,21 @@ export const getEndpointsWithDiffStreams = (input) => {
         },
         []
       );
+
+
+    // For currently playing file from playlist compare its stream info with
+    // first endpoint stream info
+    if (currentlyPlayingFile?.streamStat) {
+      const { name, streamStat: playlistFileSteamStat } = currentlyPlayingFile;
+      if (
+        !isEqual(
+          omit(playlistFileSteamStat, excludedProps),
+          omit(firstStreamStat, excludedProps)
+        )
+      ) {
+        endpointsWithDiffStreams = [...endpointsWithDiffStreams, name];
+      }
+    }
 
     // Return an object containing the key of the first endpoint and endpoints with different streams
     return { firstEndpointKey, endpointsWithDiffStreams };

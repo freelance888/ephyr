@@ -110,8 +110,6 @@
   const getStreamsDifferenceTooltip = (queue) => {
     const result = getPlaylistItemsWithDiffStreams(queue);
 
-    console.log(result);
-
     return Array.isArray(result)
       ? `There are streams with different streams params&colon; <br>
 <strong>${result.join('<br>')}</strong>`
