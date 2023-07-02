@@ -216,7 +216,7 @@
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
       <span class="section-label"
         >{value.label ?? ''}
-        <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip}/>
+        <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip} />
       </span>
     {/if}
 

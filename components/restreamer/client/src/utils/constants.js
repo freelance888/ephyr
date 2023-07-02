@@ -20,8 +20,4 @@ export const ENDPOINT_KIND_RTMP = 'RTMP';
 export const ENDPOINT_KIND_FILE = 'FILE';
 
 export const isDownloadingState = (state) =>
-  [
-    FILE_DOWNLOADING,
-    FILE_PENDING,
-    FILE_WAITING,
-  ].includes(state);
+  [FILE_DOWNLOADING, FILE_PENDING, FILE_WAITING].includes(state);

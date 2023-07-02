@@ -1,12 +1,19 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
-  import { CancelFileDownload, DownloadFile } from '../../../api/client.graphql';
+  import {
+    CancelFileDownload,
+    DownloadFile,
+  } from '../../../api/client.graphql';
   import { sanitizeTooltip, showError } from '../../utils/util';
 
   import Confirm from './Confirm.svelte';
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
-  import { FILE_LOCAL, FILE_PENDING, isDownloadingState } from '../../utils/constants';
+  import {
+    FILE_LOCAL,
+    FILE_PENDING,
+    isDownloadingState,
+  } from '../../utils/constants';
 
   export let file;
   export let showDownloadLink;

@@ -8,14 +8,19 @@
     PlayFileFromPlaylist,
     RestartPlaylistDownload,
     SetPlaylist,
-    StopPlayingFileFromPlaylist
+    StopPlayingFileFromPlaylist,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
-  import { getFileIdFromGDrive, getFolderIdFromGDrive, isFullGDrivePath, showError } from '../utils/util';
+  import {
+    getFileIdFromGDrive,
+    getFolderIdFromGDrive,
+    isFullGDrivePath,
+    showError,
+  } from '../utils/util';
   import PlaylistStatus from './common/PlaylistStatus.svelte';
 
   const restartPlaylistDownload = mutation(RestartPlaylistDownload);
@@ -50,7 +55,9 @@
         showError(e.message);
       }
     } else {
-      showError(`Google drive folder Id of file Id: ${file_or_folder_id} is incorrect`);
+      showError(
+        `Google drive folder Id of file Id: ${file_or_folder_id} is incorrect`
+      );
     }
   }
 

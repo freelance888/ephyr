@@ -82,7 +82,6 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
         []
       );
 
-
     // For currently playing file from playlist compare its stream info with
     // first endpoint stream info
     if (currentlyPlayingFile?.streamStat) {
@@ -105,7 +104,6 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
   return false;
 };
 
-
 /**
  * Retrieves playlist items with different stream information.
  *
@@ -113,16 +111,26 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
  * @returns {Array|boolean} - An array of playlist items with different stream information or false if none found
  */
 export function getPlaylistItemsWithDiffStreams(queue) {
-  const filesWithStreamInfo = queue.filter(x => Boolean(x.file?.streamStat));
+  const filesWithStreamInfo = queue.filter((x) => Boolean(x.file?.streamStat));
 
   // Check if there are playlist items with stream information
   if (Array.isArray(filesWithStreamInfo) && filesWithStreamInfo.length > 0) {
-    const { name: firstFileNameWithStreamInfo, file: { streamStat: firstStreamStat } } = filesWithStreamInfo[0];
+    const {
+      name: firstFileNameWithStreamInfo,
+      file: { streamStat: firstStreamStat },
+    } = filesWithStreamInfo[0];
 
     // Reduce the list of playlist items to find those with different stream information
-    const filesWithDiffStreams = filesWithStreamInfo.slice(1)
+    const filesWithDiffStreams = filesWithStreamInfo
+      .slice(1)
       .reduce(
-        (diffFiles, { name: currentFileName,  file: { streamStat:currentStreamStat } } = current) => {
+        (
+          diffFiles,
+          {
+            name: currentFileName,
+            file: { streamStat: currentStreamStat },
+          } = current
+        ) => {
           // Compare the streamStat objects of the current playlist item and the first playlist item
           if (
             !isEqual(
@@ -140,14 +148,13 @@ export function getPlaylistItemsWithDiffStreams(queue) {
 
     // Return the list of playlist items with different stream information, or false if none found
     return filesWithDiffStreams.length > 0
-      ? [ firstFileNameWithStreamInfo, ...filesWithDiffStreams ]
+      ? [firstFileNameWithStreamInfo, ...filesWithDiffStreams]
       : false;
   }
 
   // Return false if no playlist items with stream information found
   return false;
 }
-
 
 export const formatStreamInfo = (streamStat, title = '') => {
   if (streamStat) {

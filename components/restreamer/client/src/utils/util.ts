@@ -177,4 +177,4 @@ export const getFolderIdFromGDrive = (id) => {
   }
 
   return id;
-}
+};

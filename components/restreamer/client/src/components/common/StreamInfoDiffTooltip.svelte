@@ -1,8 +1,6 @@
 <script lang="js">
-
   export let streamsErrorsTooltip;
   export let streamsDiffTooltip;
-
 </script>
 
 <template>

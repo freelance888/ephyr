@@ -1,8 +1,8 @@
 <script lang="js">
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
-  import { SetRestream, Info } from '../../api/client.graphql';
-  import { getFileIdFromGDrive, isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
+  import { Info, SetRestream } from '../../api/client.graphql';
+  import { getFileIdFromGDrive, sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';

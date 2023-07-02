@@ -11,7 +11,7 @@
     ServerInfo,
     TuneDelay,
     TuneSidechain,
-    TuneVolume
+    TuneVolume,
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -22,7 +22,7 @@
   import Output from './Output.svelte';
   import { FILE_LOCAL, isDownloadingState } from '../utils/constants';
   import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
-  import { getPlaylistItemsWithDiffStreams } from '../utils/streamInfo.util'
+  import { getPlaylistItemsWithDiffStreams } from '../utils/streamInfo.util';
 
   let outputMutations = {
     DisableOutput,
@@ -85,20 +85,20 @@
 
   $: playlistQueue = playlist
     ? playlist.queue
-      .map((x) => ({
-        id: x.fileId,
-        name: x.name ?? x.fileId,
-        isPlaying: playlist.currentlyPlayingFile
-          ? playlist.currentlyPlayingFile.fileId === x.fileId
-          : false,
-        file: files.find((f) => f.fileId === x.fileId),
-        wasPlayed: x.wasPlayed,
-      }))
-      .map((x) => ({
-        ...x,
-        isLocal: x.file?.state === FILE_LOCAL,
-        isDownloading: isDownloadingState(x.file?.state),
-      }))
+        .map((x) => ({
+          id: x.fileId,
+          name: x.name ?? x.fileId,
+          isPlaying: playlist.currentlyPlayingFile
+            ? playlist.currentlyPlayingFile.fileId === x.fileId
+            : false,
+          file: files.find((f) => f.fileId === x.fileId),
+          wasPlayed: x.wasPlayed,
+        }))
+        .map((x) => ({
+          ...x,
+          isLocal: x.file?.state === FILE_LOCAL,
+          isDownloading: isDownloadingState(x.file?.state),
+        }))
     : [];
 
   $: currentlyPlayingFileId = playlist?.currentlyPlayingFile?.fileId;
@@ -117,12 +117,13 @@
   };
 
   const getStreamErrorTooltip = (queue) => {
-    const filesNames = queue.filter(x => x.file?.error).map(x => x.name);
+    const filesNames = queue.filter((x) => x.file?.error).map((x) => x.name);
     return filesNames?.length
-      ? `Can't get stream info from&colon; <br><strong>${filesNames.reduce((acc, cur) => acc += '<br>' + cur)}</strong>`
+      ? `Can't get stream info from&colon; <br><strong>${filesNames.reduce(
+          (acc, cur) => (acc += '<br>' + cur)
+        )}</strong>`
       : '';
   };
-
 </script>
 
 <template>
@@ -155,14 +156,18 @@
       <div>
         <span class="section-title">Playlist</span>
         {#if streamsErrorsTooltip}
-          <StreamInfoDiffTooltip {streamsErrorsTooltip}/>
+          <StreamInfoDiffTooltip {streamsErrorsTooltip} />
         {/if}
         {#if streamsDiffTooltip}
-          <StreamInfoDiffTooltip {streamsDiffTooltip}/>
+          <StreamInfoDiffTooltip {streamsDiffTooltip} />
         {/if}
       </div>
       <section class="uk-section uk-section-muted uk-padding-remove">
-        <Playlist restreamId={restream.id} queue={playlistQueue} {currentlyPlayingFileId}/>
+        <Playlist
+          restreamId={restream.id}
+          queue={playlistQueue}
+          {currentlyPlayingFileId}
+        />
       </section>
       {#if translationYoutubeUrl}
         <div class="section-title">Watch translation</div>

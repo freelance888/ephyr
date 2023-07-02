@@ -124,8 +124,14 @@ mutation StopPlayingFileFromPlaylist($restreamId: RestreamId!) {
     stopPlayingFileFromPlaylist(restreamId: $restreamId)
 }
 
-mutation GetPlaylistFromGdrive($restreamId: RestreamId!, $file_or_folder_id: String!) {
-    getPlaylistFromGdrive(restreamId: $restreamId, fileOrFolderId: $file_or_folder_id)
+mutation GetPlaylistFromGdrive(
+    $restreamId: RestreamId!
+    $file_or_folder_id: String!
+) {
+    getPlaylistFromGdrive(
+        restreamId: $restreamId
+        fileOrFolderId: $file_or_folder_id
+    )
 }
 
 mutation CancelPlaylistDownload($id: RestreamId!) {
