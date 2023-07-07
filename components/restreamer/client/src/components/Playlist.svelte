@@ -3,25 +3,24 @@
   import { dndzone } from 'svelte-dnd-action';
 
   import {
+    CancelPlaylistDownload,
     GetPlaylistFromGdrive,
     PlayFileFromPlaylist,
+    RestartPlaylistDownload,
     SetPlaylist,
     StopPlayingFileFromPlaylist,
-    CancelPlaylistDownload,
-    RestartPlaylistDownload,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
   import FileInfo from './common/FileInfo.svelte';
-  import {
-    FILE_DOWNLOADING,
-    FILE_LOCAL,
-    FILE_PENDING,
-    FILE_WAITING,
-  } from '../utils/constants';
   import FileIcon from './svg/FileIcon.svelte';
   import PlayIcon from './svg/PlayIcon.svelte';
   import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
-  import { isFullGDrivePath, showError } from '../utils/util';
+  import {
+    getFileIdFromGDrive,
+    getFolderIdFromGDrive,
+    isFullGDrivePath,
+    showError,
+  } from '../utils/util';
   import PlaylistStatus from './common/PlaylistStatus.svelte';
 
   const restartPlaylistDownload = mutation(RestartPlaylistDownload);
@@ -34,51 +33,31 @@
   const flipDurationMs = 200;
 
   export let restreamId;
-  export let playlist;
-  export let files = [];
+  export let queue;
+  export let currentlyPlayingFileId;
 
   $: dragDisabled = true;
-
-  $: queue = playlist
-    ? playlist.queue
-        .map((x) => ({
-          id: x.fileId,
-          name: x.name ?? x.fileId,
-          isPlaying: playlist.currentlyPlayingFile
-            ? playlist.currentlyPlayingFile.fileId === x.fileId
-            : false,
-          file: files.find((f) => f.fileId === x.fileId),
-          wasPlayed: x.wasPlayed,
-        }))
-        .map((x) => ({
-          ...x,
-          isLocal: x.file?.state === FILE_LOCAL,
-          isDownloading: [
-            FILE_DOWNLOADING,
-            FILE_PENDING,
-            FILE_WAITING,
-          ].includes(x.file?.state),
-        }))
-    : [];
 
   $: hasDownloadingFiles = Boolean(queue.find((x) => x.isDownloading));
 
   $: hasFilesInPlaylist = Boolean(queue?.length > 0);
 
-  let googleDriveFolderId = '';
+  let googleDriveFolderOrFileId = '';
   let isValidFolderIdInput = true;
 
-  async function loadPlaylist(folderId) {
+  async function loadPlaylistOrFile(file_or_folder_id) {
     if (isValidFolderIdInput) {
-      const variables = { id: restreamId, folder_id: folderId };
+      const variables = { restreamId, file_or_folder_id };
       try {
         await getPlaylistFromDrive({ variables });
-        googleDriveFolderId = '';
+        googleDriveFolderOrFileId = '';
       } catch (e) {
         showError(e.message);
       }
     } else {
-      showError(`Google Folder Id: ${folderId} is incorrect`);
+      showError(
+        `Google drive folder Id of file Id: ${file_or_folder_id} is incorrect`
+      );
     }
   }
 
@@ -109,12 +88,15 @@
     }
   }
 
-  function fetchFolderId(id) {
+  function getGDriveFileOrFolderId(id) {
+    let fileOrFolderId = '';
+
     if (isFullGDrivePath(id)) {
-      const result = id.match(/folders\/([^\/]+)/);
-      if (result) {
-        return result[1];
-      }
+      fileOrFolderId = getFolderIdFromGDrive(id);
+
+      return isFullGDrivePath(fileOrFolderId)
+        ? getFileIdFromGDrive(id)
+        : fileOrFolderId;
     }
 
     return id;
@@ -123,14 +105,14 @@
   function handleInputFolderId(event) {
     const stringWithFolderId = event.target.value;
     if (!stringWithFolderId) return;
-    googleDriveFolderId = fetchFolderId(stringWithFolderId);
+    googleDriveFolderOrFileId = getGDriveFileOrFolderId(stringWithFolderId);
     validateFileIdInput();
   }
 
   function validateFileIdInput() {
     if (!isValidFolderIdInput) {
       setTimeout(() => {
-        googleDriveFolderId = '';
+        googleDriveFolderOrFileId = '';
         isValidFolderIdInput = true;
       }, 3000);
     }
@@ -150,16 +132,13 @@
     }
   }
 
-  async function startStopPlaying(file_id) {
+  async function startStopPlaying(fileId) {
     try {
-      if (
-        playlist.currentlyPlayingFile &&
-        playlist.currentlyPlayingFile.fileId === file_id
-      ) {
+      if (currentlyPlayingFileId === fileId) {
         const variables = { restreamId };
         await stopPlayingFileFromPlaylist({ variables });
       } else {
-        const variables = { restreamId, file_id };
+        const variables = { restreamId, fileId };
         await playFileFromPlaylist({ variables });
       }
     } catch (e) {
@@ -195,7 +174,7 @@
       <label for="gdrive">Add files from Google Drive</label>
       <input
         id="gdrive"
-        bind:value={googleDriveFolderId}
+        bind:value={googleDriveFolderOrFileId}
         on:input={handleInputFolderId}
         class="google-drive-link uk-input uk-form-small uk-flex-1"
         type="text"
@@ -204,9 +183,9 @@
       />
 
       <button
-        disabled={!googleDriveFolderId.trim()}
+        disabled={!googleDriveFolderOrFileId.trim()}
         class="uk-button uk-button-primary uk-button-small uk-flex-none load-file"
-        on:click={() => loadPlaylist(googleDriveFolderId)}
+        on:click={() => loadPlaylistOrFile(googleDriveFolderOrFileId)}
       >
         <i class="uk-icon" uk-icon="cloud-download" />&nbsp;<span
           >Load files</span

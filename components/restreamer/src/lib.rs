@@ -34,6 +34,7 @@ pub mod console_logger;
 pub mod dvr;
 pub mod ffmpeg;
 pub mod file_manager;
+mod google_drive_api;
 mod proc;
 pub mod serde;
 pub mod server;

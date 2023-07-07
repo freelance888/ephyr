@@ -42,6 +42,7 @@
   import EqualizerIcon from './svg/EqualizerIcon.svelte';
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
   import FileInfo from './common/FileInfo.svelte';
+  import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -162,7 +163,7 @@
   };
 
   const getStreamsDifferenceTooltip = (input) => {
-    const result = getEndpointsWithDiffStreams(input);
+    const result = getEndpointsWithDiffStreams(input, currentlyPlayingFile);
     return result?.endpointsWithDiffStreams?.length
       ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
           result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'
@@ -215,17 +216,7 @@
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
       <span class="section-label"
         >{value.label ?? ''}
-        {#key streamsErrorsTooltip || streamsDiffTooltip}
-          <span>
-            <i
-              class="fa fa-info-circle info-icon"
-              class:has-error={!!streamsErrorsTooltip}
-              class:has-warning={!!streamsDiffTooltip}
-              class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
-              uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
-            />
-          </span>
-        {/key}
+        <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip} />
       </span>
     {/if}
 
@@ -442,9 +433,6 @@
     .uk-grid
       margin-top: 10px
       margin-left: -10px
-
-    .info-icon
-      font-size: 16px
 
     .currently-playing-file
       margin-top: 4px

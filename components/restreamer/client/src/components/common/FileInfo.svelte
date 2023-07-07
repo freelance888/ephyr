@@ -1,8 +1,8 @@
 <script lang="js">
   import { mutation } from 'svelte-apollo';
   import {
-    DownloadFile,
     CancelFileDownload,
+    DownloadFile,
   } from '../../../api/client.graphql';
   import { sanitizeTooltip, showError } from '../../utils/util';
 
@@ -10,9 +10,9 @@
   import { formatStreamInfo } from '../../utils/streamInfo.util';
   import StreamInfo from './StreamInfo.svelte';
   import {
-    FILE_DOWNLOADING,
     FILE_LOCAL,
     FILE_PENDING,
+    isDownloadingState,
   } from '../../utils/constants';
 
   export let file;
@@ -25,7 +25,7 @@
 
   $: fileName = file.name ? file.name : file.fileId;
 
-  $: isDownloading = file.state === FILE_DOWNLOADING;
+  $: isDownloading = isDownloadingState(file.state);
 
   const downloadFileMutation = mutation(DownloadFile);
   async function downloadFile() {

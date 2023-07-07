@@ -41,13 +41,13 @@ impl StreamStatistics {
                 let Some(audio_stream) = info.find_stream("audio") else {
                     return Self::create_error_instance(&anyhow!(
                         "Can't find 'audio' stream"
-                    ))
+                    ));
                 };
 
                 let Some(video_stream) = info.find_stream("video") else {
                     return Self::create_error_instance(&anyhow!(
                         "Can't find 'video' stream"
-                    ))
+                    ));
                 };
 
                 Self {

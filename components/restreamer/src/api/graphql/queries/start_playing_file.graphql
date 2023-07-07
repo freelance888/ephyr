@@ -1,3 +1,3 @@
-mutation StartPlayingFile($fileId: FileId!) {
-    broadcastPlayFile(fileId: $fileId)
+mutation StartPlayingFile($namePrefix: String!) {
+    broadcastPlayFile(namePrefix: $namePrefix)
 }

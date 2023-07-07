@@ -30,8 +30,8 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{
-        get_video_list_from_gdrive_folder, FileCommand, FileId, FileState,
-        LocalFileInfo,
+        get_file_from_gdrive, get_video_list_from_gdrive_folder, FileCommand,
+        FileId, FileState, LocalFileInfo,
     },
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
@@ -584,7 +584,8 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_play_file(
-        #[graphql(description = "file identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -594,8 +595,11 @@ impl MutationsRoot {
             .lock_mut()
             .iter_mut()
             .for_each(|r| {
-                let found =
-                    r.playlist.queue.iter().find(|f| f.file_id == file_id);
+                let found = r.playlist.queue.iter().find(|f| {
+                    f.name
+                        .to_lowercase()
+                        .starts_with(&name_prefix.to_lowercase())
+                });
 
                 if found.is_some() {
                     r.playlist.currently_playing_file = found.cloned();
@@ -611,7 +615,8 @@ impl MutationsRoot {
     /// Returns `true` if file was found in any of existing `[Restream]`s
     /// and `false` if no such file was found
     fn broadcast_stop_playing_file(
-        #[graphql(description = "file identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Option<bool> {
         let mut has_found = false;
@@ -622,7 +627,10 @@ impl MutationsRoot {
             .iter_mut()
             .for_each(|r| {
                 if let Some(f) = r.playlist.currently_playing_file.clone() {
-                    if f.file_id == file_id {
+                    if f.name
+                        .to_lowercase()
+                        .starts_with(&name_prefix.to_lowercase())
+                    {
                         r.playlist.currently_playing_file = None;
                         has_found = true;
                     }
@@ -636,7 +644,7 @@ impl MutationsRoot {
     /// restream's playlist.
     async fn get_playlist_from_gdrive(
         restream_id: RestreamId,
-        folder_id: String,
+        file_or_folder_id: String,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let api_key = context
@@ -650,44 +658,53 @@ impl MutationsRoot {
                     .status(StatusCode::UNAUTHORIZED)
                     .message("No API key")
             })?;
-        let result =
-            get_video_list_from_gdrive_folder(&api_key, &folder_id).await;
-        if let Ok(mut playlist_files) = result {
-            if playlist_files.is_empty() {
-                let err = "No files in playlist. \
-                    Probably there is no public access to the playlist";
 
-                tracing::error!(err);
-                return Err(graphql::Error::new("GDRIVE_API_ERROR")
-                    .status(StatusCode::BAD_REQUEST)
-                    .message(&err));
-            }
+        let files_response =
+            get_video_list_from_gdrive_folder(&api_key, &file_or_folder_id)
+                .await;
+        let single_file_response =
+            get_file_from_gdrive(&api_key, &file_or_folder_id).await;
 
-            playlist_files.sort_by_key(|x| x.name.clone());
-            context
-                .state()
-                .restreams
-                .lock_mut()
-                .iter_mut()
-                .find(|r| r.id == restream_id)
-                .ok_or_else(|| {
-                    graphql::Error::new("UNKNOWN_RESTREAM")
-                        .message("Could not find restream with provided ID")
-                })?
-                .playlist
-                .apply(playlist_files, true);
+        let mut restreams = context.state().restreams.lock_mut();
+        let restream = restreams
+            .iter_mut()
+            .find(|r| r.id == restream_id)
+            .ok_or_else(|| {
+                graphql::Error::new("UNKNOWN_RESTREAM")
+                    .message("Could not find restream with provided ID")
+            })?;
 
-            let mut commands = context.state().file_commands.lock_mut();
-            commands.push(FileCommand::ListOfFilesChanged);
-
-            Ok(Some(true))
+        if let Ok(file) = single_file_response {
+            restream.playlist.apply(vec![file], false);
         } else {
-            let err = result.err().unwrap();
-            tracing::error!(err);
-            Err(graphql::Error::new("GDRIVE_API_ERROR")
-                .status(StatusCode::BAD_REQUEST)
-                .message(&err))
+            match files_response {
+                Ok(mut playlist_files) => {
+                    if playlist_files.is_empty() {
+                        let err = "No video files found in the folder. \
+                    Probably there is no public access to that folder";
+
+                        tracing::error!(err);
+                        return Err(graphql::Error::new("GDRIVE_API_ERROR")
+                            .status(StatusCode::BAD_REQUEST)
+                            .message(&err));
+                    }
+
+                    playlist_files.sort_by_key(|x| x.name.clone());
+                    restream.playlist.apply(playlist_files, false);
+                }
+                Err(err) => {
+                    tracing::error!(err);
+                    return Err(graphql::Error::new("GDRIVE_API_ERROR")
+                        .status(StatusCode::BAD_REQUEST)
+                        .message(&err));
+                }
+            }
         }
+
+        let mut commands = context.state().file_commands.lock_mut();
+        commands.push(FileCommand::ListOfFilesChanged);
+
+        Ok(Some(true))
     }
 
     /// Enables an `Input` by its `id`.
