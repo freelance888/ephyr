@@ -91,7 +91,9 @@ pub struct TranscodingRestreamer {
     /// [`Url`] to publish the transcoded live stream onto.
     pub to_url: Url,
 
-    /// [TranscodingOptions] options for [FFmpeg] transcoding.
+    /// Options for [FFmpeg] transcoding.
+    ///
+    /// [FFmpeg]: https://ffmpeg.org
     pub options: TranscodingOptions,
 }
 
