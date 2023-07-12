@@ -61,6 +61,12 @@
       if (!!current.id) {
         changed ||= current.withHls !== previous.withHls;
       }
+
+      if (!!current.id) {
+        changed ||=
+          current.withPlaybackEncoding !== previous.withPlaybackEncoding;
+      }
+
       submitable &&= changed;
     })
   );
@@ -71,6 +77,7 @@
     let variables = {
       key: restream.key,
       with_hls: restream.withHls,
+      with_playback_encoding: restream.withPlaybackEncoding,
     };
 
     if (restream.label) {
@@ -235,6 +242,15 @@
               type="checkbox"
               bind:checked={$restreamStore.withHls}
             /> with HLS endpoint</label
+          >
+        </div>
+        <div class="hls">
+          <label
+            ><input
+              class="uk-checkbox"
+              type="checkbox"
+              bind:checked={$restreamStore.withPlaybackEncoding}
+            /> with playback encoding</label
           >
         </div>
 

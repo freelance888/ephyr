@@ -41,6 +41,9 @@ pub struct Restream {
     /// `Output`s that a live stream is re-streamed to.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<Output>,
+
+    /// If need to set input playback encoding
+    pub with_playback_encoding: bool,
 }
 
 impl Restream {
@@ -55,6 +58,9 @@ impl Restream {
             input: Input::new(spec.input),
             outputs: spec.outputs.into_iter().map(Output::new).collect(),
             playlist: Playlist::new(spec.playlist),
+            with_playback_encoding: spec
+                .with_playback_encoding
+                .unwrap_or(false),
         }
     }
 
@@ -114,6 +120,7 @@ impl Restream {
             playlist: Some(self.playlist.export()),
             input: self.input.export(),
             outputs: self.outputs.iter().map(Output::export).collect(),
+            with_playback_encoding: Some(self.with_playback_encoding),
         }
     }
 

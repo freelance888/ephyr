@@ -154,6 +154,7 @@ impl RestreamerKind {
         endpoint: &state::InputEndpoint,
         key: &RestreamKey,
         is_playing_playlist: bool,
+        with_playback_encoding: bool,
         files: &[LocalFileInfo],
         file_root: &Path,
     ) -> Option<Self> {
@@ -171,7 +172,7 @@ impl RestreamerKind {
                 let to_url = endpoint.kind.rtmp_url(key, &input.key);
                 let id: Uuid = endpoint.id.into();
 
-                if &input.key == "playback" {
+                if with_playback_encoding && &input.key == "playback" {
                     TranscodingRestreamer {
                         id,
                         from_url,
