@@ -23,9 +23,11 @@ use uuid::Uuid;
 use crate::{
     dvr,
     ffmpeg::{
-        copy_restreamer::CopyRestreamer, file_restreamer::FileRestreamer,
-        mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
-        transcoding_restreamer::TranscodingRestreamer,
+        copy_restreamer::CopyRestreamer,
+        file_restreamer::FileRestreamer,
+        mixing_restreamer::MixingRestreamer,
+        restreamer::RestreamerStatus,
+        transcoding_restreamer::{TranscodingOptions, TranscodingRestreamer},
     },
     file_manager::LocalFileInfo,
     proc::kill_process,
@@ -71,7 +73,7 @@ pub enum RestreamerKind {
     /// Re-streaming of a live stream from one URL endpoint to another one
     /// transcoding it with desired settings, and optionally transmuxing it to
     /// the destination format.
-    Transcoding(TranscodingRestreamer),
+    Transcoding(Box<TranscodingRestreamer>),
 
     /// Mixing a live stream from one URL endpoint with additional live streams
     /// and re-streaming the result to another endpoint.
@@ -173,12 +175,12 @@ impl RestreamerKind {
                 let id: Uuid = endpoint.id.into();
 
                 if with_playback_encoding && &input.key == "playback" {
-                    TranscodingRestreamer {
+                    Box::new(TranscodingRestreamer {
                         id,
                         from_url,
                         to_url,
-                        options: Default::default(),
-                    }
+                        options: TranscodingOptions::default(),
+                    })
                     .into()
                 } else {
                     CopyRestreamer {
@@ -194,13 +196,13 @@ impl RestreamerKind {
                 if !input.is_ready_to_serve() {
                     return None;
                 }
-                TranscodingRestreamer {
+                Box::new(TranscodingRestreamer {
                     id: endpoint.id.into(),
                     from_url: state::InputEndpointKind::Rtmp
                         .rtmp_url(key, &input.key),
                     to_url: endpoint.kind.rtmp_url(key, &input.key),
-                    options: Default::default(),
-                }
+                    options: TranscodingOptions::default(),
+                })
                 .into()
             }
 

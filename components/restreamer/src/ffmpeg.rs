@@ -17,5 +17,5 @@ pub use self::{
     restreamer::Restreamer,
     restreamer_kind::RestreamerKind,
     restreamers_pool::RestreamersPool,
-    transcoding_restreamer::TranscodingRestreamer,
+    transcoding_restreamer::{TranscodingOptions, TranscodingRestreamer},
 };
