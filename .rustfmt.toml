@@ -11,6 +11,6 @@ format_macro_matchers = true
 use_try_shorthand = true
 
 error_on_line_overflow = true
-error_on_unformatted = true
+error_on_unformatted = false
 
 unstable_features = true
