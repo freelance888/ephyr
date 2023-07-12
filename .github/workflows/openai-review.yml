@@ -20,13 +20,17 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: fluxninja/openai-pr-reviewer@main
+      - uses: fluxninja/openai-pr-reviewer@0.54.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           debug: false
+          disable_review: true
+          openai_light_model: "gpt-4"
           review_comment_lgtm: false
+          review_simple_changes: false
           summarize: true
+          max_files: 40
           path_filters: |
             !**/*.lock
