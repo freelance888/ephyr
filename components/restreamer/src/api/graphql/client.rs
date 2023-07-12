@@ -182,6 +182,11 @@ impl MutationsRoot {
             default = false
         )]
         with_hls: bool,
+        #[graphql(
+            description = "Indicator whether the `Restream` should encode playback output.",
+            default = false
+        )]
+        with_playback_encoding: bool,
         #[graphql(description = "ID of the `Restream` to be updated \
                                  rather than creating a new one.")]
         id: Option<RestreamId>,
@@ -274,6 +279,7 @@ impl MutationsRoot {
             },
             outputs: vec![],
             playlist: Some(spec::v1::Playlist { queue: vec![] }),
+            with_playback_encoding: Some(with_playback_encoding),
         };
 
         let result = if let Some(id) = id {

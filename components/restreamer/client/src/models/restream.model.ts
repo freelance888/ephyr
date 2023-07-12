@@ -16,6 +16,7 @@ export class RestreamModel {
   isPull: boolean = false;
   pullUrl: string = '';
   withHls: boolean = false;
+  withPlaybackEncoding: boolean = false;
   fileId: string = '';
 
   backups: BackupModel[] = [];
@@ -61,6 +62,8 @@ export class RestreamModel {
     this.isPull = !!pullUrl;
     this.pullUrl = sanitizeUrl(pullUrl ?? '');
     this.withHls = withHls;
+    console.log(value);
+    this.withPlaybackEncoding = value.withPlaybackEncoding;
   }
 
   removeBackup(index: number): void {
