@@ -99,8 +99,10 @@ pub struct Restream {
     pub playlist: Option<Playlist>,
 
     /// If need to set input playback encoding.
-    #[serde(skip_serializing_if = "is_false")]
-    pub with_playback_encoding: bool,
+    ///
+    /// Option here to preserve schema backward compatibility
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub with_playback_encoding: Option<bool>,
 }
 
 impl Restream {
