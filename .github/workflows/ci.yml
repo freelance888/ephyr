@@ -465,7 +465,7 @@ jobs:
         uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
           server-name: "cypress-ephyr-tests"
-          server-image: "ubuntu-20.04"
+          server-image: "ubuntu-22.04"
           server-type: "cpx11"
           ssh-key-name: "github-ci"
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
