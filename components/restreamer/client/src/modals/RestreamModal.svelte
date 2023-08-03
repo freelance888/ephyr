@@ -244,15 +244,18 @@
             /> with HLS endpoint</label
           >
         </div>
-        <div class="hls">
-          <label
-            ><input
-              class="uk-checkbox"
-              type="checkbox"
-              bind:checked={$restreamStore.withPlaybackEncoding}
-            /> with playback encoding</label
-          >
-        </div>
+
+        {#if $restreamStore.backups.length > 0}
+          <div class="playback-encoding">
+            <label
+              ><input
+                class="uk-checkbox"
+                type="checkbox"
+                bind:checked={$restreamStore.withPlaybackEncoding}
+              /> with playback encoding</label
+            >
+          </div>
+        {/if}
 
         <div class="uk-section uk-section-xsmall backups-section">
           <button

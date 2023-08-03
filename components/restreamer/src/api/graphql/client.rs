@@ -266,6 +266,10 @@ impl MutationsRoot {
             });
         }
 
+        // We want to allow to encode only if we have `playback`
+        let with_playback_encoding =
+            &input_key == "playback" && with_playback_encoding;
+
         let spec = spec::v1::Restream {
             id: None,
             key,
@@ -279,7 +283,7 @@ impl MutationsRoot {
             },
             outputs: vec![],
             playlist: Some(spec::v1::Playlist { queue: vec![] }),
-            with_playback_encoding: Some(with_playback_encoding),
+            with_playback_encoding: with_playback_encoding,
         };
 
         let result = if let Some(id) = id {
