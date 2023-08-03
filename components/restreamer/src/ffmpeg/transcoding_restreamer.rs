@@ -60,9 +60,11 @@ impl Default for TranscodingOptions {
             vcodec: Some("libx264".into()),
             vprofile: Some("baseline".into()),
             vpreset: Some("superfast".into()),
-            acodec: Some("aac".into()),
-            // TODO: change to it on prod
-            // acodec: Some("libfdk_aac".into()),
+            acodec: if cfg!(target_os = "linux") {
+                Some("libfdk_aac".into())
+            } else {
+                Some("aac".into())
+            },
             maxrate: Some("8M".into()),
             bufsize: Some("16M".into()),
             ar: Some("48000".into()),

@@ -174,7 +174,7 @@ impl RestreamerKind {
                 let to_url = endpoint.kind.rtmp_url(key, &input.key);
                 let id: Uuid = endpoint.id.into();
 
-                if with_playback_encoding && &input.key == "playback" {
+                if input.key.is_playback() && with_playback_encoding {
                     Box::new(TranscodingRestreamer {
                         id,
                         from_url,

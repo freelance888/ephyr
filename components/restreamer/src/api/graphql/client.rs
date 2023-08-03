@@ -201,56 +201,27 @@ impl MutationsRoot {
             || file_id.is_some()
         {
             (
-                InputKey::new("playback").unwrap(),
+                InputKey::playback(),
                 Some(spec::v1::InputSrc::FailoverInputs(
-                    vec![spec::v1::Input {
-                        id: None,
-                        key: InputKey::new("primary").unwrap(),
-                        endpoints: vec![spec::v1::InputEndpoint {
-                            kind: InputEndpointKind::Rtmp,
-                            label: None,
-                            file_id: None,
-                        }],
-                        src: src.map(spec::v1::InputSrc::RemoteUrl),
-                        enabled: true,
-                    }]
-                    .into_iter()
-                    .chain(backups.into_iter().map(|b| spec::v1::Input {
-                        id: None,
-                        key: b.key,
-                        endpoints: vec![spec::v1::InputEndpoint {
-                            kind: InputEndpointKind::Rtmp,
-                            label: None,
-                            file_id: None,
-                        }],
-                        src: b.src.map(spec::v1::InputSrc::RemoteUrl),
-                        enabled: true,
-                    }))
-                    .chain(
-                        file_id
-                            .map_or_else(Vec::new, |id| {
-                                vec![spec::v1::Input {
-                                    id: None,
-                                    key: InputKey::new("file_backup").unwrap(),
-                                    endpoints: vec![spec::v1::InputEndpoint {
-                                        kind: InputEndpointKind::File,
-                                        label: None,
-                                        file_id: Some(id),
-                                    }],
-                                    src: None,
-                                    enabled: true,
-                                }]
-                            })
-                            .into_iter(),
-                    )
-                    .collect(),
+                    vec![spec::v1::Input::new_primary(src)]
+                        .into_iter()
+                        .chain(
+                            backups
+                                .into_iter()
+                                .map(spec::v1::Input::new_backup),
+                        )
+                        .chain(
+                            file_id
+                                .map_or_else(Vec::new, |id| {
+                                    vec![spec::v1::Input::new_file_backup(id)]
+                                })
+                                .into_iter(),
+                        )
+                        .collect(),
                 )),
             )
         } else {
-            (
-                InputKey::new("primary").unwrap(),
-                src.map(spec::v1::InputSrc::RemoteUrl),
-            )
+            (InputKey::primary(), src.map(spec::v1::InputSrc::RemoteUrl))
         };
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
@@ -268,7 +239,7 @@ impl MutationsRoot {
 
         // We want to allow to encode only if we have `playback`
         let with_playback_encoding =
-            &input_key == "playback" && with_playback_encoding;
+            input_key.is_playback() && with_playback_encoding;
 
         let spec = spec::v1::Restream {
             id: None,
@@ -283,7 +254,7 @@ impl MutationsRoot {
             },
             outputs: vec![],
             playlist: Some(spec::v1::Playlist { queue: vec![] }),
-            with_playback_encoding: with_playback_encoding,
+            with_playback_encoding,
         };
 
         let result = if let Some(id) = id {

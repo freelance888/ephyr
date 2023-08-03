@@ -245,7 +245,7 @@
           >
         </div>
 
-        {#if $restreamStore.backups.length > 0}
+        {#if $restreamStore.withPlayback()}
           <div class="playback-encoding">
             <label
               ><input

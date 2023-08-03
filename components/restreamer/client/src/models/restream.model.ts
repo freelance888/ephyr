@@ -62,7 +62,6 @@ export class RestreamModel {
     this.isPull = !!pullUrl;
     this.pullUrl = sanitizeUrl(pullUrl ?? '');
     this.withHls = withHls;
-    console.log(value);
     this.withPlaybackEncoding = value.withPlaybackEncoding;
   }
 
@@ -83,5 +82,9 @@ export class RestreamModel {
     return this.backups
       .map((x) => Number(x.key.replace(`${this.backupPrefix}`, '')))
       .reduce((max, current) => (current > max ? current : max), 0);
+  }
+
+  withPlayback(): boolean {
+    return this.backups.length > 0;
   }
 }

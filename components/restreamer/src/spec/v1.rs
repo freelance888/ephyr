@@ -154,6 +154,53 @@ pub struct Input {
 }
 
 impl Input {
+    /// Creates a file backup [`Input`] out of the given [`FileId`].
+    #[must_use]
+    pub fn new_file_backup(file_id: FileId) -> Self {
+        Self {
+            id: None,
+            key: state::InputKey::file_backup(),
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::File,
+                label: None,
+                file_id: Some(file_id),
+            }],
+            src: None,
+            enabled: true,
+        }
+    }
+    /// Creates a new primary [`Input`] out of the given [`state::InputSrcUrl`].
+    #[must_use]
+    pub fn new_primary(src: Option<state::InputSrcUrl>) -> Self {
+        Self {
+            id: None,
+            key: state::InputKey::primary(),
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::Rtmp,
+                label: None,
+                file_id: None,
+            }],
+            src: src.map(InputSrc::RemoteUrl),
+            enabled: true,
+        }
+    }
+
+    /// Creates a new backup [`Input`] out of the given [`BackupInput`].
+    #[must_use]
+    pub fn new_backup(backup: BackupInput) -> Self {
+        Self {
+            id: None,
+            key: backup.key,
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::Rtmp,
+                label: None,
+                file_id: None,
+            }],
+            src: backup.src.map(InputSrc::RemoteUrl),
+            enabled: true,
+        }
+    }
+
     /// Creates a new [`Input`] out of the given
     /// [`state::InputKey`] and [`InputSrc`].
     #[must_use]
