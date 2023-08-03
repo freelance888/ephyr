@@ -72,6 +72,9 @@ impl Restream {
     pub fn apply(&mut self, new: spec::v1::Restream, replace: bool) {
         self.key = new.key;
         self.label = new.label;
+        if let Some(with_playback_encoding) = new.with_playback_encoding {
+            self.with_playback_encoding = with_playback_encoding;
+        }
         self.input.apply(new.input);
 
         if let Some(p) = new.playlist {
