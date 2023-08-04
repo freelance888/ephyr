@@ -23,11 +23,13 @@ use uuid::Uuid;
 use crate::{
     dvr,
     ffmpeg::{
-        copy_restreamer::CopyRestreamer, file_restreamer::FileRestreamer,
-        mixing_restreamer::MixingRestreamer, restreamer::RestreamerStatus,
-        transcoding_restreamer::TranscodingRestreamer,
+        copy_restreamer::CopyRestreamer,
+        file_restreamer::FileRestreamer,
+        mixing_restreamer::MixingRestreamer,
+        restreamer::RestreamerStatus,
+        transcoding_restreamer::{TranscodingOptions, TranscodingRestreamer},
     },
-    file_manager::{FileId, FileState, LocalFileInfo},
+    file_manager::LocalFileInfo,
     proc::kill_process,
     state::{self, RestreamKey, State, Status},
 };
@@ -71,7 +73,7 @@ pub enum RestreamerKind {
     /// Re-streaming of a live stream from one URL endpoint to another one
     /// transcoding it with desired settings, and optionally transmuxing it to
     /// the destination format.
-    Transcoding(TranscodingRestreamer),
+    Transcoding(Box<TranscodingRestreamer>),
 
     /// Mixing a live stream from one URL endpoint with additional live streams
     /// and re-streaming the result to another endpoint.
@@ -154,6 +156,7 @@ impl RestreamerKind {
         endpoint: &state::InputEndpoint,
         key: &RestreamKey,
         is_playing_playlist: bool,
+        with_playback_encoding: bool,
         files: &[LocalFileInfo],
         file_root: &Path,
     ) -> Option<Self> {
@@ -166,61 +169,40 @@ impl RestreamerKind {
                 if is_playing_playlist {
                     return None;
                 }
-                let from_url = match input.src.as_ref()? {
-                    state::InputSrc::Remote(remote) => {
-                        remote.url.clone().into()
+                let from_url =
+                    input.src.as_ref()?.src_url(key, files, file_root)?;
+                let to_url = endpoint.kind.rtmp_url(key, &input.key);
+                let id: Uuid = endpoint.id.into();
+
+                if input.key.is_playback() && with_playback_encoding {
+                    Box::new(TranscodingRestreamer {
+                        id,
+                        from_url,
+                        to_url,
+                        options: TranscodingOptions::default(),
+                    })
+                    .into()
+                } else {
+                    CopyRestreamer {
+                        id,
+                        from_url,
+                        to_url,
                     }
-                    state::InputSrc::Failover(s) => {
-                        s.inputs.iter().find_map(|i| {
-                            i.endpoints.iter().find_map(|e| {
-                                if e.is_rtmp() && e.status == Status::Online {
-                                    Some(e.kind.rtmp_url(key, &i.key))
-                                } else if i.enabled
-                                    && e.is_file()
-                                    && e.file_id.is_some()
-                                    && files.iter().any(|f| {
-                                        e.file_id == Some(f.file_id.clone())
-                                            && (f.state == FileState::Local)
-                                    })
-                                {
-                                    url::Url::from_file_path(
-                                        file_root.join(
-                                            e.file_id
-                                                .as_ref()
-                                                .unwrap_or(&FileId::default())
-                                                .to_string(),
-                                        ),
-                                    )
-                                    .ok()
-                                } else {
-                                    None
-                                }
-                            })
-                        })?
-                    }
-                };
-                CopyRestreamer {
-                    id: endpoint.id.into(),
-                    from_url,
-                    to_url: endpoint.kind.rtmp_url(key, &input.key),
+                    .into()
                 }
-                .into()
             }
 
             state::InputEndpointKind::Hls => {
                 if !input.is_ready_to_serve() {
                     return None;
                 }
-                TranscodingRestreamer {
+                Box::new(TranscodingRestreamer {
                     id: endpoint.id.into(),
                     from_url: state::InputEndpointKind::Rtmp
                         .rtmp_url(key, &input.key),
                     to_url: endpoint.kind.rtmp_url(key, &input.key),
-                    vcodec: Some("libx264".into()),
-                    vprofile: Some("baseline".into()),
-                    vpreset: Some("superfast".into()),
-                    acodec: Some("libfdk_aac".into()),
-                }
+                    options: TranscodingOptions::default(),
+                })
                 .into()
             }
 

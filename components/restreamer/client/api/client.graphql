@@ -87,6 +87,7 @@ mutation SetRestream(
     $id: RestreamId
     $backup_inputs: [BackupInput!]
     $with_hls: Boolean!
+    $with_playback_encoding: Boolean!
     $file_id: FileId
 ) {
     setRestream(
@@ -96,6 +97,7 @@ mutation SetRestream(
         backupInputs: $backup_inputs
         fileId: $file_id
         withHls: $with_hls
+        withPlaybackEncoding: $with_playback_encoding
         id: $id
     )
 }
@@ -293,6 +295,7 @@ fragment restreamBasic on Restream {
     id
     key
     label
+    withPlaybackEncoding
     input {
         id
         key
