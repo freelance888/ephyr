@@ -22,6 +22,7 @@
     unused_results
 )]
 
+use mime::Mime;
 use reqwest::{Response, StatusCode};
 use serde::Deserialize;
 
@@ -29,6 +30,21 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
 &includeItemsFromAllDrives=True\
 &includeTeamDriveItems=True";
+//
+// /// Source file of a [`Video`].
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct Source {
+//     /// [URL] of this [`Source`] file, where it can be read from.
+//     ///
+//     /// [URL]: https://en.wikipedia.org/wiki/URL
+//     pub src: Url,
+//
+//     /// [MIME type][1] of this [`Source`] file.
+//     ///
+//     /// [1]: https://en.wikipedia.org/wiki/Media_type
+//     #[serde(with = "mime_serde_shim")]
+//     pub r#type: Mime,
+// }
 
 /// Represents an extended file information response from Google Drive API.
 #[derive(Deserialize, Debug)]
@@ -37,9 +53,11 @@ pub struct ExtendedFileInfoResponse {
     pub id: String,
     /// Name of file on the Google Drive
     pub name: String,
-    /// Type of file on the Google Drive
-    #[serde(alias = "mimeType")]
-    pub mime_type: String,
+    /// [MIME type][1] of this [`ExtendedFileInfoResponse`] file.
+    ///
+    /// [1]: https://en.wikipedia.org/wiki/Media_type
+    #[serde(alias = "mimeType", with = "mime_serde_shim")]
+    pub mime_type: Mime,
 }
 
 impl ExtendedFileInfoResponse {
@@ -50,7 +68,7 @@ impl ExtendedFileInfoResponse {
 
     /// Returns `true` if current object is video file otherwise `false`
     pub fn is_video(&self) -> bool {
-        self.mime_type.starts_with("video")
+        self.mime_type.type_() == mime::VIDEO
     }
 }
 

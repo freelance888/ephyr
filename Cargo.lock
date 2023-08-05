@@ -1463,6 +1463,8 @@ dependencies = [
 name = "ephyr-api-google-drive"
 version = "0.1.0"
 dependencies = [
+ "mime",
+ "mime_serde_shim",
  "reqwest",
  "serde",
  "tokio",
@@ -2550,6 +2552,16 @@ checksum = "4192263c238a5f0d0c6bfd21f336a313a4ce1c450542449ca191bb657b4642ef"
 dependencies = [
  "mime",
  "unicase",
+]
+
+[[package]]
+name = "mime_serde_shim"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab9c5b33b135e34aab675cef7f678c688b30740ba299d75e3a8c0af89b5d5cea"
+dependencies = [
+ "mime",
+ "serde",
 ]
 
 [[package]]
