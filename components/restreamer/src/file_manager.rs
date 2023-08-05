@@ -5,19 +5,18 @@ use std::{
     path::PathBuf,
 };
 
-use derive_more::{Deref, Display, Into};
+use derive_more::{Deref, Display, From, Into};
 use ephyr_log::{tracing, Instrument};
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
 use crate::{
-    cli::Opts,
-    display_panic,
-    google_drive_api::{
+    api::google_drive::{
         ErrorResponse, ExtendedFileInfoResponse, GoogleDriveApi,
     },
-    spec,
+    cli::Opts,
+    display_panic, spec,
     state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
@@ -57,6 +56,7 @@ pub enum FileCommand {
     Eq,
     Hash,
     Into,
+    From,
     PartialEq,
     Default,
     Serialize,
@@ -234,7 +234,7 @@ impl FileManager {
         state: &'a State,
     ) -> Result<(), String> {
         let filename = GoogleDriveApi::new(api_key)
-            .get_file_info(file_id)
+            .get_file_info(file_id.as_str())
             .await?
             .name;
 
@@ -299,7 +299,7 @@ impl FileManager {
 
                 // Download the file contents
                 let mut response = GoogleDriveApi::new(&api_key)
-                    .get_file_response(&file_id)
+                    .get_file_response(&file_id.as_str())
                     .await?;
 
                 let status = response.status();
@@ -514,7 +514,7 @@ fn update_stream_info(file_id: FileId, url: String, state: State) {
             async move {
                 let result = stream_probe(url).await;
                 state
-                    .set_file_stream_info(&file_id, result)
+                    .set_file_stream_info(&file_id.into(), result)
                     .unwrap_or_else(|e| tracing::error!("{}", e));
             }
             .in_current_span(),
@@ -554,7 +554,7 @@ pub struct LocalFileInfo {
 impl From<ExtendedFileInfoResponse> for LocalFileInfo {
     fn from(file_response: ExtendedFileInfoResponse) -> Self {
         LocalFileInfo {
-            file_id: FileId(file_response.id),
+            file_id: FileId::from(file_response.id),
             name: Some(file_response.name),
             state: FileState::Pending,
             download_state: None,
@@ -582,7 +582,7 @@ pub struct PlaylistFileInfo {
 impl From<ExtendedFileInfoResponse> for spec::v1::PlaylistFileInfo {
     fn from(file_response: ExtendedFileInfoResponse) -> Self {
         spec::v1::PlaylistFileInfo {
-            file_id: FileId(file_response.id),
+            file_id: FileId::from(file_response.id),
             name: file_response.name,
         }
     }
@@ -672,13 +672,12 @@ pub async fn get_file_from_gdrive(
     api_key: &str,
     file_id: &str,
 ) -> Result<spec::v1::PlaylistFileInfo, String> {
-    let file_info_response = GoogleDriveApi::new(api_key)
-        .get_file_info(&FileId(file_id.to_string()))
-        .await?;
+    let file_info_response =
+        GoogleDriveApi::new(api_key).get_file_info(file_id).await?;
 
     if file_info_response.is_video() {
         Ok(spec::v1::PlaylistFileInfo {
-            file_id: FileId(file_info_response.id),
+            file_id: FileId::from(file_info_response.id),
             name: file_info_response.name,
         })
     } else {
@@ -704,7 +703,7 @@ pub async fn get_video_list_from_gdrive_folder(
         .into_iter()
         .filter(ExtendedFileInfoResponse::is_video)
         .map(|x| spec::v1::PlaylistFileInfo {
-            file_id: FileId(x.id),
+            file_id: FileId::from(x.id),
             name: x.name,
         })
         .collect())

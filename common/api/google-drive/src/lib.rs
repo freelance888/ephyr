@@ -1,4 +1,27 @@
-use crate::file_manager::FileId;
+//! Definitions of [google.drive][1] site API and a client to request it.
+//!
+//! [1]: https://drive.google.com
+
+#![deny(
+    broken_intra_doc_links,
+    missing_debug_implementations,
+    nonstandard_style,
+    rust_2018_idioms,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code
+)]
+#![warn(
+    deprecated_in_future,
+    missing_docs,
+    unreachable_pub,
+    unused_import_braces,
+    unused_labels,
+    unused_lifetimes,
+    unused_qualifications,
+    unused_results
+)]
+
 use reqwest::{Response, StatusCode};
 use serde::Deserialize;
 
@@ -10,54 +33,65 @@ const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 /// Represents an extended file information response from Google Drive API.
 #[derive(Deserialize, Debug)]
 pub struct ExtendedFileInfoResponse {
+    /// ID of file on the Google Drive
     pub id: String,
+    /// Name of file on the Google Drive
     pub name: String,
+    /// Type of file on the Google Drive
     #[serde(alias = "mimeType")]
     pub mime_type: String,
 }
 
 impl ExtendedFileInfoResponse {
-    #[allow(dead_code)]
-    pub(crate) fn is_dir(&self) -> bool {
+    /// Returns `true` if current object is directory otherwise `false`
+    pub fn is_dir(&self) -> bool {
         self.mime_type == "application/vnd.google-apps.folder"
     }
 
-    pub(crate) fn is_video(&self) -> bool {
+    /// Returns `true` if current object is video file otherwise `false`
+    pub fn is_video(&self) -> bool {
         self.mime_type.starts_with("video")
     }
 }
 
 /// Represents the response from a file list request in Google Drive API.
-#[derive(Deserialize)]
-pub(crate) struct FileListResponse {
-    pub(crate) files: Vec<ExtendedFileInfoResponse>,
+#[derive(Deserialize, Debug)]
+pub struct FileListResponse {
+    /// List files or folders
+    pub files: Vec<ExtendedFileInfoResponse>,
 }
 
 /// Google Drive api wrapper
-pub(crate) struct GoogleDriveApi {
-    pub(crate) api_key: String,
+#[derive(Clone, Debug)]
+pub struct GoogleDriveApi {
+    /// Google API Token with activated Google Drive V3 API
+    pub api_key: String,
 }
 
 impl GoogleDriveApi {
+    /// URL of the [google.drive][1] site API v1.
     ///
-    #[must_use]
-    pub(crate) fn new(api_key: &str) -> Self {
+    /// [1]: https://drive.google.com
+    pub const V3_URL: &'static str = "https://www.googleapis.com/drive/v3";
+
+    /// Create new instance of [GoogleDriveApi]
+    pub fn new(api_key: &str) -> Self {
         Self {
             api_key: api_key.to_string(),
         }
     }
 
     /// Get the list of files from a specific `GDrive` folder.
-    pub(crate) async fn get_dir_content(
+    pub async fn get_dir_content(
         &self,
         dir_id: &str,
     ) -> Result<FileListResponse, String> {
         let response = reqwest::get(
             format!(
-                "https://www.googleapis.com/drive/v3/files?\
-                     key={}&q='{dir_id}'%20in%20parents&\
+                "{}/files?key={}&q='{dir_id}'%20in%20parents&\
                      fields=files/id,files/name,files/mimeType&\
                      {GDRIVE_PUBLIC_PARAMS}",
+                GoogleDriveApi::V3_URL,
                 &self.api_key
             )
             .as_str(),
@@ -67,14 +101,14 @@ impl GoogleDriveApi {
     }
 
     /// Get the details of a single file from `GDrive`.
-    pub(crate) async fn get_file_info(
+    pub async fn get_file_info(
         &self,
-        file_id: &FileId,
+        file_id: &str,
     ) -> Result<ExtendedFileInfoResponse, String> {
         let response = reqwest::get(
             format!(
-                "https://www.googleapis.com/drive/v3/files/{file_id}?
-                fields=name&key={}&{GDRIVE_PUBLIC_PARAMS}",
+                "{}/files/{file_id}?fields=name&key={}&{GDRIVE_PUBLIC_PARAMS}",
+                GoogleDriveApi::V3_URL,
                 &self.api_key
             )
             .as_str(),
@@ -83,9 +117,10 @@ impl GoogleDriveApi {
         Self::get_result(response).await
     }
 
-    pub(crate) async fn get_file_response(
+    /// Get file binary representation
+    pub async fn get_file_response(
         &self,
-        file_id: &FileId,
+        file_id: &str,
     ) -> Result<Response, String> {
         let client = reqwest::ClientBuilder::new()
             .connection_verbose(false)
@@ -97,9 +132,9 @@ impl GoogleDriveApi {
         client
             .get(
                 format!(
-                    "https://www.googleapis.com/drive/v3/files/\
-                            {file_id}?alt=media&key={}\
-                            &{GDRIVE_PUBLIC_PARAMS}",
+                    "{}/files/{file_id}?alt=media&key={}\
+                &{GDRIVE_PUBLIC_PARAMS}",
+                    GoogleDriveApi::V3_URL,
                     self.api_key
                 )
                 .as_str(),
@@ -146,14 +181,17 @@ impl GoogleDriveApi {
 }
 
 /// Represents the error response from Google Drive API.
-#[derive(Deserialize)]
-pub(crate) struct ErrorResponse {
-    pub(crate) error: ErrorMessage,
+#[derive(Deserialize, Debug)]
+pub struct ErrorResponse {
+    /// Encapsulate Google Drive API error
+    pub error: ErrorMessage,
 }
 
 /// Represents an error message in the error response from Google Drive API.
-#[derive(Deserialize)]
-pub(crate) struct ErrorMessage {
-    pub(crate) code: u16,
-    pub(crate) message: String,
+#[derive(Deserialize, Debug)]
+pub struct ErrorMessage {
+    /// Google Drive API error code
+    pub code: u16,
+    /// Google Drive API error message
+    pub message: String,
 }

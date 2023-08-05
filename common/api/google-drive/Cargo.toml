@@ -1,0 +1,18 @@
+[package]
+name = "ephyr-api-google-drive"
+version = "0.1.0"
+edition = "2018"
+authors = ["ALLATRA IT <it@allatra.org>"]
+publish = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+url = { version = "2.1", features = ["serde"] }
+[dependencies.reqwest]
+    version = "0.11"
+    features = ["default-tls", "json"]
+    default-features = false
+
+
+[dev-dependencies]
+tokio = { version = "1.24", features = ["macros"] }
