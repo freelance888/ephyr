@@ -3,7 +3,7 @@
 //! [1]: https://drive.google.com
 
 #![deny(
-    broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     missing_debug_implementations,
     nonstandard_style,
     rust_2018_idioms,
@@ -57,18 +57,18 @@ pub struct ExtendedFileInfoResponse {
     ///
     /// [1]: https://en.wikipedia.org/wiki/Media_type
     #[serde(alias = "mimeType", with = "mime_serde_shim")]
-    pub mime_type: Mime,
+    pub r#type: Mime,
 }
 
 impl ExtendedFileInfoResponse {
     /// Returns `true` if current object is directory otherwise `false`
     pub fn is_dir(&self) -> bool {
-        self.mime_type == "application/vnd.google-apps.folder"
+        self.r#type == "application/vnd.google-apps.folder"
     }
 
     /// Returns `true` if current object is video file otherwise `false`
     pub fn is_video(&self) -> bool {
-        self.mime_type.type_() == mime::VIDEO
+        self.r#type.type_() == mime::VIDEO
     }
 }
 
@@ -125,7 +125,7 @@ impl GoogleDriveApi {
     ) -> Result<ExtendedFileInfoResponse, String> {
         let response = reqwest::get(
             format!(
-                "{}/files/{file_id}?fields=name&key={}&{GDRIVE_PUBLIC_PARAMS}",
+                "{}/files/{file_id}?fields=id,name,mimeType&key={}&{GDRIVE_PUBLIC_PARAMS}",
                 GoogleDriveApi::V3_URL,
                 &self.api_key
             )
@@ -212,4 +212,50 @@ pub struct ErrorMessage {
     pub code: u16,
     /// Google Drive API error message
     pub message: String,
+}
+
+#[cfg(test)]
+mod spec {
+    //! Test API with [Google Drive Dir]
+    //!
+    //! [Google Drive Dir]: https://drive.google.com/drive/folders/17tRXMWEO3ZxBlhqxMLPnM4Dd-eRIaSAl
+    use super::*;
+    use std::env;
+
+    const DRIVE_FOLDER_ID: &'static str = "17tRXMWEO3ZxBlhqxMLPnM4Dd-eRIaSAl";
+    const DRIVE_FILE_ID: &'static str = "1uN6QrrS05Hm_6L7XJxINbKEam_RRFr9X";
+    const DRIVE_FILE_NAME: &'static str = "out 2023-06-13 KF.mp4";
+
+    #[tokio::test]
+    async fn retrieves_dir_content() {
+        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
+        let res = GoogleDriveApi::new(&api_key)
+            .get_dir_content(DRIVE_FOLDER_ID)
+            .await
+            .unwrap();
+        assert_eq!(res.files.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn retrieves_file_info() {
+        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
+        let res = GoogleDriveApi::new(&api_key)
+            .get_file_info(DRIVE_FILE_ID)
+            .await
+            .unwrap();
+
+        assert_eq!(res.id, DRIVE_FILE_ID);
+        assert_eq!(res.name, DRIVE_FILE_NAME);
+        assert_eq!(res.r#type.type_(), mime::VIDEO);
+    }
+
+    #[tokio::test]
+    async fn retrieves_file_response() {
+        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
+        let res = GoogleDriveApi::new(&api_key)
+            .get_file_response(DRIVE_FILE_ID)
+            .await
+            .unwrap();
+        assert_eq!(res.status(), 200);
+    }
 }
