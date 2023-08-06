@@ -1,6 +1,7 @@
-//! Definitions of [google.drive][1] site API and a client to request it.
+//! Definitions of [google.drive][1] site [API V3][2] and a client to request it.
 //!
 //! [1]: https://drive.google.com
+//! [2]: https://developers.google.com/drive/api/reference/rest/v3
 
 #![deny(
     rustdoc::broken_intra_doc_links,
@@ -22,64 +23,172 @@
     unused_results
 )]
 
-use mime::Mime;
-use reqwest::{Response, StatusCode};
-use serde::Deserialize;
+use derive_more::{Display, Error};
+use serde::de::DeserializeOwned;
+use std::env;
+use url::Url;
 
 const GDRIVE_PUBLIC_PARAMS: &str = "supportsAllDrives=True\
 &supportsTeamDrives=True\
 &includeItemsFromAllDrives=True\
 &includeTeamDriveItems=True";
-//
-// /// Source file of a [`Video`].
-// #[derive(Clone, Debug, Deserialize, Serialize)]
-// pub struct Source {
-//     /// [URL] of this [`Source`] file, where it can be read from.
-//     ///
-//     /// [URL]: https://en.wikipedia.org/wiki/URL
-//     pub src: Url,
-//
-//     /// [MIME type][1] of this [`Source`] file.
-//     ///
-//     /// [1]: https://en.wikipedia.org/wiki/Media_type
-//     #[serde(with = "mime_serde_shim")]
-//     pub r#type: Mime,
-// }
 
-/// Represents an extended file information response from Google Drive API.
-#[derive(Deserialize, Debug)]
-pub struct ExtendedFileInfoResponse {
-    /// ID of file on the Google Drive
-    pub id: String,
-    /// Name of file on the Google Drive
-    pub name: String,
-    /// [MIME type][1] of this [`ExtendedFileInfoResponse`] file.
+/// Possible errors of performing [`GoogleDriveApi`] requests on [V3 API].
+///
+/// [V3 API]: https://developers.google.com/drive/api/reference/rest/v3
+#[derive(Debug, Display, Error)]
+pub enum Error {
+    /// Performing HTTP request failed itself.
+    #[display(fmt = "Failed to perform HTTP request: {_0}")]
+    RequestFailed(reqwest::Error),
+
+    /// [`GoogleDriveApi`] responded with a bad [`StatusCode`].
     ///
-    /// [1]: https://en.wikipedia.org/wiki/Media_type
-    #[serde(alias = "mimeType", with = "mime_serde_shim")]
-    pub r#type: Mime,
+    /// [`StatusCode`]: reqwest::StatusCode
+    #[display(fmt = "API responded with bad status: {_0}")]
+    BadStatus(#[error(not(source))] reqwest::StatusCode),
+
+    /// [`GoogleDriveApi`] responded with a bad body, which cannot be deserialized.
+    #[display(fmt = "Failed to decode API response: {_0}")]
+    BadBody(reqwest::Error),
+
+    /// [`GoogleDriveApi`] responded with an error from Google API.
+    #[display(fmt = "Google Drive API responded with an error: {} {}", _0.code, _0.message)]
+    ApiError(responses::ApiErrorMessage),
 }
 
-impl ExtendedFileInfoResponse {
-    /// Returns `true` if current object is directory otherwise `false`
-    pub fn is_dir(&self) -> bool {
-        self.r#type == "application/vnd.google-apps.folder"
+/// API Responses structs mappers
+pub mod responses {
+    use derive_more::{Display, Error};
+    use mime::Mime;
+    use serde::Deserialize;
+    use std::fmt::{Display, Formatter};
+
+    /// Represents file info fetched from Google Drive API.
+    #[derive(Deserialize, Debug)]
+    pub struct FileInfo {
+        /// ID of this [`FileInfo`] file.
+        pub id: String,
+        /// Name of this [`FileInfo`] file.
+        pub name: String,
+        /// [MIME type][1] of this [`FileInfo`] file.
+        ///
+        /// [1]: https://en.wikipedia.org/wiki/Media_type
+        #[serde(alias = "mimeType", with = "mime_serde_shim")]
+        pub mime_type: Mime,
     }
 
-    /// Returns `true` if current object is video file otherwise `false`
-    pub fn is_video(&self) -> bool {
-        self.r#type.type_() == mime::VIDEO
+    impl FileInfo {
+        /// Returns `true` if current object is directory otherwise `false`
+        pub fn is_dir(&self) -> bool {
+            self.mime_type == "application/vnd.google-apps.folder"
+        }
+
+        /// Returns `true` if current object is video file otherwise `false`
+        pub fn is_video(&self) -> bool {
+            self.mime_type.type_() == mime::VIDEO
+        }
+    }
+
+    /// Represents the file info list fetched from Google Drive API.
+    #[derive(Deserialize, Debug)]
+    pub struct FileInfoList {
+        /// List files or folders
+        pub files: Vec<FileInfo>,
+    }
+
+    /// Represents the error response from Google Drive API.
+    #[derive(Deserialize, Debug, Error, Display)]
+    pub struct ApiError {
+        /// Encapsulate Google Drive API error
+        pub error: ApiErrorMessage,
+    }
+
+    /// Represents an error message in the error response from Google Drive API.
+    #[derive(Deserialize, Debug, Error)]
+    pub struct ApiErrorMessage {
+        /// Google Drive API error code
+        pub code: u16,
+        /// Google Drive API error message
+        pub message: String,
+    }
+
+    impl Display for ApiErrorMessage {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "ErrorMessage({}, {})", self.code, self.message)
+        }
     }
 }
 
-/// Represents the response from a file list request in Google Drive API.
-#[derive(Deserialize, Debug)]
-pub struct FileListResponse {
-    /// List files or folders
-    pub files: Vec<ExtendedFileInfoResponse>,
+async fn req(url: String) -> Result<reqwest::Response, Error> {
+    dbg!(&url.to_string());
+    let resp = reqwest::get(url).await.map_err(Error::RequestFailed)?;
+    let status = resp.status();
+    if !status.is_success() {
+        if status == reqwest::StatusCode::BAD_REQUEST
+            || status == reqwest::StatusCode::UNAUTHORIZED
+        {
+            // Try to deserialize the error response
+            if let Ok(error_resp) = resp.json::<responses::ApiError>().await {
+                return Err(Error::ApiError(error_resp.error));
+            }
+        }
+        return Err(Error::BadStatus(status));
+    }
+
+    Ok(resp)
 }
 
-/// Google Drive api wrapper
+async fn req_json<T: DeserializeOwned>(url: String) -> Result<T, Error> {
+    let resp = req(url).await?;
+    resp.json::<T>().await.map_err(Error::BadBody)
+}
+
+/// The [V3 API files][1] resource.
+///
+/// [1]: https://developers.google.com/drive/api/reference/rest/v3/files
+#[derive(Debug)]
+pub struct Files {
+    api_url: Url,
+}
+
+impl Files {
+    /// Get the details of a single file.
+    pub async fn get_file_info(
+        &self,
+        file_id: &str,
+    ) -> Result<responses::FileInfo, Error> {
+        let mut url = self.api_url.clone();
+        _ = url.path_segments_mut().unwrap().push(file_id);
+        let url = format!("{url}&fields=id,name,mimeType");
+        req_json::<responses::FileInfo>(url).await
+    }
+
+    /// Get the list of files from a specific folder.
+    pub async fn get_dir_content(
+        &self,
+        dir_id: &str,
+    ) -> Result<responses::FileInfoList, Error> {
+        let url = format!("{}&q='{dir_id}'%20in%20parents&fields=files/id,files/name,files/mimeType",
+                          &self.api_url);
+        req_json::<responses::FileInfoList>(url).await
+    }
+
+    /// Get file binary representation
+    pub async fn get_file_response(
+        &self,
+        file_id: &str,
+    ) -> Result<reqwest::Response, Error> {
+        let mut url = self.api_url.clone();
+        _ = url.path_segments_mut().unwrap().push(file_id);
+        let url = format!("{url}&alt=media");
+        req(url).await
+    }
+}
+
+/// [Google Drive API V3][1] wrapper
+///
+/// [1]: https://developers.google.com/drive/api/reference/rest/v3
 #[derive(Clone, Debug)]
 pub struct GoogleDriveApi {
     /// Google API Token with activated Google Drive V3 API
@@ -87,9 +196,9 @@ pub struct GoogleDriveApi {
 }
 
 impl GoogleDriveApi {
-    /// URL of the [google.drive][1] site API v1.
+    /// URL of the Google Drive [API V3][1].
     ///
-    /// [1]: https://drive.google.com
+    /// [1]: https://developers.google.com/drive/api/reference/rest/v3
     pub const V3_URL: &'static str = "https://www.googleapis.com/drive/v3";
 
     /// Create new instance of [GoogleDriveApi]
@@ -99,128 +208,32 @@ impl GoogleDriveApi {
         }
     }
 
-    /// Get the list of files from a specific `GDrive` folder.
-    pub async fn get_dir_content(
-        &self,
-        dir_id: &str,
-    ) -> Result<FileListResponse, String> {
-        let response = reqwest::get(
-            format!(
-                "{}/files?key={}&q='{dir_id}'%20in%20parents&\
-                     fields=files/id,files/name,files/mimeType&\
-                     {GDRIVE_PUBLIC_PARAMS}",
-                GoogleDriveApi::V3_URL,
-                &self.api_key
-            )
-            .as_str(),
-        )
-        .await;
-        Self::get_result(response).await
+    /// Create new instance of [GoogleDriveApi] based on `GOOGLE_DRIVE_API_KEY` env value.
+    pub fn new_from_env() -> Self {
+        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
+        Self { api_key }
     }
 
-    /// Get the details of a single file from `GDrive`.
-    pub async fn get_file_info(
-        &self,
-        file_id: &str,
-    ) -> Result<ExtendedFileInfoResponse, String> {
-        let response = reqwest::get(
-            format!(
-                "{}/files/{file_id}?fields=id,name,mimeType&key={}&{GDRIVE_PUBLIC_PARAMS}",
-                GoogleDriveApi::V3_URL,
-                &self.api_key
-            )
-            .as_str(),
-        )
-        .await;
-        Self::get_result(response).await
+    /// Returns [Files] that encapsulate [V3 API files][1].
+    ///
+    /// [1]: https://developers.google.com/drive/api/reference/rest/v3/files
+    pub fn files(&self) -> Files {
+        let mut api_url =
+            Url::parse(&format!("{}/files", GoogleDriveApi::V3_URL)).unwrap();
+        api_url.set_query(Some(&format!(
+            "key={}&{GDRIVE_PUBLIC_PARAMS}",
+            self.api_key
+        )));
+        Files { api_url }
     }
-
-    /// Get file binary representation
-    pub async fn get_file_response(
-        &self,
-        file_id: &str,
-    ) -> Result<Response, String> {
-        let client = reqwest::ClientBuilder::new()
-            .connection_verbose(false)
-            .build()
-            .map_err(|err| {
-                format!("Could not create a reqwest Client: {err}")
-            })?;
-
-        client
-            .get(
-                format!(
-                    "{}/files/{file_id}?alt=media&key={}\
-                &{GDRIVE_PUBLIC_PARAMS}",
-                    GoogleDriveApi::V3_URL,
-                    self.api_key
-                )
-                .as_str(),
-            )
-            .send()
-            .await
-            .map_err(|err| {
-                format!("Could not send download request for the file {err}")
-            })
-    }
-
-    async fn get_result<T: for<'de> Deserialize<'de>>(
-        response: reqwest::Result<Response>,
-    ) -> Result<T, String> {
-        match response {
-            Err(e) => Err(format!("No valid response from the API: {e}")),
-            Ok(r) => {
-                let status = r.status();
-                match status {
-                    StatusCode::OK => r
-                        .json::<T>()
-                        .await
-                        .map_err(|e| format!("Error parsing JSON result: {e}")),
-                    StatusCode::FORBIDDEN | StatusCode::NOT_FOUND => Err(r
-                        .json::<ErrorResponse>()
-                        .await
-                        .map(|x| {
-                            format!(
-                                "Http response: {} {}",
-                                x.error.code, x.error.message
-                            )
-                        })
-                        .map_err(|e| {
-                            format!("Error parsing JSON result: {e}")
-                        })?),
-                    _ => Err(r
-                        .text()
-                        .await
-                        .unwrap_or_else(|e| format!("Unknown error: {e}"))),
-                }
-            }
-        }
-    }
-}
-
-/// Represents the error response from Google Drive API.
-#[derive(Deserialize, Debug)]
-pub struct ErrorResponse {
-    /// Encapsulate Google Drive API error
-    pub error: ErrorMessage,
-}
-
-/// Represents an error message in the error response from Google Drive API.
-#[derive(Deserialize, Debug)]
-pub struct ErrorMessage {
-    /// Google Drive API error code
-    pub code: u16,
-    /// Google Drive API error message
-    pub message: String,
 }
 
 #[cfg(test)]
 mod spec {
-    //! Test API with [Google Drive Dir]
+    //! Test API with [Google Drive Dir][1]
     //!
-    //! [Google Drive Dir]: https://drive.google.com/drive/folders/17tRXMWEO3ZxBlhqxMLPnM4Dd-eRIaSAl
+    //! [1]: https://drive.google.com/drive/folders/17tRXMWEO3ZxBlhqxMLPnM4Dd-eRIaSAl
     use super::*;
-    use std::env;
 
     const DRIVE_FOLDER_ID: &'static str = "17tRXMWEO3ZxBlhqxMLPnM4Dd-eRIaSAl";
     const DRIVE_FILE_ID: &'static str = "1uN6QrrS05Hm_6L7XJxINbKEam_RRFr9X";
@@ -228,8 +241,8 @@ mod spec {
 
     #[tokio::test]
     async fn retrieves_dir_content() {
-        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
-        let res = GoogleDriveApi::new(&api_key)
+        let res = GoogleDriveApi::new_from_env()
+            .files()
             .get_dir_content(DRIVE_FOLDER_ID)
             .await
             .unwrap();
@@ -238,21 +251,20 @@ mod spec {
 
     #[tokio::test]
     async fn retrieves_file_info() {
-        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
-        let res = GoogleDriveApi::new(&api_key)
+        let res = GoogleDriveApi::new_from_env()
+            .files()
             .get_file_info(DRIVE_FILE_ID)
             .await
             .unwrap();
-
         assert_eq!(res.id, DRIVE_FILE_ID);
         assert_eq!(res.name, DRIVE_FILE_NAME);
-        assert_eq!(res.r#type.type_(), mime::VIDEO);
+        assert_eq!(res.mime_type.type_(), mime::VIDEO);
     }
 
     #[tokio::test]
     async fn retrieves_file_response() {
-        let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
-        let res = GoogleDriveApi::new(&api_key)
+        let res = GoogleDriveApi::new_from_env()
+            .files()
             .get_file_response(DRIVE_FILE_ID)
             .await
             .unwrap();
