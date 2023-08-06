@@ -298,7 +298,7 @@ impl FileManager {
                 // Download the file contents
                 let mut response = GoogleDriveApi::new(&api_key)
                     .files()
-                    .get_file_response(&file_id.as_str())
+                    .get_file_response(&file_id)
                     .await
                     .map_err(|e| format!("{e}"))?;
 
@@ -489,7 +489,7 @@ fn update_stream_info(file_id: FileId, url: String, state: State) {
             async move {
                 let result = stream_probe(url).await;
                 state
-                    .set_file_stream_info(&file_id.into(), result)
+                    .set_file_stream_info(&file_id, result)
                     .unwrap_or_else(|e| tracing::error!("{}", e));
             }
             .in_current_span(),
