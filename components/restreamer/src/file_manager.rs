@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
 use crate::{
-    api::google_drive::{responses::FileInfo, GoogleDriveApi},
+    api::google_drive::{responses::FileInfo as DriveFileInfo, GoogleDriveApi},
     cli::Opts,
     display_panic, spec,
     state::{InputEndpointKind, InputSrc, State, Status},
@@ -303,7 +303,7 @@ impl FileManager {
                     .map_err(|e| format!("{e}"))?;
 
                 let total = response.content_length();
-                // Create FileInfo Download state and set the state
+                // Create DriveFileInfo Download state and set the state
                 // to Downloading
                 state
                     .files
@@ -311,8 +311,7 @@ impl FileManager {
                     .iter_mut()
                     .find(|file| file.file_id == file_id)
                     .ok_or_else(|| {
-                        "Could not find file with the \
-                             provided file ID"
+                        "Could not find file with the provided file ID"
                             .to_string()
                     })?
                     .pipe_borrow_mut(|val| {
@@ -335,11 +334,7 @@ impl FileManager {
             }
             .await
             .map_err(|err| {
-                tracing::error!(
-                    "Could not download file {}: {}",
-                    &file_id,
-                    err
-                );
+                tracing::error!("Could not download file {file_id}: {err}",);
                 state
                     .files
                     .lock_mut()
@@ -392,7 +387,7 @@ impl FileManager {
             }
 
             current.0 += bytes.len() as u64;
-            // Update download progress in the FileInfo,
+            // Update download progress in the DriveFileInfo,
             // but only each 400ms
             if Utc::now()
                 .signed_duration_since(last_update)
@@ -526,8 +521,8 @@ pub struct LocalFileInfo {
     pub download_state: Option<DownloadState>,
 }
 
-impl From<FileInfo> for LocalFileInfo {
-    fn from(file_response: FileInfo) -> Self {
+impl From<DriveFileInfo> for LocalFileInfo {
+    fn from(file_response: DriveFileInfo) -> Self {
         LocalFileInfo {
             file_id: FileId::from(file_response.id),
             name: Some(file_response.name),
@@ -554,8 +549,8 @@ pub struct PlaylistFileInfo {
     pub was_played: bool,
 }
 
-impl From<FileInfo> for spec::v1::PlaylistFileInfo {
-    fn from(file_response: FileInfo) -> Self {
+impl From<DriveFileInfo> for spec::v1::PlaylistFileInfo {
+    fn from(file_response: DriveFileInfo) -> Self {
         spec::v1::PlaylistFileInfo {
             file_id: FileId::from(file_response.id),
             name: file_response.name,
