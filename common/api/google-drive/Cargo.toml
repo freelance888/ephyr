@@ -21,4 +21,4 @@ url = { version = "2.1", features = ["serde"] }
 
 
 [dev-dependencies]
-tokio = { version = "1.24", features = ["macros"] }
+tokio = { version = "1.29", features = ["macros"] }
