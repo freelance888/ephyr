@@ -68,7 +68,7 @@ async fn run_periodic<F, Fut>(
 /// # Errors
 /// No return errors expected. Preserved return signature in order to
 /// run in `future::try_join3`
-#[instrument(skip_all, name = "statistics::run")]
+#[instrument(skip_all, name = "periodic_task::run")]
 pub async fn run(state: State) -> Result<(), Failure> {
     run_periodic(
         state.clone(),
