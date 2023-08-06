@@ -30,8 +30,8 @@ use crate::{
 use super::Context;
 use crate::{
     file_manager::{
-        get_file_from_gdrive, get_video_list_from_gdrive_folder, FileCommand,
-        FileId, FileState, LocalFileInfo,
+        get_video_file_from_gdrive, get_video_list_from_gdrive_folder,
+        FileCommand, FileId, FileState, LocalFileInfo,
     },
     spec::v1::BackupInput,
     state::{Direction, EndpointId, ServerInfo, VolumeLevel},
@@ -644,7 +644,7 @@ impl MutationsRoot {
             get_video_list_from_gdrive_folder(&api_key, &file_or_folder_id)
                 .await;
         let single_file_response =
-            get_file_from_gdrive(&api_key, &file_or_folder_id).await;
+            get_video_file_from_gdrive(&api_key, &file_or_folder_id).await;
 
         let mut restreams = context.state().restreams.lock_mut();
         let restream = restreams

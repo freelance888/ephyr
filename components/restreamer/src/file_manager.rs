@@ -5,19 +5,16 @@ use std::{
     path::PathBuf,
 };
 
-use derive_more::{Deref, Display, Into};
+use derive_more::{Deref, Display, From, Into};
 use ephyr_log::{tracing, Instrument};
 use juniper::{GraphQLEnum, GraphQLObject, GraphQLScalar, ScalarValue};
 use serde::{Deserialize, Serialize};
 use tap::prelude::*;
 
 use crate::{
+    api::google_drive::{responses::FileInfo as DriveFileInfo, GoogleDriveApi},
     cli::Opts,
-    display_panic,
-    google_drive_api::{
-        ErrorResponse, ExtendedFileInfoResponse, GoogleDriveApi,
-    },
-    spec,
+    display_panic, spec,
     state::{InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
     stream_statistics::StreamStatistics,
@@ -25,10 +22,8 @@ use crate::{
 use chrono::Utc;
 use ephyr_log::tracing::instrument;
 use futures::{FutureExt, TryFutureExt};
-use reqwest::{Response, StatusCode};
 use std::{
     borrow::BorrowMut, ffi::OsString, fs::DirEntry, panic::AssertUnwindSafe,
-    result::Result::Err,
 };
 
 /// Commands for handling operations on files
@@ -57,6 +52,7 @@ pub enum FileCommand {
     Eq,
     Hash,
     Into,
+    From,
     PartialEq,
     Default,
     Serialize,
@@ -234,8 +230,10 @@ impl FileManager {
         state: &'a State,
     ) -> Result<(), String> {
         let filename = GoogleDriveApi::new(api_key)
-            .get_file_info(file_id)
-            .await?
+            .files()
+            .get_file_info(file_id.as_str())
+            .await
+            .map_err(|e| format!("{e}"))?
             .name;
 
         state
@@ -299,36 +297,13 @@ impl FileManager {
 
                 // Download the file contents
                 let mut response = GoogleDriveApi::new(&api_key)
+                    .files()
                     .get_file_response(&file_id)
-                    .await?;
-
-                let status = response.status();
-                if status != StatusCode::OK {
-                    if status == 403 {
-                        return Err(response
-                            .json::<ErrorResponse>()
-                            .await
-                            .map(|r| {
-                                format!(
-                                    "Http response: {} {}",
-                                    r.error.code, r.error.message
-                                )
-                            })
-                            .map_err(|e| {
-                                format!("Status: {status}. Unknown error {e}")
-                            })?);
-                    }
-
-                    let error_response = response.text().await;
-                    return Err(format!(
-                        "Can't download file. Http response: {} {}",
-                        status,
-                        error_response.unwrap_or_default(),
-                    ));
-                }
+                    .await
+                    .map_err(|e| format!("{e}"))?;
 
                 let total = response.content_length();
-                // Create FileInfo Download state and set the state
+                // Create DriveFileInfo Download state and set the state
                 // to Downloading
                 state
                     .files
@@ -336,8 +311,7 @@ impl FileManager {
                     .iter_mut()
                     .find(|file| file.file_id == file_id)
                     .ok_or_else(|| {
-                        "Could not find file with the \
-                             provided file ID"
+                        "Could not find file with the provided file ID"
                             .to_string()
                     })?
                     .pipe_borrow_mut(|val| {
@@ -360,11 +334,7 @@ impl FileManager {
             }
             .await
             .map_err(|err| {
-                tracing::error!(
-                    "Could not download file {}: {}",
-                    &file_id,
-                    err
-                );
+                tracing::error!("Could not download file {file_id}: {err}",);
                 state
                     .files
                     .lock_mut()
@@ -390,7 +360,7 @@ impl FileManager {
     async fn download_and_write_bytes(
         file_id: &FileId,
         root_dir: &str,
-        response: &mut Response,
+        response: &mut reqwest::Response,
         state: &State,
     ) -> Result<(), String> {
         // Try opening the target file where the downloaded
@@ -417,7 +387,7 @@ impl FileManager {
             }
 
             current.0 += bytes.len() as u64;
-            // Update download progress in the FileInfo,
+            // Update download progress in the DriveFileInfo,
             // but only each 400ms
             if Utc::now()
                 .signed_duration_since(last_update)
@@ -551,10 +521,10 @@ pub struct LocalFileInfo {
     pub download_state: Option<DownloadState>,
 }
 
-impl From<ExtendedFileInfoResponse> for LocalFileInfo {
-    fn from(file_response: ExtendedFileInfoResponse) -> Self {
+impl From<DriveFileInfo> for LocalFileInfo {
+    fn from(file_response: DriveFileInfo) -> Self {
         LocalFileInfo {
-            file_id: FileId(file_response.id),
+            file_id: FileId::from(file_response.id),
             name: Some(file_response.name),
             state: FileState::Pending,
             download_state: None,
@@ -579,10 +549,10 @@ pub struct PlaylistFileInfo {
     pub was_played: bool,
 }
 
-impl From<ExtendedFileInfoResponse> for spec::v1::PlaylistFileInfo {
-    fn from(file_response: ExtendedFileInfoResponse) -> Self {
+impl From<DriveFileInfo> for spec::v1::PlaylistFileInfo {
+    fn from(file_response: DriveFileInfo) -> Self {
         spec::v1::PlaylistFileInfo {
-            file_id: FileId(file_response.id),
+            file_id: FileId::from(file_response.id),
             name: file_response.name,
         }
     }
@@ -668,19 +638,18 @@ impl NetworkByteSize {
 ///
 /// - If there is an issue with the Google Drive API request.
 /// - If the file is not a video.
-pub async fn get_file_from_gdrive(
+pub async fn get_video_file_from_gdrive(
     api_key: &str,
     file_id: &str,
 ) -> Result<spec::v1::PlaylistFileInfo, String> {
-    let file_info_response = GoogleDriveApi::new(api_key)
-        .get_file_info(&FileId(file_id.to_string()))
-        .await?;
+    let file_info = GoogleDriveApi::new(api_key)
+        .files()
+        .get_file_info(file_id)
+        .await
+        .map_err(|e| format!("{e}"))?;
 
-    if file_info_response.is_video() {
-        Ok(spec::v1::PlaylistFileInfo {
-            file_id: FileId(file_info_response.id),
-            name: file_info_response.name,
-        })
+    if file_info.is_video() {
+        Ok(file_info.into())
     } else {
         Err("This is not video file".to_string())
     }
@@ -696,16 +665,10 @@ pub async fn get_video_list_from_gdrive_folder(
     folder_id: &str,
 ) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
     let response = GoogleDriveApi::new(api_key)
-        .get_dir_content(folder_id)
+        .files()
+        .get_dir_videos(folder_id)
+        .map_err(|e| format!("{e}"))
         .await?;
 
-    Ok(response
-        .files
-        .into_iter()
-        .filter(ExtendedFileInfoResponse::is_video)
-        .map(|x| spec::v1::PlaylistFileInfo {
-            file_id: FileId(x.id),
-            name: x.name,
-        })
-        .collect())
+    Ok(response.into_iter().map(Into::into).collect())
 }
