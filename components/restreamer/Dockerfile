@@ -39,6 +39,7 @@ RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
 # avoid recompilation each time project sources are changed.
 WORKDIR /tmp/ephyr/
 
+COPY common/api/google-drive/Cargo.toml ./common/api/google-drive/
 COPY common/api/allatra-video/Cargo.toml ./common/api/allatra-video/
 COPY common/log/Cargo.toml ./common/log/
 COPY common/serde/Cargo.toml ./common/serde/
@@ -49,7 +50,9 @@ COPY Cargo.toml Cargo.lock ./
 COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
 
 
-RUN mkdir -p common/api/allatra-video/src/ \
+RUN mkdir -p common/api/google-drive/src/ \
+ && touch common/api/google-drive/src/lib.rs \
+ && mkdir -p common/api/allatra-video/src/ \
  && touch common/api/allatra-video/src/lib.rs \
  && mkdir -p common/log/src/ \
  && touch common/log/src/lib.rs \
