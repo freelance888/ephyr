@@ -12,7 +12,7 @@ tracing-log = "0.1"
 tracing-appender = "0.2"
 tracing-futures = "0.2"
 tracing-actix-web = { version= "0.7", features = ["tracing-opentelemetry_0_18_pkg"] }
-tokio = { version = "1.23", features = ["fs", "io-util", "process", "sync", "macros"] }
+tokio = { version = "1.29", features = ["fs", "io-util", "process", "sync", "macros"] }
 async-trait = "0.1"
 tracing-opentelemetry = { version = "0.18", features = ["metrics"] }
 opentelemetry = { version = "0.18", features = ["metrics"] }
