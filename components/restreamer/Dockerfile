@@ -84,6 +84,7 @@ WORKDIR /tmp/ephyr/
 RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 COPY common/log/ ./common/log/
+COPY common/api/google-drive ./common/api/google-drive/
 COPY components/restreamer/ ./components/restreamer/
 
 RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
