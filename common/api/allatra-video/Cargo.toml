@@ -1,7 +1,7 @@
 [package]
 name = "ephyr-api-allatra-video"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 authors = ["Kai Ren <tyranron@gmail.com>"]
 publish = false
 
@@ -13,11 +13,11 @@ serde = { version = "1.0", features = ["derive"] }
 serde_repr = "0.1"
 url = { version = "2.1", features = ["serde"] }
 [dependencies.derive_more]
-    version = "0.99.11"
+    version = "0.99"
     features = ["display", "error", "from"]
     default-features = false
 [dependencies.reqwest]
-    version = "0.10"
+    version = "0.11"
     features = ["default-tls", "json"]
     default-features = false
 

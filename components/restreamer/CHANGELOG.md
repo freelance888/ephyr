@@ -34,6 +34,7 @@ All user visible changes to this project will be documented in this file. This p
 - Extract Google Drive API module to `google-drive` crate ([#430]);
 - Update [FFmpeg] to 6.0  ([#375]);
 - Update [SRS] to v4-r5  ([#430]);
+- Update Rust edition to 2021 ([#430]);
 
 [#222]: /../../issues/222
 [#192]: /../../issues/192

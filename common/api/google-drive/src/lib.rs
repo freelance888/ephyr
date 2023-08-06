@@ -123,7 +123,6 @@ pub mod responses {
 }
 
 async fn req(url: String) -> Result<reqwest::Response, Error> {
-    dbg!(&url.to_string());
     let resp = reqwest::get(url).await.map_err(Error::RequestFailed)?;
     let status = resp.status();
     if !status.is_success() {

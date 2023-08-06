@@ -1,5 +1,6 @@
 [workspace]
-members = ["common/log", "components/restreamer"]
+resolver = "2"
+members = ["common/log", "common/serde", "common/api/*", "components/restreamer"]
 
 [profile.release]
 lto = "thin"

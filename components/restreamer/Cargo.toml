@@ -1,7 +1,7 @@
 [package]
 name = "ephyr-restreamer"
 version = "0.8.0+dev"
-edition = "2018"
+edition = "2021"
 authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 default-run = "ephyr-restreamer"
