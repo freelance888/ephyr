@@ -2,7 +2,7 @@
 name = "ephyr-serde"
 version = "0.1.0"
 edition = "2021"
-authors = ["Kai Ren <tyranron@gmail.com>"]
+authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 
 [features]

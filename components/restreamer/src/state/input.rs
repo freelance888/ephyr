@@ -9,13 +9,14 @@ pub use self::{
 use std::{borrow::Cow, mem};
 
 use derive_more::{Deref, Display, From, Into};
+use ephyr_serde::is_false;
 use juniper::{GraphQLObject, GraphQLScalar};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
-use crate::{serde::is_false, spec, state::Status};
+use crate::{spec, state::Status};
 
 /// Upstream source that a `Restream` receives a live stream from.
 #[derive(

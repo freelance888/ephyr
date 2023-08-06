@@ -49,21 +49,18 @@ COPY Cargo.toml Cargo.lock ./
 
 COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
 
-
-RUN mkdir -p common/api/google-drive/src/ \
- && touch common/api/google-drive/src/lib.rs \
- && mkdir -p common/api/allatra-video/src/ \
- && touch common/api/allatra-video/src/lib.rs \
- && mkdir -p common/log/src/ \
- && touch common/log/src/lib.rs \
- && mkdir -p common/serde/src/ \
- && touch common/serde/src/lib.rs \
- && mkdir -p components/restreamer/src/ \
- && touch components/restreamer/src/lib.rs components/restreamer/src/main.rs \
- && mkdir -p components/vod-meta-server/src/ \
- && touch components/vod-meta-server/src/lib.rs
-
-RUN cargo build -p ephyr-restreamer --lib --release
+# Create dummy files to build dependencies
+RUN for dir in common/api/google-drive \
+               common/api/allatra-video \
+               common/log \
+               common/serde \
+               components/restreamer \
+               components/vod-meta-server; do \
+      mkdir -p ${dir}/src \
+      && touch ${dir}/src/lib.rs; \
+    done \
+ && touch components/restreamer/src/main.rs \
+ && cargo build -p ephyr-restreamer --lib --release
 
 
 # Then, prepare Yarn dependencies to cache them in a separate Docker layer and
@@ -84,6 +81,7 @@ WORKDIR /tmp/ephyr/
 RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 COPY common/log/ ./common/log/
+COPY common/serde/ ./common/serde/
 COPY common/api/google-drive ./common/api/google-drive/
 COPY components/restreamer/ ./components/restreamer/
 

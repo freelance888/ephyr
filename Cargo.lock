@@ -1497,6 +1497,7 @@ dependencies = [
  "derive_more",
  "ephyr-api-google-drive",
  "ephyr-log",
+ "ephyr-serde",
  "futures",
  "futures-signals",
  "graphql_client",

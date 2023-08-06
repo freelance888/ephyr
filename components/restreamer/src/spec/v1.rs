@@ -2,9 +2,10 @@
 //! application's [`State`].
 //!
 //! [`State`]: state::State
+use ephyr_serde::is_false;
 use std::collections::HashSet;
 
-use crate::{file_manager::FileId, serde::is_false, state, types::UNumber};
+use crate::{file_manager::FileId, state, types::UNumber};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;

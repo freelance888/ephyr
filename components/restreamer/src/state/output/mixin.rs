@@ -2,11 +2,11 @@
 //! the destination.
 
 use crate::{
-    serde::is_false,
     spec,
     state::{output::Volume, Status},
 };
 use derive_more::{Deref, Display, From, Into};
+use ephyr_serde::is_false;
 use juniper::{
     GraphQLObject, GraphQLScalar, InputValue, ParseScalarResult,
     ParseScalarValue, ScalarToken, ScalarValue, Value,
