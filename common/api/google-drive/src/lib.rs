@@ -80,11 +80,13 @@ pub mod responses {
 
     impl FileInfo {
         /// Returns `true` if current object is directory otherwise `false`
+        #[must_use]
         pub fn is_dir(&self) -> bool {
             self.mime_type == "application/vnd.google-apps.folder"
         }
 
         /// Returns `true` if current object is video file otherwise `false`
+        #[must_use]
         pub fn is_video(&self) -> bool {
             self.mime_type.type_() == mime::VIDEO
         }
@@ -154,6 +156,7 @@ pub struct Files {
 
 impl Files {
     /// Get the details of a single file.
+    #[allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
     pub async fn get_file_info(
         &self,
         file_id: &str,
@@ -165,6 +168,7 @@ impl Files {
     }
 
     /// Get the list of files from a specific folder.
+    #[allow(clippy::missing_errors_doc)]
     pub async fn get_dir_content(
         &self,
         dir_id: &str,
@@ -174,7 +178,22 @@ impl Files {
         req_json::<responses::FileInfoList>(url).await
     }
 
+    /// Get the list of files from a specific folder.
+    #[allow(clippy::missing_errors_doc)]
+    pub async fn get_dir_videos(
+        &self,
+        dir_id: &str,
+    ) -> Result<Vec<responses::FileInfo>, Error> {
+        let resp = self.get_dir_content(dir_id).await?;
+        Ok(resp
+            .files
+            .into_iter()
+            .filter(responses::FileInfo::is_video)
+            .collect::<Vec<responses::FileInfo>>())
+    }
+
     /// Get file binary representation
+    #[allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
     pub async fn get_file_response(
         &self,
         file_id: &str,
@@ -201,14 +220,19 @@ impl GoogleDriveApi {
     /// [1]: https://developers.google.com/drive/api/reference/rest/v3
     pub const V3_URL: &'static str = "https://www.googleapis.com/drive/v3";
 
-    /// Create new instance of [GoogleDriveApi]
+    /// Create new instance of [`GoogleDriveApi`]
+    #[must_use]
     pub fn new(api_key: &str) -> Self {
         Self {
             api_key: api_key.to_string(),
         }
     }
 
-    /// Create new instance of [GoogleDriveApi] based on `GOOGLE_DRIVE_API_KEY` env value.
+    /// Create new instance of [`GoogleDriveApi`] based on `GOOGLE_DRIVE_API_KEY` env value.
+    ///
+    /// # Panics
+    /// If no `GOOGLE_DRIVE_API_KEY` env set.
+    #[must_use]
     pub fn new_from_env() -> Self {
         let api_key = env::var("GOOGLE_DRIVE_API_KEY").unwrap();
         Self { api_key }
@@ -217,6 +241,8 @@ impl GoogleDriveApi {
     /// Returns [Files] that encapsulate [V3 API files][1].
     ///
     /// [1]: https://developers.google.com/drive/api/reference/rest/v3/files
+    #[allow(clippy::missing_panics_doc)]
+    #[must_use]
     pub fn files(&self) -> Files {
         let mut api_url =
             Url::parse(&format!("{}/files", GoogleDriveApi::V3_URL)).unwrap();
@@ -247,6 +273,16 @@ mod spec {
             .await
             .unwrap();
         assert_eq!(res.files.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn retrieves_dir_videos() {
+        let res = GoogleDriveApi::new_from_env()
+            .files()
+            .get_dir_videos(DRIVE_FOLDER_ID)
+            .await
+            .unwrap();
+        assert_eq!(res.len(), 1);
     }
 
     #[tokio::test]

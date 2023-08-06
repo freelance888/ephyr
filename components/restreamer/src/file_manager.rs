@@ -638,18 +638,18 @@ impl NetworkByteSize {
 ///
 /// - If there is an issue with the Google Drive API request.
 /// - If the file is not a video.
-pub async fn get_file_from_gdrive(
+pub async fn get_video_file_from_gdrive(
     api_key: &str,
     file_id: &str,
 ) -> Result<spec::v1::PlaylistFileInfo, String> {
-    let file_info_response = GoogleDriveApi::new(api_key)
+    let file_info = GoogleDriveApi::new(api_key)
         .files()
         .get_file_info(file_id)
         .await
         .map_err(|e| format!("{e}"))?;
 
-    if file_info_response.is_video() {
-        Ok(file_info_response.into())
+    if file_info.is_video() {
+        Ok(file_info.into())
     } else {
         Err("This is not video file".to_string())
     }
@@ -666,14 +666,9 @@ pub async fn get_video_list_from_gdrive_folder(
 ) -> Result<Vec<spec::v1::PlaylistFileInfo>, String> {
     let response = GoogleDriveApi::new(api_key)
         .files()
-        .get_dir_content(folder_id)
+        .get_dir_videos(folder_id)
         .map_err(|e| format!("{e}"))
         .await?;
 
-    Ok(response
-        .files
-        .into_iter()
-        .filter(|f| f.is_video())
-        .map(Into::into)
-        .collect())
+    Ok(response.into_iter().map(Into::into).collect())
 }
