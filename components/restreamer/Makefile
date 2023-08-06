@@ -196,7 +196,7 @@ docker-image-tag = $(if $(call eq,$(tag),),$(IMAGE_TAG),$(tag))
 
 docker.image:
 	cd ../../ && \
-	docker build --network=host --force-rm --platform linux/amd64 \
+	docker build --network=host --force-rm \
 		$(if $(call eq,$(no-cache),yes),--no-cache --pull,) \
 		--file=components/restreamer/Dockerfile \
 		-t $(IMAGE_NAME):restreamer$(if \

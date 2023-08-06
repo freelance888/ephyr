@@ -96,8 +96,8 @@ RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 # Stage 'build-srs' prepares SRS distribution for the final stage.
 #
 
-# https://github.com/ossrs/srs/releases/tag/v4.0-r4
-FROM ossrs/srs:v4.0-r4 AS build-srs
+# https://github.com/ossrs/srs/releases/tag/v4.0-r5
+FROM ossrs/srs:v4.0-r5 AS build-srs
 
 
 
@@ -106,8 +106,8 @@ FROM ossrs/srs:v4.0-r4 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/5.1/ubuntu2004/Dockerfile
-FROM jrottenberg/ffmpeg:5.1-ubuntu2004 AS runtime
+# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/6.0/ubuntu2004/Dockerfile
+FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
 
