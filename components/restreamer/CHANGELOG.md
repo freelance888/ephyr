@@ -28,6 +28,8 @@ All user visible changes to this project will be documented in this file. This p
   - Show notification icon if there are some files not having stream info ([#415])
   - Compare stream information of files in a playlist and display an icon if they are not equal ([#415])
   - Compare stream information of endpoints with the stream info of the currently playing file from the playlist ([#415])
+- Input
+  - Added optional playback encoding ([#425])
 ### Miscellaneous
 - Update [FFmpeg] to 6.0  ([#375]);
 
@@ -42,6 +44,7 @@ All user visible changes to this project will be documented in this file. This p
 [#386]: /../../pull/386
 [#405]: /../../pull/405
 [#415]: /../../pull/415
+[#425]: /../../pull/425
 
 
 

@@ -1402,6 +1402,22 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "withPlaybackEncoding",
+            "description": "If need to set input playback encoding",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -1546,6 +1562,20 @@
               {
                 "name": "withHls",
                 "description": "Indicator whether the `Restream` should have an additional endpoint for serving a live stream via HLS.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": "false"
+              },
+              {
+                "name": "withPlaybackEncoding",
+                "description": "Indicator whether the `Restream` should encode playback output.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
