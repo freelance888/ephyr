@@ -74,6 +74,9 @@ tokio-stream = { version="0.1", features = ["fs"]}
 [dependencies.ephyr-api-google-drive]
     version = "0.1"
     path = "../../common/api/google-drive"
+[dependencies.ephyr-serde]
+    version = "0.1"
+    path = "../../common/serde"
 
 [build-dependencies]
 static-files = "0.2.3"

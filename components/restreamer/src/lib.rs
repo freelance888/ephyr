@@ -35,7 +35,6 @@ pub mod dvr;
 pub mod ffmpeg;
 pub mod file_manager;
 mod proc;
-pub mod serde;
 pub mod server;
 pub mod spec;
 pub mod srs;
