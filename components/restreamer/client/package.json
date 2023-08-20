@@ -21,10 +21,10 @@
     "lint": "prettier --check . && svelte-check"
   },
   "dependencies": {
-    "@apollo/client": "~3.7",
+    "@apollo/client": "~3.8",
     "@geoffcox/svelte-splitter": "^1.0.1",
     "clipboard-copy": "^4.0",
-    "graphql": "^16.5",
+    "graphql": "^16.7",
     "subscriptions-transport-ws": "^0.11",
     "svelte-apollo": "^0.5",
     "svelte-spa-router": "^3.2",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@tsconfig/svelte": "^4.0",
     "@types/lodash.clonedeep": "^4.5",
-    "@types/node": "^20.2",
+    "@types/node": "^20.5",
     "@types/uikit": "^3",
     "@types/webpack": "^5.28",
     "copy-webpack-plugin": "^11.0",
@@ -61,7 +61,7 @@
     "typedoc": "^0.24",
     "typescript": "^5.0",
     "webpack": "^5.85",
-    "webpack-cli": "^5.0",
+    "webpack-cli": "^5.1",
     "webpack-dev-server": "^4.15"
   }
 }
