@@ -15,6 +15,7 @@ use ephyr_log::{
     ChildCapture, ParsedMsg,
 };
 use futures::future::{self, FutureExt as _, TryFutureExt as _};
+use lazy_static::lazy_static;
 use regex::Regex;
 use smart_default::SmartDefault;
 use std::{
@@ -26,7 +27,6 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use structopt::lazy_static::lazy_static;
 use tokio::{fs, process::Command, sync::Mutex, time};
 
 /// [SRS] server spawnable as a separate process.

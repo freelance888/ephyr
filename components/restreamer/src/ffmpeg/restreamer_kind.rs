@@ -9,13 +9,13 @@ use ephyr_log::{
     tracing::{instrument, Instrument},
     ChildCapture, ParsedMsg, Span,
 };
+use lazy_static::lazy_static;
 use libc::pid_t;
 use regex::Regex;
 use std::{
     convert::TryInto, fmt::Display, os::unix::process::ExitStatusExt,
     path::Path, time::Duration,
 };
-use structopt::lazy_static::lazy_static;
 use tokio::{io, process::Command, sync::watch};
 use url::Url;
 use uuid::Uuid;
