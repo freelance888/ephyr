@@ -1,20 +1,19 @@
 //! CLI (command line interface).
 
+use clap::Parser;
+use ephyr_log::tracing;
 use std::{fmt, net::IpAddr, path::PathBuf, str::FromStr as _};
 
-use ephyr_log::tracing;
-use structopt::StructOpt;
-
 /// CLI (command line interface) of the re-streamer server.
-#[derive(Clone, Debug, StructOpt)]
-#[structopt(about = "RTMP re-streamer server")]
+#[derive(Clone, Debug, Parser)]
+#[command(about = "RTMP re-streamer server")]
 pub struct Opts {
     /// Debug mode of the server.
-    #[structopt(short, long, help = "Enables debug mode")]
+    #[arg(short, long, help = "Enables debug mode")]
     pub debug: bool,
 
     /// IP address for the server to listen client HTTP requests on.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_CLIENT_HTTP_IP",
         default_value = "0.0.0.0",
@@ -25,7 +24,7 @@ pub struct Opts {
     pub client_http_ip: IpAddr,
 
     /// Port for the server to listen client HTTP requests on.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_CLIENT_HTTP_PORT",
         default_value = "80",
@@ -35,7 +34,7 @@ pub struct Opts {
     pub client_http_port: u16,
 
     /// IP address for the server to listen RTMP callback HTTP requests on.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_CALLBACK_HTTP_IP",
         default_value = "127.0.0.1",
@@ -46,7 +45,7 @@ pub struct Opts {
     pub callback_http_ip: IpAddr,
 
     /// Port for the server to listen RTMP callback HTTP requests on.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_CALLBACK_HTTP_PORT",
         default_value = "8081",
@@ -57,7 +56,7 @@ pub struct Opts {
     pub callback_http_port: u16,
 
     /// Path to a file to persist the server's state in.
-    #[structopt(
+    #[arg(
         short,
         long,
         env = "EPHYR_RESTREAMER_STATE_PATH",
@@ -70,7 +69,7 @@ pub struct Opts {
     /// Path to [SRS] installation directory.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_SRS_PATH",
         default_value = "/usr/local/srs",
@@ -86,7 +85,7 @@ pub struct Opts {
     /// current working directory.
     ///
     /// [SRS]: https://github.com/ossrs/srs
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_SRS_HTTP_DIR",
         default_value = "/var/www/srs",
@@ -102,7 +101,7 @@ pub struct Opts {
     /// Path to [FFmpeg] binary.
     ///
     /// [FFmpeg]: https://ffmpeg.org
-    #[structopt(
+    #[arg(
         short,
         long,
         env = "FFMPEG_PATH",
@@ -115,7 +114,7 @@ pub struct Opts {
     /// Host to access the re-streamer server in public networks.
     ///
     /// If [`None`], then it will be auto-detected.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_PUBLIC_HOST",
         help = "Public host to access the server",
@@ -125,16 +124,16 @@ pub struct Opts {
     pub public_host: Option<String>,
 
     /// Verbosity level of the server logs.
-    #[structopt(
+    #[arg(
         short,
         long,
-        parse(try_from_str = tracing::Level::from_str),
+        value_parser(tracing::Level::from_str),
         help = "Logs verbosity level: INFO | DEBUG | TRACE"
     )]
     pub verbose: Option<tracing::Level>,
 
     /// Logs format for displaying.
-    #[structopt(
+    #[arg(
         short,
         long,
         env = "EPHYR_RESTREAMER_LOG_FORMAT",
@@ -143,7 +142,7 @@ pub struct Opts {
     pub log_format: Option<ephyr_log::LogFormat>,
 
     /// Path for local video files.
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_VIDEO_FILE_ROOT",
         default_value = "/tmp/ephyr",
@@ -156,7 +155,7 @@ pub struct Opts {
     /// IP address of [OpenTelemetry] collector server to send logs to.
     ///
     /// [OpenTelemetry]: https://OpenTelemetry.io
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_OTLP_COLLECTOR_IP",
         help = "IP of OTLP collector to send traces",
@@ -169,7 +168,7 @@ pub struct Opts {
     /// In our case as we send data with gRPC so port is typically `4317`.
     ///
     /// [OpenTelemetry]: https://OpenTelemetry.io
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_OTLP_COLLECTOR_PORT",
         help = "Port of OTLP collector to send traces",
@@ -180,7 +179,7 @@ pub struct Opts {
     /// Service name to collect traces to [OpenTelemetry] collector.
     ///
     /// [OpenTelemetry]: https://OpenTelemetry.io
-    #[structopt(
+    #[arg(
         long,
         env = "EPHYR_RESTREAMER_SERVICE_NAME",
         default_value = "ephyr-restreamer",
@@ -197,7 +196,7 @@ impl Opts {
     #[inline]
     #[must_use]
     pub fn from_args() -> Self {
-        <Self as StructOpt>::from_args()
+        <Self as Parser>::parse()
     }
 }
 
