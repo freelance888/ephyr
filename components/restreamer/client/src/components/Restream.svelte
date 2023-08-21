@@ -42,6 +42,7 @@
   import EqualizerIcon from './svg/EqualizerIcon.svelte';
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
   import FileInfo from './common/FileInfo.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -50,12 +51,15 @@
   const gqlClient = getClient();
   const info = subscribe(Info, { errorPolicy: 'all' });
 
+  const dispatch = createEventDispatcher();
+
   export let public_host = 'localhost';
   // TODO: rename 'value' to 'reStream'
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
   export let isFullView = false;
+  export let sortMode = false;
 
   let outputMutations = {
     DisableOutput,
@@ -102,10 +106,10 @@
 
   $: failoverInputsCount = value.input.src?.inputs?.length ?? 0;
 
-  let openRestreamModal = false;
-
   $: currentlyPlayingFile =
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+
+  let openRestreamModal = false;
 
   async function removeRestream() {
     try {
@@ -152,6 +156,11 @@
         JSON.stringify(JSON.parse(resp.data.export), null, 2)
       );
     }
+  }
+
+  function startDrag(e) {
+    e.preventDefault();
+    dispatch('dragStarted', false);
   }
 
   const getStreamErrorTooltip = (input) => {
@@ -298,6 +307,11 @@
       </button>
     </div>
 
+    <span
+      class="item-drag-zone uk-icon"
+      uk-icon="table"
+      on:mousedown={startDrag}
+    />
     <a
       data-testid="edit-input-modal:open"
       class="edit-input"
@@ -321,7 +335,7 @@
       with_label={false}
       show_controls={showControls}
     />
-    {#if isFailoverInput(value.input)}
+    {#if isFailoverInput(value.input) && !sortMode}
       {#each value.input.src.inputs as input, index}
         <Input
           {public_host}
@@ -348,28 +362,30 @@
       {/if}
     {/if}
 
-    <div class="uk-grid uk-grid-small">
-      {#each value.outputs as output}
-        <Output
-          {deleteConfirmation}
-          {enableConfirmation}
-          {public_host}
-          restream_id={value.id}
-          value={output}
-          hidden={hasActiveFilters &&
-            !reStreamOutputsFilters.includes(output.status)}
-          mutations={outputMutations}
-        />
-      {:else}
-        <div class="uk-flex-1">
-          <div class="uk-card-default uk-padding-small uk-text-center">
-            There are no Outputs for current Input. You can add it by clicking <b
-              >+OUTPUT</b
-            > button.
+    {#if !sortMode}
+      <div class="uk-grid uk-grid-small">
+        {#each value.outputs as output}
+          <Output
+            {deleteConfirmation}
+            {enableConfirmation}
+            {public_host}
+            restream_id={value.id}
+            value={output}
+            hidden={hasActiveFilters &&
+              !reStreamOutputsFilters.includes(output.status)}
+            mutations={outputMutations}
+          />
+        {:else}
+          <div class="uk-flex-1">
+            <div class="uk-card-default uk-padding-small uk-text-center">
+              There are no Outputs for current Input. You can add it by clicking <b
+                >+OUTPUT</b
+              > button.
+            </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 </template>
 
@@ -384,7 +400,7 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link
+      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone
         opacity: 1
 
     .uk-button-small
@@ -394,7 +410,7 @@
       opacity: 0
       transition: opacity .3s ease
 
-    .edit-input, .export-import, .uk-close
+    .edit-input, .export-import, .uk-close, .item-drag-zone
       position: absolute
       opacity: 0
       transition: opacity .3s ease
@@ -407,13 +423,18 @@
       transition: opacity .3s ease
       opacity: 0
 
-    .edit-input, .export-import
+    .edit-input, .export-import, .item-drag-zone
       color: #666
       outline: none
 
       &:hover
         text-decoration: none
         color: #444
+
+    .item-drag-zone
+      cursor: grab
+      left: -25px
+      top: -2px
 
     .edit-input
       left: -25px

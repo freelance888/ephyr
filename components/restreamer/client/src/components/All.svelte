@@ -23,6 +23,7 @@
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
+  import { dndzone } from 'svelte-dnd-action';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -60,6 +61,10 @@
       searchInOutputs
     );
   }
+
+  $: dragDisabled = true;
+
+  $: sortMode = false;
 
   const isReStreamVisible = (restream) => {
     const hasInputFilter = globalInputsFilters.includes(
@@ -204,6 +209,21 @@
       searchInOutputs = true;
     }
   }
+
+  function handleSort(e) {
+    console.log(e.detail.items);
+    allReStreams = e.detail.items;
+    dragDisabled = true;
+  }
+
+  function onDrop(e) {
+    handleSort(e);
+  }
+
+  function onDragStarted(e) {
+    dragDisabled = e.details;
+  }
+
 </script>
 
 <template>
@@ -353,28 +373,51 @@
         /> in outputs
       </label>
     </div>
+    <div>
+      <button
+        type="button"
+        on:click={() => sortMode = !sortMode}
+      >Sort mode</button>
+    </div>
   </section>
 
-  {#each allReStreams as restream}
-    <Restream
-      public_host={$info.data.info.publicHost}
-      value={restream}
-      hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
-      {globalOutputsFilters}
-      {files}
-    />
-  {:else}
-    <div
-      class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
-    >
-      <div>
-        There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+  <div
+    use:dndzone={{
+        items: allReStreams,
+        dropTargetClasses: ['drop-target'],
+        dragDisabled,
+        flipDurationMs: 200,
+      }}
+    on:consider={handleSort}
+    on:finalize={onDrop}
+  >
+    {#each allReStreams as restream (restream.id)}
+        <Restream
+          public_host={$info.data.info.publicHost}
+          on:dragStarted={onDragStarted}
+          sortMode={sortMode}
+          value={restream}
+          hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
+          {globalOutputsFilters}
+          {files}
+        />
+    {:else}
+      <div
+        class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
+      >
+        <div>
+          There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+        </div>
       </div>
-    </div>
-  {/each}
+    {/each}
+  </div>
 </template>
 
 <style lang="stylus">
+  :global(.drop-target) {
+    outline: none !important;
+  }
+
   .set-output-password
     margin-left: 10px;
     display: inline-block

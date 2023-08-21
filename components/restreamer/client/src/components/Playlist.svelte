@@ -31,8 +31,6 @@
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
   const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist);
 
-  const flipDurationMs = 200;
-
   export let restreamId;
   export let playlist;
   export let files = [];
@@ -270,7 +268,7 @@
         items: queue,
         dropTargetClasses: ['drop-target'],
         dragDisabled,
-        flipDurationMs,
+        flipDurationMs: 200,
       }}
       on:consider={handleSort}
       on:finalize={onDrop}
