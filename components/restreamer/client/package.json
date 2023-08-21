@@ -24,7 +24,7 @@
     "@apollo/client": "~3.8",
     "@geoffcox/svelte-splitter": "^1.0.1",
     "clipboard-copy": "^4.0",
-    "graphql": "^16.7",
+    "graphql": "^16.8",
     "subscriptions-transport-ws": "^0.11",
     "svelte-apollo": "^0.5",
     "svelte-spa-router": "^3.2",
