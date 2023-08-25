@@ -1,6 +1,9 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
+  import Fa from 'svelte-fa'
+  import { faEdit } from '@fortawesome/free-regular-svg-icons'
+
   import { getClient, mutation, subscribe } from 'svelte-apollo';
 
   import {
@@ -108,6 +111,11 @@
 
   $: currentlyPlayingFile =
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+
+  faEdit.prefix = 'far';
+  $: {
+    console.log(faEdit);
+  }
 
   let openRestreamModal = false;
 
@@ -308,17 +316,20 @@
     </div>
 
     <span
+      class:uk-hidden={!sortMode}
       class="item-drag-zone uk-icon"
       uk-icon="table"
       on:mousedown={startDrag}
     />
     <a
+      class:uk-hidden={sortMode}
       data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
+      title="Edit input"
       on:click|preventDefault={() => (openRestreamModal = true)}
     >
-      <i class="far fa-edit" title="Edit input" />
+      <Fa icon={faEdit}/>
     </a>
     {#if openRestreamModal}
       <RestreamModal
@@ -434,7 +445,6 @@
     .item-drag-zone
       cursor: grab
       left: -25px
-      top: -2px
 
     .edit-input
       left: -25px

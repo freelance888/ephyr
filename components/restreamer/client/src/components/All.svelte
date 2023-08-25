@@ -211,7 +211,6 @@
   }
 
   function handleSort(e) {
-    console.log(e.detail.items);
     allReStreams = e.detail.items;
     dragDisabled = true;
   }

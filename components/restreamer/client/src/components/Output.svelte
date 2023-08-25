@@ -1,4 +1,9 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faCircle } from '@fortawesome/free-solid-svg-icons';
+  import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
+  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons'
+
   import { mutation } from 'svelte-apollo';
   import { getMixPageUrl, showError } from '../utils/util';
 
@@ -131,30 +136,38 @@
     {/if}
 
     <div class="output-mixes">
-      <div class="uk-flex uk-margin-small-bottom">
+      <div class="uk-flex uk-flex-base-line">
         {#if value.status === 'ONLINE'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-circle"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-circle online" /></span
+            >
+            <Fa class='online' icon={faCircle}></Fa>
+          </span
           >
         {:else if value.status === 'INITIALIZING'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-dot-circle initializing" /></span
+            >
+            <Fa class='initializing' icon={faDotCircleSolid}></Fa>
+          </span
           >
         {:else if value.status === 'UNSTABLE'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-dot-circle unstable" /></span
+            >
+            <Fa class='unstable' icon={faDotCircleSolid}></Fa>
+          </span
           >
         {:else}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            ><i class="far fa-dot-circle offline" /></span
+            >
+             <Fa class='offline' icon={faDotCircle}></Fa>
+          </span
           >
         {/if}
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
@@ -269,9 +282,9 @@
 
   .status-indicator
     flex-shrink: 0
-  .fa-circle, .fa-dot-circle
+
+  .e-circle, .e-dot-circle
     font-size: 10px
-    margin-top: -1px
 
   a.dvr-link
     color: var(--primary-text-color)

@@ -160,6 +160,9 @@
     padding-bottom: 3px
     font-size: 12px
 
+  .uk-flex-base-line
+    align-items: baseline
+
   .uk-notification-message
     pointer-events: none
     font-size: 1rem
