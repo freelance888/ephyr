@@ -1,4 +1,6 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
   import { STREAM_ERROR, STREAM_WARNING } from '../../utils/constants';
 
   export let count;
@@ -7,6 +9,21 @@
   export let disabled;
   export let title;
   export let handleClick = () => {};
+
+  $: iconClass = getClass(status);
+
+  function getClass(s) {
+    let cls = 'info-icon';
+
+    if (s === STREAM_ERROR) {
+      cls += ' streams-errors';
+    } else if (s === STREAM_WARNING) {
+      cls += ' streams-warnings'
+    }
+
+    return cls;
+  }
+
 </script>
 
 <template>
@@ -32,11 +49,7 @@
       class:unstable={status === 'UNSTABLE'}
     >
       {#if [STREAM_ERROR, STREAM_WARNING].includes(status)}
-        <i
-          class:streams-errors={status === STREAM_ERROR}
-          class:streams-warnings={status === STREAM_WARNING}
-          class="fa fa-info-circle info-icon"
-        />
+        <Fa class={iconClass} icon={faInfoCircle}></Fa>
       {:else}
         <span class="circle" />
       {/if}
@@ -66,9 +79,9 @@
         background-color: #bdbdbd
         cursor: pointer
 
-  .streams-errors
+  :global(.streams-errors)
     color: var(--danger-color)
-  .streams-warnings
+  :global(.streams-warnings)
     color: var(--warning-color)
 
 </style>

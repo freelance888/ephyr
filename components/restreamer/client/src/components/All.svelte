@@ -1,4 +1,7 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+
   import { mutation } from 'svelte-apollo';
 
   import Confirm from './common/Confirm.svelte';
@@ -289,16 +292,16 @@
           <a
             href="/"
             class="set-output-password"
-            on:click|preventDefault={() => (openPasswordOutputModal = true)}
-          >
-            <i
-              class="fas"
-              class:fa-lock-open={!$info.data.info.passwordOutputHash}
-              class:fa-lock={!!$info.data.info.passwordOutputHash}
-              title="{!$info.data.info.passwordOutputHash
+            title="{!$info.data.info.passwordOutputHash
                 ? 'Set'
                 : 'Change'} output password"
-            />
+            on:click|preventDefault={() => (openPasswordOutputModal = true)}
+          >
+            {#if $info.data.info.passwordOutputHash}
+              <Fa icon={faLock}></Fa>
+            {:else}
+              <Fa icon={faLockOpen}></Fa>
+            {/if}
           </a>
           {#if openPasswordOutputModal}
             <PasswordModal

@@ -3,6 +3,9 @@
 <script lang="js">
   import Fa from 'svelte-fa'
   import { faEdit } from '@fortawesome/free-regular-svg-icons'
+  import { faPlus } from '@fortawesome/free-solid-svg-icons'
+  import { faShareSquare } from '@fortawesome/free-solid-svg-icons'
+
 
   import { getClient, mutation, subscribe } from 'svelte-apollo';
 
@@ -226,7 +229,7 @@
       on:click|preventDefault={openExportModal}
       title="Export/Import"
     >
-      <i class="fas fa-share-square" />
+      <Fa icon={faShareSquare} />
     </a>
 
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
@@ -311,7 +314,8 @@
         data-testid="add-output:open-modal-btn"
         on:click={openAddOutputModal}
       >
-        <i class="fas fa-plus" />&nbsp;<span>Output</span>
+        <Fa icon={faPlus} />
+        <span>Output</span>
       </button>
     </div>
 

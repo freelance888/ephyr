@@ -28,12 +28,6 @@
     }
   }
 
-  const params = {
-    style: {
-      visibility: 'hidden'
-    }
-  }
-
 </script>
 
 <template>
@@ -59,6 +53,7 @@
 
 <style lang="stylus" global>
   .toggle
+    display: inline-block
     input[type="checkbox"]
       display: none
 
