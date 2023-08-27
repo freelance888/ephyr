@@ -373,6 +373,35 @@ impl MutationsRoot {
         context.state().disable_restream(id)
     }
 
+    /// Reorder of restreams
+    fn change_order(
+        ids: Vec<RestreamId>,
+        context: &Context,
+    ) -> Result<bool, graphql::Error> {
+
+        let restreams = context.state().restreams.get_cloned();
+        // Checks for duplicates
+        if ids.iter().unique().count() != restreams.len() {
+            return Err(graphql::Error::new("DUPLICATES_IN_RESTREAMS")
+                .status(StatusCode::BAD_REQUEST)
+                .message(
+                    "Can't set order of restreams. List of identities contains duplicated values",
+                ));
+        }
+
+        let reordered = ids
+            .iter()
+            .filter_map(|id| {
+                restreams.iter().find(|r| r.id == *id)
+            })
+            .cloned()
+            .collect();
+
+        context.state().restreams.replace(reordered);
+
+        Ok(true)
+    }
+
     /// Set playlist to [`Restream`]
     ///
     /// ### Result

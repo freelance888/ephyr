@@ -10,6 +10,7 @@
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
+    UpdateOrder
   } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
@@ -35,6 +36,8 @@
     DisableAllOutputsOfRestreams
   );
 
+  const updateOrderMutation = mutation(UpdateOrder);
+
   export let state;
   export let info;
   export let files;
@@ -49,6 +52,7 @@
   let searchInInputs = searchText ? filterBy.includes('input') : true;
   let searchInOutputs = searchText ? filterBy.includes('output') : false;
 
+  $: orderedRestreams = undefined;
   $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
@@ -57,17 +61,19 @@
   $: hasActiveFilters = globalInputsFilters.length;
 
   $: {
-    allReStreams = getFilteredRestreams(
-      searchText,
-      $state.data.allRestreams,
-      searchInInputs,
-      searchInOutputs
-    );
+      allReStreams = getFilteredRestreams(
+        searchText,
+        orderedRestreams ?? $state.data.allRestreams,
+        searchInInputs,
+        searchInOutputs
+      );
   }
 
   $: dragDisabled = true;
 
-  $: sortMode = false;
+  $: inputsSortMode = false;
+
+  $: outputsSortMode = false;
 
   const isReStreamVisible = (restream) => {
     const hasInputFilter = globalInputsFilters.includes(
@@ -214,16 +220,31 @@
   }
 
   function handleSort(e) {
-    allReStreams = e.detail.items;
+    orderedRestreams = e.detail.items;
     dragDisabled = true;
   }
 
-  function onDrop(e) {
+  async function onDrop(e) {
+    const ids = e.detail.items.map((x) => x.id);
     handleSort(e);
+
+    await updateOrder(ids);
+    setTimeout(() => {
+      orderedRestreams = undefined;
+    }, 2000)
   }
 
   function onDragStarted(e) {
     dragDisabled = e.details;
+  }
+
+  async function updateOrder(ids) {
+    try {
+      const variables = { ids };
+      await updateOrderMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
   }
 
 </script>
@@ -378,8 +399,13 @@
     <div>
       <button
         type="button"
-        on:click={() => sortMode = !sortMode}
+        on:click={() => inputsSortMode = !inputsSortMode}
       >Sort mode</button>
+      <button
+        type="button"
+        on:click={() => outputsSortMode = !outputsSortMode}
+      >Output sort mode</button>
+
     </div>
   </section>
 
@@ -397,7 +423,8 @@
         <Restream
           public_host={$info.data.info.publicHost}
           on:dragStarted={onDragStarted}
-          sortMode={sortMode}
+          inputsSortMode={inputsSortMode}
+          outputsSortMode={outputsSortMode}
           value={restream}
           hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
           {globalOutputsFilters}

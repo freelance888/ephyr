@@ -5,7 +5,7 @@
   import { faEdit } from '@fortawesome/free-regular-svg-icons'
   import { faPlus } from '@fortawesome/free-solid-svg-icons'
   import { faShareSquare } from '@fortawesome/free-solid-svg-icons'
-
+  import { dndzone } from 'svelte-dnd-action';
 
   import { getClient, mutation, subscribe } from 'svelte-apollo';
 
@@ -65,7 +65,8 @@
   export let globalOutputsFilters;
   export let hidden = false;
   export let isFullView = false;
-  export let sortMode = false;
+  export let inputsSortMode = false;
+  export let outputsSortMode = false;
 
   let outputMutations = {
     DisableOutput,
@@ -115,9 +116,10 @@
   $: currentlyPlayingFile =
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
 
-  faEdit.prefix = 'far';
+  $: dragDisabled = true;
+
   $: {
-    console.log(faEdit);
+    console.log(outputsSortMode);
   }
 
   let openRestreamModal = false;
@@ -207,7 +209,7 @@
       <button
         type="button"
         class="uk-close"
-        hidden={isFullView}
+        hidden={isFullView || outputsSortMode || inputsSortMode}
         uk-close
         on:click={deleteConfirmation
           ? () => confirm(removeRestream)
@@ -224,7 +226,7 @@
 
     <a
       class="export-import"
-      hidden={isFullView}
+      hidden={isFullView || outputsSortMode || inputsSortMode}
       href="/"
       on:click|preventDefault={openExportModal}
       title="Export/Import"
@@ -249,7 +251,10 @@
       </span>
     {/if}
 
-    <div class="uk-float-right uk-flex uk-flex-middle">
+    <div
+      class:uk-hidden={inputsSortMode || outputsSortMode}
+      class="uk-float-right uk-flex uk-flex-middle"
+    >
       <a
         href={getFullStreamUrl(value.id)}
         hidden={isFullView}
@@ -320,13 +325,13 @@
     </div>
 
     <span
-      class:uk-hidden={!sortMode}
+      class:uk-hidden={!inputsSortMode}
       class="item-drag-zone uk-icon"
       uk-icon="table"
       on:mousedown={startDrag}
     />
     <a
-      class:uk-hidden={sortMode}
+      class:uk-hidden={inputsSortMode}
       data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
@@ -342,43 +347,56 @@
         restream={new RestreamModel(cloneDeep(value))}
       />
     {/if}
-    <Input
-      {public_host}
-      restream_id={value.id}
-      restream_key={value.key}
-      value={value.input}
-      with_label={false}
-      show_controls={showControls}
-    />
-    {#if isFailoverInput(value.input) && !sortMode}
-      {#each value.input.src.inputs as input, index}
-        <Input
-          {public_host}
-          restream_id={value.id}
-          restream_key={value.key}
-          value={input}
-          with_label={true}
-          show_controls={showControls}
-          show_move_up={failoverInputsCount > 1 && index !== 0}
-          show_up_confirmation={failoverInputsCount > 1 && index === 1}
-          show_move_down={failoverInputsCount > 1 &&
-            index !== failoverInputsCount - 1}
-        />
-      {/each}
-      {#if currentlyPlayingFile}
-        <div class="uk-flex uk-flex-middle currently-playing-file">
-          <div class="playlist-file-icon">
-            <EqualizerIcon />
+
+    {#if !outputsSortMode}
+      <Input
+        {public_host}
+        restream_id={value.id}
+        restream_key={value.key}
+        value={value.input}
+        with_label={false}
+        show_controls={showControls}
+      />
+      {#if isFailoverInput(value.input) && !inputsSortMode}
+        {#each value.input.src.inputs as input, index}
+          <Input
+            {public_host}
+            restream_id={value.id}
+            restream_key={value.key}
+            value={input}
+            with_label={true}
+            show_controls={showControls}
+            show_move_up={failoverInputsCount > 1 && index !== 0}
+            show_up_confirmation={failoverInputsCount > 1 && index === 1}
+            show_move_down={failoverInputsCount > 1 &&
+              index !== failoverInputsCount - 1}
+          />
+        {/each}
+        {#if currentlyPlayingFile}
+          <div class="uk-flex uk-flex-middle currently-playing-file">
+            <div class="playlist-file-icon">
+              <EqualizerIcon />
+            </div>
+            <div class="file-info">
+              <FileInfo file={currentlyPlayingFile} />
+            </div>
           </div>
-          <div class="file-info">
-            <FileInfo file={currentlyPlayingFile} />
-          </div>
-        </div>
+        {/if}
       {/if}
     {/if}
 
-    {#if !sortMode}
-      <div class="uk-grid uk-grid-small">
+    {#if !inputsSortMode}
+      <div class="uk-grid uk-grid-small"
+        use:dndzone={{
+        items: value.outputs,
+        dropTargetClasses: ['drop-target'],
+        dragDisabled,
+        flipDurationMs: 200,
+      }}
+           on:consider={handleSort}
+           on:finalize={onDrop}
+
+      >
         {#each value.outputs as output}
           <Output
             {deleteConfirmation}
@@ -405,6 +423,10 @@
 </template>
 
 <style lang="stylus">
+  :global(.drop-target) {
+    outline: none !important;
+  }
+
   .uk-section
     position: relative
     margin-top: 20px

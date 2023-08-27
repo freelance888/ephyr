@@ -80,6 +80,10 @@ mutation Import($restream_id: RestreamId, $replace: Boolean!, $spec: String!) {
     import(restreamId: $restream_id, replace: $replace, spec: $spec)
 }
 
+mutation UpdateOrder($ids: [RestreamId!]!) {
+    changeOrder(ids:$ids)
+}
+
 mutation SetRestream(
     $key: RestreamKey!
     $url: InputSrcUrl
