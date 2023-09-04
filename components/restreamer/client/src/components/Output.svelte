@@ -1,5 +1,6 @@
 <script lang="js">
   import Fa from 'svelte-fa';
+  import { faEdit } from '@fortawesome/free-regular-svg-icons'
   import { faCircle } from '@fortawesome/free-solid-svg-icons';
   import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
   import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons'
@@ -15,6 +16,7 @@
   import Mixin from './Mixin.svelte';
   import RecordsModal from '../modals/RecordsModal.svelte';
   import Url from './common/Url.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let public_host;
   export let value;
@@ -24,6 +26,9 @@
   export let enableConfirmation;
   export let mutations;
   export let isReadOnly = false;
+  export let outputsSortMode = false;
+
+  const dispatch = createEventDispatcher();
 
   const disableOutputMutation = mutations.DisableOutput
     ? mutation(mutations.DisableOutput)
@@ -70,6 +75,13 @@
       value.mixins.map((m) => m.src)
     );
   }
+
+  function outputStartDrag(e) {
+    e.preventDefault();
+    dispatch('outputDragStarted', false);
+  }
+
+
 </script>
 
 <template>
@@ -108,12 +120,20 @@
 
     {#if !isReadOnly}
       <div class="left-buttons-area" />
+      <span
+        class:uk-hidden={!outputsSortMode}
+        class="item-drag-zone uk-icon"
+        uk-icon="table"
+        on:mousedown={outputStartDrag}
+      />
       <a
+        class:uk-hidden={outputsSortMode}
         class="edit-output"
         href="/"
+        title="Edit output"
         on:click|preventDefault={openEditOutputModal}
       >
-        <i class="far fa-edit" title="Edit output" />
+        <Fa icon={faEdit} />
       </a>
 
       <div>

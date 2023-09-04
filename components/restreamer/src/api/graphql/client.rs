@@ -38,6 +38,7 @@ use crate::{
     types::UNumber,
 };
 use url::Url;
+use crate::state::Output;
 
 /// Schema of `Restreamer` app.
 pub type Schema =
@@ -379,9 +380,8 @@ impl MutationsRoot {
         context: &Context,
     ) -> Result<bool, graphql::Error> {
 
-        let restreams = context.state().restreams.get_cloned();
-        // Checks for duplicates
-        if ids.iter().unique().count() != restreams.len() {
+        // Check for duplicates
+        if ids.iter().unique().count() != ids.iter().count() {
             return Err(graphql::Error::new("DUPLICATES_IN_RESTREAMS")
                 .status(StatusCode::BAD_REQUEST)
                 .message(
@@ -389,7 +389,8 @@ impl MutationsRoot {
                 ));
         }
 
-        let reordered = ids
+        let mut restreams = context.state().restreams.lock_mut();
+        let reordered: Vec<Restream> = ids
             .iter()
             .filter_map(|id| {
                 restreams.iter().find(|r| r.id == *id)
@@ -397,7 +398,62 @@ impl MutationsRoot {
             .cloned()
             .collect();
 
-        context.state().restreams.replace(reordered);
+        // Check for non existing ids
+        if ids.iter().unique().count() != reordered.iter().count() {
+            return Err(graphql::Error::new("NON_EXISTING_ID")
+                .status(StatusCode::BAD_REQUEST)
+                .message(
+                    "Can't set order of restreams. One or more identities were not found",
+                ));
+        }
+
+        *restreams = reordered;
+
+        Ok(true)
+    }
+
+    /// Reorder of outputs
+    fn change_order_of_outputs(
+        restream_id: RestreamId,
+        ids: Vec<OutputId>,
+        context: &Context,
+    ) -> Result<bool, graphql::Error> {
+
+        // Check for duplicates
+        if ids.iter().unique().count() != ids.iter().count() {
+            return Err(graphql::Error::new("DUPLICATES_IN_OUTPUTS")
+                .status(StatusCode::BAD_REQUEST)
+                .message(
+                    "Can't set order of outputs. List of identities contains duplicated values",
+                ));
+        }
+
+        let mut restreams = context.state().restreams.lock_mut();
+        let outputs =
+            &mut restreams.iter_mut().find(|r| r.id == restream_id).ok_or(
+                graphql::Error::new("RESTREAM_NOT_FOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&format!("Restream {restream_id} not found")
+            ))?.outputs;
+
+        let reordered: Vec<Output> = ids
+            .iter()
+            .filter_map(|id| {
+                outputs.iter().find(|r| r.id == *id)
+            })
+            .cloned()
+            .collect();
+
+        // Check for non existing ids
+        if ids.iter().unique().count() != reordered.iter().count() {
+            return Err(graphql::Error::new("NON_EXISTING_ID")
+                .status(StatusCode::BAD_REQUEST)
+                .message(
+                    "Can't set order of outputs. One or more identities were not found",
+                ));
+        }
+
+        let _ = std::mem::replace(outputs, reordered);
 
         Ok(true)
     }

@@ -82,6 +82,10 @@
     errorPolicy: 'all',
   });
 
+  $: orderedOutputs = undefined;
+
+  $: outputs = orderedOutputs ?? value.outputs;
+
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
     : true;
@@ -171,9 +175,37 @@
     }
   }
 
-  function startDrag(e) {
+  function intputStartDrag(e) {
     e.preventDefault();
-    dispatch('dragStarted', false);
+    dispatch('inputsDragStarted', false);
+  }
+
+  function outputsHandleSort(e) {
+    orderedOutputs = e.detail.items;
+    dragDisabled = true;
+  }
+
+  async function onDropOutput(e) {
+    // const ids = e.detail.items.map((x) => x.id);
+    outputsHandleSort(e);
+    //
+    // await updateOrder(ids);
+    // setTimeout(() => {
+    //   orderedRestreams = undefined;
+    // }, 2000)
+  }
+
+  function onOutputDragStarted(e) {
+    dragDisabled = e.details;
+  }
+
+  async function updateOrder(ids) {
+    // try {
+    //   const variables = { ids };
+    //   await updateOrderMutation({ variables });
+    // } catch (e) {
+    //   showError(e.message);
+    // }
   }
 
   const getStreamErrorTooltip = (input) => {
@@ -328,10 +360,10 @@
       class:uk-hidden={!inputsSortMode}
       class="item-drag-zone uk-icon"
       uk-icon="table"
-      on:mousedown={startDrag}
+      on:mousedown={intputStartDrag}
     />
     <a
-      class:uk-hidden={inputsSortMode}
+      class:uk-hidden={inputsSortMode || outputsSortMode}
       data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
@@ -388,20 +420,22 @@
     {#if !inputsSortMode}
       <div class="uk-grid uk-grid-small"
         use:dndzone={{
-        items: value.outputs,
+        items: outputs,
+        type: 'output',
         dropTargetClasses: ['drop-target'],
         dragDisabled,
         flipDurationMs: 200,
       }}
-           on:consider={handleSort}
-           on:finalize={onDrop}
-
+           on:consider={outputsHandleSort}
+           on:finalize={onDropOutput}
       >
-        {#each value.outputs as output}
+        {#each outputs as output (output.id)}
           <Output
             {deleteConfirmation}
             {enableConfirmation}
             {public_host}
+            {outputsSortMode}
+            on:outputDragStarted={onOutputDragStarted}
             restream_id={value.id}
             value={output}
             hidden={hasActiveFilters &&

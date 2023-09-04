@@ -219,22 +219,23 @@
     }
   }
 
-  function handleSort(e) {
+  function handleInputsSort(e) {
     orderedRestreams = e.detail.items;
     dragDisabled = true;
   }
 
-  async function onDrop(e) {
-    const ids = e.detail.items.map((x) => x.id);
-    handleSort(e);
+  async function onInputDrop(e) {
+    handleInputsSort(e);
 
+    const ids = e.detail.items.map((x) => x.id);
     await updateOrder(ids);
+
     setTimeout(() => {
       orderedRestreams = undefined;
     }, 2000)
   }
 
-  function onDragStarted(e) {
+  function onInputsDragStarted(e) {
     dragDisabled = e.details;
   }
 
@@ -412,17 +413,18 @@
   <div
     use:dndzone={{
         items: allReStreams,
+        type: 'input',
         dropTargetClasses: ['drop-target'],
         dragDisabled,
         flipDurationMs: 200,
       }}
-    on:consider={handleSort}
-    on:finalize={onDrop}
+    on:consider={handleInputsSort}
+    on:finalize={onInputDrop}
   >
     {#each allReStreams as restream (restream.id)}
         <Restream
           public_host={$info.data.info.publicHost}
-          on:dragStarted={onDragStarted}
+          on:inputsDragStarted={onInputsDragStarted}
           inputsSortMode={inputsSortMode}
           outputsSortMode={outputsSortMode}
           value={restream}
