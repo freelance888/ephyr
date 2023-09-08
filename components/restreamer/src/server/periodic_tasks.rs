@@ -17,11 +17,8 @@ use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
 
-async fn run_periodic<F, Fut>(
-    state: State,
-    interval: time::Duration,
-    mut func: F,
-) where
+fn run_periodic<F, Fut>(state: State, interval: time::Duration, mut func: F)
+where
     F: FnMut(State) -> Fut + Send + 'static,
     Fut: Future<Output = Result<(), anyhow::Error>> + Send,
 {
@@ -80,22 +77,19 @@ pub async fn run(state: State) -> Result<(), Failure> {
             let mut rx_last: f64 = 0.0;
             update_server_statistics(state, &mut tx_last, &mut rx_last).await
         },
-    )
-    .await;
+    );
 
     run_periodic(
         state.clone(),
         time::Duration::from_secs(2),
         |state| async move { sync_stream_info(state) },
-    )
-    .await;
+    );
 
     run_periodic(
         state.clone(),
         time::Duration::from_secs(2),
         |state| async move { start_pending_downloads(state) },
-    )
-    .await;
+    );
 
     Ok(())
 }

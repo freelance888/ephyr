@@ -265,7 +265,7 @@ impl fmt::Debug for Input {
             .field("audio", &"Arc<Mutex<AudioHandler>>")
             .field("conn", &self.conn)
             .field("is_conn_unrecoverable", &self.is_conn_unrecoverable)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 

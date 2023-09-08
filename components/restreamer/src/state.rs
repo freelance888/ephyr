@@ -95,6 +95,10 @@ impl State {
     /// # Errors
     ///
     /// If [`State`] file exists, but fails to be parsed.
+    ///
+    /// ## Panics
+    ///
+    /// If state json file cannot be deserialized.
     pub async fn try_new<P: AsRef<Path>>(
         file: P,
     ) -> Result<Self, anyhow::Error> {
