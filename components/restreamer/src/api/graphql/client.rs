@@ -197,32 +197,27 @@ impl MutationsRoot {
             Some(b) => b,
         };
 
-        let (input_key, input_src) = if backup_inputs.is_some()
-            || file_id.is_some()
-        {
-            (
-                InputKey::playback(),
-                Some(spec::v1::InputSrc::FailoverInputs(
-                    vec![spec::v1::Input::new_primary(src)]
-                        .into_iter()
-                        .chain(
-                            backups
-                                .into_iter()
-                                .map(spec::v1::Input::new_backup),
-                        )
-                        .chain(
-                            file_id
-                                .map_or_else(Vec::new, |id| {
-                                    vec![spec::v1::Input::new_file_backup(id)]
-                                })
-                                .into_iter(),
-                        )
-                        .collect(),
-                )),
-            )
-        } else {
-            (InputKey::primary(), src.map(spec::v1::InputSrc::RemoteUrl))
-        };
+        let (input_key, input_src) =
+            if backup_inputs.is_some() || file_id.is_some() {
+                (
+                    InputKey::playback(),
+                    Some(spec::v1::InputSrc::FailoverInputs(
+                        vec![spec::v1::Input::new_primary(src)]
+                            .into_iter()
+                            .chain(
+                                backups
+                                    .into_iter()
+                                    .map(spec::v1::Input::new_backup),
+                            )
+                            .chain(file_id.map_or_else(Vec::new, |id| {
+                                vec![spec::v1::Input::new_file_backup(id)]
+                            }))
+                            .collect(),
+                    )),
+                )
+            } else {
+                (InputKey::primary(), src.map(spec::v1::InputSrc::RemoteUrl))
+            };
 
         let mut endpoints = vec![spec::v1::InputEndpoint {
             kind: InputEndpointKind::Rtmp,
