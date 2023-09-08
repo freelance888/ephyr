@@ -26,7 +26,7 @@ itertools = "0.11"
 hex = "0.4"
 humantime = "2.1"
 libc = "0.2"
-nix = "0.27"
+nix = { version = "0.27", features = ["signal"] }
 num_cpus = "1.14"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
