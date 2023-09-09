@@ -45,6 +45,7 @@ pub mod stream_statistics;
 pub mod teamspeak;
 pub mod types;
 
+use itertools::Itertools;
 use std::any::Any;
 
 use ephyr_log::tracing;
@@ -80,4 +81,26 @@ pub fn display_panic<'a>(err: &'a (dyn Any + Send + 'static)) -> &'a str {
         return s.as_str();
     }
     "Box<Any>"
+}
+
+/// This way of reordering prevent us to loose data in case if count of ids is less that count
+/// of items
+pub fn reorder_items<T, F, Id>(items: &Vec<T>, ids: &Vec<Id>, get_id: F) -> Vec<T>
+where
+    T: Clone,
+    Id: Eq,
+    F: Fn(&T) -> Id,
+{
+    items
+        .iter()
+        .map(|item| {
+            let pos = ids.iter().position(|id| *id == get_id(&item));
+            match pos {
+                Some(p) => (p, item),
+                None => (usize::MAX, item),
+            }
+        })
+        .sorted_by(|a, b| a.0.cmp(&b.0))
+        .map(|x| x.1.clone())
+        .collect()
 }
