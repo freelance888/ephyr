@@ -4,7 +4,8 @@ import { SubscriptionClient } from 'subscriptions-transport-ws';
 import { ApolloClient } from '@apollo/client/core';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { InMemoryCache } from '@apollo/client/cache';
-
+import isEqual from 'lodash/isEqual';
+import take from 'lodash/take';
 /**
  * Displays an error UI popup with the given error `message`.
  *
@@ -144,3 +145,7 @@ export const sanitizeTooltip = (message) => message.replaceAll(':', ' - ');
 export const isFullGDrivePath = (id: string): boolean => {
   return id.startsWith('https://drive.google.com');
 };
+
+export const isArrayStartWithAnother = (arr1: [], arr2: []) => {
+  return isEqual(arr1, take(arr2, arr1.length));
+}

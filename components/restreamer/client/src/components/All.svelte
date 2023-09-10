@@ -6,7 +6,12 @@
 
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
-  import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
+  import {
+    escapeRegExp,
+    isArrayStartWithAnother,
+    isFailoverInput,
+    showError
+  } from '../utils/util';
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
@@ -27,8 +32,6 @@
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
-  import unique from 'lodash/uniq';
-  import isEqual from 'lodash/isEqual';
   import { dndzone } from 'svelte-dnd-action';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
@@ -68,9 +71,10 @@
       const storedIds = s.data.allRestreams.map(x => x.id);
       const orderedIds = orderedRestreams.map(x => x.id);
 
-      if (isEqual(storedIds, orderedIds)) {
+      if (isArrayStartWithAnother(orderedIds, storedIds)) {
         orderWasUpdated = true;
         orderedRestreams = undefined;
+
         console.log('ALL RESTREAMS: ', s.data.allRestreams);
       }
     }
@@ -255,6 +259,7 @@
   }
 
   async function updateOrder(ids) {
+
     try {
       const variables = { ids };
       await updateOrderMutation({ variables });
@@ -394,34 +399,45 @@
       uk-close
       on:click={() => (searchText = '')}
     />
-    <div class="uk-margin-small-top">
-      <label>
-        <input
-          class="uk-checkbox"
-          bind:checked={searchInInputs}
-          on:change={onChangeSearchInInput}
-          type="checkbox"
-        /> in inputs
-      </label>
-      <label>
-        <input
-          class="uk-checkbox uk-margin-small-left"
-          bind:checked={searchInOutputs}
-          on:change={onChangeSearchInOutputs}
-          type="checkbox"
-        /> in outputs
-      </label>
-    </div>
-    <div>
-      <button
-        type="button"
-        on:click={() => inputsSortMode = !inputsSortMode}
-      >Sort mode</button>
-      <button
-        type="button"
-        on:click={() => outputsSortMode = !outputsSortMode}
-      >Output sort mode</button>
-
+    <div class="uk-margin-small-top uk-grid uk-grid-small uk-flex-middle">
+      <div>
+        <label>
+          <input
+            class="uk-checkbox"
+            bind:checked={searchInInputs}
+            on:change={onChangeSearchInInput}
+            type="checkbox"
+          /> in inputs
+        </label>
+        <label>
+          <input
+            class="uk-checkbox uk-margin-small-left"
+            bind:checked={searchInOutputs}
+            on:change={onChangeSearchInOutputs}
+            type="checkbox"
+          /> in outputs
+        </label>
+      </div>
+      <div class='uk-margin-auto-left'>
+        <button
+          class:uk-hidden={inputsSortMode || outputsSortMode}
+          class='uk-button uk-button-default uk-button-small'
+          type="button"
+          on:click={() => inputsSortMode = !inputsSortMode}
+        >Inputs sort mode</button>
+        <button
+          class:uk-hidden={inputsSortMode || outputsSortMode}
+          class='uk-button uk-button-default uk-button-small'
+          type="button"
+          on:click={() => outputsSortMode = !outputsSortMode}
+        >Outputs sort mode</button>
+        <button
+          class='uk-button uk-button-secondary uk-button-small'
+          class:uk-hidden={!inputsSortMode && !outputsSortMode}
+          type="button"
+          on:click={() => {inputsSortMode = false; outputsSortMode = false}}
+        >Close sort mode</button>
+      </div>
     </div>
   </section>
 

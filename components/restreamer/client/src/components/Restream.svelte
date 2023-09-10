@@ -186,10 +186,10 @@
   }
 
   async function onDropOutput(e) {
-    // const ids = e.detail.items.map((x) => x.id);
+    const ids = e.detail.items.map((x) => x.id);
     outputsHandleSort(e);
-    //
-    // await updateOrder(ids);
+
+    await updateOrder(ids);
     // setTimeout(() => {
     //   orderedRestreams = undefined;
     // }, 2000)
