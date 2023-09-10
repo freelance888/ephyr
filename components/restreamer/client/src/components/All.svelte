@@ -27,6 +27,8 @@
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
+  import unique from 'lodash/uniq';
+  import isEqual from 'lodash/isEqual';
   import { dndzone } from 'svelte-dnd-action';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
@@ -60,6 +62,20 @@
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
 
+  onDestroy(
+    state.subscribe(s => {
+    if (s.data && orderedRestreams && !orderWasUpdated) {
+      const storedIds = s.data.allRestreams.map(x => x.id);
+      const orderedIds = orderedRestreams.map(x => x.id);
+
+      if (isEqual(storedIds, orderedIds)) {
+        orderWasUpdated = true;
+        orderedRestreams = undefined;
+        console.log('ALL RESTREAMS: ', s.data.allRestreams);
+      }
+    }
+  }));
+
   $: {
       allReStreams = getFilteredRestreams(
         searchText,
@@ -68,6 +84,8 @@
         searchInOutputs
       );
   }
+
+  $: orderWasUpdated = true;
 
   $: dragDisabled = true;
 
@@ -220,23 +238,20 @@
   }
 
   function handleInputsSort(e) {
-    orderedRestreams = e.detail.items;
     dragDisabled = true;
+    orderedRestreams = e.detail.items;
   }
 
   async function onInputDrop(e) {
+    const ids = e.detail.items.map((x) => x.id);
     handleInputsSort(e);
 
-    const ids = e.detail.items.map((x) => x.id);
+    orderWasUpdated = false;
     await updateOrder(ids);
-
-    setTimeout(() => {
-      orderedRestreams = undefined;
-    }, 2000)
   }
 
   function onInputsDragStarted(e) {
-    dragDisabled = e.details;
+    dragDisabled = false;
   }
 
   async function updateOrder(ids) {
@@ -416,11 +431,13 @@
         type: 'input',
         dropTargetClasses: ['drop-target'],
         dragDisabled,
+        morphDisabled: true,
         flipDurationMs: 200,
       }}
     on:consider={handleInputsSort}
     on:finalize={onInputDrop}
   >
+
     {#each allReStreams as restream (restream.id)}
         <Restream
           public_host={$info.data.info.publicHost}

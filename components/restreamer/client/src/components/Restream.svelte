@@ -5,6 +5,10 @@
   import { faEdit } from '@fortawesome/free-regular-svg-icons'
   import { faPlus } from '@fortawesome/free-solid-svg-icons'
   import { faShareSquare } from '@fortawesome/free-solid-svg-icons'
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
+
+  '@fortawesome/free-regular-svg-icons'
+  '@fortawesome/free-regular-svg-icons'
   import { dndzone } from 'svelte-dnd-action';
 
   import { getClient, mutation, subscribe } from 'svelte-apollo';
@@ -121,10 +125,6 @@
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
 
   $: dragDisabled = true;
-
-  $: {
-    console.log(outputsSortMode);
-  }
 
   let openRestreamModal = false;
 
@@ -270,13 +270,15 @@
       <span class="section-label"
         >{value.label ?? ''}
         {#key streamsErrorsTooltip || streamsDiffTooltip}
-          <span>
-            <i
-              class="fa fa-info-circle info-icon"
-              class:has-error={!!streamsErrorsTooltip}
-              class:has-warning={!!streamsDiffTooltip}
-              class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
-              uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
+          <span
+            class='info-icon'
+            class:has-error={!!streamsErrorsTooltip}
+            class:has-warning={!!streamsDiffTooltip}
+            class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
+            uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
+          >
+            <Fa faInfoCircle
+              icon={faInfoCircle}
             />
           </span>
         {/key}
@@ -330,19 +332,21 @@
 
             <Confirm let:confirm>
               <Toggle
-                data-testid="toggle-all-outputs-status"
-                id="all-outputs-toggle-{value.id}"
+                data-testid='toggle-all-outputs-status'
+                id='all-outputs-toggle-{value.id}'
                 checked={allEnabled}
-                title="{toggleStatusText} all outputs"
+                title='{toggleStatusText} all outputs'
                 confirmFn={enableConfirmation ? confirm : undefined}
                 onChangeFn={toggleAllOutputs}
               />
-              <span slot="title"
-                >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
-              >
-              <span slot="description">Are you sure about it?</span>
-              <span slot="confirm">{toggleStatusText}</span>
-            </Confirm>
+            <span slot='title'
+            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+            >
+            <span slot='description'>Are you sure about it?</span>
+            <span slot='confirm'>{toggleStatusText}</span>
+          </Confirm>
+
+
           </span>
         {/if}
       </div>
@@ -423,6 +427,7 @@
         items: outputs,
         type: 'output',
         dropTargetClasses: ['drop-target'],
+        dropFromOthersDisabled: true,
         dragDisabled,
         flipDurationMs: 200,
       }}

@@ -43,6 +43,7 @@
   export let show_move_down;
   export let show_up_confirmation;
 
+
   const backupFile = subscribe(SingleFile, {
     variables: { id: endpoint.fileId },
     errorPolicy: 'all'
