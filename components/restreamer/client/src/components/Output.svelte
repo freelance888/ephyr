@@ -246,6 +246,7 @@
       width: calc((100% - (20px * 2)) / 2)
       @media screen and (max-width: 700px)
         width: 100%
+
     &.hidden
       display: none
 
@@ -311,5 +312,10 @@
   .output-mixes
     width: calc(100% - 56px);
     margin-left: 4px
+
+  .item-drag-zone
+    margin-right: 4px
+    cursor: grab
+
 
 </style>
