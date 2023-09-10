@@ -374,7 +374,7 @@ impl MutationsRoot {
     }
 
     /// Reorder of restreams
-    fn change_order(
+    fn change_inputs_order(
         ids: Vec<RestreamId>,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
@@ -386,7 +386,7 @@ impl MutationsRoot {
     }
 
     /// Reorder of outputs
-    fn change_order_of_outputs(
+    fn change_outputs_order(
         restream_id: RestreamId,
         ids: Vec<OutputId>,
         context: &Context,

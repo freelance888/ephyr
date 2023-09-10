@@ -28,10 +28,13 @@
     CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
-  import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
+  import { getFullStreamUrl, isArrayStartWithAnother, isFailoverInput, showError } from '../utils/util';
   import { statusesList } from '../utils/constants';
 
   import { exportModal, outputModal } from '../stores';
+  import {
+    UpdateOutputsOrder
+  } from '../../api/client.graphql'
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -81,6 +84,8 @@
     TuneSidechain,
   };
 
+  const updateOutputsOrderMutation = mutation(UpdateOutputsOrder);
+
   const playingFile = subscribe(CurrentlyPlayingFile, {
     variables: { id: value.id },
     errorPolicy: 'all',
@@ -125,6 +130,20 @@
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
 
   $: dragDisabled = true;
+
+  $: orderWasUpdated = true;
+
+  $: if (value.outputs && orderedOutputs && !orderWasUpdated) {
+      const storedIds = value.outputs.map(x => x.id);
+      const orderedIds = orderedOutputs.map(x => x.id);
+
+      if (isArrayStartWithAnother(orderedIds, storedIds)) {
+        orderWasUpdated = true;
+        orderedOutputs = undefined;
+
+        console.log('ALL OUTPUTS: ', value.outputs);
+      }
+  }
 
   let openRestreamModal = false;
 
@@ -189,23 +208,21 @@
     const ids = e.detail.items.map((x) => x.id);
     outputsHandleSort(e);
 
-    await updateOrder(ids);
-    // setTimeout(() => {
-    //   orderedRestreams = undefined;
-    // }, 2000)
+    orderWasUpdated = false;
+    await updateOutputsOrder(ids);
   }
 
   function onOutputDragStarted(e) {
     dragDisabled = e.details;
   }
 
-  async function updateOrder(ids) {
-    // try {
-    //   const variables = { ids };
-    //   await updateOrderMutation({ variables });
-    // } catch (e) {
-    //   showError(e.message);
-    // }
+  async function updateOutputsOrder(ids) {
+    try {
+      const variables = { ids, restreamId: value.id };
+      await updateOutputsOrderMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
   }
 
   const getStreamErrorTooltip = (input) => {

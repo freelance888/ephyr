@@ -81,7 +81,6 @@
     dispatch('outputDragStarted', false);
   }
 
-
 </script>
 
 <template>

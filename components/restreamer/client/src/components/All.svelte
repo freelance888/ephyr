@@ -15,7 +15,7 @@
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
-    UpdateOrder
+    UpdateInputsOrder
   } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
@@ -41,7 +41,7 @@
     DisableAllOutputsOfRestreams
   );
 
-  const updateOrderMutation = mutation(UpdateOrder);
+  const updateInputsOrderMutation = mutation(UpdateInputsOrder);
 
   export let state;
   export let info;
@@ -262,7 +262,7 @@
 
     try {
       const variables = { ids };
-      await updateOrderMutation({ variables });
+      await updateInputsOrderMutation({ variables });
     } catch (e) {
       showError(e.message);
     }
