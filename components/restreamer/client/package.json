@@ -32,7 +32,7 @@
     "uikit-icons": "^0.5"
   },
   "devDependencies": {
-    "@tsconfig/svelte": "^4.0",
+    "@tsconfig/svelte": "^5.0",
     "@types/lodash.clonedeep": "^4.5",
     "@types/node": "^20.5",
     "@types/uikit": "^3",
