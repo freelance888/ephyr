@@ -58,7 +58,7 @@
     "svelte-preprocess": "^5.0",
     "ts-loader": "^9.4",
     "ts-node": "^10.9",
-    "typedoc": "^0.24",
+    "typedoc": "^0.25",
     "typescript": "^5.0",
     "webpack": "^5.85",
     "webpack-cli": "^5.1",
