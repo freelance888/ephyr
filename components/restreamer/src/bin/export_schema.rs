@@ -9,13 +9,13 @@
 use std::{fs, path::PathBuf, str::FromStr};
 
 use anyhow::anyhow;
+use clap::Parser;
 use derive_more::Display;
 use ephyr_restreamer::api;
-use structopt::StructOpt;
 
 /// Introspects GraphQL schema and exports it into `*.graphql.schema.json` file.
 fn main() -> anyhow::Result<()> {
-    let opts = CliOpts::from_args_safe()?;
+    let opts = CliOpts::parse();
 
     let err_fn = |e| anyhow!("Failed to execute introspection query: {e}");
 
@@ -68,14 +68,14 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// CLI (command line interface) of this binary.
-#[derive(Clone, Debug, StructOpt)]
-#[structopt(
+#[derive(Clone, Debug, Parser)]
+#[command(
     about = "Export GraphQL schema to a JSON file",
     rename_all = "kebab-case"
 )]
 struct CliOpts {
     /// [`api::graphql`] to export schema of.
-    #[structopt(
+    #[arg(
         long,
         default_value = "client",
         help = "Backend API to export schema of: client"
@@ -85,7 +85,7 @@ struct CliOpts {
     /// Output directory to create JSON file in.
     ///
     /// [`vod::meta::State`]: crate::vod::meta::State
-    #[structopt(
+    #[arg(
         long,
         default_value = "./components/restreamer/",
         help = "Output directory to create JSON file in"

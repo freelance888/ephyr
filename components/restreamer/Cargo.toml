@@ -1,7 +1,7 @@
 [package]
 name = "ephyr-restreamer"
 version = "0.8.0+dev"
-edition = "2018"
+edition = "2021"
 authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 default-run = "ephyr-restreamer"
@@ -11,9 +11,9 @@ actix-service = "2.0"
 actix-web = "4.1"
 actix-web-httpauth = "0.7"
 actix-web-static-files = "4.0"
-static-files = "0.2.3"
+static-files = "0.2"
 anyhow = "1.0"
-argon2 = { version = "1.0.0", package = "rust-argon2", default-features = false }
+argon2 = { version = "1.0", package = "rust-argon2", default-features = false }
 askama = { version = "0.12", default-features = false }
 backoff = { version = "0.4", features = ["tokio"] }
 byteorder = "1.4"
@@ -22,12 +22,12 @@ ephyr-log = { version = "0.2", path = "../../common/log" }
 futures = "0.3"
 futures-signals = "0.3"
 graphql_client = "0.13"
-itertools = "0.10.5"
+itertools = "0.11"
 hex = "0.4"
 humantime = "2.1"
 libc = "0.2"
-nix = "0.26"
-num_cpus = "1.14.0"
+nix = { version = "0.27", features = ["signal"] }
+num_cpus = "1.14"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
 rand = "0.8"
@@ -37,8 +37,8 @@ send_wrapper = { version = "0.6", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_humantime = { version = "1.0", package = "humantime-serde" }
 serde_json = "1.0"
-smart-default = "0.6"
-structopt = "0.3"
+smart-default = "0.7"
+clap = { version = "4", features = ["derive", "env"] }
 systemstat = "0.2"
 tap = "1.0.1"
 url = { version = "2.1", features = ["serde"] }
@@ -46,6 +46,7 @@ uuid = { version = "1.1", features = ["serde", "v4"] }
 zeromq = "0.3"
 interprocess = { version = "1.2", features = ["tokio_support"] }
 tokio-stream = { version="0.1", features = ["fs"]}
+lazy_static = "1.4"
 [dependencies.tsclientlib]
     git = "https://github.com/ReSpeak/tsclientlib"
     rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
@@ -57,7 +58,7 @@ tokio-stream = { version="0.1", features = ["fs"]}
     features = ["as_ref", "deref", "display", "error", "from"]
     default-features = false
 [dependencies.tokio]
-    version = "1.24"
+    version = "1.29"
     features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
     git="https://github.com/graphql-rust/juniper"
@@ -71,6 +72,12 @@ tokio-stream = { version="0.1", features = ["fs"]}
 [dependencies.juniper_graphql_ws]
     git="https://github.com/graphql-rust/juniper"
     branch = "master"
+[dependencies.ephyr-api-google-drive]
+    version = "0.1"
+    path = "../../common/api/google-drive"
+[dependencies.ephyr-serde]
+    version = "0.1"
+    path = "../../common/serde"
 
 [build-dependencies]
 static-files = "0.2.3"

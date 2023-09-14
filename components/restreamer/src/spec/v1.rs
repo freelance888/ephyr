@@ -2,9 +2,10 @@
 //! application's [`State`].
 //!
 //! [`State`]: state::State
+use ephyr_serde::is_false;
 use std::collections::HashSet;
 
-use crate::{file_manager::FileId, serde::is_false, state, types::UNumber};
+use crate::{file_manager::FileId, state, types::UNumber};
 use juniper::GraphQLInputObject;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
@@ -95,7 +96,14 @@ pub struct Restream {
     pub outputs: Vec<Output>,
 
     /// Playlist for this restream
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub playlist: Option<Playlist>,
+
+    /// If need to set input playback encoding.
+    ///
+    /// Option here to preserve schema backward compatibility
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub with_playback_encoding: Option<bool>,
 }
 
 impl Restream {
@@ -149,6 +157,53 @@ pub struct Input {
 }
 
 impl Input {
+    /// Creates a file backup [`Input`] out of the given [`FileId`].
+    #[must_use]
+    pub fn new_file_backup(file_id: FileId) -> Self {
+        Self {
+            id: None,
+            key: state::InputKey::file_backup(),
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::File,
+                label: None,
+                file_id: Some(file_id),
+            }],
+            src: None,
+            enabled: true,
+        }
+    }
+    /// Creates a new primary [`Input`] out of the given [`state::InputSrcUrl`].
+    #[must_use]
+    pub fn new_primary(src: Option<state::InputSrcUrl>) -> Self {
+        Self {
+            id: None,
+            key: state::InputKey::primary(),
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::Rtmp,
+                label: None,
+                file_id: None,
+            }],
+            src: src.map(InputSrc::RemoteUrl),
+            enabled: true,
+        }
+    }
+
+    /// Creates a new backup [`Input`] out of the given [`BackupInput`].
+    #[must_use]
+    pub fn new_backup(backup: BackupInput) -> Self {
+        Self {
+            id: None,
+            key: backup.key,
+            endpoints: vec![InputEndpoint {
+                kind: state::InputEndpointKind::Rtmp,
+                label: None,
+                file_id: None,
+            }],
+            src: backup.src.map(InputSrc::RemoteUrl),
+            enabled: true,
+        }
+    }
+
     /// Creates a new [`Input`] out of the given
     /// [`state::InputKey`] and [`InputSrc`].
     #[must_use]

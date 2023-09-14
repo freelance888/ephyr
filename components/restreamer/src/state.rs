@@ -95,6 +95,10 @@ impl State {
     /// # Errors
     ///
     /// If [`State`] file exists, but fails to be parsed.
+    ///
+    /// ## Panics
+    ///
+    /// If state json file cannot be deserialized.
     pub async fn try_new<P: AsRef<Path>>(
         file: P,
     ) -> Result<Self, anyhow::Error> {
@@ -482,7 +486,7 @@ impl State {
             .endpoints
             .iter_mut()
             .find(|endpoint| endpoint.id == endpoint_id)
-            .map(|mut ie| {
+            .map(|ie| {
                 if ie.label == label {
                     false
                 } else {
@@ -801,7 +805,7 @@ impl State {
         let mut restreams = self.restreams.lock_mut();
         restreams.iter_mut().for_each(|r| {
             if let Some(InputSrc::Failover(s)) = &mut r.input.src {
-                for mut e in
+                for e in
                     s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
                 {
                     if e.kind == InputEndpointKind::File && e.file_id.is_some()
@@ -856,7 +860,7 @@ impl State {
         result: anyhow::Result<StreamInfo>,
     ) -> anyhow::Result<()> {
         let mut files = self.files.lock_mut();
-        let mut file = files
+        let file = files
             .iter_mut()
             .find(|f| f.file_id == *file_id)
             .ok_or_else(|| {

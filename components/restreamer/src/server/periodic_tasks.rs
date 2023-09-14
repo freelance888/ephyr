@@ -17,11 +17,8 @@ use futures::FutureExt;
 use num_cpus;
 use std::panic::AssertUnwindSafe;
 
-async fn run_periodic<F, Fut>(
-    state: State,
-    interval: time::Duration,
-    mut func: F,
-) where
+fn run_periodic<F, Fut>(state: State, interval: time::Duration, mut func: F)
+where
     F: FnMut(State) -> Fut + Send + 'static,
     Fut: Future<Output = Result<(), anyhow::Error>> + Send,
 {
@@ -68,7 +65,7 @@ async fn run_periodic<F, Fut>(
 /// # Errors
 /// No return errors expected. Preserved return signature in order to
 /// run in `future::try_join3`
-#[instrument(skip_all, name = "statistics::run")]
+#[instrument(skip_all, name = "periodic_task::run")]
 pub async fn run(state: State) -> Result<(), Failure> {
     run_periodic(
         state.clone(),
@@ -80,22 +77,19 @@ pub async fn run(state: State) -> Result<(), Failure> {
             let mut rx_last: f64 = 0.0;
             update_server_statistics(state, &mut tx_last, &mut rx_last).await
         },
-    )
-    .await;
+    );
 
     run_periodic(
         state.clone(),
         time::Duration::from_secs(2),
         |state| async move { sync_stream_info(state) },
-    )
-    .await;
+    );
 
     run_periodic(
         state.clone(),
         time::Duration::from_secs(2),
         |state| async move { start_pending_downloads(state) },
-    )
-    .await;
+    );
 
     Ok(())
 }
@@ -207,9 +201,7 @@ fn sync_stream_info(state: State) -> Result<(), anyhow::Error> {
     let mut restreams = state.restreams.lock_mut();
     restreams.iter_mut().for_each(|r| {
         if let Some(InputSrc::Failover(s)) = &mut r.input.src {
-            for mut e in
-                s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut())
-            {
+            for e in s.inputs.iter_mut().flat_map(|i| i.endpoints.iter_mut()) {
                 if e.kind == InputEndpointKind::File && e.file_id.is_some() {
                     // For file - populate statistics from [`LocalFileInfo`]
                     if let Some(file_id) = e.file_id.clone() {

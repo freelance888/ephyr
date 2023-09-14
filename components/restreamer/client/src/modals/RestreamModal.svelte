@@ -1,8 +1,8 @@
 <script lang="js">
   import { onDestroy } from 'svelte';
   import { mutation, subscribe } from 'svelte-apollo';
-  import { SetRestream, Info } from '../../api/client.graphql';
-  import { isFullGDrivePath, sanitizeLabel, showError } from '../utils/util';
+  import { Info, SetRestream } from '../../api/client.graphql';
+  import { getFileIdFromGDrive, sanitizeLabel, showError } from '../utils/util';
   import { saveOrCloseByKeys } from '../utils/directives.util';
   import { RestreamModel } from '../models/restream.model';
   import { writable } from 'svelte/store';
@@ -61,6 +61,12 @@
       if (!!current.id) {
         changed ||= current.withHls !== previous.withHls;
       }
+
+      if (!!current.id) {
+        changed ||=
+          current.withPlaybackEncoding !== previous.withPlaybackEncoding;
+      }
+
       submitable &&= changed;
     })
   );
@@ -71,6 +77,7 @@
     let variables = {
       key: restream.key,
       with_hls: restream.withHls,
+      with_playback_encoding: restream.withPlaybackEncoding,
     };
 
     if (restream.label) {
@@ -93,7 +100,7 @@
     }
 
     if (restream.fileId) {
-      const fileId = fetchFileId(restream.fileId);
+      const fileId = getFileIdFromGDrive(restream.fileId);
       if (fileId) {
         restream.fileId = fileId;
         variables.file_id = fileId;
@@ -146,21 +153,10 @@
     });
   };
 
-  const fetchFileId = (id) => {
-    if (isFullGDrivePath(id)) {
-      const result = id.match(/file\/d\/([^\/]+)/);
-      if (result) {
-        return result[1];
-      }
-    }
-
-    return id;
-  };
-
   const handleInputFileId = (event) => {
     const stringWithFileId = event.target.value;
     if (!stringWithFileId) return;
-    $restreamStore.fileId = fetchFileId(stringWithFileId);
+    $restreamStore.fileId = getFileIdFromGDrive(stringWithFileId);
     validateFileIdInput();
   };
 
@@ -248,6 +244,18 @@
             /> with HLS endpoint</label
           >
         </div>
+
+        {#if $restreamStore.withPlayback()}
+          <div class="playback-encoding">
+            <label
+              ><input
+                class="uk-checkbox"
+                type="checkbox"
+                bind:checked={$restreamStore.withPlaybackEncoding}
+              /> with playback encoding</label
+            >
+          </div>
+        {/if}
 
         <div class="uk-section uk-section-xsmall backups-section">
           <button

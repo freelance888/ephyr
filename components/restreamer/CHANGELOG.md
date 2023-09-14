@@ -20,14 +20,23 @@ All user visible changes to this project will be documented in this file. This p
 ### Added
 - Dashboard:
   - Remove all clients ([#386])
-  - Star/Stop playing file ([#386])
+  - Star/Stop playing file by file name prefix ([#415])
 - Playlist
   - Status component ([#343], [#348])
   - Make playlist optional on import ([#405])
-
+  - Add single file from Google Drive to playlist ([#415])
+  - Show notification icon if there are some files not having stream info ([#415])
+  - Compare stream information of files in a playlist and display an icon if they are not equal ([#415])
+  - Compare stream information of endpoints with the stream info of the currently playing file from the playlist ([#415])
+- Input
+  - Added optional playback encoding ([#425])
 ### Miscellaneous
+- Extract Google Drive API module to `google-drive` crate ([#430]);
 - Update [FFmpeg] to 6.0  ([#375]);
+- Update [SRS] to v4-r5  ([#430]);
+- Update Rust edition to 2021 ([#131], [#430]);
 
+[#131]: /../../issues/131
 [#222]: /../../issues/222
 [#192]: /../../issues/192
 [#178]: /../../issues/178
@@ -38,6 +47,9 @@ All user visible changes to this project will be documented in this file. This p
 [#375]: /../../pull/375
 [#386]: /../../pull/386
 [#405]: /../../pull/405
+[#415]: /../../pull/415
+[#425]: /../../pull/425
+[#430]: /../../pull/430
 
 
 

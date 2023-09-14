@@ -123,7 +123,7 @@ impl From<statistics_query::Status> for Status {
             statistics_query::Status::INITIALIZING => Status::Initializing,
             statistics_query::Status::UNSTABLE => Status::Unstable,
             statistics_query::Status::Other(other) => {
-                panic!("Unknown status {}", other)
+                panic!("Unknown status {other}")
             }
         }
     }
@@ -233,8 +233,9 @@ pub fn save_client_error(
 ) {
     let mut clients = state.clients.lock_mut();
 
-    let Some(client) = clients.iter_mut().find(|r| r.id == *client_id)
-        else { panic!("Client with id = {} was not found", client_id) };
+    let Some(client) = clients.iter_mut().find(|r| r.id == *client_id) else {
+        panic!("Client with id = {client_id} was not found")
+    };
 
     client.statistics = Some(ClientStatisticsResponse {
         data: None,
@@ -260,11 +261,9 @@ pub fn save_client_statistics(
 
     let mut clients = state.clients.lock_mut();
 
-    let Some(client) =
-        clients.iter_mut().find(|r| r.id == *client_id)
-        else {
-            panic!("Client with id = {} was not found", client_id)
-        };
+    let Some(client) = clients.iter_mut().find(|r| r.id == *client_id) else {
+        panic!("Client with id = {client_id} was not found")
+    };
 
     client.statistics = match response.data {
         Some(data) => Some(ClientStatisticsResponse {

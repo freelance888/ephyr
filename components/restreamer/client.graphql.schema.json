@@ -1402,6 +1402,22 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "withPlaybackEncoding",
+            "description": "If need to set input playback encoding",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -1546,6 +1562,20 @@
               {
                 "name": "withHls",
                 "description": "Indicator whether the `Restream` should have an additional endpoint for serving a live stream via HLS.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": "false"
+              },
+              {
+                "name": "withPlaybackEncoding",
+                "description": "Indicator whether the `Restream` should encode playback output.",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -1983,14 +2013,14 @@
             "description": "Starts playing file if it's found in playlist of any `[Restream]`\n\nReturns `true` if file was found in any of existing `[Restream]`s\nand `false` if no such file was found",
             "args": [
               {
-                "name": "fileId",
-                "description": "file identity",
+                "name": "namePrefix",
+                "description": "Prefix of the file name to search",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "FileId",
+                    "name": "String",
                     "ofType": null
                   }
                 },
@@ -2010,14 +2040,14 @@
             "description": "Stops playing file if it's found in playlist of any `[Restream]`\n\nReturns `true` if file was found in any of existing `[Restream]`s\nand `false` if no such file was found",
             "args": [
               {
-                "name": "fileId",
-                "description": "file identity",
+                "name": "namePrefix",
+                "description": "Prefix of the file name to search",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "FileId",
+                    "name": "String",
                     "ofType": null
                   }
                 },
@@ -2051,7 +2081,7 @@
                 "defaultValue": null
               },
               {
-                "name": "folderId",
+                "name": "fileOrFolderId",
                 "description": null,
                 "type": {
                   "kind": "NON_NULL",

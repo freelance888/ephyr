@@ -9,13 +9,13 @@ pub use self::{
 use std::{mem, path::Path};
 
 use derive_more::{Deref, Display, From, Into};
+use ephyr_serde::is_false;
 use juniper::{GraphQLObject, GraphQLScalar};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    serde::is_false,
     spec,
     state::{Label, RestreamKey, Status},
 };

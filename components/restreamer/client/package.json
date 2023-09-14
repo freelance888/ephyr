@@ -21,12 +21,12 @@
     "lint": "prettier --check . && svelte-check"
   },
   "dependencies": {
-    "@apollo/client": "~3.7",
+    "@apollo/client": "~3.8",
     "@fortawesome/free-regular-svg-icons": "^6.4.2",
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
     "@geoffcox/svelte-splitter": "^1.0.1",
     "clipboard-copy": "^4.0",
-    "graphql": "^16.5",
+    "graphql": "^16.8",
     "subscriptions-transport-ws": "^0.11",
     "svelte-apollo": "^0.5",
     "svelte-fa": "^3.0.4",
@@ -37,13 +37,13 @@
   "devDependencies": {
     "@tsconfig/svelte": "^4.0",
     "@types/lodash.clonedeep": "^4.5",
-    "@types/node": "^20.2",
+    "@types/node": "^20.5",
     "@types/uikit": "^3",
     "@types/webpack": "^5.28",
     "copy-webpack-plugin": "^11.0",
     "cross-env": "^7.0",
     "css-loader": "^6.7",
-    "cypress": "^12.9",
+    "cypress": "^12.17",
     "graphql-tag": "^2.12",
     "html-webpack-plugin": "^5.5",
     "lodash.clonedeep": "^4.5",
@@ -54,8 +54,8 @@
     "style-loader": "^3.3",
     "stylus": "^0.59",
     "stylus-loader": "^7.1",
-    "svelte": "^3.58",
-    "svelte-check": "^3.4",
+    "svelte": "^3.59",
+    "svelte-check": "^3.5",
     "svelte-dnd-action": "^0.9",
     "svelte-loader": "^3.1",
     "svelte-preprocess": "^5.0",
@@ -64,7 +64,7 @@
     "typedoc": "^0.24",
     "typescript": "^5.0",
     "webpack": "^5.85",
-    "webpack-cli": "^5.0",
+    "webpack-cli": "^5.1",
     "webpack-dev-server": "^4.15"
   }
 }

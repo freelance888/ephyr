@@ -1,20 +1,18 @@
 [package]
-name = "ephyr-api-allatra-video"
+name = "ephyr-api-google-drive"
 version = "0.1.0"
 edition = "2021"
-authors = ["Kai Ren <tyranron@gmail.com>"]
+authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 
 [dependencies]
-ephyr-serde = { version = "0.1", path = "../../serde", features = ["seconds"] }
+serde = { version = "1.0", features = ["derive"] }
 mime = "0.3"
 mime_serde_shim = "0.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_repr = "0.1"
 url = { version = "2.1", features = ["serde"] }
 [dependencies.derive_more]
     version = "0.99"
-    features = ["display", "error", "from"]
+    features = ["as_ref", "deref", "display", "error", "from", "into"]
     default-features = false
 [dependencies.reqwest]
     version = "0.11"

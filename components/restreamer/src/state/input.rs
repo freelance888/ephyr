@@ -9,13 +9,14 @@ pub use self::{
 use std::{borrow::Cow, mem};
 
 use derive_more::{Deref, Display, From, Into};
+use ephyr_serde::is_false;
 use juniper::{GraphQLObject, GraphQLScalar};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
-use crate::{serde::is_false, spec, state::Status};
+use crate::{spec, state::Status};
 
 /// Upstream source that a `Restream` receives a live stream from.
 #[derive(
@@ -279,6 +280,21 @@ pub struct InputKey(String);
 const MAX_INPUT_KEY_LENGTH: usize = 20;
 
 impl InputKey {
+    /// Creates a new [`InputKey`] with `playback` key
+    #[must_use]
+    pub fn playback() -> Self {
+        Self("playback".to_owned())
+    }
+    /// Creates a new [`InputKey`] with `primary` key
+    #[must_use]
+    pub fn primary() -> Self {
+        Self("primary".to_owned())
+    }
+    /// Creates a new [`InputKey`] with `file_backup` key
+    #[must_use]
+    pub fn file_backup() -> Self {
+        Self("file_backup".to_owned())
+    }
     /// Creates a new [`InputKey`] if the given value meets its invariants.
     #[must_use]
     pub fn new<'s, S: Into<Cow<'s, str>>>(val: S) -> Option<Self> {
@@ -290,6 +306,12 @@ impl InputKey {
         let val = val.into();
         (!val.is_empty() && REGEX.is_match(&val))
             .then(|| Self(val.into_owned()))
+    }
+
+    /// Return `true` if key is playback
+    #[must_use]
+    pub fn is_playback(&self) -> bool {
+        self == &Self::playback()
     }
 }
 

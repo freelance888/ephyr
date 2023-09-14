@@ -6,8 +6,9 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 use url::Url;
 
 use crate::{
+    file_manager::{FileId, FileState, LocalFileInfo},
     spec,
-    state::{Input, Label},
+    state::{Input, Label, RestreamKey, Status},
 };
 
 /// Source to pull a live stream by an `Input` from.
@@ -49,6 +50,44 @@ impl InputSrc {
         }
     }
 
+    /// Returns the source [`Url`] of this [`InputSrc`].
+    #[must_use]
+    pub fn src_url(
+        &self,
+        key: &RestreamKey,
+        files: &[LocalFileInfo],
+        file_root: &Path,
+    ) -> Option<Url> {
+        match self {
+            Self::Remote(remote) => Some(remote.url.clone().into()),
+            Self::Failover(s) => s.inputs.iter().find_map(|i| {
+                i.endpoints.iter().find_map(|e| {
+                    if e.is_rtmp() && e.status == Status::Online {
+                        Some(e.kind.rtmp_url(key, &i.key))
+                    } else if i.enabled
+                        && e.is_file()
+                        && e.file_id.is_some()
+                        && files.iter().any(|f| {
+                            e.file_id == Some(f.file_id.clone())
+                                && (f.state == FileState::Local)
+                        })
+                    {
+                        Url::from_file_path(
+                            file_root.join(
+                                e.file_id
+                                    .as_ref()
+                                    .unwrap_or(&FileId::default())
+                                    .to_string(),
+                            ),
+                        )
+                        .ok()
+                    } else {
+                        None
+                    }
+                })
+            }),
+        }
+    }
     /// Applies the given [`spec::v1::InputSrc`] to this [`InputSrc`].
     ///
     /// Replaces all the [`FailoverInputSrc::inputs`] with new ones.

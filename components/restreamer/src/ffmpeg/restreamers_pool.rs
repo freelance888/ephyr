@@ -75,6 +75,7 @@ impl RestreamersPool {
                 &r.key,
                 &r.input,
                 r.playlist.currently_playing_file.is_some(),
+                r.with_playback_encoding,
                 &mut new_pool,
             );
 
@@ -132,7 +133,8 @@ impl RestreamersPool {
         fields(
             restream.key=%key,
             input.key=%input.key,
-            is_playing_playlist)
+            is_playing_playlist,
+            with_playback_encoding)
         )
     ]
     fn apply_input(
@@ -140,24 +142,31 @@ impl RestreamersPool {
         key: &state::RestreamKey,
         input: &state::Input,
         is_playing_playlist: bool,
+        with_playback_encoding: bool,
         new_pool: &mut HashMap<Uuid, Restreamer>,
     ) {
         if let Some(state::InputSrc::Failover(s)) = &input.src {
             for i in &s.inputs {
                 tracing::debug!(actor=%i.id,"Failover input");
-                self.apply_input(key, i, false, new_pool);
+                self.apply_input(
+                    key,
+                    i,
+                    false,
+                    with_playback_encoding,
+                    new_pool,
+                );
             }
         }
 
         for endpoint in &input.endpoints {
             let id = endpoint.id.into();
             tracing::debug!(actor=%id, "Input endpoint aka Restreamer");
-
             let kind = RestreamerKind::from_input(
                 input,
                 endpoint,
                 key,
                 is_playing_playlist,
+                with_playback_encoding,
                 &self.state.files.lock_ref(),
                 &self.files_root,
             );

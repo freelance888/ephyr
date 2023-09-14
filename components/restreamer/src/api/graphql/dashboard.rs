@@ -7,7 +7,6 @@ use crate::{
     api::graphql,
     broadcaster::DashboardCommand,
     console_logger::ConsoleMessage,
-    file_manager::FileId,
     state::{Client, ClientId},
 };
 use actix_web::http::StatusCode;
@@ -97,22 +96,24 @@ impl MutationsRoot {
 
     /// Start playing specific file on any of client
     fn broadcast_play_file(
-        #[graphql(description = "File identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let mut commands = context.state().dashboard_commands.lock_mut();
-        commands.push(DashboardCommand::StartPlayingFile(file_id));
+        commands.push(DashboardCommand::StartPlayingFile(name_prefix));
 
         Ok(Some(true))
     }
 
     /// Stop playing specific file on any of client
     fn broadcast_stop_playing_file(
-        #[graphql(description = "File identity")] file_id: FileId,
+        #[graphql(description = "Prefix of the file name to search")]
+        name_prefix: String,
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         let mut commands = context.state().dashboard_commands.lock_mut();
-        commands.push(DashboardCommand::StopPlayingFile(file_id));
+        commands.push(DashboardCommand::StopPlayingFile(name_prefix));
 
         Ok(Some(true))
     }
