@@ -2,6 +2,7 @@
   import Fa from 'svelte-fa';
   import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
   import { STREAM_ERROR, STREAM_WARNING } from '../../utils/constants';
+  import ToggleButton from './ToggleButton.svelte';
 
   export let count;
   export let active;
@@ -27,22 +28,9 @@
 </script>
 
 <template>
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
-    class="status-filter"
-    on:click={(e) => {
-      if (disabled) {
-        return;
-      }
-
-      handleClick(e);
-    }}
-  >
+  <ToggleButton {handleClick} {disabled} {active}>
     <div
       title={title ? title : status}
-      class="content"
-      class:active
-      class:disabled
       class:online={status === 'ONLINE'}
       class:offline={status === 'OFFLINE'}
       class:initializing={status === 'INITIALIZING'}
@@ -55,30 +43,10 @@
       {/if}
       {count}
     </div>
-  </div>
+  </ToggleButton>
 </template>
 
 <style lang="stylus">
-  .status-filter
-    min-width: 32px
-    display: inline-flex
-    .content
-      width: 100%
-      text-align: center
-      margin-right: 2px
-      background-color: inherit
-      padding: 1px 4px
-      border-radius: 2px
-      outline: none
-      &.active
-        background-color: #cecece
-      &.disabled
-        &:hover
-          cursor: not-allowed
-      &:hover
-        background-color: #bdbdbd
-        cursor: pointer
-
   :global(.streams-errors)
     color: var(--danger-color)
   :global(.streams-warnings)

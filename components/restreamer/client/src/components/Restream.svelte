@@ -6,9 +6,6 @@
   import { faPlus } from '@fortawesome/free-solid-svg-icons'
   import { faShareSquare } from '@fortawesome/free-solid-svg-icons'
   import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
-
-  '@fortawesome/free-regular-svg-icons'
-  '@fortawesome/free-regular-svg-icons'
   import { dndzone } from 'svelte-dnd-action';
 
   import { getClient, mutation, subscribe } from 'svelte-apollo';
@@ -56,6 +53,7 @@
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
   import FileInfo from './common/FileInfo.svelte';
   import { createEventDispatcher } from 'svelte';
+  import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
   const disableAllOutputsMutation = mutation(DisableAllOutputs);
@@ -233,7 +231,7 @@
   };
 
   const getStreamsDifferenceTooltip = (input) => {
-    const result = getEndpointsWithDiffStreams(input);
+    const result = getEndpointsWithDiffStreams(input, currentlyPlayingFile);
     return result?.endpointsWithDiffStreams?.length
       ? `<strong>${result.endpointsWithDiffStreams.join(', ')}</strong> ${
           result.endpointsWithDiffStreams.length === 1 ? 'stream' : 'streams'
@@ -286,19 +284,7 @@
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
       <span class="section-label"
         >{value.label ?? ''}
-        {#key streamsErrorsTooltip || streamsDiffTooltip}
-          <span
-            class='info-icon'
-            class:has-error={!!streamsErrorsTooltip}
-            class:has-warning={!!streamsDiffTooltip}
-            class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
-            uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
-          >
-            <Fa faInfoCircle
-              icon={faInfoCircle}
-            />
-          </span>
-        {/key}
+        <StreamInfoDiffTooltip streamsErrorsTooltip={streamsErrorsTooltip} {streamsDiffTooltip} />
       </span>
     {/if}
 
@@ -514,6 +500,7 @@
     .full-view-link
       font-size: 0.8rem
       transition: opacity .3s ease
+      margin-right: 8px
       opacity: 0
 
     .edit-input, .export-import, .item-drag-zone
@@ -555,9 +542,6 @@
     .uk-grid
       margin-top: 10px
       margin-left: -10px
-
-    .info-icon
-      font-size: 16px
 
     .currently-playing-file
       margin-top: 4px

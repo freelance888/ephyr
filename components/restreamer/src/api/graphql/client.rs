@@ -378,7 +378,7 @@ impl MutationsRoot {
             )?
             .outputs;
 
-        let reordered = reorder_items(&outputs, &ids, |r: &Output| r.id);
+        let reordered = reorder_items(outputs, &ids, |r: &Output| r.id);
         let _ = std::mem::replace(outputs, reordered);
 
         Ok(true)

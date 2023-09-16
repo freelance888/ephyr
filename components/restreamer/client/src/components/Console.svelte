@@ -34,7 +34,6 @@
 <template>
   <section>
     <div class="console-toolbar uk-flex uk-flex-middle">
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
       <span class="console-title" on:click={dispatchToggleConsole}>Console</span
       >
       {#if errorCount}

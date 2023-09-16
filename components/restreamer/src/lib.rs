@@ -84,7 +84,7 @@ pub fn display_panic<'a>(err: &'a (dyn Any + Send + 'static)) -> &'a str {
 
 /// This way of reordering prevent us to loose data in case if count of ids is less that count
 /// of items
-pub fn reorder_items<T, F, Id>(items: &Vec<T>, ids: &Vec<Id>, get_id: F) -> Vec<T>
+pub fn reorder_items<T, F, Id>(items: &[T], ids: &[Id], get_id: F) -> Vec<T>
 where
     T: Clone,
     Id: Eq,
@@ -93,7 +93,7 @@ where
     items
         .iter()
         .map(|item| {
-            let pos = ids.iter().position(|id| *id == get_id(&item));
+            let pos = ids.iter().position(|id| *id == get_id(item));
             match pos {
                 Some(p) => (p, item),
                 None => (usize::MAX, item),

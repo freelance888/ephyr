@@ -1,6 +1,6 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+  import { faLock, faLockOpen, faSort } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation } from 'svelte-apollo';
 
@@ -33,6 +33,7 @@
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
   import { dndzone } from 'svelte-dnd-action';
+  import ToggleButton from './common/ToggleButton.svelte';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -333,7 +334,7 @@
         {#key $info.data.info.passwordOutputHash}
           <a
             href="/"
-            class="set-output-password"
+            class="set-output-password action-icon"
             title="{!$info.data.info.passwordOutputHash
                 ? 'Set'
                 : 'Change'} output password"
@@ -419,12 +420,22 @@
         </label>
       </div>
       <div class='uk-margin-auto-left'>
-        <button
+        <ToggleButton
+          active={false}
+          disabled={false}
+          handleClick={() => {}}
+        >
+        <a
+          href='/'
+          class='action-icon'
           class:uk-hidden={inputsSortMode || outputsSortMode}
-          class='uk-button uk-button-default uk-button-small'
-          type="button"
-          on:click={() => inputsSortMode = !inputsSortMode}
-        >Inputs sort mode</button>
+          on:click|preventDefault={() => inputsSortMode = !inputsSortMode}
+          title={(inputsSortMode ? 'Disable' : 'Enable') + ' inputs sort mode'}
+        >
+          <Fa icon={faSort}></Fa>
+        </a>
+        </ToggleButton>
+
         <button
           class:uk-hidden={inputsSortMode || outputsSortMode}
           class='uk-button uk-button-default uk-button-small'
@@ -485,6 +496,8 @@
   .set-output-password
     margin-left: 10px;
     display: inline-block
+
+  .action-icon
     color: var(--primary-text-color)
 
     &:hover

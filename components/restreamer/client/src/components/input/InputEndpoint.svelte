@@ -148,7 +148,7 @@
       <FileInfo file={currentFile} showDownloadLink={true} />
     {:else}
       <Url
-        streamInfo={formatStreamInfo(endpoint.streamStat)}
+        streamInfo={formatStreamInfo(endpoint.streamStat, input.key)}
         isError={!!endpoint.streamStat?.error}
         url={input_url}
       />
