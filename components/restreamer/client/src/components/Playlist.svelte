@@ -332,10 +332,6 @@
 </template>
 
 <style lang="stylus">
-  :global(.drop-target) {
-    outline: none !important;
-  }
-
   .google-drive-dir
     input
       max-width: 500px

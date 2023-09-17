@@ -484,10 +484,6 @@
 </template>
 
 <style lang="stylus">
-  :global(.drop-target) {
-    outline: none !important;
-  }
-
   .set-output-password
     margin-left: 10px;
     display: inline-block

@@ -464,10 +464,6 @@
 </template>
 
 <style lang="stylus">
-  :global(.drop-target) {
-    outline: none !important;
-  }
-
   .uk-section
     position: relative
     margin-top: 20px
