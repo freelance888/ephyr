@@ -349,22 +349,30 @@ impl MutationsRoot {
         context.state().disable_restream(id)
     }
 
-    /// Reorder of restreams
+    /// Change order of `Restream`s depending on the order of its id inside `ids` array
     fn change_inputs_order(
+        #[graphql(description = "Ordered list of Restreams identities")]
         ids: Vec<RestreamId>,
         context: &Context,
-    ) -> Result<bool, graphql::Error> {
+    ) -> Option<bool> {
         let mut restreams = context.state().restreams.lock_mut();
         let reordered = reorder_items(&restreams, &ids, |r: &Restream| r.id);
         *restreams = reordered;
 
-        Ok(true)
+        Some(true)
     }
 
-    /// Reorder of outputs
+    /// Reorder `Restream`s' outputs depending on the order of its id inside `ids` array
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if outputs were reordered successfully
     fn change_outputs_order(
+        #[graphql(description = "ID of the parent `Restream`")]
         restream_id: RestreamId,
-        ids: Vec<OutputId>,
+        #[graphql(description = "Ordered list of outputs identities")] ids: Vec<
+            OutputId,
+        >,
         context: &Context,
     ) -> Result<bool, graphql::Error> {
         let mut restreams = context.state().restreams.lock_mut();

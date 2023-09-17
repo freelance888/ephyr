@@ -1716,11 +1716,11 @@
           },
           {
             "name": "changeInputsOrder",
-            "description": "Reorder of restreams",
+            "description": "Change order of `Restream`s depending on the order of its id inside `ids` array",
             "args": [
               {
                 "name": "ids",
-                "description": null,
+                "description": "Ordered list of Restreams identities",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -1742,24 +1742,20 @@
               }
             ],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
             "name": "changeOutputsOrder",
-            "description": "Reorder of outputs",
+            "description": "Reorder `Restream`s' outputs depending on the order of its id inside `ids` array\n\n### Result\n\nReturns `true` if outputs were reordered successfully",
             "args": [
               {
                 "name": "restreamId",
-                "description": null,
+                "description": "ID of the parent `Restream`",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
@@ -1773,7 +1769,7 @@
               },
               {
                 "name": "ids",
-                "description": null,
+                "description": "Ordered list of outputs identities",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
