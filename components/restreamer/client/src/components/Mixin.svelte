@@ -1,4 +1,9 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faWaveSquare } from '@fortawesome/free-solid-svg-icons'
+  import { faClock } from '@fortawesome/free-regular-svg-icons'
+  import { faLink } from '@fortawesome/free-solid-svg-icons'
+
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
   import Volume from './common/Volume.svelte';
@@ -78,7 +83,7 @@
 
 <template>
   <div class="mixin">
-    <i class="fas fa-wave-square" title="Mixed audio" />
+    <span class='icon-wave-square' title="Mixed audio"><Fa icon={faWaveSquare}></Fa></span>
     <Url url={hideIdentity(value.src)} />
     <Volume
       volume={value.volume}
@@ -90,7 +95,7 @@
       title="Mixed audio"
     />
     <div class="mixin-options">
-      <i class="far fa-clock" title="Delay" />
+      <span class="icon-clock"><Fa icon={faClock}></Fa></span>
       <span>Delay</span>
       <input
         class="uk-input"
@@ -102,7 +107,7 @@
         title="Delay"
       />
       <span>s</span>
-      <i class="fas fa-link" title="Sidechain" />
+      <span class='icon-link'><Fa icon={faLink}></Fa></span>
       <span>Sidechain</span>
       <input
         class="uk-checkbox"
@@ -117,7 +122,7 @@
 </template>
 
 <style lang="stylus">
-  .fa-wave-square, .fa-clock, .fa-link
+  .icon-wave-square, .icon-clock, .icon-link
     font-size: 10px
     color: #d9d9d9
 
@@ -136,7 +141,7 @@
       margin-top: -2px
       text-align: right
 
-    .fa-link
+    .icon-link
       margin-left: 15px
 
     .uk-checkbox

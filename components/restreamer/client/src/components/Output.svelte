@@ -4,6 +4,7 @@
   import { faCircle } from '@fortawesome/free-solid-svg-icons';
   import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
   import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons'
+  import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 
   import { mutation } from 'svelte-apollo';
   import { getMixPageUrl, showError } from '../utils/util';
@@ -211,7 +212,7 @@
             target="_blank"
             rel="noopener noreferrer"
             title="Open in a separate window"
-            ><i class="fas fa-external-link-alt" />
+            ><Fa icon={faExternalLinkAlt}></Fa>
           </a>
         {/if}
 

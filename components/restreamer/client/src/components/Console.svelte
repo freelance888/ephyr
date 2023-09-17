@@ -1,4 +1,7 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons'
+
   import { mutation, subscribe } from 'svelte-apollo';
   import { ConsoleLog } from '../../api/dashboard.graphql';
   import { ConsoleClear } from '../../api/dashboard.graphql';
@@ -12,7 +15,7 @@
 
   $: items = $consoleLog.data?.consoleLog ?? [];
 
-  $: errorCount = items.filter((x) => x.kind === 'ERR').length;
+  $: errorCount =  items.filter((x) => x.kind === 'ERR').length;
   $: warningCount = items.filter((x) => x.kind === 'WARNING').length;
   $: infoCount = items.filter((x) => x.kind === 'INFO').length;
 
@@ -38,19 +41,19 @@
       >
       {#if errorCount}
         <span class="console-icon" title="Number of errors">
-          <i class="fa fa-exclamation-triangle console-error" />{errorCount}
+          <span class='icon-exclamation-triangle console-error'><Fa icon={faExclamationTriangle}></Fa></span>{errorCount}
         </span>
       {/if}
 
       {#if warningCount}
         <span class="console-icon" title="Number of warning messages">
-          <i class="fa fa-exclamation-triangle console-warning" />{warningCount}
+          <span class='icon-exclamation-triangle console-warning'><Fa icon={faExclamationTriangle}></Fa></span>{warningCount}
         </span>
       {/if}
 
       {#if infoCount}
         <span class="console-icon" title="Number of info messages">
-          <i class="fa fa-exclamation-triangle" />{infoCount}
+          <span class='icon-exclamation-triangle'><Fa icon={faExclamationTriangle}></Fa></span>{infoCount}
         </span>
       {/if}
 
@@ -111,7 +114,7 @@
   .console-icon
     padding: 8px
 
-  .fa-exclamation-triangle
+  .icon-exclamation-triangle
     display: inline-block
     margin-right: 4px
 
