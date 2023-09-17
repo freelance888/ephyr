@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang='js'>
   import Fa from 'svelte-fa';
   import { faLock, faLockOpen, faSort } from '@fortawesome/free-solid-svg-icons';
 
@@ -21,13 +21,13 @@
   import PasswordModal from '../modals/PasswordModal.svelte';
   import {
     getAggregatedStreamsData,
-    toggleFilterStatus,
+    toggleFilterStatus
   } from '../utils/filters.util';
   import {
     statusesList,
     STREAM_ERROR,
     STREAM_WARNING,
-    streamStatusList,
+    streamStatusList
   } from '../utils/constants';
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
@@ -68,26 +68,26 @@
 
   onDestroy(
     state.subscribe(s => {
-    if (s.data && orderedRestreams && !orderWasUpdated) {
-      const storedIds = s.data.allRestreams.map(x => x.id);
-      const orderedIds = orderedRestreams.map(x => x.id);
+      if (s.data && orderedRestreams && !orderWasUpdated) {
+        const storedIds = s.data.allRestreams.map(x => x.id);
+        const orderedIds = orderedRestreams.map(x => x.id);
 
-      if (isArrayStartWithAnother(orderedIds, storedIds)) {
-        orderWasUpdated = true;
-        orderedRestreams = undefined;
+        if (isArrayStartWithAnother(orderedIds, storedIds)) {
+          orderWasUpdated = true;
+          orderedRestreams = undefined;
 
-        console.log('ALL RESTREAMS: ', s.data.allRestreams);
+          console.log('ALL RESTREAMS: ', s.data.allRestreams);
+        }
       }
-    }
-  }));
+    }));
 
   $: {
-      allReStreams = getFilteredRestreams(
-        searchText,
-        orderedRestreams ?? $state.data.allRestreams,
-        searchInInputs,
-        searchInOutputs
-      );
+    allReStreams = getFilteredRestreams(
+      searchText,
+      orderedRestreams ?? $state.data.allRestreams,
+      searchInInputs,
+      searchInOutputs
+    );
   }
 
   $: orderWasUpdated = true;
@@ -122,8 +122,8 @@
     return status === STREAM_WARNING
       ? 'Inputs with inconsistencies in streams params'
       : status === STREAM_ERROR
-      ? 'Inputs with errors on getting streams params'
-      : '';
+        ? 'Inputs with errors on getting streams params'
+        : '';
   };
 
   const storeSearchTextInQueryParams = () => {
@@ -177,7 +177,7 @@
       const hasInputLabel =
         onlyInInputs &&
         x.input.endpoints.filter((e) => e.label && regex.test(e.label)).length >
-          0;
+        0;
 
       const hasFailoverInputLabel =
         onlyInInputs &&
@@ -274,11 +274,11 @@
 <template>
   <OutputModal />
 
-  <section class="uk-section-muted toolbar">
-    <span class="section-label">Filters</span>
-    <div class="uk-grid uk-grid-small uk-flex-middle">
+  <section class='uk-section-muted toolbar'>
+    <span class='section-label'>Filters</span>
+    <div class='uk-grid uk-grid-small uk-flex-middle'>
       <div>
-        <span class="toolbar-label">
+        <span class='toolbar-label'>
           INPUTS:
 
           {#each statusesList as status (status)}
@@ -294,9 +294,20 @@
             />
           {/each}
         </span>
+        <ToggleButton
+          active={inputsSortMode}
+          disabled={outputsSortMode}
+          handleClick={() => inputsSortMode = !inputsSortMode}
+        >
+          <span
+            title={(inputsSortMode ? 'Disable' : 'Enable') + ' inputs sort mode'}
+          >
+            <Fa icon={faSort}></Fa>
+          </span>
+        </ToggleButton>
       </div>
-      <div class="uk-margin-small-left">
-        <span class="toolbar-label">
+      <div class='uk-margin-small-left'>
+        <span class='toolbar-label'>
           STREAMS:
           {#each streamStatusList as status (status)}
             <StatusFilter
@@ -314,9 +325,9 @@
           {/each}
         </span>
       </div>
-      <div class="uk-flex-auto uk-flex-right uk-flex uk-flex-middle">
-        <span class="toolbar-label"
-          >OUTPUTS:
+      <div class='uk-flex-auto uk-flex-right uk-flex uk-flex-middle'>
+        <span class='toolbar-label'
+        >OUTPUTS:
 
           {#each statusesList as status (status)}
             <StatusFilter
@@ -331,10 +342,22 @@
             />
           {/each}
         </span>
+        <ToggleButton
+          active={outputsSortMode}
+          disabled={inputsSortMode}
+          handleClick={() => outputsSortMode = !outputsSortMode}
+        >
+         <span
+           title={(outputsSortMode ? 'Disable' : 'Enable') + ' outputs sort mode'}
+         >
+          <Fa icon={faSort}></Fa>
+         </span>
+        </ToggleButton>
+
         {#key $info.data.info.passwordOutputHash}
           <a
-            href="/"
-            class="set-output-password action-icon"
+            href='/'
+            class='set-output-password action-icon'
             title="{!$info.data.info.passwordOutputHash
                 ? 'Set'
                 : 'Change'} output password"
@@ -348,108 +371,77 @@
           </a>
           {#if openPasswordOutputModal}
             <PasswordModal
-              password_kind="OUTPUT"
+              password_kind='OUTPUT'
               current_hash={$info.data.info.passwordOutputHash}
               bind:visible={openPasswordOutputModal}
             />
           {/if}
         {/key}
       </div>
-      <div class="uk-margin-auto-left">
+      <div class='uk-margin-auto-left'>
         <!-- TODO: move Confirm modals to other files -->
         <Confirm let:confirm>
           <button
-            class="uk-button uk-button-default"
-            data-testid="start-all-outputs"
-            title="Start all outputs of all restreams"
+            class='uk-button uk-button-default'
+            data-testid='start-all-outputs'
+            title='Start all outputs of all restreams'
             on:click={() => confirm(enableAllOutputsOfRestreams)}
-            ><span>Start All</span>
+          ><span>Start All</span>
           </button>
-          <span slot="title">Start all outputs</span>
-          <span slot="description"
-            >This will start all outputs of all restreams.
+          <span slot='title'>Start all outputs</span>
+          <span slot='description'
+          >This will start all outputs of all restreams.
           </span>
-          <span slot="confirm">Start</span>
+          <span slot='confirm'>Start</span>
         </Confirm>
 
         <Confirm let:confirm>
           <button
-            class="uk-button uk-button-default"
-            data-testid="stop-all-outputs"
-            title="Stop all outputs of all restreams"
+            class='uk-button uk-button-default'
+            data-testid='stop-all-outputs'
+            title='Stop all outputs of all restreams'
             on:click={() => confirm(disableAllOutputsOfRestreams)}
-            value=""><span>Stop All</span></button
+            value=''><span>Stop All</span></button
           >
-          <span slot="title">Stop all outputs</span>
-          <span slot="description"
-            >This will stop all outputs of all restreams.
+          <span slot='title'>Stop all outputs</span>
+          <span slot='description'
+          >This will stop all outputs of all restreams.
           </span>
-          <span slot="confirm">Stop</span>
+          <span slot='confirm'>Stop</span>
         </Confirm>
       </div>
     </div>
 
     <input
-      class="uk-input uk-width-1-3 uk-margin-small-top"
+      class='uk-input uk-width-1-3 uk-margin-small-top'
       bind:value={searchText}
-      placeholder="Search by labels (regex)"
+      placeholder='Search by labels (regex)'
     />
     <button
-      type="button"
-      class="clear-search"
+      type='button'
+      class='clear-search'
       uk-close
       on:click={() => (searchText = '')}
     />
-    <div class="uk-margin-small-top uk-grid uk-grid-small uk-flex-middle">
+    <div class='uk-margin-small-top uk-grid uk-grid-small uk-flex-middle'>
       <div>
         <label>
           <input
-            class="uk-checkbox"
+            class='uk-checkbox'
             bind:checked={searchInInputs}
             on:change={onChangeSearchInInput}
-            type="checkbox"
+            type='checkbox'
           /> in inputs
         </label>
         <label>
           <input
-            class="uk-checkbox uk-margin-small-left"
+            class='uk-checkbox uk-margin-small-left'
             bind:checked={searchInOutputs}
             on:change={onChangeSearchInOutputs}
-            type="checkbox"
+            type='checkbox'
           /> in outputs
         </label>
       </div>
-      <div class='uk-margin-auto-left'>
-        <ToggleButton
-          active={false}
-          disabled={false}
-          handleClick={() => {}}
-        >
-        <a
-          href='/'
-          class='action-icon'
-          class:uk-hidden={inputsSortMode || outputsSortMode}
-          on:click|preventDefault={() => inputsSortMode = !inputsSortMode}
-          title={(inputsSortMode ? 'Disable' : 'Enable') + ' inputs sort mode'}
-        >
-          <Fa icon={faSort}></Fa>
-        </a>
-        </ToggleButton>
-
-        <button
-          class:uk-hidden={inputsSortMode || outputsSortMode}
-          class='uk-button uk-button-default uk-button-small'
-          type="button"
-          on:click={() => outputsSortMode = !outputsSortMode}
-        >Outputs sort mode</button>
-        <button
-          class='uk-button uk-button-secondary uk-button-small'
-          class:uk-hidden={!inputsSortMode && !outputsSortMode}
-          type="button"
-          on:click={() => {inputsSortMode = false; outputsSortMode = false}}
-        >Close sort mode</button>
-      </div>
-    </div>
   </section>
 
   <div
@@ -466,19 +458,19 @@
   >
 
     {#each allReStreams as restream (restream.id)}
-        <Restream
-          public_host={$info.data.info.publicHost}
-          on:inputsDragStarted={onInputsDragStarted}
-          inputsSortMode={inputsSortMode}
-          outputsSortMode={outputsSortMode}
-          value={restream}
-          hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
-          {globalOutputsFilters}
-          {files}
-        />
+      <Restream
+        public_host={$info.data.info.publicHost}
+        on:inputsDragStarted={onInputsDragStarted}
+        inputsSortMode={inputsSortMode}
+        outputsSortMode={outputsSortMode}
+        value={restream}
+        hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
+        {globalOutputsFilters}
+        {files}
+      />
     {:else}
       <div
-        class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
+        class='uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center'
       >
         <div>
           There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
@@ -488,7 +480,7 @@
   </div>
 </template>
 
-<style lang="stylus">
+<style lang='stylus'>
   :global(.drop-target) {
     outline: none !important;
   }
@@ -496,8 +488,6 @@
   .set-output-password
     margin-left: 10px;
     display: inline-block
-
-  .action-icon
     color: var(--primary-text-color)
 
     &:hover
