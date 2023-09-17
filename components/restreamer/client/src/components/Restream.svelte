@@ -137,8 +137,6 @@
       if (isArrayStartWithAnother(orderedIds, storedIds)) {
         orderWasUpdated = true;
         orderedOutputs = undefined;
-
-        console.log('ALL OUTPUTS: ', value.outputs);
       }
   }
 

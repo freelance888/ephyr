@@ -75,8 +75,6 @@
         if (isArrayStartWithAnother(orderedIds, storedIds)) {
           orderWasUpdated = true;
           orderedRestreams = undefined;
-
-          console.log('ALL RESTREAMS: ', s.data.allRestreams);
         }
       }
     }));
