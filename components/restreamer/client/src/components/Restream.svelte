@@ -1,10 +1,10 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
-  import Fa from 'svelte-fa'
-  import { faEdit } from '@fortawesome/free-regular-svg-icons'
-  import { faPlus } from '@fortawesome/free-solid-svg-icons'
-  import { faShareSquare } from '@fortawesome/free-solid-svg-icons'
+  import Fa from 'svelte-fa';
+  import { faEdit } from '@fortawesome/free-regular-svg-icons';
+  import { faPlus } from '@fortawesome/free-solid-svg-icons';
+  import { faShareSquare } from '@fortawesome/free-solid-svg-icons';
   import { dndzone } from 'svelte-dnd-action';
 
   import { getClient, mutation, subscribe } from 'svelte-apollo';
@@ -24,13 +24,16 @@
     CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
-  import { getFullStreamUrl, isArrayStartWithAnother, isFailoverInput, showError } from '../utils/util';
+  import {
+    getFullStreamUrl,
+    isArrayStartWithAnother,
+    isFailoverInput,
+    showError,
+  } from '../utils/util';
   import { statusesList } from '../utils/constants';
 
   import { exportModal, outputModal } from '../stores';
-  import {
-    UpdateOutputsOrder
-  } from '../../api/client.graphql'
+  import { UpdateOutputsOrder } from '../../api/client.graphql';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -131,13 +134,13 @@
   $: orderWasUpdated = true;
 
   $: if (value.outputs && orderedOutputs && !orderWasUpdated) {
-      const storedIds = value.outputs.map(x => x.id);
-      const orderedIds = orderedOutputs.map(x => x.id);
+    const storedIds = value.outputs.map((x) => x.id);
+    const orderedIds = orderedOutputs.map((x) => x.id);
 
-      if (isArrayStartWithAnother(orderedIds, storedIds)) {
-        orderWasUpdated = true;
-        orderedOutputs = undefined;
-      }
+    if (isArrayStartWithAnother(orderedIds, storedIds)) {
+      orderWasUpdated = true;
+      orderedOutputs = undefined;
+    }
   }
 
   let openRestreamModal = false;
@@ -281,7 +284,7 @@
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
       <span class="section-label"
         >{value.label ?? ''}
-        <StreamInfoDiffTooltip streamsErrorsTooltip={streamsErrorsTooltip} {streamsDiffTooltip} />
+        <StreamInfoDiffTooltip {streamsErrorsTooltip} {streamsDiffTooltip} />
       </span>
     {/if}
 
@@ -332,21 +335,19 @@
 
             <Confirm let:confirm>
               <Toggle
-                data-testid='toggle-all-outputs-status'
-                id='all-outputs-toggle-{value.id}'
+                data-testid="toggle-all-outputs-status"
+                id="all-outputs-toggle-{value.id}"
                 checked={allEnabled}
-                title='{toggleStatusText} all outputs'
+                title="{toggleStatusText} all outputs"
                 confirmFn={enableConfirmation ? confirm : undefined}
                 onChangeFn={toggleAllOutputs}
               />
-            <span slot='title'
-            >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
-            >
-            <span slot='description'>Are you sure about it?</span>
-            <span slot='confirm'>{toggleStatusText}</span>
-          </Confirm>
-
-
+              <span slot="title"
+                >{toggleStatusText} all outputs of <code>{value.key}</code> input</span
+              >
+              <span slot="description">Are you sure about it?</span>
+              <span slot="confirm">{toggleStatusText}</span>
+            </Confirm>
           </span>
         {/if}
       </div>
@@ -374,7 +375,7 @@
       title="Edit input"
       on:click|preventDefault={() => (openRestreamModal = true)}
     >
-      <Fa icon={faEdit}/>
+      <Fa icon={faEdit} />
     </a>
     {#if openRestreamModal}
       <RestreamModal
@@ -422,17 +423,18 @@
     {/if}
 
     {#if !inputsSortMode}
-      <div class="uk-grid uk-grid-small"
+      <div
+        class="uk-grid uk-grid-small"
         use:dndzone={{
-        items: outputs,
-        type: 'output',
-        dropTargetClasses: ['drop-target'],
-        dropFromOthersDisabled: true,
-        dragDisabled,
-        flipDurationMs: 200,
-      }}
-           on:consider={outputsHandleSort}
-           on:finalize={onDropOutput}
+          items: outputs,
+          type: 'output',
+          dropTargetClasses: ['drop-target'],
+          dropFromOthersDisabled: true,
+          dragDisabled,
+          flipDurationMs: 200,
+        }}
+        on:consider={outputsHandleSort}
+        on:finalize={onDropOutput}
       >
         {#each outputs as output (output.id)}
           <Output

@@ -1,8 +1,8 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faWaveSquare } from '@fortawesome/free-solid-svg-icons'
-  import { faClock } from '@fortawesome/free-regular-svg-icons'
-  import { faLink } from '@fortawesome/free-solid-svg-icons'
+  import { faWaveSquare } from '@fortawesome/free-solid-svg-icons';
+  import { faClock } from '@fortawesome/free-regular-svg-icons';
+  import { faLink } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation } from 'svelte-apollo';
   import { showError } from '../utils/util';
@@ -83,7 +83,9 @@
 
 <template>
   <div class="mixin">
-    <span class='icon-wave-square' title="Mixed audio"><Fa icon={faWaveSquare}></Fa></span>
+    <span class="icon-wave-square" title="Mixed audio"
+      ><Fa icon={faWaveSquare} /></span
+    >
     <Url url={hideIdentity(value.src)} />
     <Volume
       volume={value.volume}
@@ -95,7 +97,7 @@
       title="Mixed audio"
     />
     <div class="mixin-options">
-      <span class="icon-clock"><Fa icon={faClock}></Fa></span>
+      <span class="icon-clock"><Fa icon={faClock} /></span>
       <span>Delay</span>
       <input
         class="uk-input"
@@ -107,7 +109,7 @@
         title="Delay"
       />
       <span>s</span>
-      <span class='icon-link'><Fa icon={faLink}></Fa></span>
+      <span class="icon-link"><Fa icon={faLink} /></span>
       <span>Sidechain</span>
       <input
         class="uk-checkbox"

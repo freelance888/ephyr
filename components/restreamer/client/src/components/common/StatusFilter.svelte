@@ -19,12 +19,11 @@
     if (s === STREAM_ERROR) {
       cls += ' streams-errors';
     } else if (s === STREAM_WARNING) {
-      cls += ' streams-warnings'
+      cls += ' streams-warnings';
     }
 
     return cls;
   }
-
 </script>
 
 <template>
@@ -37,7 +36,7 @@
       class:unstable={status === 'UNSTABLE'}
     >
       {#if [STREAM_ERROR, STREAM_WARNING].includes(status)}
-        <Fa class={iconClass} icon={faInfoCircle}></Fa>
+        <Fa class={iconClass} icon={faInfoCircle} />
       {:else}
         <span class="circle" />
       {/if}

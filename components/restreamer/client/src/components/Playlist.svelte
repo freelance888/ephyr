@@ -271,6 +271,7 @@
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
             >
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
               <span
                 class="item-icon"
                 class:can-be-started={item.isLocal}

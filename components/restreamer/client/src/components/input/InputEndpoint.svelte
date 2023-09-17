@@ -1,10 +1,10 @@
-<script lang='js'>
-  import Fa from 'svelte-fa'
-  import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
-  import { faArrowDown } from '@fortawesome/free-solid-svg-icons'
-  import { faCircle } from '@fortawesome/free-solid-svg-icons'
-  import { faDotCircle } from '@fortawesome/free-regular-svg-icons'
-  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons'
+<script lang="js">
+  import Fa from 'svelte-fa';
+  import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+  import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
+  import { faCircle } from '@fortawesome/free-solid-svg-icons';
+  import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
+  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons';
 
   import Confirm from '../common/Confirm.svelte';
   import Url from '../common/Url.svelte';
@@ -20,12 +20,12 @@
     FILE_PENDING,
     INITIALIZING,
     OFFLINE,
-    ONLINE
+    ONLINE,
   } from '../../utils/constants';
 
   import {
     MoveInputInDirection,
-    SingleFile
+    SingleFile,
   } from '../../../api/client.graphql';
   import { showError } from '../../utils/util';
   import { mutation, subscribe } from 'svelte-apollo';
@@ -45,7 +45,7 @@
 
   const backupFile = subscribe(SingleFile, {
     variables: { id: endpoint.fileId },
-    errorPolicy: 'all'
+    errorPolicy: 'all',
   });
 
   $: isPull = !!input.src && input.src.__typename === 'RemoteInputSrc';
@@ -62,7 +62,7 @@
 
   $: alertWarning = isFile
     ? currentFile?.state === FILE_PENDING ||
-    currentFile?.state === FILE_DOWNLOADING
+      currentFile?.state === FILE_DOWNLOADING
     : endpoint.status === INITIALIZING;
 
   $: alertSuccess = isFile
@@ -75,8 +75,8 @@
         variables: {
           restream_id: restream_id,
           input_id: input.id,
-          direction: 'UP'
-        }
+          direction: 'UP',
+        },
       });
     } catch (e) {
       showError(e.message);
@@ -89,8 +89,8 @@
         variables: {
           restream_id: restream_id,
           input_id: input.id,
-          direction: 'DOWN'
-        }
+          direction: 'DOWN',
+        },
       });
     } catch (e) {
       showError(e.message);
@@ -99,7 +99,7 @@
 </script>
 
 <template>
-  <div class='endpoint'>
+  <div class="endpoint">
     <div
       class:endpoint-status-icon={true}
       data-testid={`endpoint-status:${endpoint.status}`}
@@ -108,38 +108,51 @@
       class:uk-alert-success={alertSuccess}
     >
       {#if isFile}
-        <span class='e-arrow-right' title='Serves live {endpoint.kind} stream'>
-           <Fa icon={faArrowRight}></Fa>
+        <span class="e-arrow-right" title="Serves live {endpoint.kind} stream">
+          <Fa icon={faArrowRight} />
         </span>
       {:else if isFailover || endpoint.kind !== ENDPOINT_KIND_RTMP}
         {#if endpoint.status === ONLINE}
-          <span class='e-circle' title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream">
-            <Fa icon={faCircle}></Fa>
-          </span
+          <span
+            class="e-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
           >
+            <Fa icon={faCircle} />
+          </span>
         {:else if endpoint.status === INITIALIZING}
-          <span class='e-dot-circle' title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream">
-            <Fa icon={faDotCircleSolid}></Fa>
-          </span
+          <span
+            class="e-dot-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
           >
+            <Fa icon={faDotCircleSolid} />
+          </span>
         {:else}
-          <span class='e-dot-circle' title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream">
-            <Fa icon={faDotCircle}></Fa>
+          <span
+            class="e-dot-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
+          >
+            <Fa icon={faDotCircle} />
           </span>
         {/if}
       {:else if isPull}
-        <span class='e-arrow-down' title='Pulls {input.key} live {endpoint.kind} stream'>
-          <Fa icon={faArrowDown}></Fa>
+        <span
+          class="e-arrow-down"
+          title="Pulls {input.key} live {endpoint.kind} stream"
+        >
+          <Fa icon={faArrowDown} />
         </span>
       {:else}
-        <span class='e-arrow-right' title='Accepts {input.key} live {endpoint.kind} stream'>
-           <Fa icon={faArrowRight}></Fa>
+        <span
+          class="e-arrow-right"
+          title="Accepts {input.key} live {endpoint.kind} stream"
+        >
+          <Fa icon={faArrowRight} />
         </span>
       {/if}
     </div>
@@ -159,34 +172,34 @@
           {#if show_up_confirmation}
             <Confirm let:confirm>
               <button
-                class='uk-button-default arrows'
-                data-testid='move-input-up'
-                title='Move up'
+                class="uk-button-default arrows"
+                data-testid="move-input-up"
+                title="Move up"
                 on:click={() => confirm(moveUp)}
-              ><span>↑</span>
+                ><span>↑</span>
               </button>
-              <span slot='title'>Move up</span>
-              <span slot='description'
-              >Move this endpoint up and replace primary endpoint.
+              <span slot="title">Move up</span>
+              <span slot="description"
+                >Move this endpoint up and replace primary endpoint.
               </span>
-              <span slot='confirm'>Move up</span>
+              <span slot="confirm">Move up</span>
             </Confirm>
           {:else}
             <button
-              class='uk-button-default arrows'
-              data-testid='move-input-up'
-              title='Move up'
+              class="uk-button-default arrows"
+              data-testid="move-input-up"
+              title="Move up"
               on:click={moveUp}
-            ><span>↑</span>
+              ><span>↑</span>
             </button>
           {/if}
         {:else}
           <button
-            style='border:none'
-            class='uk-button-default arrows'
-            data-testid='move-input-up'
-            title=''
-          ><span>&nbsp&nbsp</span>
+            style="border:none"
+            class="uk-button-default arrows"
+            data-testid="move-input-up"
+            title=""
+            ><span>&nbsp&nbsp</span>
           </button>
         {/if}
 
@@ -195,35 +208,35 @@
           {#if !show_move_up}
             <Confirm let:confirm>
               <button
-                class='uk-button-default arrows'
-                data-testid='move-input-down'
-                title='Move down'
+                class="uk-button-default arrows"
+                data-testid="move-input-down"
+                title="Move down"
                 on:click={() => confirm(moveDown)}
-              ><span>↓</span>
+                ><span>↓</span>
               </button>
-              <span slot='title'>Move down</span>
-              <span slot='description'
-              >Move this endpoint down. Note, this endpoint is primary, it
+              <span slot="title">Move down</span>
+              <span slot="description"
+                >Move this endpoint down. Note, this endpoint is primary, it
                 will be replaced by the following endpoint.
               </span>
-              <span slot='confirm'>Move down</span>
+              <span slot="confirm">Move down</span>
             </Confirm>
           {:else}
             <button
-              class='uk-button-default arrows'
-              data-testid='move-input-down'
-              title='Move down'
+              class="uk-button-default arrows"
+              data-testid="move-input-down"
+              title="Move down"
               on:click={moveDown}
-            ><span>↓</span>
+              ><span>↓</span>
             </button>
           {/if}
         {:else}
           <button
-            style='border:none'
-            class='uk-button-default arrows'
-            data-testid='move-input-down'
-            title=''
-          ><span>&nbsp&nbsp</span>
+            style="border:none"
+            class="uk-button-default arrows"
+            data-testid="move-input-down"
+            title=""
+            ><span>&nbsp&nbsp</span>
           </button>
         {/if}
       {/if}
@@ -235,7 +248,7 @@
   </div>
 </template>
 
-<style lang='stylus'>
+<style lang="stylus">
   .endpoint
     display: flex
 

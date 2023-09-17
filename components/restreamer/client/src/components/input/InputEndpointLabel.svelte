@@ -1,7 +1,7 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faEdit } from '@fortawesome/free-solid-svg-icons'
-  import { faPlus } from '@fortawesome/free-solid-svg-icons'
+  import { faEdit } from '@fortawesome/free-solid-svg-icons';
+  import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation } from 'svelte-apollo';
 

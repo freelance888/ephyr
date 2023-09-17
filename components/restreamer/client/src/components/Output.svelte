@@ -1,10 +1,10 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faEdit } from '@fortawesome/free-regular-svg-icons'
+  import { faEdit } from '@fortawesome/free-regular-svg-icons';
   import { faCircle } from '@fortawesome/free-solid-svg-icons';
   import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
-  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons'
-  import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
+  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons';
+  import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation } from 'svelte-apollo';
   import { getMixPageUrl, showError } from '../utils/util';
@@ -81,7 +81,6 @@
     e.preventDefault();
     dispatch('outputDragStarted', false);
   }
-
 </script>
 
 <template>
@@ -161,34 +160,30 @@
           <span
             class="uk-margin-small-right status-indicator e-circle"
             data-testid={`output-status:${value.status}`}
-            >
-            <Fa class='online' icon={faCircle}></Fa>
-          </span
           >
+            <Fa class="online" icon={faCircle} />
+          </span>
         {:else if value.status === 'INITIALIZING'}
           <span
             class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            >
-            <Fa class='initializing' icon={faDotCircleSolid}></Fa>
-          </span
           >
+            <Fa class="initializing" icon={faDotCircleSolid} />
+          </span>
         {:else if value.status === 'UNSTABLE'}
           <span
             class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            >
-            <Fa class='unstable' icon={faDotCircleSolid}></Fa>
-          </span
           >
+            <Fa class="unstable" icon={faDotCircleSolid} />
+          </span>
         {:else}
           <span
             class="uk-margin-small-right status-indicator e-dot-circle"
             data-testid={`output-status:${value.status}`}
-            >
-             <Fa class='offline' icon={faDotCircle}></Fa>
-          </span
           >
+            <Fa class="offline" icon={faDotCircle} />
+          </span>
         {/if}
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
           <RecordsModal let:open id={value.id} {public_host}>
@@ -212,7 +207,7 @@
             target="_blank"
             rel="noopener noreferrer"
             title="Open in a separate window"
-            ><Fa icon={faExternalLinkAlt}></Fa>
+            ><Fa icon={faExternalLinkAlt} />
           </a>
         {/if}
 

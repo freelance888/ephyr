@@ -81,13 +81,12 @@ mutation Import($restream_id: RestreamId, $replace: Boolean!, $spec: String!) {
 }
 
 mutation UpdateInputsOrder($ids: [RestreamId!]!) {
-    changeInputsOrder(ids:$ids)
+    changeInputsOrder(ids: $ids)
 }
 
 mutation UpdateOutputsOrder($ids: [OutputId!]!, $restreamId: RestreamId!) {
-    changeOutputsOrder(ids:$ids, restreamId:$restreamId)
+    changeOutputsOrder(ids: $ids, restreamId: $restreamId)
 }
-
 
 mutation SetRestream(
     $key: RestreamKey!

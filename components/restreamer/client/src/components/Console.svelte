@@ -1,6 +1,6 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons'
+  import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation, subscribe } from 'svelte-apollo';
   import { ConsoleLog } from '../../api/dashboard.graphql';
@@ -15,7 +15,7 @@
 
   $: items = $consoleLog.data?.consoleLog ?? [];
 
-  $: errorCount =  items.filter((x) => x.kind === 'ERR').length;
+  $: errorCount = items.filter((x) => x.kind === 'ERR').length;
   $: warningCount = items.filter((x) => x.kind === 'WARNING').length;
   $: infoCount = items.filter((x) => x.kind === 'INFO').length;
 
@@ -37,23 +37,30 @@
 <template>
   <section>
     <div class="console-toolbar uk-flex uk-flex-middle">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
       <span class="console-title" on:click={dispatchToggleConsole}>Console</span
       >
       {#if errorCount}
         <span class="console-icon" title="Number of errors">
-          <span class='icon-exclamation-triangle console-error'><Fa icon={faExclamationTriangle}></Fa></span>{errorCount}
+          <span class="icon-exclamation-triangle console-error"
+            ><Fa icon={faExclamationTriangle} /></span
+          >{errorCount}
         </span>
       {/if}
 
       {#if warningCount}
         <span class="console-icon" title="Number of warning messages">
-          <span class='icon-exclamation-triangle console-warning'><Fa icon={faExclamationTriangle}></Fa></span>{warningCount}
+          <span class="icon-exclamation-triangle console-warning"
+            ><Fa icon={faExclamationTriangle} /></span
+          >{warningCount}
         </span>
       {/if}
 
       {#if infoCount}
         <span class="console-icon" title="Number of info messages">
-          <span class='icon-exclamation-triangle'><Fa icon={faExclamationTriangle}></Fa></span>{infoCount}
+          <span class="icon-exclamation-triangle"
+            ><Fa icon={faExclamationTriangle} /></span
+          >{infoCount}
         </span>
       {/if}
 

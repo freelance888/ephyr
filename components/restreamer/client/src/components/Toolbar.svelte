@@ -1,6 +1,12 @@
 <script lang="js">
-  import Fa from 'svelte-fa'
-  import { faPlus, faShareSquare, faCog, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+  import Fa from 'svelte-fa';
+  import {
+    faPlus,
+    faShareSquare,
+    faCog,
+    faLock,
+    faLockOpen,
+  } from '@fortawesome/free-solid-svg-icons';
 
   import { exportModal } from '../stores';
 
@@ -69,9 +75,9 @@
       on:click|preventDefault={() => (openPasswordModal = true)}
     >
       {#if $info.data.info.passwordHash}
-        <Fa icon={faLock}></Fa>
+        <Fa icon={faLock} />
       {:else}
-        <Fa icon={faLockOpen}></Fa>
+        <Fa icon={faLockOpen} />
       {/if}
     </a>
     {#if openPasswordModal}
@@ -88,7 +94,7 @@
       class="uk-button uk-button-primary"
       on:click={() => (openRestreamModal = true)}
     >
-      <Fa icon={faPlus}></Fa>
+      <Fa icon={faPlus} />
       <span>Input</span>
     </button>
     {#if openRestreamModal}

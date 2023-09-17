@@ -1,12 +1,11 @@
 <script lang="js">
-
   export let disabled;
   export let active;
   export let handleClick = () => {};
-
 </script>
 
 <template>
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="toggle-container"
     on:click={(e) => {
@@ -16,11 +15,7 @@
       handleClick(e);
     }}
   >
-    <div
-      class:active
-      class:disabled
-      class='content'
-    >
+    <div class:active class:disabled class="content">
       <slot />
     </div>
   </div>

@@ -65,7 +65,7 @@
             class="error-icon value uk-text-danger"
             title={formatErrorMsg(serverInfo.errorMsg)}
           >
-              <Fa faInfoCircle icon={faInfoCircle}/>
+            <Fa faInfoCircle icon={faInfoCircle} />
           </span>
         {/if}
       </div>

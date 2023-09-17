@@ -182,4 +182,4 @@ export const getFolderIdFromGDrive = (id) => {
 
 export const isArrayStartWithAnother = (arr1: [], arr2: []) => {
   return isEqual(arr1, take(arr2, arr1.length));
-}
+};

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Fa from 'svelte-fa';
-  import { faClose } from '@fortawesome/free-solid-svg-icons'
-  import { faCheck } from '@fortawesome/free-solid-svg-icons'
+  import { faClose } from '@fortawesome/free-solid-svg-icons';
+  import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
   export let id: string;
   export let checked = false;
@@ -27,7 +27,6 @@
       if (onChangeFn) onChangeFn();
     }
   }
-
 </script>
 
 <template>
@@ -44,10 +43,9 @@
       on:click={onChange}
     />
     <label for={id} class="toggle">
-      <Fa class={!checked ? 'uk-invisible' : ''} icon={faCheck} scale={1.2}></Fa>
-      <Fa class={checked ? 'uk-invisible' : ''} icon={faClose} scale={1.2}></Fa>
+      <Fa class={!checked ? 'uk-invisible' : ''} icon={faCheck} scale={1.2} />
+      <Fa class={checked ? 'uk-invisible' : ''} icon={faClose} scale={1.2} />
     </label>
-
   </span>
 </template>
 

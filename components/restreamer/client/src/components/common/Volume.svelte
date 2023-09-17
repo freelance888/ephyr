@@ -1,7 +1,7 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faVolumeUp } from '@fortawesome/free-solid-svg-icons'
-  import { faVolumeMute } from '@fortawesome/free-solid-svg-icons'
+  import { faVolumeUp } from '@fortawesome/free-solid-svg-icons';
+  import { faVolumeMute } from '@fortawesome/free-solid-svg-icons';
 
   import { mutation } from 'svelte-apollo';
   import { showError } from '../../utils/util';
@@ -59,9 +59,9 @@
 <div class="uk-flex volume">
   <a href="/" on:click|preventDefault={toggleVolume}>
     {#if muted}
-      <span class='volume-mute'><Fa icon={faVolumeMute}></Fa></span>
+      <span class="volume-mute"><Fa icon={faVolumeMute} /></span>
     {:else}
-      <span class='volume-up'><Fa icon={faVolumeUp}></Fa></span>
+      <span class="volume-up"><Fa icon={faVolumeUp} /></span>
     {/if}
   </a>
   <input
