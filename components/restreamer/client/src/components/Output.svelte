@@ -158,31 +158,31 @@
       <div class="uk-flex uk-flex-base-line">
         {#if value.status === 'ONLINE'}
           <span
-            class="uk-margin-small-right status-indicator e-circle"
+            class="uk-margin-small-right status-indicator e-circle online"
             data-testid={`output-status:${value.status}`}
           >
-            <Fa class="online" icon={faCircle} />
+            <Fa icon={faCircle} />
           </span>
         {:else if value.status === 'INITIALIZING'}
           <span
-            class="uk-margin-small-right status-indicator e-dot-circle"
+            class="uk-margin-small-right status-indicator e-dot-circle initializing"
             data-testid={`output-status:${value.status}`}
           >
-            <Fa class="initializing" icon={faDotCircleSolid} />
+            <Fa icon={faDotCircleSolid} />
           </span>
         {:else if value.status === 'UNSTABLE'}
           <span
-            class="uk-margin-small-right status-indicator e-dot-circle"
+            class="uk-margin-small-right status-indicator e-dot-circle unstable"
             data-testid={`output-status:${value.status}`}
           >
-            <Fa class="unstable" icon={faDotCircleSolid} />
+            <Fa icon={faDotCircleSolid} />
           </span>
         {:else}
           <span
-            class="uk-margin-small-right status-indicator e-dot-circle"
+            class="uk-margin-small-right status-indicator e-dot-circle offline"
             data-testid={`output-status:${value.status}`}
           >
-            <Fa class="offline" icon={faDotCircle} />
+            <Fa icon={faDotCircle} />
           </span>
         {/if}
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
