@@ -157,6 +157,7 @@ impl Output {
     Deserialize,
     Display,
     Eq,
+    Hash,
     From,
     GraphQLScalar,
     Into,

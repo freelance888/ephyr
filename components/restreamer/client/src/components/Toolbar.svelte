@@ -1,4 +1,13 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import {
+    faPlus,
+    faShareSquare,
+    faCog,
+    faLock,
+    faLockOpen,
+  } from '@fortawesome/free-solid-svg-icons';
+
   import { exportModal } from '../stores';
 
   import RestreamModal from '../modals/RestreamModal.svelte';
@@ -47,9 +56,10 @@
   <a
     href="/"
     class="set-settings"
+    title="Change settings"
     on:click|preventDefault={() => (openSettingsModal = true)}
   >
-    <i class="fas fa-cog" title="Change settings" />
+    <Fa icon={faCog} />
   </a>
   {#if openSettingsModal}
     <SettingsModal
@@ -61,14 +71,14 @@
     <a
       href="/"
       class="set-password"
+      title="{!$info.data.info.passwordHash ? 'Set' : 'Change'} password"
       on:click|preventDefault={() => (openPasswordModal = true)}
     >
-      <i
-        class="fas"
-        class:fa-lock-open={!$info.data.info.passwordHash}
-        class:fa-lock={!!$info.data.info.passwordHash}
-        title="{!$info.data.info.passwordHash ? 'Set' : 'Change'} password"
-      />
+      {#if $info.data.info.passwordHash}
+        <Fa icon={faLock} />
+      {:else}
+        <Fa icon={faLockOpen} />
+      {/if}
     </a>
     {#if openPasswordModal}
       <PasswordModal
@@ -84,7 +94,8 @@
       class="uk-button uk-button-primary"
       on:click={() => (openRestreamModal = true)}
     >
-      <i class="fas fa-plus" />&nbsp;<span>Input</span>
+      <Fa icon={faPlus} />
+      <span>Input</span>
     </button>
     {#if openRestreamModal}
       <RestreamModal
@@ -101,7 +112,7 @@
         on:click|preventDefault={openExportModal}
         title="Export/Import all"
       >
-        <i class="fas fa-share-square" />
+        <Fa icon={faShareSquare} />
       </a>
     {/if}
   </div>

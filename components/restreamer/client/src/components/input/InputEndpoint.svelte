@@ -1,4 +1,11 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+  import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
+  import { faCircle } from '@fortawesome/free-solid-svg-icons';
+  import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
+  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons';
+
   import Confirm from '../common/Confirm.svelte';
   import Url from '../common/Url.svelte';
   import InputEndpointLabel from './InputEndpointLabel.svelte';
@@ -101,54 +108,51 @@
       class:uk-alert-success={alertSuccess}
     >
       {#if isFile}
-        <span
-          ><i
-            class="fas fa-arrow-right"
-            title="Serves live {endpoint.kind} stream"
-          /></span
-        >
+        <span class="e-arrow-right" title="Serves live {endpoint.kind} stream">
+          <Fa icon={faArrowRight} />
+        </span>
       {:else if isFailover || endpoint.kind !== ENDPOINT_KIND_RTMP}
         {#if endpoint.status === ONLINE}
           <span
-            ><i
-              class="fas fa-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream"
-            /></span
+            class="e-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
           >
+            <Fa icon={faCircle} />
+          </span>
         {:else if endpoint.status === INITIALIZING}
           <span
-            ><i
-              class="fas fa-dot-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream"
-            /></span
+            class="e-dot-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
           >
+            <Fa icon={faDotCircleSolid} />
+          </span>
         {:else}
           <span
-            ><i
-              class="far fa-dot-circle"
-              title="Serves {isFailover
-                ? 'failover '
-                : ''}live {endpoint.kind} stream"
-            /></span
+            class="e-dot-circle"
+            title="Serves {isFailover
+              ? 'failover '
+              : ''}live {endpoint.kind} stream"
           >
+            <Fa icon={faDotCircle} />
+          </span>
         {/if}
       {:else if isPull}
         <span
-          ><i
-            class="fas fa-arrow-down"
-            title="Pulls {input.key} live {endpoint.kind} stream"
-          />
+          class="e-arrow-down"
+          title="Pulls {input.key} live {endpoint.kind} stream"
+        >
+          <Fa icon={faArrowDown} />
         </span>
       {:else}
         <span
-          ><i
-            class="fas fa-arrow-right"
-            title="Accepts {input.key} live {endpoint.kind} stream"
-          />
+          class="e-arrow-right"
+          title="Accepts {input.key} live {endpoint.kind} stream"
+        >
+          <Fa icon={faArrowRight} />
         </span>
       {/if}
     </div>
@@ -157,7 +161,7 @@
       <FileInfo file={currentFile} showDownloadLink={true} />
     {:else}
       <Url
-        streamInfo={formatStreamInfo(endpoint.streamStat)}
+        streamInfo={formatStreamInfo(endpoint.streamStat, input.key)}
         isError={!!endpoint.streamStat?.error}
         url={input_url}
       />
@@ -248,11 +252,11 @@
   .endpoint
     display: flex
 
-    .fa-arrow-down, .fa-arrow-right
+    .e-arrow-down, .e-arrow-right
       font-size: 14px
       cursor: help
 
-    .fa-circle, .fa-dot-circle
+    .e-circle, .e-dot-circle
       font-size: 13px
       cursor: help
 

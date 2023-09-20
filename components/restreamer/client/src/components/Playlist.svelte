@@ -30,8 +30,6 @@
   const playFileFromPlaylist = mutation(PlayFileFromPlaylist);
   const stopPlayingFileFromPlaylist = mutation(StopPlayingFileFromPlaylist);
 
-  const flipDurationMs = 200;
-
   export let restreamId;
   export let queue;
   export let currentlyPlayingFileId;
@@ -249,7 +247,7 @@
         items: queue,
         dropTargetClasses: ['drop-target'],
         dragDisabled,
-        flipDurationMs,
+        flipDurationMs: 200,
       }}
       on:consider={handleSort}
       on:finalize={onDrop}
@@ -268,12 +266,12 @@
             >
             <span slot="description" />
             <span slot="confirm">{item.isPlaying ? 'Stop' : 'Start'}</span>
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
               class="item-file uk-height-1-1 uk-width-1-1 uk-flex uk-flex-middle"
               class:is-playing={item.isPlaying}
               class:is-finished={item.wasPlayed}
             >
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
               <span
                 class="item-icon"
                 class:can-be-started={item.isLocal}
@@ -334,10 +332,6 @@
 </template>
 
 <style lang="stylus">
-  :global(.drop-target) {
-    outline: none !important;
-  }
-
   .google-drive-dir
     input
       max-width: 500px

@@ -1,4 +1,11 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faEdit } from '@fortawesome/free-regular-svg-icons';
+  import { faCircle } from '@fortawesome/free-solid-svg-icons';
+  import { faDotCircle } from '@fortawesome/free-regular-svg-icons';
+  import { faDotCircle as faDotCircleSolid } from '@fortawesome/free-solid-svg-icons';
+  import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+
   import { mutation } from 'svelte-apollo';
   import { getMixPageUrl, showError } from '../utils/util';
 
@@ -10,6 +17,7 @@
   import Mixin from './Mixin.svelte';
   import RecordsModal from '../modals/RecordsModal.svelte';
   import Url from './common/Url.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let public_host;
   export let value;
@@ -19,6 +27,9 @@
   export let enableConfirmation;
   export let mutations;
   export let isReadOnly = false;
+  export let outputsSortMode = false;
+
+  const dispatch = createEventDispatcher();
 
   const disableOutputMutation = mutations.DisableOutput
     ? mutation(mutations.DisableOutput)
@@ -65,6 +76,11 @@
       value.mixins.map((m) => m.src)
     );
   }
+
+  function outputStartDrag(e) {
+    e.preventDefault();
+    dispatch('outputDragStarted', false);
+  }
 </script>
 
 <template>
@@ -103,12 +119,20 @@
 
     {#if !isReadOnly}
       <div class="left-buttons-area" />
+      <span
+        class:uk-hidden={!outputsSortMode}
+        class="item-drag-zone uk-icon"
+        uk-icon="table"
+        on:mousedown={outputStartDrag}
+      />
       <a
+        class:uk-hidden={outputsSortMode}
         class="edit-output"
         href="/"
+        title="Edit output"
         on:click|preventDefault={openEditOutputModal}
       >
-        <i class="far fa-edit" title="Edit output" />
+        <Fa icon={faEdit} />
       </a>
 
       <div>
@@ -131,31 +155,35 @@
     {/if}
 
     <div class="output-mixes">
-      <div class="uk-flex uk-margin-small-bottom">
+      <div class="uk-flex uk-flex-base-line">
         {#if value.status === 'ONLINE'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-circle online"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-circle online" /></span
           >
+            <Fa icon={faCircle} />
+          </span>
         {:else if value.status === 'INITIALIZING'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle initializing"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-dot-circle initializing" /></span
           >
+            <Fa icon={faDotCircleSolid} />
+          </span>
         {:else if value.status === 'UNSTABLE'}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle unstable"
             data-testid={`output-status:${value.status}`}
-            ><i class="fas fa-dot-circle unstable" /></span
           >
+            <Fa icon={faDotCircleSolid} />
+          </span>
         {:else}
           <span
-            class="uk-margin-small-right status-indicator"
+            class="uk-margin-small-right status-indicator e-dot-circle offline"
             data-testid={`output-status:${value.status}`}
-            ><i class="far fa-dot-circle offline" /></span
           >
+            <Fa icon={faDotCircle} />
+          </span>
         {/if}
         {#if value.dst.startsWith('file:///') && value.status === 'OFFLINE'}
           <RecordsModal let:open id={value.id} {public_host}>
@@ -179,7 +207,7 @@
             target="_blank"
             rel="noopener noreferrer"
             title="Open in a separate window"
-            ><i class="fas fa-external-link-alt" />
+            ><Fa icon={faExternalLinkAlt} />
           </a>
         {/if}
 
@@ -214,6 +242,7 @@
       width: calc((100% - (20px * 2)) / 2)
       @media screen and (max-width: 700px)
         width: 100%
+
     &.hidden
       display: none
 
@@ -269,9 +298,9 @@
 
   .status-indicator
     flex-shrink: 0
-  .fa-circle, .fa-dot-circle
+
+  .e-circle, .e-dot-circle
     font-size: 10px
-    margin-top: -1px
 
   a.dvr-link
     color: var(--primary-text-color)
@@ -279,5 +308,10 @@
   .output-mixes
     width: calc(100% - 56px);
     margin-left: 4px
+
+  .item-drag-zone
+    margin-right: 4px
+    cursor: grab
+
 
 </style>

@@ -1,12 +1,25 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import {
+    faLock,
+    faLockOpen,
+    faSort,
+  } from '@fortawesome/free-solid-svg-icons';
+
   import { mutation } from 'svelte-apollo';
 
   import Confirm from './common/Confirm.svelte';
   import StatusFilter from './common/StatusFilter';
-  import { escapeRegExp, isFailoverInput, showError } from '../utils/util';
+  import {
+    escapeRegExp,
+    isArrayStartWithAnother,
+    isFailoverInput,
+    showError,
+  } from '../utils/util';
   import {
     DisableAllOutputsOfRestreams,
     EnableAllOutputsOfRestreams,
+    UpdateInputsOrder,
   } from '../../api/client.graphql';
   import OutputModal from '../modals/OutputModal.svelte';
   import PasswordModal from '../modals/PasswordModal.svelte';
@@ -23,6 +36,8 @@
   import { onDestroy } from 'svelte';
   import Restream from './Restream.svelte';
   import cloneDeep from 'lodash/cloneDeep';
+  import { dndzone } from 'svelte-dnd-action';
+  import ToggleButton from './common/ToggleButton.svelte';
 
   const enableAllOutputsOfRestreamsMutation = mutation(
     EnableAllOutputsOfRestreams
@@ -30,6 +45,8 @@
   const disableAllOutputsOfRestreamsMutation = mutation(
     DisableAllOutputsOfRestreams
   );
+
+  const updateInputsOrderMutation = mutation(UpdateInputsOrder);
 
   export let state;
   export let info;
@@ -45,6 +62,7 @@
   let searchInInputs = searchText ? filterBy.includes('input') : true;
   let searchInOutputs = searchText ? filterBy.includes('output') : false;
 
+  $: orderedRestreams = undefined;
   $: allReStreams = [];
   $: aggregatedStreamsData = getAggregatedStreamsData(allReStreams);
 
@@ -52,14 +70,36 @@
   $: globalOutputsFilters = [];
   $: hasActiveFilters = globalInputsFilters.length;
 
+  onDestroy(
+    state.subscribe((s) => {
+      if (s.data && orderedRestreams && !orderWasUpdated) {
+        const storedIds = s.data.allRestreams.map((x) => x.id);
+        const orderedIds = orderedRestreams.map((x) => x.id);
+
+        if (isArrayStartWithAnother(orderedIds, storedIds)) {
+          orderWasUpdated = true;
+          orderedRestreams = undefined;
+        }
+      }
+    })
+  );
+
   $: {
     allReStreams = getFilteredRestreams(
       searchText,
-      $state.data.allRestreams,
+      orderedRestreams ?? $state.data.allRestreams,
       searchInInputs,
       searchInOutputs
     );
   }
+
+  $: orderWasUpdated = true;
+
+  $: dragDisabled = true;
+
+  $: inputsSortMode = false;
+
+  $: outputsSortMode = false;
 
   const isReStreamVisible = (restream) => {
     const hasInputFilter = globalInputsFilters.includes(
@@ -204,6 +244,32 @@
       searchInOutputs = true;
     }
   }
+
+  function handleInputsSort(e) {
+    dragDisabled = true;
+    orderedRestreams = e.detail.items;
+  }
+
+  async function onInputDrop(e) {
+    const ids = e.detail.items.map((x) => x.id);
+    handleInputsSort(e);
+
+    orderWasUpdated = false;
+    await updateOrder(ids);
+  }
+
+  function onInputsDragStarted(e) {
+    dragDisabled = false;
+  }
+
+  async function updateOrder(ids) {
+    try {
+      const variables = { ids };
+      await updateInputsOrderMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
 </script>
 
 <template>
@@ -229,6 +295,18 @@
             />
           {/each}
         </span>
+        <ToggleButton
+          active={inputsSortMode}
+          disabled={outputsSortMode}
+          handleClick={() => (inputsSortMode = !inputsSortMode)}
+        >
+          <span
+            title={(inputsSortMode ? 'Disable' : 'Enable') +
+              ' inputs sort mode'}
+          >
+            <Fa icon={faSort} />
+          </span>
+        </ToggleButton>
       </div>
       <div class="uk-margin-small-left">
         <span class="toolbar-label">
@@ -266,20 +344,33 @@
             />
           {/each}
         </span>
+        <ToggleButton
+          active={outputsSortMode}
+          disabled={inputsSortMode}
+          handleClick={() => (outputsSortMode = !outputsSortMode)}
+        >
+          <span
+            title={(outputsSortMode ? 'Disable' : 'Enable') +
+              ' outputs sort mode'}
+          >
+            <Fa icon={faSort} />
+          </span>
+        </ToggleButton>
+
         {#key $info.data.info.passwordOutputHash}
           <a
             href="/"
-            class="set-output-password"
+            class="set-output-password action-icon"
+            title="{!$info.data.info.passwordOutputHash
+              ? 'Set'
+              : 'Change'} output password"
             on:click|preventDefault={() => (openPasswordOutputModal = true)}
           >
-            <i
-              class="fas"
-              class:fa-lock-open={!$info.data.info.passwordOutputHash}
-              class:fa-lock={!!$info.data.info.passwordOutputHash}
-              title="{!$info.data.info.passwordOutputHash
-                ? 'Set'
-                : 'Change'} output password"
-            />
+            {#if $info.data.info.passwordOutputHash}
+              <Fa icon={faLock} />
+            {:else}
+              <Fa icon={faLockOpen} />
+            {/if}
           </a>
           {#if openPasswordOutputModal}
             <PasswordModal
@@ -335,43 +426,61 @@
       uk-close
       on:click={() => (searchText = '')}
     />
-    <div class="uk-margin-small-top">
-      <label>
-        <input
-          class="uk-checkbox"
-          bind:checked={searchInInputs}
-          on:change={onChangeSearchInInput}
-          type="checkbox"
-        /> in inputs
-      </label>
-      <label>
-        <input
-          class="uk-checkbox uk-margin-small-left"
-          bind:checked={searchInOutputs}
-          on:change={onChangeSearchInOutputs}
-          type="checkbox"
-        /> in outputs
-      </label>
+    <div class="uk-margin-small-top uk-grid uk-grid-small uk-flex-middle">
+      <div>
+        <label>
+          <input
+            class="uk-checkbox"
+            bind:checked={searchInInputs}
+            on:change={onChangeSearchInInput}
+            type="checkbox"
+          /> in inputs
+        </label>
+        <label>
+          <input
+            class="uk-checkbox uk-margin-small-left"
+            bind:checked={searchInOutputs}
+            on:change={onChangeSearchInOutputs}
+            type="checkbox"
+          /> in outputs
+        </label>
+      </div>
     </div>
   </section>
 
-  {#each allReStreams as restream}
-    <Restream
-      public_host={$info.data.info.publicHost}
-      value={restream}
-      hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
-      {globalOutputsFilters}
-      {files}
-    />
-  {:else}
-    <div
-      class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
-    >
-      <div>
-        There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+  <div
+    use:dndzone={{
+      items: allReStreams,
+      type: 'input',
+      dropTargetClasses: ['drop-target'],
+      dragDisabled,
+      morphDisabled: true,
+      flipDurationMs: 200,
+    }}
+    on:consider={handleInputsSort}
+    on:finalize={onInputDrop}
+  >
+    {#each allReStreams as restream (restream.id)}
+      <Restream
+        public_host={$info.data.info.publicHost}
+        on:inputsDragStarted={onInputsDragStarted}
+        {inputsSortMode}
+        {outputsSortMode}
+        value={restream}
+        hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
+        {globalOutputsFilters}
+        {files}
+      />
+    {:else}
+      <div
+        class="uk-section uk-section-muted uk-section-xsmall uk-padding uk-text-center"
+      >
+        <div>
+          There are no Inputs. You can add it by clicking <b>+INPUT</b> button.
+        </div>
       </div>
-    </div>
-  {/each}
+    {/each}
+  </div>
 </template>
 
 <style lang="stylus">

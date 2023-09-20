@@ -1,4 +1,8 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faPlus } from '@fortawesome/free-solid-svg-icons';
+  import { faShareSquare } from '@fortawesome/free-solid-svg-icons';
+
   import AddServerModal from '../modals/AddServerModal.svelte';
   import ExportDashboardModal from '../modals/ExportDashboardModal.svelte';
 
@@ -16,7 +20,7 @@
       class="uk-button uk-button-primary"
       on:click={() => (openAddServerModal = true)}
     >
-      <i class="fas fa-plus" />&nbsp;<span>Add host</span>
+      <span><Fa icon={faPlus} />&nbsp;Add host</span>
     </button>
     {#if openAddServerModal}
       <AddServerModal bind:visible={openAddServerModal} />
@@ -27,7 +31,7 @@
       on:click|preventDefault={() => (openExportModal = true)}
       title="Export/Import hosts"
     >
-      <i class="fas fa-share-square" />
+      <Fa icon={faShareSquare} />
     </a>
     {#if openExportModal}
       <ExportDashboardModal {hosts} bind:visible={openExportModal} />

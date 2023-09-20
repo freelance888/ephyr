@@ -152,6 +152,7 @@ impl Restream {
     Eq,
     From,
     GraphQLScalar,
+    Hash,
     Into,
     PartialEq,
     Serialize,

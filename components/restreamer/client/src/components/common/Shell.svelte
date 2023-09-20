@@ -155,10 +155,16 @@
     &:not([disabled]):hover
       background-color: #046
 
+  .drop-target, #dnd-action-dragged-el
+    outline: none !important;
+
   footer
     padding-top: 10px
     padding-bottom: 3px
     font-size: 12px
+
+  .uk-flex-base-line
+    align-items: baseline
 
   .uk-notification-message
     pointer-events: none
@@ -229,5 +235,4 @@
     transition: 0.1s ease-in
     &:hover
       color: var(--primary-text-hover-color)
-
 </style>

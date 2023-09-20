@@ -1715,6 +1715,94 @@
             "deprecationReason": null
           },
           {
+            "name": "changeInputsOrder",
+            "description": "Change order of `Restream`s depending on the order of its id inside `ids` array",
+            "args": [
+              {
+                "name": "ids",
+                "description": "Ordered list of Restreams identities",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "RestreamId",
+                        "ofType": null
+                      }
+                    }
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "changeOutputsOrder",
+            "description": "Reorder `Restream`s' outputs depending on the order of its id inside `ids` array\n\n### Result\n\nReturns `true` if outputs were reordered successfully",
+            "args": [
+              {
+                "name": "restreamId",
+                "description": "ID of the parent `Restream`",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "RestreamId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "ids",
+                "description": "Ordered list of outputs identities",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "OutputId",
+                        "ofType": null
+                      }
+                    }
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "setPlaylist",
             "description": "Set playlist to [`Restream`]\n\n### Result\n\nReturns `true` if restream was found by `restream_id` and\nplaylist was set to it",
             "args": [

@@ -18,6 +18,8 @@ All user visible changes to this project will be documented in this file. This p
 - Export/Import of file backup ([#386])
 
 ### Added
+- Web UI:
+  - Drag & drop for inputs and outputs ([#451])
 - Dashboard:
   - Remove all clients ([#386])
   - Star/Stop playing file by file name prefix ([#415])
@@ -31,6 +33,7 @@ All user visible changes to this project will be documented in this file. This p
 - Input
   - Added optional playback encoding ([#425])
 ### Miscellaneous
+- Get rid of direct url to fontawesome library ([#451])
 - Extract Google Drive API module to `google-drive` crate ([#430]);
 - Update [FFmpeg] to 6.0  ([#375]);
 - Update [SRS] to v4-r5  ([#430]);
@@ -50,7 +53,7 @@ All user visible changes to this project will be documented in this file. This p
 [#415]: /../../pull/415
 [#425]: /../../pull/425
 [#430]: /../../pull/430
-
+[#451]: /../../pull/451
 
 
 ## [0.7.0] · 17-04-2023

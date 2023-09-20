@@ -1,4 +1,8 @@
 <script lang="ts">
+  import Fa from 'svelte-fa';
+  import { faClose } from '@fortawesome/free-solid-svg-icons';
+  import { faCheck } from '@fortawesome/free-solid-svg-icons';
+
   export let id: string;
   export let checked = false;
   export let classes = '';
@@ -38,27 +42,35 @@
       {id}
       on:click={onChange}
     />
-    <label for={id} class="toggle" />
+    <label for={id} class="toggle">
+      <Fa class={!checked ? 'uk-invisible' : ''} icon={faCheck} scale={1.2} />
+      <Fa class={checked ? 'uk-invisible' : ''} icon={faClose} scale={1.2} />
+    </label>
   </span>
 </template>
 
 <style lang="stylus" global>
   .toggle
+    display: inline-block
     input[type="checkbox"]
       display: none
 
       & + label
         cursor: pointer
         position: relative
-        display: inline-block
+        display: flex
+        align-items: center
+        justify-content: space-around
         height: 2em
         width: 4em
         background: #cecece
         border-radius: 20em
-        vertical-align: middle
         transition: .3s background
         user-select: none
         margin-top: -5px
+
+        svg
+          color: #fff
 
         &, &::before, &::after
           box-sizing: border-box
@@ -67,6 +79,7 @@
           position: absolute
           top: 0
           left: 0
+
         &::before
           content: ''
           display: inline-block
@@ -77,25 +90,16 @@
           border-radius: 50%
           z-index: 200
           transition:.3s left
-        &::after
-          color: #fff
-          content: '\f00d'
-          font: 1.25em 'Font Awesome 5 Pro'
-          top: 50%
-          margin-top: -.5em
-          left: 2em
 
       &:checked + label
         background: #08c
 
         &::before
           left: 2em
-        &::after
-          content: '\f00c'
-          left: .5em
 
     &.small
       input[type="checkbox"]
         & + label
-          margin-top: -4px
+          margin-top: 3px
+
 </style>

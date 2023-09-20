@@ -1,6 +1,12 @@
 <svelte:options immutable={true} />
 
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faEdit } from '@fortawesome/free-regular-svg-icons';
+  import { faPlus } from '@fortawesome/free-solid-svg-icons';
+  import { faShareSquare } from '@fortawesome/free-solid-svg-icons';
+  import { dndzone } from 'svelte-dnd-action';
+
   import { getClient, mutation, subscribe } from 'svelte-apollo';
 
   import {
@@ -18,10 +24,16 @@
     CurrentlyPlayingFile,
   } from '../../api/client.graphql';
 
-  import { getFullStreamUrl, isFailoverInput, showError } from '../utils/util';
+  import {
+    getFullStreamUrl,
+    isArrayStartWithAnother,
+    isFailoverInput,
+    showError,
+  } from '../utils/util';
   import { statusesList } from '../utils/constants';
 
   import { exportModal, outputModal } from '../stores';
+  import { UpdateOutputsOrder } from '../../api/client.graphql';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -42,6 +54,7 @@
   import EqualizerIcon from './svg/EqualizerIcon.svelte';
   import PlaylistIcon from './svg/PlaylistIcon.svelte';
   import FileInfo from './common/FileInfo.svelte';
+  import { createEventDispatcher } from 'svelte';
   import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
 
   const removeRestreamMutation = mutation(RemoveRestream);
@@ -51,12 +64,16 @@
   const gqlClient = getClient();
   const info = subscribe(Info, { errorPolicy: 'all' });
 
+  const dispatch = createEventDispatcher();
+
   export let public_host = 'localhost';
   // TODO: rename 'value' to 'reStream'
   export let value;
   export let globalOutputsFilters;
   export let hidden = false;
   export let isFullView = false;
+  export let inputsSortMode = false;
+  export let outputsSortMode = false;
 
   let outputMutations = {
     DisableOutput,
@@ -67,10 +84,16 @@
     TuneSidechain,
   };
 
+  const updateOutputsOrderMutation = mutation(UpdateOutputsOrder);
+
   const playingFile = subscribe(CurrentlyPlayingFile, {
     variables: { id: value.id },
     errorPolicy: 'all',
   });
+
+  $: orderedOutputs = undefined;
+
+  $: outputs = orderedOutputs ?? value.outputs;
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -103,10 +126,24 @@
 
   $: failoverInputsCount = value.input.src?.inputs?.length ?? 0;
 
-  let openRestreamModal = false;
-
   $: currentlyPlayingFile =
     isPlaylistPlaying && $playingFile.data?.currentlyPlayingFile;
+
+  $: dragDisabled = true;
+
+  $: orderWasUpdated = true;
+
+  $: if (value.outputs && orderedOutputs && !orderWasUpdated) {
+    const storedIds = value.outputs.map((x) => x.id);
+    const orderedIds = orderedOutputs.map((x) => x.id);
+
+    if (isArrayStartWithAnother(orderedIds, storedIds)) {
+      orderWasUpdated = true;
+      orderedOutputs = undefined;
+    }
+  }
+
+  let openRestreamModal = false;
 
   async function removeRestream() {
     try {
@@ -155,6 +192,37 @@
     }
   }
 
+  function intputStartDrag(e) {
+    e.preventDefault();
+    dispatch('inputsDragStarted', false);
+  }
+
+  function outputsHandleSort(e) {
+    orderedOutputs = e.detail.items;
+    dragDisabled = true;
+  }
+
+  async function onDropOutput(e) {
+    const ids = e.detail.items.map((x) => x.id);
+    outputsHandleSort(e);
+
+    orderWasUpdated = false;
+    await updateOutputsOrder(ids);
+  }
+
+  function onOutputDragStarted(e) {
+    dragDisabled = e.details;
+  }
+
+  async function updateOutputsOrder(ids) {
+    try {
+      const variables = { ids, restreamId: value.id };
+      await updateOutputsOrderMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
   const getStreamErrorTooltip = (input) => {
     const inputKeys = getEndpointsWithStreamsErrors(input);
     return inputKeys?.length
@@ -188,7 +256,7 @@
       <button
         type="button"
         class="uk-close"
-        hidden={isFullView}
+        hidden={isFullView || outputsSortMode || inputsSortMode}
         uk-close
         on:click={deleteConfirmation
           ? () => confirm(removeRestream)
@@ -205,12 +273,12 @@
 
     <a
       class="export-import"
-      hidden={isFullView}
+      hidden={isFullView || outputsSortMode || inputsSortMode}
       href="/"
       on:click|preventDefault={openExportModal}
       title="Export/Import"
     >
-      <i class="fas fa-share-square" />
+      <Fa icon={faShareSquare} />
     </a>
 
     {#if !!value.label || streamsErrorsTooltip || streamsDiffTooltip}
@@ -220,7 +288,10 @@
       </span>
     {/if}
 
-    <div class="uk-float-right uk-flex uk-flex-middle">
+    <div
+      class:uk-hidden={inputsSortMode || outputsSortMode}
+      class="uk-float-right uk-flex uk-flex-middle"
+    >
       <a
         href={getFullStreamUrl(value.id)}
         hidden={isFullView}
@@ -285,17 +356,26 @@
         data-testid="add-output:open-modal-btn"
         on:click={openAddOutputModal}
       >
-        <i class="fas fa-plus" />&nbsp;<span>Output</span>
+        <Fa icon={faPlus} />
+        <span>Output</span>
       </button>
     </div>
 
+    <span
+      class:uk-hidden={!inputsSortMode}
+      class="item-drag-zone uk-icon"
+      uk-icon="table"
+      on:mousedown={intputStartDrag}
+    />
     <a
+      class:uk-hidden={inputsSortMode || outputsSortMode}
       data-testid="edit-input-modal:open"
       class="edit-input"
       href="/"
+      title="Edit input"
       on:click|preventDefault={() => (openRestreamModal = true)}
     >
-      <i class="far fa-edit" title="Edit input" />
+      <Fa icon={faEdit} />
     </a>
     {#if openRestreamModal}
       <RestreamModal
@@ -304,63 +384,82 @@
         restream={new RestreamModel(cloneDeep(value))}
       />
     {/if}
-    <Input
-      {public_host}
-      restream_id={value.id}
-      restream_key={value.key}
-      value={value.input}
-      with_label={false}
-      show_controls={showControls}
-    />
-    {#if isFailoverInput(value.input)}
-      {#each value.input.src.inputs as input, index}
-        <Input
-          {public_host}
-          restream_id={value.id}
-          restream_key={value.key}
-          value={input}
-          with_label={true}
-          show_controls={showControls}
-          show_move_up={failoverInputsCount > 1 && index !== 0}
-          show_up_confirmation={failoverInputsCount > 1 && index === 1}
-          show_move_down={failoverInputsCount > 1 &&
-            index !== failoverInputsCount - 1}
-        />
-      {/each}
-      {#if currentlyPlayingFile}
-        <div class="uk-flex uk-flex-middle currently-playing-file">
-          <div class="playlist-file-icon">
-            <EqualizerIcon />
+
+    {#if !outputsSortMode}
+      <Input
+        {public_host}
+        restream_id={value.id}
+        restream_key={value.key}
+        value={value.input}
+        with_label={false}
+        show_controls={showControls}
+      />
+      {#if isFailoverInput(value.input) && !inputsSortMode}
+        {#each value.input.src.inputs as input, index}
+          <Input
+            {public_host}
+            restream_id={value.id}
+            restream_key={value.key}
+            value={input}
+            with_label={true}
+            show_controls={showControls}
+            show_move_up={failoverInputsCount > 1 && index !== 0}
+            show_up_confirmation={failoverInputsCount > 1 && index === 1}
+            show_move_down={failoverInputsCount > 1 &&
+              index !== failoverInputsCount - 1}
+          />
+        {/each}
+        {#if currentlyPlayingFile}
+          <div class="uk-flex uk-flex-middle currently-playing-file">
+            <div class="playlist-file-icon">
+              <EqualizerIcon />
+            </div>
+            <div class="file-info">
+              <FileInfo file={currentlyPlayingFile} />
+            </div>
           </div>
-          <div class="file-info">
-            <FileInfo file={currentlyPlayingFile} />
-          </div>
-        </div>
+        {/if}
       {/if}
     {/if}
 
-    <div class="uk-grid uk-grid-small">
-      {#each value.outputs as output}
-        <Output
-          {deleteConfirmation}
-          {enableConfirmation}
-          {public_host}
-          restream_id={value.id}
-          value={output}
-          hidden={hasActiveFilters &&
-            !reStreamOutputsFilters.includes(output.status)}
-          mutations={outputMutations}
-        />
-      {:else}
-        <div class="uk-flex-1">
-          <div class="uk-card-default uk-padding-small uk-text-center">
-            There are no Outputs for current Input. You can add it by clicking <b
-              >+OUTPUT</b
-            > button.
+    {#if !inputsSortMode}
+      <div
+        class="uk-grid uk-grid-small"
+        use:dndzone={{
+          items: outputs,
+          type: 'output',
+          dropTargetClasses: ['drop-target'],
+          dropFromOthersDisabled: true,
+          dragDisabled,
+          flipDurationMs: 200,
+        }}
+        on:consider={outputsHandleSort}
+        on:finalize={onDropOutput}
+      >
+        {#each outputs as output (output.id)}
+          <Output
+            {deleteConfirmation}
+            {enableConfirmation}
+            {public_host}
+            {outputsSortMode}
+            on:outputDragStarted={onOutputDragStarted}
+            restream_id={value.id}
+            value={output}
+            hidden={hasActiveFilters &&
+              !reStreamOutputsFilters.includes(output.status)}
+            mutations={outputMutations}
+          />
+        {:else}
+          <div class="uk-flex-1">
+            <div class="uk-card-default uk-padding-small uk-text-center">
+              There are no Outputs for current Input. You can add it by clicking <b
+                >+OUTPUT</b
+              > button.
+            </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 </template>
 
@@ -375,7 +474,7 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link
+      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone
         opacity: 1
 
     .uk-button-small
@@ -385,7 +484,7 @@
       opacity: 0
       transition: opacity .3s ease
 
-    .edit-input, .export-import, .uk-close
+    .edit-input, .export-import, .uk-close, .item-drag-zone
       position: absolute
       opacity: 0
       transition: opacity .3s ease
@@ -396,15 +495,20 @@
     .full-view-link
       font-size: 0.8rem
       transition: opacity .3s ease
+      margin-right: 8px
       opacity: 0
 
-    .edit-input, .export-import
+    .edit-input, .export-import, .item-drag-zone
       color: #666
       outline: none
 
       &:hover
         text-decoration: none
         color: #444
+
+    .item-drag-zone
+      cursor: grab
+      left: -25px
 
     .edit-input
       left: -25px

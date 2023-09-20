@@ -1,5 +1,7 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
   import { isNumber } from '../../utils/util';
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
 
   export let serverInfo;
   export let rowMode = false;
@@ -63,7 +65,7 @@
             class="error-icon value uk-text-danger"
             title={formatErrorMsg(serverInfo.errorMsg)}
           >
-            <i class="fas fa-info-circle" />
+            <Fa faInfoCircle icon={faInfoCircle} />
           </span>
         {/if}
       </div>

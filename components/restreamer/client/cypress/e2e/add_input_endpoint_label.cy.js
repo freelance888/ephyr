@@ -11,6 +11,7 @@ describe('CHECK INPUT ENDPOINT LABEL', { testIsolation: false }, () => {
 
   it('Assert that first endpoint input does not have label option', () => {
     cy.get("span:contains('/it/playback')")
+      .click()
       .parent()
       .parent()
       .invoke('show')

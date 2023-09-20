@@ -1,4 +1,8 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faEdit } from '@fortawesome/free-solid-svg-icons';
+  import { faPlus } from '@fortawesome/free-solid-svg-icons';
+
   import { mutation } from 'svelte-apollo';
 
   import { SetEndpointLabel } from '../../../api/client.graphql';
@@ -17,7 +21,7 @@
   let label_input;
   let show_edit = false;
 
-  $: btn_text = endpoint.label ? 'Edit' : 'Add label';
+  $: btnText = endpoint.label ? 'Edit' : 'Add label';
   $: isEditMode = !!endpoint.label;
 
   async function showEdit() {
@@ -62,7 +66,7 @@
       data-testid="endpoint-label-text"
       class={endpoint.label ? 'uk-margin-small-left' : ''}
       bind:this={label_component}
-      class:hidden={show_edit}>{endpoint.label ? endpoint.label : ''}</span
+      class:uk-hidden={show_edit}>{endpoint.label ? endpoint.label : ''}</span
     >
     {#if show_edit}
       <input
@@ -78,17 +82,16 @@
         }}
       />
     {/if}
-    <!-- The only found way to prevent caching of icon inside button -->
     <button
       class="edit-label-btn uk-button uk-button-link"
-      class:hidden={!show_controls}
+      class:uk-hidden={!show_controls}
       on:click|preventDefault={() => {
         showEdit();
       }}
     >
-      <span class="uk-margin-small-left">{btn_text}</span>
-      <span class:hidden={!isEditMode}><i class="fas fa-edit" /></span>
-      <span class:hidden={isEditMode}><i class="fas fa-plus" /></span>
+      <span class="uk-margin-small-left">{btnText}</span>
+      <Fa class={!isEditMode ? 'uk-hidden' : ''} icon={faEdit} />
+      <Fa class={isEditMode ? 'uk-hidden' : ''} icon={faPlus} />
     </button>
   </div>
 </template>
@@ -98,9 +101,6 @@
     align-items: baseline
     display: inline-flex
     color: var(--primary-text-color)
-
-    .hidden
-      display: none
 
     .edit-label-btn
       color: var(--primary-text-color)

@@ -18,7 +18,7 @@ use tap::Tap;
 
 use crate::{
     api::graphql,
-    dvr, spec,
+    dvr, reorder_items, spec,
     state::{
         Delay, InputEndpointKind, InputId, InputKey, InputSrc, InputSrcUrl,
         Label, MixinId, MixinSrcUrl, OutputDstUrl, OutputId, PasswordKind,
@@ -34,7 +34,7 @@ use crate::{
         FileCommand, FileId, FileState, LocalFileInfo,
     },
     spec::v1::BackupInput,
-    state::{Direction, EndpointId, ServerInfo, VolumeLevel},
+    state::{Direction, EndpointId, Output, ServerInfo, VolumeLevel},
     types::UNumber,
 };
 use url::Url;
@@ -347,6 +347,49 @@ impl MutationsRoot {
         context: &Context,
     ) -> Option<bool> {
         context.state().disable_restream(id)
+    }
+
+    /// Change order of `Restream`s depending on the order of its id inside `ids` array
+    fn change_inputs_order(
+        #[graphql(description = "Ordered list of Restreams identities")]
+        ids: Vec<RestreamId>,
+        context: &Context,
+    ) -> Option<bool> {
+        let mut restreams = context.state().restreams.lock_mut();
+        let reordered = reorder_items(&restreams, &ids, |r: &Restream| r.id);
+        *restreams = reordered;
+
+        Some(true)
+    }
+
+    /// Reorder `Restream`s' outputs depending on the order of its id inside `ids` array
+    ///
+    /// ### Result
+    ///
+    /// Returns `true` if outputs were reordered successfully
+    fn change_outputs_order(
+        #[graphql(description = "ID of the parent `Restream`")]
+        restream_id: RestreamId,
+        #[graphql(description = "Ordered list of outputs identities")] ids: Vec<
+            OutputId,
+        >,
+        context: &Context,
+    ) -> Result<bool, graphql::Error> {
+        let mut restreams = context.state().restreams.lock_mut();
+        let outputs = &mut restreams
+            .iter_mut()
+            .find(|r| r.id == restream_id)
+            .ok_or(
+                graphql::Error::new("RESTREAM_NOT_FOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&format!("Restream {restream_id} not found")),
+            )?
+            .outputs;
+
+        let reordered = reorder_items(outputs, &ids, |r: &Output| r.id);
+        let _ = std::mem::replace(outputs, reordered);
+
+        Ok(true)
     }
 
     /// Set playlist to [`Restream`]

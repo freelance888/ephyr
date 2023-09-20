@@ -1,4 +1,7 @@
 <script lang="js">
+  import Fa from 'svelte-fa';
+  import { faCopy } from '@fortawesome/free-regular-svg-icons';
+
   import { copyToClipboard } from '../../utils/util';
   import StreamInfo from './StreamInfo.svelte';
 
@@ -29,7 +32,7 @@
         on:click|preventDefault={() => copyToClipboard(url)}
       >
         Copy
-        <i class="far fa-copy" />
+        <Fa icon={faCopy} />
       </button>
     {/if}
   </div>
