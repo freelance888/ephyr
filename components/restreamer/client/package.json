@@ -37,7 +37,7 @@
   "devDependencies": {
     "@tsconfig/svelte": "^4.0",
     "@types/lodash.clonedeep": "^4.5",
-    "@types/node": "^20.5",
+    "@types/node": "^20.6",
     "@types/uikit": "^3",
     "@types/webpack": "^5.28",
     "copy-webpack-plugin": "^11.0",
