@@ -11,10 +11,17 @@
     StopPlayingFileFromPlaylist,
   } from '../../api/client.graphql';
   import { mutation } from 'svelte-apollo';
+
+  import Fa from 'svelte-fa';
+  import {
+    faDownload,
+    faTriangleExclamation,
+    faCirclePlay,
+    faCircleStop,
+  } from '@fortawesome/free-solid-svg-icons';
+
   import FileInfo from './common/FileInfo.svelte';
-  import FileIcon from './svg/FileIcon.svelte';
-  import PlayIcon from './svg/PlayIcon.svelte';
-  import StopPlayingIcon from './svg/StopPlayingIcon.svelte';
+
   import {
     getFileIdFromGDrive,
     getFolderIdFromGDrive,
@@ -285,13 +292,16 @@
                     class="file-icon"
                     class:is-downloading={item.isDownloading}
                   >
-                    <!-- Inline svg prevents duplicating fa icons during drag & drop -->
-                    <FileIcon />
+                    {#if item.isError}
+                      <Fa icon={faTriangleExclamation} />
+                    {:else}
+                      <Fa icon={faDownload} />
+                    {/if}
                   </span>
                 {:else if item.isPlaying}
-                  <PlayIcon />
+                  <Fa icon={faCircleStop} />
                 {:else}
-                  <StopPlayingIcon />
+                  <Fa icon={faCirclePlay} />
                 {/if}
               </span>
               {#if item.file}
@@ -346,7 +356,7 @@
         opacity: 1
 
   .start-download, .stop-download, .load-file, .clear-playlist
-      opacity: 0
+    opacity: 0
 
   .clear-playlist
     color: var(--danger-color)
@@ -372,7 +382,7 @@
     background-color: #fff
 
     &:hover
-      background-color: #f8f8f8
+      backgrouncd-color: #f8f8f8
 
       .uk-close
         display: block
@@ -389,8 +399,11 @@
     padding-right: 4px
     padding-left: 4px
     font-size: 28px
+    color: #949494
+
     &.can-be-started
       cursor: pointer
+
     .file-icon
       :global(svg)
         font-size: 28px
@@ -401,6 +414,7 @@
 
   .item-file
     flex: 1
+
     &.is-playing
       .item-icon
         color: var(--success-color)
