@@ -20,7 +20,11 @@
   import YoutubePlayer from './common/YoutubePlayer.svelte';
   import Restream from './Restream.svelte';
   import Output from './Output.svelte';
-  import { FILE_LOCAL, isDownloadingState } from '../utils/constants';
+  import {
+    FILE_DOWNLOAD_ERROR,
+    FILE_LOCAL,
+    isDownloadingState,
+  } from '../utils/constants';
   import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
   import { getPlaylistItemsWithDiffStreams } from '../utils/streamInfo.util';
 
@@ -98,6 +102,7 @@
           ...x,
           isLocal: x.file?.state === FILE_LOCAL,
           isDownloading: isDownloadingState(x.file?.state),
+          isError: x.file?.state === FILE_DOWNLOAD_ERROR,
         }))
     : [];
 
