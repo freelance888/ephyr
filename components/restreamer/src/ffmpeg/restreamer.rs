@@ -142,7 +142,7 @@ impl Restreamer {
                                 .map(|r| r.factor_first().0)
                         }
                         .in_current_span()
-                        .unwrap_or_else(|_| {
+                        .unwrap_or_else(|()| {
                             Self::change_status(
                                 time_of_fail,
                                 kind,

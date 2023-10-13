@@ -236,7 +236,7 @@ impl RestreamerKind {
                 if let Ok(from_url) = Url::from_file_path(
                     file_root.join(file.file_id.to_string()),
                 )
-                .map_err(|_| {
+                .map_err(|()| {
                     tracing::error!(
                         %file.file_id,
                         "Failed to parse `from_url` from `file_id`"

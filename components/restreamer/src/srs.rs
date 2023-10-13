@@ -176,7 +176,7 @@ impl Server {
                         );
                         Ok(())
                     })
-                    .unwrap_or_else(|_: ()| ())
+                    .unwrap_or_else(|(): ()| ())
                     .catch_unwind()
                     .await
                     .map_err(|p| {
