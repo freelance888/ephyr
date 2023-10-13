@@ -198,7 +198,7 @@ impl Storage {
 /// parent directory.
 #[allow(clippy::missing_panics_doc)]
 pub async fn new_file_path(url: &Url) -> io::Result<PathBuf> {
-    let mut path = url.to_file_path().map_err(|_| {
+    let mut path = url.to_file_path().map_err(|()| {
         io::Error::new(io::ErrorKind::Other, "File URL contains bad file path")
     })?;
 

@@ -55,7 +55,7 @@ impl MutationsRoot {
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().add_client(&client_id) {
-            Ok(_) => Ok(Some(true)),
+            Ok(()) => Ok(Some(true)),
             Err(e) => Err(graphql::Error::new("DUPLICATE_CLIENT")
                 .status(StatusCode::CONFLICT)
                 .message(&e)),
@@ -71,7 +71,7 @@ impl MutationsRoot {
         context: &Context,
     ) -> Result<Option<bool>, graphql::Error> {
         match context.state().remove_client(&client_id) {
-            Some(_) => Ok(Some(true)),
+            Some(()) => Ok(Some(true)),
             None => Ok(None),
         }
     }

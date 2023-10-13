@@ -212,7 +212,7 @@ impl fmt::Debug for Failure {
 
 impl From<()> for Failure {
     #[inline]
-    fn from(_: ()) -> Self {
+    fn from((): ()) -> Self {
         Self
     }
 }

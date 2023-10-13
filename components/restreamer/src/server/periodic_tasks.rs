@@ -33,7 +33,7 @@ where
 
             match result {
                 Ok(r) => match r {
-                    Ok(_) => {}
+                    Ok(()) => {}
                     Err(err) => {
                         tracing::error!(
                             "An error: `{err}` occurred while running \

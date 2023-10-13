@@ -80,7 +80,7 @@ async fn on_callback(
         callback::Event::OnStop => on_stop(&req, &state, false),
         callback::Event::OnHls => on_hls(&req, &state),
     }
-    .map(|_| "0")
+    .map(|()| "0")
 }
 
 /// Handles [`callback::Event::OnConnect`].

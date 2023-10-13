@@ -956,7 +956,10 @@ impl MutationsRoot {
         restream_id: RestreamId,
         context: &Context,
     ) -> Option<bool> {
-        context.state().remove_output(id, restream_id).map(|_| true)
+        context
+            .state()
+            .remove_output(id, restream_id)
+            .map(|()| true)
     }
 
     /// Enables an `Output` by its `id` in the specified `Restream`.
