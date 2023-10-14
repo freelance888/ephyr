@@ -44,6 +44,11 @@ pub async fn run(mut cfg: Opts) -> Result<(), Failure> {
                 .to_string(),
         );
     }
+    tracing::info!(
+        "Public host: http://{}:{}",
+        cfg.public_host.as_deref().unwrap(),
+        cfg.client_http_port
+    );
 
     let ffmpeg_path =
         fs::canonicalize(&cfg.ffmpeg_path).await.map_err(|e| {
