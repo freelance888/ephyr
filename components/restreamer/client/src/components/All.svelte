@@ -50,7 +50,6 @@
 
   export let state;
   export let info;
-  export let files;
 
   const searchQueryKey = 'search';
   const filterQueryKey = 'filter_by';
@@ -469,7 +468,6 @@
         value={restream}
         hidden={globalInputsFilters?.length && !isReStreamVisible(restream)}
         {globalOutputsFilters}
-        {files}
       />
     {:else}
       <div

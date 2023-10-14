@@ -20,9 +20,9 @@
   export let value;
   export let with_label;
   export let show_controls;
-  export let show_move_up;
-  export let show_move_down;
-  export let show_up_confirmation;
+  export let show_move_up = false;
+  export let show_move_down = false;
+  export let show_up_confirmation = true;
 
   $: isPull = !!value.src && value.src.__typename === 'RemoteInputSrc';
 

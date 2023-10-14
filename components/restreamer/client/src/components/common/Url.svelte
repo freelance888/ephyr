@@ -6,7 +6,7 @@
   import StreamInfo from './StreamInfo.svelte';
 
   export let url;
-  export let previewUrl;
+  export let previewUrl = false;
   export let streamInfo;
   export let isError;
 </script>

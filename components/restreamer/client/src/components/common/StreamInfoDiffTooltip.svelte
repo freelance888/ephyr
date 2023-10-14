@@ -1,6 +1,6 @@
 <script lang="js">
-  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
   import Fa from 'svelte-fa';
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 
   export let streamsErrorsTooltip;
   export let streamsDiffTooltip;
@@ -15,7 +15,7 @@
       class:hidden={!streamsErrorsTooltip && !streamsDiffTooltip}
       uk-tooltip={streamsErrorsTooltip || streamsDiffTooltip}
     >
-      <Fa faInfoCircle icon={faInfoCircle} />
+      <Fa icon={faInfoCircle} />
     </span>
   {/key}
 </template>
