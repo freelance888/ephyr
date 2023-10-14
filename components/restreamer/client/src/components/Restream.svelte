@@ -474,7 +474,7 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone
+      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone, .playlist-icon
         opacity: 1
 
     .uk-button-small
@@ -552,6 +552,9 @@
         height: 16px
 
     .playlist-icon
+      opacity: 0
+      transition: opacity .3s ease
+
       &.is-playing
         color: var(--success-color)
       :global(svg)
