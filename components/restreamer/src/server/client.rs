@@ -14,7 +14,9 @@ use actix_web_static_files::ResourceFiles;
 use ephyr_log::{tracing, tracing_actix_web::TracingLogger};
 use futures::{future, FutureExt as _};
 use juniper::http::playground::playground_source;
-use juniper_actix::{graphql_handler, subscriptions::subscriptions_handler};
+use juniper_actix::{
+    graphql_handler, subscriptions::ws_handler as subscriptions_handler,
+};
 use juniper_graphql_ws::ConnectionConfig;
 
 use crate::{
