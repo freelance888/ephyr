@@ -11,6 +11,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
 const isDevServer = process.env.WEBPACK_SERVE == 'true';
+const ephyrDevAddress = setupEphyrDevAddress();
 
 function setupEphyrDevAddress(): string | undefined {
   if (isDevServer) {
@@ -67,6 +68,9 @@ const config: webpack.Configuration = {
     compress: true,
     port: 8080,
     host: '0.0.0.0',
+    client: {
+      webSocketURL: `ws://${ephyrDevAddress}/api`,
+    },
   },
   module: {
     rules: [
@@ -169,7 +173,7 @@ const config: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
       WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
-      EPHYR_DEV_ADDRESS: setupEphyrDevAddress(),
+      EPHYR_DEV_ADDRESS: ephyrDevAddress,
     }),
   ],
   devtool: is_prod ? false : 'source-map',
