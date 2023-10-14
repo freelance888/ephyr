@@ -10,6 +10,32 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
+const isDevServer = process.env.WEBPACK_SERVE == 'true';
+
+function setupEphyrDevAddress(): string | undefined {
+  if (isDevServer) {
+    var host = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_IP;
+    var port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
+    if (host === undefined) {
+      console.warn(
+        'No `EPHYR_RESTREAMER_CLIENT_HTTP_IP` set, use default `0.0.0.0`'
+      );
+      host = '0.0.0.0';
+    }
+    if (port === undefined) {
+      console.warn(
+        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` set, use default `:80`'
+      );
+      port = '80';
+    }
+    const addr = `${host}:${port}`;
+    console.log(`Use following address for backend server: ${addr}`);
+    return addr;
+  } else {
+    console.log('Use browser hostname as backend server address');
+    return undefined;
+  }
+}
 
 const config: webpack.Configuration = {
   entry: {
@@ -143,6 +169,7 @@ const config: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
       WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
+      EPHYR_DEV_ADDRESS: setupEphyrDevAddress(),
     }),
   ],
   devtool: is_prod ? false : 'source-map',
