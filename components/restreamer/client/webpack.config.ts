@@ -10,9 +10,8 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
-const EPHYR_DEV_HOST_PORT = setEphyrDevHostPort(
-  process.env.WEBPACK_SERVE == 'true'
-);
+const isDevServer = process.argv.some((v) => v.includes('webpack-dev-server'));
+const EPHYR_DEV_HOST_PORT = setEphyrDevHostPort(isDevServer);
 
 function setEphyrDevHostPort(isDevServer: boolean): string | null {
   if (isDevServer) {
@@ -64,7 +63,7 @@ const config: webpack.Configuration = {
     port: 8080,
     host: '0.0.0.0',
     client: {
-      webSocketURL: EPHYR_DEV_HOST_PORT
+      webSocketURL: isDevServer
         ? `ws://0.0.0.0:${EPHYR_DEV_HOST_PORT}/api`
         : undefined,
     },
@@ -169,7 +168,7 @@ const config: webpack.Configuration = {
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
-      WEBPACK_SERVE: process.env.WEBPACK_SERVE || '',
+      WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
       EPHYR_DEV_HOST_PORT: EPHYR_DEV_HOST_PORT,
     }),
   ],
