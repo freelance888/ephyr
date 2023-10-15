@@ -101,11 +101,12 @@ export function createGraphQlClient(
   onDisconnect: Function
 ): ApolloClient<unknown> {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  var url = `${protocol}://${window.location.hostname}${apiUrl}`;
-  let serverAddress = process.env.EPHYR_DEV_ADDRESS;
-  if (serverAddress !== undefined) {
-    url = `${protocol}://${serverAddress}${apiUrl}`;
+  let serverAddress: string | null = process.env.EPHYR_DEV_ADDRESS || null;
+  if (serverAddress === null) {
+    serverAddress = window.location.hostname;
   }
+  let url = `${protocol}://${serverAddress}${apiUrl}`;
+
   console.log(`Connecting to ${url} ...`);
   const wsClient = new SubscriptionClient(url, { reconnect: true });
 

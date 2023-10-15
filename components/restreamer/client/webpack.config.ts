@@ -10,10 +10,9 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
-const isDevServer = process.env.WEBPACK_SERVE == 'true';
-const ephyrDevAddress = setupEphyrDevAddress();
+const ephyrDevAddress = setEphyrDevAddress(process.env.WEBPACK_SERVE == 'true');
 
-function setupEphyrDevAddress(): string | undefined {
+function setEphyrDevAddress(isDevServer: boolean): string | null {
   if (isDevServer) {
     var host = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_IP;
     var port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
@@ -34,7 +33,7 @@ function setupEphyrDevAddress(): string | undefined {
     return addr;
   } else {
     console.log('Use browser hostname as backend server address');
-    return undefined;
+    return null;
   }
 }
 
@@ -69,7 +68,7 @@ const config: webpack.Configuration = {
     port: 8080,
     host: '0.0.0.0',
     client: {
-      webSocketURL: `ws://${ephyrDevAddress}/api`,
+      webSocketURL: ephyrDevAddress ? `ws://${ephyrDevAddress}/api` : undefined,
     },
   },
   module: {
@@ -172,7 +171,7 @@ const config: webpack.Configuration = {
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
-      WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
+      WEBPACK_SERVE: process.env.WEBPACK_SERVE || '',
       EPHYR_DEV_ADDRESS: ephyrDevAddress,
     }),
   ],
