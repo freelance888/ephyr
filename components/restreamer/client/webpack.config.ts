@@ -10,29 +10,25 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
-const ephyrDevAddress = setEphyrDevAddress(process.env.WEBPACK_SERVE == 'true');
+const EPHYR_DEV_HOST_PORT = setEphyrDevHostPort(
+  process.env.WEBPACK_SERVE == 'true'
+);
 
-function setEphyrDevAddress(isDevServer: boolean): string | null {
+function setEphyrDevHostPort(isDevServer: boolean): string | null {
   if (isDevServer) {
-    var host = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_IP;
-    var port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
-    if (host === undefined) {
-      console.warn(
-        'No `EPHYR_RESTREAMER_CLIENT_HTTP_IP` set, use default `0.0.0.0`'
-      );
-      host = '0.0.0.0';
-    }
+    let port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
     if (port === undefined) {
       console.warn(
-        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` set, use default `:80`'
+        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` env var set, use default `:80`'
       );
       port = '80';
     }
-    const addr = `${host}:${port}`;
-    console.log(`Use following address for backend server: ${addr}`);
-    return addr;
+    console.log(
+      `Use host from browser and port \`${port}\` as backend server address`
+    );
+    return port;
   } else {
-    console.log('Use browser hostname as backend server address');
+    console.log('Use host and port from browser as backend server address');
     return null;
   }
 }
@@ -68,7 +64,9 @@ const config: webpack.Configuration = {
     port: 8080,
     host: '0.0.0.0',
     client: {
-      webSocketURL: ephyrDevAddress ? `ws://${ephyrDevAddress}/api` : undefined,
+      webSocketURL: EPHYR_DEV_HOST_PORT
+        ? `ws://0.0.0.0:${EPHYR_DEV_HOST_PORT}/api`
+        : undefined,
     },
   },
   module: {
@@ -172,7 +170,7 @@ const config: webpack.Configuration = {
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
       WEBPACK_SERVE: process.env.WEBPACK_SERVE || '',
-      EPHYR_DEV_ADDRESS: ephyrDevAddress,
+      EPHYR_DEV_HOST_PORT: EPHYR_DEV_HOST_PORT,
     }),
   ],
   devtool: is_prod ? false : 'source-map',
