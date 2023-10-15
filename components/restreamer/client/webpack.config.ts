@@ -10,6 +10,28 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const is_prod = process.env.NODE_ENV === 'production';
 const mode = is_prod ? 'production' : 'development';
+const EPHYR_DEV_HOST_PORT = setEphyrDevHostPort(
+  process.env.WEBPACK_SERVE == 'true'
+);
+
+function setEphyrDevHostPort(isDevServer: boolean): string | null {
+  if (isDevServer) {
+    let port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
+    if (port === undefined) {
+      console.warn(
+        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` env var set, use default `:80`'
+      );
+      port = '80';
+    }
+    console.log(
+      `Use host from browser and port \`${port}\` as backend server address`
+    );
+    return port;
+  } else {
+    console.log('Use host and port from browser as backend server address');
+    return null;
+  }
+}
 
 const config: webpack.Configuration = {
   entry: {
@@ -41,6 +63,11 @@ const config: webpack.Configuration = {
     compress: true,
     port: 8080,
     host: '0.0.0.0',
+    client: {
+      webSocketURL: EPHYR_DEV_HOST_PORT
+        ? `ws://0.0.0.0:${EPHYR_DEV_HOST_PORT}/api`
+        : undefined,
+    },
   },
   module: {
     rules: [
@@ -142,7 +169,8 @@ const config: webpack.Configuration = {
     }),
     new webpack.EnvironmentPlugin({
       VERSION: process.env.CARGO_PKG_VERSION || process.env.npm_package_version,
-      WEBPACK_DEV_SERVER: process.env.WEBPACK_DEV_SERVER || '',
+      WEBPACK_SERVE: process.env.WEBPACK_SERVE || '',
+      EPHYR_DEV_HOST_PORT: EPHYR_DEV_HOST_PORT,
     }),
   ],
   devtool: is_prod ? false : 'source-map',
