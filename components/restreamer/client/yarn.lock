@@ -3856,9 +3856,9 @@ uikit-icons@^0.5:
     react "^16.11.0"
 
 uikit@^3:
-  version "3.16.24"
-  resolved "https://registry.yarnpkg.com/uikit/-/uikit-3.16.24.tgz#7f3b729a9683b44478c20991139fb4b48f9f234d"
-  integrity sha512-b33pxCinNlgrkQf+VUNk7AzN0wFWo41C5avYbXQTtt41xOAlJD2mBQHNwlTm8s8uo+CZa3djX1inJLuY2JwusQ==
+  version "3.17.1"
+  resolved "https://registry.yarnpkg.com/uikit/-/uikit-3.17.1.tgz#3f388eb29b438aa679a375bc659e3c81505c8104"
+  integrity sha512-MfWXHxNRQ7NDsjXaRCvQV/nuL2YMCylmRE5ULlCTdFv/riyRp528uJGOxNG51KP1eW7a/FyGmT3DiAB+tvUYvA==
 
 undici-types@~5.25.1:
   version "5.25.3"
