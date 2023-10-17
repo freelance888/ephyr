@@ -1803,6 +1803,79 @@
             "deprecationReason": null
           },
           {
+            "name": "moveOutput",
+            "description": "",
+            "args": [
+              {
+                "name": "srcRestreamId",
+                "description": "ID of the source parent `Restream`",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "RestreamId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "dstRestreamId",
+                "description": "ID of the destination parent `Restream`",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "RestreamId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "srcOutputId",
+                "description": "ID of the `Output` to be moved",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "OutputId",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "dstPosition",
+                "description": "Position in destination array of `Output`s",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "UNumber",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "setPlaylist",
             "description": "Set playlist to [`Restream`]\n\n### Result\n\nReturns `true` if restream was found by `restream_id` and\nplaylist was set to it",
             "args": [

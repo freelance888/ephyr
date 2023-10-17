@@ -33,7 +33,7 @@
   import { statusesList } from '../utils/constants';
 
   import { exportModal, outputModal } from '../stores';
-  import { UpdateOutputsOrder } from '../../api/client.graphql';
+  import { UpdateOutputsOrder, MoveOutput } from '../../api/client.graphql';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -85,6 +85,7 @@
   };
 
   const updateOutputsOrderMutation = mutation(UpdateOutputsOrder);
+  const moveOutputMutation = mutation(MoveOutput);
 
   const playingFile = subscribe(CurrentlyPlayingFile, {
     variables: { id: value.id },
@@ -203,6 +204,7 @@
   }
 
   async function onDropOutput(e) {
+    console.log('onDropOutput: ', e)
     const ids = e.detail.items.map((x) => x.id);
     outputsHandleSort(e);
 
@@ -212,6 +214,15 @@
 
   function onOutputDragStarted(e) {
     dragDisabled = e.details;
+  }
+
+  async function moveOutputs(srcRestreamId, dstRestreamId, srcOutputId, dstPosition) {
+    try {
+      // const variables = { ids, restreamId: value.id };
+      await moveOutputMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
   }
 
   async function updateOutputsOrder(ids) {
@@ -429,7 +440,6 @@
           items: outputs,
           type: 'output',
           dropTargetClasses: ['drop-target'],
-          dropFromOthersDisabled: true,
           dragDisabled,
           flipDurationMs: 200,
         }}

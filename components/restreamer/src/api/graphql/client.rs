@@ -392,6 +392,54 @@ impl MutationsRoot {
         Ok(true)
     }
 
+    ///
+    fn move_output(
+        #[graphql(description = "ID of the `Output` to be moved")]
+        src_output_id: OutputId,
+        #[graphql(description = "ID of the destination parent `Restream`")]
+        dst_restream_id: RestreamId,
+        #[graphql(description = "Position in destination array of `Output`s")]
+        dst_position: UNumber,
+        context: &Context,
+    ) -> Result<bool, graphql::Error> {
+        let mut restreams = context.state().restreams.lock_mut();
+
+        let (src_restream_id, output) = restreams
+            .iter_mut()
+            .find_map(|r| {
+                (r.outputs.iter().position(|o| o.id == src_output_id)).and_then(|pos| {
+                    let output = r.outputs.remove(pos);
+                    Some((r.id, output))
+                })
+            })
+            .ok_or(
+                graphql::Error::new("RESTREAM_NOT_FOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&format!("Source Restream or Output not found")),
+            )?;
+
+        let _ = context.state().disable_output(src_output_id, src_restream_id);
+
+        let dst_outputs = &mut restreams
+            .iter_mut()
+            .find(|r| r.id == dst_restream_id)
+            .ok_or(
+                graphql::Error::new("RESTREAM_NOT_FOUND")
+                    .status(StatusCode::BAD_REQUEST)
+                    .message(&format!("Restream {dst_restream_id} not found")),
+            )?
+            .outputs;
+
+        if dst_position > dst_outputs.len().into() {
+            return Err(graphql::Error::new("WRONG_ARRAY_INDEX")
+                .status(StatusCode::BAD_REQUEST)
+                .message(&format!("Can't insert output to destination position {}", dst_position.0)));
+        }
+
+        dst_outputs.insert(dst_position.into(), output);
+        Ok(true)
+    }
+
     /// Set playlist to [`Restream`]
     ///
     /// ### Result
