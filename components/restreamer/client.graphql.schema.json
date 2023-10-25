@@ -1807,14 +1807,14 @@
             "description": "",
             "args": [
               {
-                "name": "srcRestreamId",
-                "description": "ID of the source parent `Restream`",
+                "name": "srcOutputId",
+                "description": "ID of the `Output` to be moved",
                 "type": {
                   "kind": "NON_NULL",
                   "name": null,
                   "ofType": {
                     "kind": "SCALAR",
-                    "name": "RestreamId",
+                    "name": "OutputId",
                     "ofType": null
                   }
                 },
@@ -1829,20 +1829,6 @@
                   "ofType": {
                     "kind": "SCALAR",
                     "name": "RestreamId",
-                    "ofType": null
-                  }
-                },
-                "defaultValue": null
-              },
-              {
-                "name": "srcOutputId",
-                "description": "ID of the `Output` to be moved",
-                "type": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "OutputId",
                     "ofType": null
                   }
                 },

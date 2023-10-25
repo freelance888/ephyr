@@ -404,12 +404,13 @@ impl MutationsRoot {
     ) -> Result<bool, graphql::Error> {
         let mut restreams = context.state().restreams.lock_mut();
 
-        let (src_restream_id, output) = restreams
+        let output = restreams
             .iter_mut()
             .find_map(|r| {
                 (r.outputs.iter().position(|o| o.id == src_output_id)).and_then(|pos| {
-                    let output = r.outputs.remove(pos);
-                    Some((r.id, output))
+                    let mut output = r.outputs.remove(pos);
+                    output.enabled = false;
+                    Some(output)
                 })
             })
             .ok_or(
@@ -417,8 +418,6 @@ impl MutationsRoot {
                     .status(StatusCode::BAD_REQUEST)
                     .message(&format!("Source Restream or Output not found")),
             )?;
-
-        let _ = context.state().disable_output(src_output_id, src_restream_id);
 
         let dst_outputs = &mut restreams
             .iter_mut()

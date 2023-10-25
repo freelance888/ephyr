@@ -94,7 +94,7 @@
 
   $: orderedOutputs = undefined;
 
-  $: outputs = orderedOutputs ?? value.outputs;
+  $: outputs = orderedOutputs ?? value.outputs.map(x => ({...x, restreamId: value.id}));
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -193,6 +193,10 @@
     }
   }
 
+  function transformDraggedElement(element, draggedElementData, index) {
+    draggedElementData.newIndex = index;
+  }
+
   function intputStartDrag(e) {
     e.preventDefault();
     dispatch('inputsDragStarted', false);
@@ -205,20 +209,31 @@
 
   async function onDropOutput(e) {
     console.log('onDropOutput: ', e)
+
     const ids = e.detail.items.map((x) => x.id);
     outputsHandleSort(e);
 
     orderWasUpdated = false;
-    await updateOutputsOrder(ids);
-  }
+
+    const movedItem = e.detail.items.find(x => x.restreamId !== value.id);
+    if (movedItem) {
+      await moveOutput(movedItem.id, value.id, movedItem.newIndex);
+    } else {
+      await updateOutputsOrder(ids);
+    }
+ }
 
   function onOutputDragStarted(e) {
     dragDisabled = e.details;
   }
 
-  async function moveOutputs(srcRestreamId, dstRestreamId, srcOutputId, dstPosition) {
+  async function moveOutput(srcOutputId, dstRestreamId, dstPosition) {
     try {
-      // const variables = { ids, restreamId: value.id };
+      const variables = {
+        srcOutputId,
+        dstRestreamId,
+        dstPosition
+      };
       await moveOutputMutation({ variables });
     } catch (e) {
       showError(e.message);
@@ -441,6 +456,7 @@
           type: 'output',
           dropTargetClasses: ['drop-target'],
           dragDisabled,
+          transformDraggedElement,
           flipDurationMs: 200,
         }}
         on:consider={outputsHandleSort}
