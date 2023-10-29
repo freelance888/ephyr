@@ -27,11 +27,40 @@ impl Drop for DroppableAbortHandle {
     }
 }
 
+impl From<UNumber> for usize {
+    fn from(value: UNumber) -> Self {
+        value.0 as usize
+    }
+}
+
 /// Generic number for using with Graphql
 #[derive(
-    Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, GraphQLScalar,
+    Debug,
+    Clone,
+    Copy,
+    Deserialize,
+    Serialize,
+    PartialEq,
+    Eq,
+    GraphQLScalar,
+    PartialOrd,
 )]
 pub struct UNumber(pub u16);
+
+impl From<u16> for UNumber {
+    fn from(value: u16) -> Self {
+        UNumber(value)
+    }
+}
+
+impl From<usize> for UNumber {
+    fn from(value: usize) -> Self {
+        match u16::try_from(value) {
+            Ok(value) => UNumber(value),
+            _ => UNumber(0),
+        }
+    }
+}
 
 impl TryFrom<i32> for UNumber {
     type Error = std::num::TryFromIntError;

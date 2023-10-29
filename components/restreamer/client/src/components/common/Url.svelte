@@ -6,7 +6,7 @@
   import StreamInfo from './StreamInfo.svelte';
 
   export let url;
-  export let previewUrl;
+  export let previewUrl = false;
   export let streamInfo;
   export let isError;
 </script>
@@ -28,7 +28,7 @@
     {/if}
     {#if url}
       <button
-        class="url-action-btn uk-button uk-button-link uk-margin-small-left"
+        class="url-action-btn uk-button uk-button-link"
         on:click|preventDefault={() => copyToClipboard(url)}
       >
         Copy

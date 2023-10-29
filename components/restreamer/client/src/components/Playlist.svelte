@@ -198,7 +198,7 @@
       </button>
       <Confirm let:confirm>
         <button
-          class="uk-button uk-button-link url-action-btn uk-margin-small-left start-download"
+          class="uk-button uk-button-link url-action-btn start-download"
           class:uk-hidden={!hasFilesInPlaylist || hasDownloadingFiles}
           data-testid="start-all-outputs"
           title="Start all incomplete downloads of files in the playlist"
@@ -215,7 +215,7 @@
 
       <Confirm let:confirm>
         <button
-          class="uk-button uk-button-link url-action-btn uk-margin-small-left stop-download"
+          class="uk-button uk-button-link url-action-btn stop-download"
           class:uk-hidden={!hasFilesInPlaylist || !hasDownloadingFiles}
           data-testid="stop-all-outputs"
           title="Stop all downloads of all files in the playlist"

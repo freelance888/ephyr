@@ -33,7 +33,7 @@
   import { statusesList } from '../utils/constants';
 
   import { exportModal, outputModal } from '../stores';
-  import { UpdateOutputsOrder } from '../../api/client.graphql';
+  import { UpdateOutputsOrder, MoveOutput } from '../../api/client.graphql';
 
   import Confirm from './common/Confirm.svelte';
   import Input from './input/Input.svelte';
@@ -85,6 +85,7 @@
   };
 
   const updateOutputsOrderMutation = mutation(UpdateOutputsOrder);
+  const moveOutputMutation = mutation(MoveOutput);
 
   const playingFile = subscribe(CurrentlyPlayingFile, {
     variables: { id: value.id },
@@ -93,7 +94,9 @@
 
   $: orderedOutputs = undefined;
 
-  $: outputs = orderedOutputs ?? value.outputs;
+  $: outputs =
+    orderedOutputs ??
+    value.outputs.map((x) => ({ ...x, restreamId: value.id }));
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -192,6 +195,10 @@
     }
   }
 
+  function transformDraggedElement(element, draggedElementData, index) {
+    draggedElementData.newIndex = index;
+  }
+
   function intputStartDrag(e) {
     e.preventDefault();
     dispatch('inputsDragStarted', false);
@@ -207,11 +214,30 @@
     outputsHandleSort(e);
 
     orderWasUpdated = false;
-    await updateOutputsOrder(ids);
+
+    const movedItem = e.detail.items.find((x) => x.restreamId !== value.id);
+    if (movedItem) {
+      await moveOutput(movedItem.id, value.id, movedItem.newIndex);
+    } else {
+      await updateOutputsOrder(ids);
+    }
   }
 
   function onOutputDragStarted(e) {
     dragDisabled = e.details;
+  }
+
+  async function moveOutput(srcOutputId, dstRestreamId, dstPosition) {
+    try {
+      const variables = {
+        srcOutputId,
+        dstRestreamId,
+        dstPosition,
+      };
+      await moveOutputMutation({ variables });
+    } catch (e) {
+      showError(e.message);
+    }
   }
 
   async function updateOutputsOrder(ids) {
@@ -429,8 +455,8 @@
           items: outputs,
           type: 'output',
           dropTargetClasses: ['drop-target'],
-          dropFromOthersDisabled: true,
           dragDisabled,
+          transformDraggedElement,
           flipDurationMs: 200,
         }}
         on:consider={outputsHandleSort}
@@ -474,7 +500,7 @@
       display: none
 
     &:hover
-      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone
+      .uk-close, .edit-input, .export-import, .uk-button-small, .full-view-link, .item-drag-zone, .playlist-icon
         opacity: 1
 
     .uk-button-small
@@ -552,6 +578,9 @@
         height: 16px
 
     .playlist-icon
+      opacity: 0
+      transition: opacity .3s ease
+
       &.is-playing
         color: var(--success-color)
       :global(svg)

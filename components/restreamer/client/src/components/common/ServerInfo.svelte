@@ -1,7 +1,7 @@
 <script lang="js">
   import Fa from 'svelte-fa';
   import { isNumber } from '../../utils/util';
-  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 
   export let serverInfo;
   export let rowMode = false;

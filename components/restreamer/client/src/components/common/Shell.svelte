@@ -225,6 +225,9 @@
     color: var(--warning-color)
 
   .url-action-btn
+    white-space: nowrap
+    padding-right: 1em
+    padding-left: 1em
     align-self: center
     height: 100%
     color: var(--primary-text-color)

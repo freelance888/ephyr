@@ -1,14 +1,14 @@
 <script lang="js">
   import Fa from 'svelte-fa';
-  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons/faInfoCircle';
+  import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
   import { STREAM_ERROR, STREAM_WARNING } from '../../utils/constants';
   import ToggleButton from './ToggleButton.svelte';
 
   export let count;
   export let active;
   export let status;
-  export let disabled;
-  export let title;
+  export let disabled = false;
+  export let title = '';
   export let handleClick = () => {};
 
   $: iconClass = getClass(status);

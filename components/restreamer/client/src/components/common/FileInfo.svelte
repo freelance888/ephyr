@@ -17,7 +17,7 @@
 
   export let file;
   export let showDownloadLink;
-  export let classList;
+  export let classList = '';
 
   $: fileDownloadProgress = getDownloadProgress(file);
 
@@ -99,7 +99,7 @@
       {#if showDownloadLink}
         {#if isDownloading}
           <button
-            class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
+            class="download-btn url-action-btn uk-button uk-button-link"
             on:click|preventDefault={confirm(() => stopDownloadFile())}
           >
             Cancel
@@ -107,7 +107,7 @@
           </button>
         {:else}
           <button
-            class="download-btn url-action-btn uk-button uk-button-link uk-margin-small-left"
+            class="download-btn url-action-btn uk-button uk-button-link"
             on:click|preventDefault={confirm(() => downloadFile())}
           >
             Download
