@@ -35,7 +35,15 @@ impl From<UNumber> for usize {
 
 /// Generic number for using with Graphql
 #[derive(
-    Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, GraphQLScalar, PartialOrd
+    Debug,
+    Clone,
+    Copy,
+    Deserialize,
+    Serialize,
+    PartialEq,
+    Eq,
+    GraphQLScalar,
+    PartialOrd,
 )]
 pub struct UNumber(pub u16);
 
@@ -47,10 +55,9 @@ impl From<u16> for UNumber {
 
 impl From<usize> for UNumber {
     fn from(value: usize) -> Self {
-        if value <= u16::MAX as usize {
-            UNumber(value as u16)
-        } else {
-            UNumber(0)
+        match u16::try_from(value) {
+            Ok(value) => UNumber(value),
+            _ => UNumber(0),
         }
     }
 }

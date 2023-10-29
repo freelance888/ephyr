@@ -145,7 +145,7 @@
             confirmFn={enableConfirmation ? confirm : undefined}
             onChangeFn={toggle}
           />
-          <span slot="title"
+          <span slot="title" class="output-name"
             >{toggleStatusText} <code>{value.dst}</code> output</span
           >
           <span slot="description">Are you sure about it?</span>
@@ -313,5 +313,10 @@
     margin-right: 4px
     cursor: grab
 
+  .output-name
+    overflow: hidden
+    text-overflow: ellipsis
+    display: inline-block
+    width: 100%
 
 </style>

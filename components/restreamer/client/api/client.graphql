@@ -88,8 +88,16 @@ mutation UpdateOutputsOrder($ids: [OutputId!]!, $restreamId: RestreamId!) {
     changeOutputsOrder(ids: $ids, restreamId: $restreamId)
 }
 
-mutation MoveOutput($srcOutputId: OutputId!, $dstRestreamId: RestreamId!, $dstPosition: UNumber!) {
-    moveOutput(srcOutputId: $srcOutputId, dstRestreamId: $dstRestreamId, dstPosition: $dstPosition)
+mutation MoveOutput(
+    $srcOutputId: OutputId!
+    $dstRestreamId: RestreamId!
+    $dstPosition: UNumber!
+) {
+    moveOutput(
+        srcOutputId: $srcOutputId
+        dstRestreamId: $dstRestreamId
+        dstPosition: $dstPosition
+    )
 }
 
 mutation SetRestream(

@@ -1804,7 +1804,7 @@
           },
           {
             "name": "moveOutput",
-            "description": "",
+            "description": "Moves `Output` specified by `scr_output_id` from parent `Intput` to\n`Restream` specified by `dst_restream_id` into `dst_position`\nAlso moving the `Output` become disabled.\n\n### Result\n\nReturns `true` if output was moved sucessfully",
             "args": [
               {
                 "name": "srcOutputId",

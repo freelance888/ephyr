@@ -22,8 +22,7 @@
   $: canRenderToolbar = isOnline && $info.data;
   $: infoError = $info && $info.error;
   $: isLoading = !isOnline || $state.loading;
-  $: canRenderMainComponent =
-    isOnline && $state.data && $info.data;
+  $: canRenderMainComponent = isOnline && $state.data && $info.data;
   $: stateError = $state?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
   $: document.title = (isOnline ? '' : '🔴  ') + document.title;
@@ -37,13 +36,7 @@
     error={stateError || infoError}
     serverInfo={sInfo}
   >
-    <Toolbar
-      slot="toolbar"
-      {info}
-      {state}
-      {isOnline}
-      {gqlClient}
-    />
+    <Toolbar slot="toolbar" {info} {state} {isOnline} {gqlClient} />
     <PageAll slot="main" {info} {state} />
   </Shell>
 </template>

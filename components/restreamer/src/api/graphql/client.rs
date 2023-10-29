@@ -392,7 +392,13 @@ impl MutationsRoot {
         Ok(true)
     }
 
+    /// Moves `Output` specified by `scr_output_id` from parent `Intput` to
+    /// `Restream` specified by `dst_restream_id` into `dst_position`
+    /// Also moving the `Output` become disabled.
     ///
+    /// ### Result
+    ///
+    /// Returns `true` if output was moved sucessfully
     fn move_output(
         #[graphql(description = "ID of the `Output` to be moved")]
         src_output_id: OutputId,
@@ -407,16 +413,18 @@ impl MutationsRoot {
         let output = restreams
             .iter_mut()
             .find_map(|r| {
-                (r.outputs.iter().position(|o| o.id == src_output_id)).and_then(|pos| {
-                    let mut output = r.outputs.remove(pos);
-                    output.enabled = false;
-                    Some(output)
-                })
+                (r.outputs.iter().position(|o| o.id == src_output_id)).map(
+                    |pos| {
+                        let mut output = r.outputs.remove(pos);
+                        output.enabled = false;
+                        output
+                    },
+                )
             })
             .ok_or(
                 graphql::Error::new("RESTREAM_NOT_FOUND")
                     .status(StatusCode::BAD_REQUEST)
-                    .message(&format!("Source Restream or Output not found")),
+                    .message("Source Restream or Output not found"),
             )?;
 
         let dst_outputs = &mut restreams
@@ -432,7 +440,10 @@ impl MutationsRoot {
         if dst_position > dst_outputs.len().into() {
             return Err(graphql::Error::new("WRONG_ARRAY_INDEX")
                 .status(StatusCode::BAD_REQUEST)
-                .message(&format!("Can't insert output to destination position {}", dst_position.0)));
+                .message(&format!(
+                    "Can't insert output to destination position {}",
+                    dst_position.0
+                )));
         }
 
         dst_outputs.insert(dst_position.into(), output);

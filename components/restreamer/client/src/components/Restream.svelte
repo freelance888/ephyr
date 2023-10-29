@@ -94,7 +94,9 @@
 
   $: orderedOutputs = undefined;
 
-  $: outputs = orderedOutputs ?? value.outputs.map(x => ({...x, restreamId: value.id}));
+  $: outputs =
+    orderedOutputs ??
+    value.outputs.map((x) => ({ ...x, restreamId: value.id }));
 
   $: deleteConfirmation = $info.data
     ? $info.data.info.deleteConfirmation
@@ -208,20 +210,18 @@
   }
 
   async function onDropOutput(e) {
-    console.log('onDropOutput: ', e)
-
     const ids = e.detail.items.map((x) => x.id);
     outputsHandleSort(e);
 
     orderWasUpdated = false;
 
-    const movedItem = e.detail.items.find(x => x.restreamId !== value.id);
+    const movedItem = e.detail.items.find((x) => x.restreamId !== value.id);
     if (movedItem) {
       await moveOutput(movedItem.id, value.id, movedItem.newIndex);
     } else {
       await updateOutputsOrder(ids);
     }
- }
+  }
 
   function onOutputDragStarted(e) {
     dragDisabled = e.details;
@@ -232,7 +232,7 @@
       const variables = {
         srcOutputId,
         dstRestreamId,
-        dstPosition
+        dstPosition,
       };
       await moveOutputMutation({ variables });
     } catch (e) {
