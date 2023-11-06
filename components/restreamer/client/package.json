@@ -52,7 +52,7 @@
     "prettier": "^2.8",
     "prettier-plugin-svelte": "^2.10",
     "style-loader": "^3.3",
-    "stylus": "^0.59",
+    "stylus": "^0.61",
     "stylus-loader": "^7.1",
     "svelte": "^3.59",
     "svelte-check": "^3.5",
