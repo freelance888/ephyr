@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  restreamer:
+    image: allatra/ephyr:restreamer-${EPHYR_VER:-edge}
+    networks:  # e.g. hostmode
+      - "hostnet"
+    volumes:
+      - ${host_config_srs_path:-/var/lib/ephyr-restreamer/srs.conf}:/usr/local/srs/conf/srs.conf
+      - ${host_state_path:-/var/lib/ephyr-restreamer/state.json}:${EPHYR_RESTREAMER_STATE_PATH:-/tmp/workdir/state.json}
+      - ${host_ephyr_www_dir:-/var/www/ephyr-restreamer/}:${EPHYR_RESTREAMER_SRS_HTTP_DIR:-/var/www/srs/}
+      - ${host_ephyr_www_dir:-/var/www/ephyr-restreamer/}:${EPHYR_RESTREAMER_VIDEO_FILE_ROOT:-/tmp/workdir/files}
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == worker
+          - node.labels.ephyr.restreamer.dont != true
+
+networks:
+  hostnet:
+    external: true
+    name: host
