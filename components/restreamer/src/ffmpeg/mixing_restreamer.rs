@@ -386,18 +386,14 @@ impl MixingRestreamer {
             pin!(copying);
 
             // Run copying to FIFO and stops if receive signal from `kill_rx`
-            loop {
-                tokio::select! {
-                    r = &mut copying => {
-                        _ = r.map_err(|e|
-                            tracing::error!("Failed to write into FIFO: {}", e)
-                        );
-                        break;
-                    }
-                   _ = kill_rx.changed() => {
-                        tracing::debug!("Signal for FIFO received");
-                        break;
-                    }
+            tokio::select! {
+                r = &mut copying => {
+                    _ = r.map_err(|e|
+                        tracing::error!("Failed to write into FIFO: {}", e)
+                    );
+                }
+               _ = kill_rx.changed() => {
+                    tracing::debug!("Signal for FIFO received");
                 }
             }
             // Clean up FIFO file
