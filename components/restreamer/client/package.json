@@ -62,7 +62,7 @@
     "ts-loader": "^9.4",
     "ts-node": "^10.9",
     "typedoc": "^0.25",
-    "typescript": "^5.0",
+    "typescript": "^5.2",
     "webpack": "^5.85",
     "webpack-cli": "^5.1",
     "webpack-dev-server": "^4.15"
