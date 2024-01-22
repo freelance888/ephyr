@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@apollo/client": "~3.8",
-    "@fortawesome/free-regular-svg-icons": "^6.4.2",
+    "@fortawesome/free-regular-svg-icons": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
     "@geoffcox/svelte-splitter": "^1.0.1",
     "clipboard-copy": "^4.0",
