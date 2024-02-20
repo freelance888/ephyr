@@ -78,6 +78,9 @@ lazy_static = "1.4"
 [dependencies.ephyr-serde]
     version = "0.1"
     path = "../../common/serde"
+[dependencies.srs-client]
+    version = "0.1"
+    path = "../../common/srs-client"
 
 [build-dependencies]
 static-files = "0.2.3"

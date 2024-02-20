@@ -3,7 +3,7 @@
 //! [SRS]: https://github.com/ossrs/srs
 
 use crate::{
-    api, display_panic, dvr,
+    display_panic, dvr,
     proc::{kill_process, kill_process_by_name},
 };
 use anyhow::anyhow;
@@ -18,6 +18,7 @@ use futures::future::{self, FutureExt as _, TryFutureExt as _};
 use lazy_static::lazy_static;
 use regex::Regex;
 use smart_default::SmartDefault;
+use srs_client::SrsClient;
 use std::{
     borrow::Borrow,
     ops::Deref,
@@ -176,18 +177,18 @@ impl Server {
                         );
                         Ok(())
                     })
-                    .unwrap_or_else(|(): ()| ())
-                    .catch_unwind()
-                    .await
-                    .map_err(|p| {
-                        tracing::error!(
+                        .unwrap_or_else(|(): ()| ())
+                        .catch_unwind()
+                        .await
+                        .map_err(|p| {
+                            tracing::error!(
                             "Panicked while spawning/observing SRS server: {}",
                             display_panic(&p),
                         );
-                    });
+                        });
                 }
             }
-            .in_current_span()
+                .in_current_span()
         });
 
         let srv = Self {
@@ -221,8 +222,8 @@ impl Server {
                 anyhow!("Failed to render SRS config from template: {e}")
             })?,
         )
-        .await
-        .map_err(|e| anyhow!("Failed to write SRS config file: {e}"))
+            .await
+            .map_err(|e| anyhow!("Failed to write SRS config file: {e}"))
     }
 }
 
@@ -301,16 +302,16 @@ impl Drop for ClientId {
     /// [SRS]: https://github.com/ossrs/srs
     fn drop(&mut self) {
         if let Some(client_id) = Arc::get_mut(&mut self.0).cloned() {
+            // TODO: move url initialization
+            let client = SrsClient::build("http://127.0.0.1:8002").unwrap();
             drop(tokio::spawn(
-                api::srs::Client::kickoff_client(client_id.clone()).map_err(
-                    move |e| {
-                        tracing::error!(
-                            client=client_id,
-                            e=%e,
-                            "Failed to kickoff client",
-                        );
-                    },
-                ),
+                client.kickoff_client(client_id.clone()).map_err(move |e| {
+                    tracing::error!(
+                        client=client_id,
+                        e=%e,
+                        "Failed to kickoff client",
+                    );
+                }),
             ));
         }
     }

@@ -9,18 +9,17 @@ use actix_web::{
 use futures::{FutureExt, TryFutureExt};
 use tap::Tap;
 
-use ephyr_log::{
-    tracing,
-    tracing::{instrument, Instrument},
-};
-
 use crate::{
-    api::srs::callback,
     cli::{Failure, Opts},
     display_panic,
     state::{EndpointId, Input, InputEndpointKind, InputSrc, State, Status},
     stream_probe::stream_probe,
 };
+use ephyr_log::{
+    tracing,
+    tracing::{instrument, Instrument},
+};
+use srs_client::{SrsCallbackEvent, SrsCallbackReq};
 
 /// Runs HTTP server for exposing [SRS] [HTTP Callback API][1] on `/`
 /// endpoint for responding to [SRS] HTTP callbacks.
@@ -33,7 +32,7 @@ use crate::{
 /// [SRS]: https://github.com/ossrs/srs
 /// [1]: https://github.com/ossrs/srs/wiki/v4_EN_HTTPCallback
 #[instrument(name = "srs_callback", skip_all,
-    fields(%cfg.callback_http_port, %cfg.callback_http_ip)
+fields(% cfg.callback_http_port, % cfg.callback_http_ip)
 )]
 pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
     Ok(HttpServer::new(move || {
@@ -42,14 +41,14 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .wrap(middleware::Logger::default())
             .service(on_callback)
     })
-    .bind((cfg.callback_http_ip, cfg.callback_http_port))
-    .map_err(|e| tracing::error!(%e, "Failed to bind callback HTTP server"))?
-    .run()
-    .in_current_span()
-    .await
-    .map_err(|e| {
-        tracing::error!(%e, "Failed to run callback HTTP server");
-    })?)
+        .bind((cfg.callback_http_ip, cfg.callback_http_port))
+        .map_err(|e| tracing::error!(%e, "Failed to bind callback HTTP server"))?
+        .run()
+        .in_current_span()
+        .await
+        .map_err(|e| {
+            tracing::error!(%e, "Failed to run callback HTTP server");
+        })?)
 }
 
 /// Endpoint serving the whole [HTTP Callback API][1] for [SRS].
@@ -63,38 +62,39 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
 #[allow(clippy::unused_async)]
 #[post("/")]
 #[instrument(name = "srs_callback", skip_all,
-    fields(
-            action=%req.action,
-            client=%req.ip,
-            input=&req.app_stream())
+fields(
+action = % req.action,
+client = % req.ip,
+input = & req.app_stream())
 )]
 async fn on_callback(
-    req: web::Json<callback::Request>,
+    req: web::Json<SrsCallbackReq>,
     state: Data<State>,
 ) -> Result<&'static str, Error> {
     match req.action {
-        callback::Event::OnConnect => on_connect(&req, &state),
-        callback::Event::OnPublish => on_start(&req, &state, true),
-        callback::Event::OnUnpublish => on_stop(&req, &state, true),
-        callback::Event::OnPlay => on_start(&req, &state, false),
-        callback::Event::OnStop => on_stop(&req, &state, false),
-        callback::Event::OnHls => on_hls(&req, &state),
+        SrsCallbackEvent::OnConnect => on_connect(&req, &state),
+        SrsCallbackEvent::OnPublish => on_start(&req, &state, true),
+        SrsCallbackEvent::OnUnpublish => on_stop(&req, &state, true),
+        SrsCallbackEvent::OnPlay => on_start(&req, &state, false),
+        SrsCallbackEvent::OnStop => on_stop(&req, &state, false),
+        SrsCallbackEvent::OnHls => on_hls(&req, &state),
+        SrsCallbackEvent::OnDvr => Ok(()),
     }
-    .map(|()| "0")
+        .map(|()| "0")
 }
 
-/// Handles [`callback::Event::OnConnect`].
+/// Handles [`SrsCallbackEvent::OnConnect`].
 ///
 /// Only checks whether the appropriate [`state::Restream`] exists and its
 /// [`Input`] is enabled.
 ///
 /// # Errors
 ///
-/// If [`callback::Request::app`] matches no existing [`state::Restream`].
+/// If [`SrsCallbackReq::app`] matches no existing [`state::Restream`].
 ///
 /// [`state::Restream`]: crate::state::Restream
 #[instrument(err, skip_all)]
-fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
+fn on_connect(req: &SrsCallbackReq, state: &State) -> Result<(), Error> {
     state
         .restreams
         .get_cloned()
@@ -111,16 +111,16 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
         .map(|_| ())
 }
 
-/// Handles [`callback::Event::OnPublish`] and [`callback::Event::OnPlay`].
+/// Handles [`SrsCallbackEvent::OnPublish`] and [`SrsCallbackEvent::OnPlay`].
 ///
 /// Updates the appropriate [`state::Restream`]'s [`InputEndpoint`] to
-/// [`Status::Online`] (if [`callback::Event::OnPublish`]) and remembers the
+/// [`Status::Online`] (if [`SrsCallbackEvent::OnPublish`]) and remembers the
 /// connected [SRS] client.
 ///
 /// # Errors
 ///
-/// - If [`callback::Request::vhost`], [`callback::Request::app`] or
-///   [`callback::Request::stream`] matches no existing enabled
+/// - If [`SrsCallbackReq::vhost`], [`SrsCallbackReq::app`] or
+///   [`SrsCallbackReq::stream`] matches no existing enabled
 ///   [`InputEndpoint`].
 /// - If [`InputEndpoint`] is not allowed to be published by external
 ///   client.
@@ -131,7 +131,7 @@ fn on_connect(req: &callback::Request, state: &State) -> Result<(), Error> {
 /// [SRS]: https://github.com/ossrs/srs
 #[instrument(err, skip_all)]
 fn on_start(
-    req: &callback::Request,
+    req: &SrsCallbackReq,
     state: &State,
     publishing: bool,
 ) -> Result<(), Error> {
@@ -217,21 +217,21 @@ fn on_start(
     Ok(())
 }
 
-/// Handles [`callback::Event::OnUnpublish`].
+/// Handles [`SrsCallbackEvent::OnUnpublish`].
 ///
 /// Updates the appropriate [`state::Restream`]'s [`InputEndpoint`] to
 /// [`Status::Offline`].
 ///
 /// # Errors
 ///
-/// If [`callback::Request::vhost`], [`callback::Request::app`] or
-/// [`callback::Request::stream`] matches no existing [`InputEndpoint`].
+/// If [`SrsCallbackReq::vhost`], [`SrsCallbackReq::app`] or
+/// [`SrsCallbackReq::stream`] matches no existing [`InputEndpoint`].
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
 #[instrument(err, skip_all)]
 fn on_stop(
-    req: &callback::Request,
+    req: &SrsCallbackReq,
     state: &State,
     publishing: bool,
 ) -> Result<(), Error> {
@@ -267,7 +267,7 @@ fn on_stop(
         })?;
 
     let input = lookup_input(&mut restream.input, stream).ok_or_else(|| {
-        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist",))
+        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist", ))
     })?;
 
     let endpoint = input
@@ -292,21 +292,21 @@ fn on_stop(
     Ok(())
 }
 
-/// Handles [`callback::Event::OnHls`].
+/// Handles [`SrsCallbackEvent::OnHls`].
 ///
 /// Checks whether the appropriate [`state::Restream`] with an
 /// [`InputEndpointKind::Hls`] exists and its [`Input`] is enabled.
 ///
 /// # Errors
 ///
-/// If [`callback::Request::vhost`], [`callback::Request::app`] or
-/// [`callback::Request::stream`] matches no existing [`InputEndpoint`]
+/// If [`SrsCallbackReq::vhost`], [`SrsCallbackReq::app`] or
+/// [`SrsCallbackReq::stream`] matches no existing [`InputEndpoint`]
 /// of [`InputEndpointKind::Hls`].
 ///
 /// [`InputEndpoint`]: crate::state::InputEndpoint
 /// [`state::Restream`]: crate::state::Restream
 #[instrument(err, skip_all)]
-fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
+fn on_hls(req: &SrsCallbackReq, state: &State) -> Result<(), Error> {
     /// Traverses the given [`Input`] and all its [`Input::srcs`] looking
     /// for the one matching the specified `stream` and being enabled.
     #[must_use]
@@ -365,6 +365,7 @@ fn on_hls(req: &callback::Request, state: &State) -> Result<(), Error> {
     }
     Ok(())
 }
+
 #[instrument(skip_all)]
 fn update_stream_info(id: EndpointId, url: String, state: State) {
     drop(
@@ -376,16 +377,16 @@ fn update_stream_info(id: EndpointId, url: String, state: State) {
                         .set_stream_info(id, result)
                         .unwrap_or_else(|e| tracing::error!(%e));
                 }
-                .in_current_span(),
+                    .in_current_span(),
             )
-            .catch_unwind()
-            .map_err(move |p| {
-                tracing::error!(
+                .catch_unwind()
+                .map_err(move |p| {
+                    tracing::error!(
                     e = display_panic(&p),
                     "Can not fetch stream info",
                 );
-            }),
+                }),
         )
-        .in_current_span(),
+            .in_current_span(),
     );
 }
