@@ -2,7 +2,7 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/6.0/ubuntu2004/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/main/docker-images/6.0/ubuntu2004/Dockerfile
 FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS build-ephyr
 
 
@@ -40,22 +40,20 @@ RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
 WORKDIR /tmp/ephyr/
 
 COPY common/api/google-drive/Cargo.toml ./common/api/google-drive/
-COPY common/api/allatra-video/Cargo.toml ./common/api/allatra-video/
 COPY common/log/Cargo.toml ./common/log/
+COPY common/srs-client/Cargo.toml ./common/srs-client/
 COPY common/serde/Cargo.toml ./common/serde/
 COPY components/restreamer/Cargo.toml ./components/restreamer/
-COPY components/vod-meta-server/Cargo.toml ./components/vod-meta-server/
 COPY Cargo.toml Cargo.lock ./
 
 COPY components/restreamer/client.graphql.schema.json ./components/restreamer/
 
 # Create dummy files to build dependencies
 RUN for dir in common/api/google-drive \
-               common/api/allatra-video \
                common/log \
+               common/srs-client \
                common/serde \
-               components/restreamer \
-               components/vod-meta-server; do \
+               components/restreamer; do \
       mkdir -p ${dir}/src \
       && touch ${dir}/src/lib.rs; \
     done \
@@ -81,8 +79,9 @@ WORKDIR /tmp/ephyr/
 RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 COPY common/log/ ./common/log/
+COPY common/srs-client/ ./common/srs-client/
 COPY common/serde/ ./common/serde/
-COPY common/api/google-drive ./common/api/google-drive/
+COPY common/api/google-drive/ ./common/api/google-drive/
 COPY components/restreamer/ ./components/restreamer/
 
 RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
@@ -104,7 +103,7 @@ FROM ossrs/srs:v4.0-r5 AS build-srs
 # Stage 'runtime' creates final Docker image to use in runtime.
 #
 
-# https://github.com/jrottenberg/ffmpeg/blob/master/docker-images/6.0/ubuntu2004/Dockerfile
+# https://github.com/jrottenberg/ffmpeg/blob/main/docker-images/6.0/ubuntu2004/Dockerfile
 FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/

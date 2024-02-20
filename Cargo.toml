@@ -1,6 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["common/log", "common/serde", "common/srs-client", "common/api/*", "components/restreamer"]
+members = [
+    "common/log",
+    "common/serde",
+    "common/srs-client",
+    "common/api/google-drive",
+    "components/restreamer"
+]
 
 [profile.release]
 lto = "thin"
