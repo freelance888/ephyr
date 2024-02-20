@@ -177,18 +177,18 @@ impl Server {
                         );
                         Ok(())
                     })
-                        .unwrap_or_else(|(): ()| ())
-                        .catch_unwind()
-                        .await
-                        .map_err(|p| {
-                            tracing::error!(
+                    .unwrap_or_else(|(): ()| ())
+                    .catch_unwind()
+                    .await
+                    .map_err(|p| {
+                        tracing::error!(
                             "Panicked while spawning/observing SRS server: {}",
                             display_panic(&p),
                         );
-                        });
+                    });
                 }
             }
-                .in_current_span()
+            .in_current_span()
         });
 
         let srv = Self {
@@ -222,8 +222,8 @@ impl Server {
                 anyhow!("Failed to render SRS config from template: {e}")
             })?,
         )
-            .await
-            .map_err(|e| anyhow!("Failed to write SRS config file: {e}"))
+        .await
+        .map_err(|e| anyhow!("Failed to write SRS config file: {e}"))
     }
 }
 

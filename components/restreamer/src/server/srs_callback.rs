@@ -41,14 +41,14 @@ pub async fn run(cfg: &Opts, state: State) -> Result<(), Failure> {
             .wrap(middleware::Logger::default())
             .service(on_callback)
     })
-        .bind((cfg.callback_http_ip, cfg.callback_http_port))
-        .map_err(|e| tracing::error!(%e, "Failed to bind callback HTTP server"))?
-        .run()
-        .in_current_span()
-        .await
-        .map_err(|e| {
-            tracing::error!(%e, "Failed to run callback HTTP server");
-        })?)
+    .bind((cfg.callback_http_ip, cfg.callback_http_port))
+    .map_err(|e| tracing::error!(%e, "Failed to bind callback HTTP server"))?
+    .run()
+    .in_current_span()
+    .await
+    .map_err(|e| {
+        tracing::error!(%e, "Failed to run callback HTTP server");
+    })?)
 }
 
 /// Endpoint serving the whole [HTTP Callback API][1] for [SRS].
@@ -80,7 +80,7 @@ async fn on_callback(
         SrsCallbackEvent::OnHls => on_hls(&req, &state),
         SrsCallbackEvent::OnDvr => Ok(()),
     }
-        .map(|()| "0")
+    .map(|()| "0")
 }
 
 /// Handles [`SrsCallbackEvent::OnConnect`].
@@ -267,7 +267,7 @@ fn on_stop(
         })?;
 
     let input = lookup_input(&mut restream.input, stream).ok_or_else(|| {
-        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist", ))
+        error::ErrorNotFound(format!("Stream `{stream}` doesn't exist",))
     })?;
 
     let endpoint = input
@@ -377,16 +377,16 @@ fn update_stream_info(id: EndpointId, url: String, state: State) {
                         .set_stream_info(id, result)
                         .unwrap_or_else(|e| tracing::error!(%e));
                 }
-                    .in_current_span(),
+                .in_current_span(),
             )
-                .catch_unwind()
-                .map_err(move |p| {
-                    tracing::error!(
+            .catch_unwind()
+            .map_err(move |p| {
+                tracing::error!(
                     e = display_panic(&p),
                     "Can not fetch stream info",
                 );
-                }),
+            }),
         )
-            .in_current_span(),
+        .in_current_span(),
     );
 }
