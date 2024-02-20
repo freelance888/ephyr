@@ -2,16 +2,15 @@
 name = "ephyr-log"
 version = "0.2.0"
 edition = "2021"
-authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 
 [dependencies]
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter","registry","json"]}
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "json"] }
 tracing-log = "0.1"
 tracing-appender = "0.2"
 tracing-futures = "0.2"
-tracing-actix-web = { version= "0.7", features = ["tracing-opentelemetry_0_18_pkg"] }
+tracing-actix-web = { version = "0.7", features = ["tracing-opentelemetry_0_18_pkg"] }
 tokio = { version = "1.29", features = ["fs", "io-util", "process", "sync", "macros"] }
 async-trait = "0.1"
 tracing-opentelemetry = { version = "0.18", features = ["metrics"] }
