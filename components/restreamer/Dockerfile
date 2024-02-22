@@ -59,6 +59,7 @@ COPY components/restreamer/client/yarn.lock ./
 RUN yarn install --pure-lockfile
 WORKDIR /app
 RUN cargo chef cook --release --recipe-path recipe.json
+RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 
 #
@@ -67,12 +68,10 @@ RUN cargo chef cook --release --recipe-path recipe.json
 FROM base as builder
 WORKDIR /app
 COPY --from=cacher /app/target target
-COPY --from=cacher /usr/local/cargo /usr/local/cargo
 COPY . .
 
 # No need to run cargo chef cook here, as dependencies are already pre-compiled
 RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
-RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 
 #
