@@ -2,7 +2,7 @@
 # Stage 'build-ephyr' builds Ephyr for the final stage.
 #
 # https://github.com/jrottenberg/ffmpeg/blob/main/docker-images/6.0/ubuntu2004/Dockerfile
-FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS build-ephyr
+FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS base
 
 # Install build dependencies.
 RUN apt-get update \
@@ -30,25 +30,48 @@ RUN curl -sLO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/
 RUN (curl -Ls install-node.vercel.app/16 | bash -s -- --yes) \
  && npm install --location=global yarn
 
-# First, build all the dependencies to cache them in a separate Docker layer and
-# avoid recompilation each time project sources are changed.
-WORKDIR /tmp/ephyr/
 
+#
+# Builder stage for cargo-chef
+#
+FROM base as chef
+RUN cargo install cargo-chef
+
+#
+# Planner stage for cargo-chef
+#
+FROM chef as planner
+WORKDIR /app
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+#
+# Cacher stage for cargo-chef
+#
+FROM chef as cacher
+WORKDIR /app
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+# Ensure Yarn dependencies are available for the frontend build in build.rs
+WORKDIR /app/components/restreamer/client
+COPY components/restreamer/client/package.json ./
+COPY components/restreamer/client/yarn.lock ./
+RUN yarn install --pure-lockfile
+WORKDIR /app
+RUN cargo chef cook --release --recipe-path recipe.json
+
+
+#
+# Final builder stage
+#
+FROM base as builder
+WORKDIR /app
+COPY --from=cacher /app/target target
+COPY --from=cacher /usr/local/cargo /usr/local/cargo
 COPY . .
 
-# Create dummy files to build dependencies
-RUN cargo build -p ephyr-restreamer --lib --release
-
-
-# Then, prepare Yarn dependencies to cache them in a separate Docker layer and
-# avoid recompilation each time project sources are changed.
-WORKDIR /tmp/ephyr/components/restreamer/
-
-RUN yarn install --pure-lockfile
-
-# Finally, build the whole project.
-WORKDIR /tmp/ephyr/
-
+# No need to run cargo chef cook here, as dependencies are already pre-compiled
+RUN cargo build -p ephyr-restreamer --bin ephyr-restreamer --release
 RUN rm -rf ./target/release/.fingerprint/ephyr-*
 
 
@@ -66,7 +89,7 @@ FROM ossrs/srs:v4.0-r5 AS build-srs
 FROM jrottenberg/ffmpeg:6.0-ubuntu2004 AS runtime
 
 COPY --from=build-srs /usr/local/srs/ /usr/local/srs/
-COPY --from=build-ephyr /tmp/ephyr/target/release/ephyr-restreamer \
+COPY --from=builder /app/target/release/ephyr-restreamer \
                         /usr/local/bin/ephyr-restreamer
 
 ENTRYPOINT  ["/usr/local/bin/ephyr-restreamer"]
