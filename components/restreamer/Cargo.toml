@@ -2,7 +2,6 @@
 name = "ephyr-restreamer"
 version = "0.8.0+dev"
 edition = "2021"
-authors = ["ALLATRA IT <it@allatra.org>"]
 publish = false
 default-run = "ephyr-restreamer"
 
@@ -45,39 +44,42 @@ url = { version = "2.1", features = ["serde"] }
 uuid = { version = "1.1", features = ["serde", "v4"] }
 zeromq = "0.3"
 interprocess = { version = "1.2", features = ["tokio_support"] }
-tokio-stream = { version="0.1", features = ["fs"]}
+tokio-stream = { version = "0.1", features = ["fs"] }
 lazy_static = "1.4"
 [dependencies.tsclientlib]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
+git = "https://github.com/ReSpeak/tsclientlib"
+rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
 [dependencies.tsproto-packets]
-    git = "https://github.com/ReSpeak/tsclientlib"
-    rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
+git = "https://github.com/ReSpeak/tsclientlib"
+rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
 [dependencies.derive_more]
-    version = "0.99"
-    features = ["as_ref", "deref", "display", "error", "from"]
-    default-features = false
+version = "0.99"
+features = ["as_ref", "deref", "display", "error", "from"]
+default-features = false
 [dependencies.tokio]
-    version = "1.29"
-    features = ["fs", "io-util", "process", "sync", "time"]
+version = "1.29"
+features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
-    git="https://github.com/graphql-rust/juniper"
-    branch = "master"
-    version = "0.16.0-dev"
-    features = ["chrono"]
+git = "https://github.com/graphql-rust/juniper"
+branch = "master"
+version = "0.16.0-dev"
+features = ["chrono"]
 [dependencies.juniper_actix]
-    git="https://github.com/graphql-rust/juniper"
-    features = ["subscriptions"]
-    branch = "master"
+git = "https://github.com/graphql-rust/juniper"
+features = ["subscriptions"]
+branch = "master"
 [dependencies.juniper_graphql_ws]
-    git="https://github.com/graphql-rust/juniper"
-    branch = "master"
+git = "https://github.com/graphql-rust/juniper"
+branch = "master"
 [dependencies.ephyr-api-google-drive]
-    version = "0.1"
-    path = "../../common/api/google-drive"
+version = "0.1"
+path = "../../common/api/google-drive"
 [dependencies.ephyr-serde]
-    version = "0.1"
-    path = "../../common/serde"
+version = "0.1"
+path = "../../common/serde"
+[dependencies.srs-client]
+version = "0.1"
+path = "../../common/srs-client"
 
 [build-dependencies]
 static-files = "0.2.3"
