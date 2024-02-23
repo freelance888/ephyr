@@ -473,6 +473,19 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
 
+      - name: Update Cloudflare DNS Record
+        run: |
+          ACCESS_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }}
+          BASE_URL=https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE }}
+          DNS_RECORD_ID=`curl -X GET "$BASE_URL/dns_records" -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" | 
+              jq '.result[] | select(.type == "A" and .name == "${{ secrets.CLOUDFLARE_DOMAIN }}").zone_id'`
+          TYPE="A"
+          NAME=${{ secrets.CLOUDFLARE_DOMAIN }}
+          CONTENT=$SERVER_IPV4  # Use the input for the IP address
+          TTL="60"
+          curl -X PUT "$BASE_URL/dns_records/$DNS_RECORD_ID" -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data '{"type":"'"$TYPE"'","name":"'"$NAME"'","content":"'"$CONTENT"'","ttl":'"$TTL"'}' | jq
+
       - name: Install Ephyr on new server
         uses: webfactory/ssh-agent@v0.4.1
         with:
@@ -490,5 +503,5 @@ jobs:
           browser: chrome
           working-directory: components/restreamer/client
         env:
-          CYPRESS_host: ${{ env.SERVER_IPV4 }}
-          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}
+          CYPRESS_host: ${{ secrets.CLOUDFLARE_DOMAIN }}
+          CYPRESS_baseUrl: "https://${{ secrets.CLOUDFLARE_DOMAIN }}"
