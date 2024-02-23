@@ -3,6 +3,7 @@ describe('CHECK STREAMING STATE', { testIsolation: false }, () => {
 
   before(() => {
     cy.visit('/');
+    cy.stopAllTestStreams();
     cy.deleteAllInputs();
     cy.importJsonConf(Cypress.env('host'));
     cy.runTestStream('rtmp://' + Cypress.env('host') + '/en/primary');

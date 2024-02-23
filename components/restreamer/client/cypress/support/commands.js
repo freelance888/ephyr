@@ -275,11 +275,15 @@ Cypress.Commands.add('importJsonConf', (host) => {
   cy.get("button:contains('Replace')").should('not.exist');
 });
 
-// IMPORT ALL INPUTS
+// FFMPEG management
 Cypress.Commands.add('runTestStream', (rtmp) => {
   cy.exec(
     `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
   );
+});
+
+Cypress.Commands.add('stopAllTestStreams', () => {
+  cy.exec('killall -9 ffmpeg || echo "No ffmpeg process found"');
 });
 
 const redColor = 'rgb(240, 80, 110)';

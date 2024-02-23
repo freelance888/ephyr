@@ -14,8 +14,8 @@ jobs:
 
   clippy:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -35,8 +35,8 @@ jobs:
 
   rustfmt:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -53,15 +53,15 @@ jobs:
 
   eslint:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+              || !startsWith(github.ref, 'refs/tags/') }}
     steps:
       - uses: actions/checkout@v3
         if: ${{ matrix.if }}
@@ -70,10 +70,10 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/client/yarn.lock', matrix.component)) }}
+            format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
-                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+          && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
         working-directory: components/${{ matrix.component }}/client
@@ -93,25 +93,25 @@ jobs:
   test-unit-rust:
     name: Rust unit tests
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - crate: log
             if: true
-#          - crate: serde
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - crate: api-allatra-video
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
+          #          - crate: serde
+          #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+          #                    || !startsWith(github.ref, 'refs/tags/') }}
+          #          - crate: api-allatra-video
+          #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+          #                    || !startsWith(github.ref, 'refs/tags/') }}
           - crate: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - crate: vod-meta-server
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
+              || !startsWith(github.ref, 'refs/tags/') }}
+    #          - crate: vod-meta-server
+    #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+    #                    || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -129,7 +129,7 @@ jobs:
         with:
           key: ${{ matrix.crate }}
         if: ${{ matrix.if
-                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+          && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: cargo test -p ephyr-${{ matrix.crate }} --all-features
         env:
@@ -139,8 +139,8 @@ jobs:
   graphql-schema:
     name: GraphQL schema
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/restreamer-v')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/restreamer-v')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -159,7 +159,7 @@ jobs:
 
       - name: Verify GraphQL schema is up-to-date
         run: diff ./client.graphql.schema.json
-                  ./components/restreamer/client.graphql.schema.json
+          ./components/restreamer/client.graphql.schema.json
         if: ${{ matrix.if }}
 
 
@@ -171,17 +171,17 @@ jobs:
 
   rustdoc:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - component: vod-meta-server
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
+              || !startsWith(github.ref, 'refs/tags/') }}
+    #          - component: vod-meta-server
+    #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+    #                    || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -199,7 +199,7 @@ jobs:
         with:
           key: ${{ matrix.component }}
         if: ${{ matrix.if
-                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+          && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: cargo doc -p ephyr-${{ matrix.component }} --all-features --no-deps
         env:
@@ -208,14 +208,14 @@ jobs:
 
   typedoc:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
+              || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -225,10 +225,10 @@ jobs:
         with:
           path: ${{ env.YARN_CACHE_FOLDER }}
           key: ${{ runner.os }}-yarn-${{ matrix.component }}-${{ hashFiles(
-                        format('components/{0}/client/yarn.lock', matrix.component)) }}
+            format('components/{0}/client/yarn.lock', matrix.component)) }}
           restore-keys: ${{ runner.os }}-yarn-${{ matrix.component }}-
         if: ${{ matrix.if
-                && !contains(github.event.head_commit.message, '[fresh ci]') }}
+          && !contains(github.event.head_commit.message, '[fresh ci]') }}
 
       - run: yarn install --pure-lockfile --non-interactive
         working-directory: components/${{ matrix.component }}/client
@@ -247,28 +247,28 @@ jobs:
 
   docker:
     if: ${{ github.ref == 'refs/heads/master'
-            || startsWith(github.ref, 'refs/tags/')
-            || contains(github.event.head_commit.message, '[release]')
-            || !contains(github.event.head_commit.message, '[skip ci]') }}
+      || startsWith(github.ref, 'refs/tags/')
+      || contains(github.event.head_commit.message, '[release]')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             export: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                        || github.ref == 'refs/heads/master'
-                        || contains(github.event.head_commit.message, '[release]') }}
+              || github.ref == 'refs/heads/master'
+              || contains(github.event.head_commit.message, '[release]') }}
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - component: vod-meta-server
-#            export: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                        || github.ref == 'refs/heads/master'
-#                        || contains(github.event.head_commit.message, '[release]') }}
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                    || !startsWith(github.ref, 'refs/tags/') }}
+              || !startsWith(github.ref, 'refs/tags/') }}
+    #          - component: vod-meta-server
+    #            export: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+    #                        || github.ref == 'refs/heads/master'
+    #                        || contains(github.event.head_commit.message, '[release]') }}
+    #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+    #                    || !startsWith(github.ref, 'refs/tags/') }}
     env:
       no-cache: ${{ contains(github.event.head_commit.message, '[fresh ci]')
-                    || github.ref == 'refs/heads/master'
-                    || startsWith(github.ref, 'refs/tags/') }}
+        || github.ref == 'refs/heads/master'
+        || startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -277,7 +277,7 @@ jobs:
         if: ${{ matrix.if }}
 
       - run: make docker.image no-cache=yes tag=build-${{ github.run_number }}
-                               comp=${{ matrix.component }}
+          comp=${{ matrix.component }}
         if: ${{ matrix.if && env.no-cache == 'true' }}
 
       - uses: jpribyl/action-docker-layer-caching@v0.1.0
@@ -287,12 +287,12 @@ jobs:
         continue-on-error: true
         if: ${{ matrix.if && env.no-cache != 'true' }}
       - run: make docker.image no-cache=no tag=build-${{ github.run_number }}
-                               comp=${{ matrix.component }}
+          comp=${{ matrix.component }}
         if: ${{ matrix.if && env.no-cache != 'true' }}
 
       - run: make docker.tar to-file=image.tar
-                             tags=build-${{ github.run_number }}
-                             comp=${{ matrix.component }}
+          tags=build-${{ github.run_number }}
+          comp=${{ matrix.component }}
         if: ${{ matrix.if && matrix.export }}
       - uses: actions/upload-artifact@v2
         with:
@@ -318,19 +318,19 @@ jobs:
       - typedoc
       - docker
     if: ${{ github.ref == 'refs/heads/master'
-            || contains(github.event.head_commit.message, '[release]')
-            || startsWith(github.ref, 'refs/tags/') }}
+      || contains(github.event.head_commit.message, '[release]')
+      || startsWith(github.ref, 'refs/tags/') }}
     strategy:
       matrix:
         include:
           - component: restreamer
             if: ${{ startsWith(github.ref, 'refs/tags/restreamer-v')
-                    || contains(github.event.head_commit.message, '[release]')
-                    || !startsWith(github.ref, 'refs/tags/') }}
-#          - component: vod-meta-server
-#            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
-#                  || contains(github.event.head_commit.message, '[release]')
-#                  || !startsWith(github.ref, 'refs/tags/') }}
+              || contains(github.event.head_commit.message, '[release]')
+              || !startsWith(github.ref, 'refs/tags/') }}
+    #          - component: vod-meta-server
+    #            if: ${{ startsWith(github.ref, 'refs/tags/vod-meta-server-v')
+    #                  || contains(github.event.head_commit.message, '[release]')
+    #                  || !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.tags.outputs.result }}
@@ -354,7 +354,7 @@ jobs:
           text: ${{ github.ref }}
           regex: '^refs/tags/[a-z-]*-v((([0-9]+)\.[0-9]+)\.[0-9]+(-.+)?)$'
         if: ${{ matrix.if
-                && startsWith(github.ref, 'refs/tags/') }}
+          && startsWith(github.ref, 'refs/tags/') }}
 
       - name: Verify release version matches Cargo manifest
         run: >-
@@ -362,7 +362,7 @@ jobs:
                == $(grep -m1 'version = "' Cargo.toml | cut -d '"' -f2)
         working-directory: components/${{ matrix.component }}
         if: ${{ matrix.if
-                && startsWith(github.ref, 'refs/tags/') }}
+          && startsWith(github.ref, 'refs/tags/') }}
 
       - name: Verify release version matches NPM manifest
         run: >-
@@ -370,8 +370,8 @@ jobs:
                == $(grep -m1 '  "version": "' client/package.json | cut -d '"' -f4)
         working-directory: components/${{ matrix.component }}
         if: ${{ matrix.if
-                && startsWith(github.ref, 'refs/tags/')
-                && matrix.component == 'restreamer' }}
+          && startsWith(github.ref, 'refs/tags/')
+          && matrix.component == 'restreamer' }}
 
       - name: Calculate Docker tags
         id: tags
@@ -397,8 +397,8 @@ jobs:
             return versions;
         if: ${{ matrix.if }}
       - run: make docker.tag of=build-${{ github.run_number }}
-                             tags=${{ steps.tags.outputs.result }}
-                             comp=${{ matrix.component }}
+          tags=${{ steps.tags.outputs.result }}
+          comp=${{ matrix.component }}
         if: ${{ matrix.if }}
 
       - name: Login to Docker Hub
@@ -409,7 +409,7 @@ jobs:
         if: ${{ matrix.if }}
 
       - run: make docker.push tags=${{ steps.tags.outputs.result }}
-                              comp=${{ matrix.component }}
+          comp=${{ matrix.component }}
         if: ${{ matrix.if }}
 
       - name: Update README on Docker Hub
@@ -428,7 +428,7 @@ jobs:
         run: echo ::set-output name=link::https://github.com/${{ github.repository }}/blob/${{ matrix.component }}-v${{ steps.semver.outputs.group1 }}/components/${{ matrix.component }}/CHANGELOG.md#$(sed -n '/^## \[${{ steps.semver.outputs.group1 }}\]/{s/^## \[\(.*\)\][^0-9]*\([0-9].*\)/\1--\2/;s/[^0-9a-z-]*//g;p;}' CHANGELOG.md)
         working-directory: components/${{ matrix.component }}
         if: ${{ matrix.if
-                && startsWith(github.ref, 'refs/tags/') }}
+          && startsWith(github.ref, 'refs/tags/') }}
       - name: Release on GitHub
         uses: actions/create-release@v1
         env:
@@ -442,10 +442,7 @@ jobs:
             [Changelog](${{ steps.changelog.outputs.link }})
           prerelease: ${{ steps.semver.outputs.group4 != '' }}
         if: ${{ matrix.if
-                && startsWith(github.ref, 'refs/tags/') }}
-
-
-
+          && startsWith(github.ref, 'refs/tags/') }}
 
 
 
@@ -473,6 +470,20 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.HETZNER_TOKEN }}
 
+      - name: Update Cloudflare DNS Record
+        run: |
+          NAME=${{ secrets.CLOUDFLARE_DOMAIN }}
+          ACCESS_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }}
+          DNS_RECORD_ID=${{ secrets.CLOUDFLARE_DNS_RECORD_ID }}
+          BASE_URL=https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE }}
+          
+          result=`curl -X PUT "$BASE_URL/dns_records/$DNS_RECORD_ID" -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data '{"type":"'"A"'","name":"'"$NAME"'","content":"'"$SERVER_IPV4"'","ttl":'"60"',"proxied":'"true"'}' | jq .success`
+          if [ "$result" != true ]; then
+            echo "Update failed, exiting with error."
+            exit 1
+          fi
+
       - name: Install Ephyr on new server
         uses: webfactory/ssh-agent@v0.4.1
         with:
@@ -491,4 +502,4 @@ jobs:
           working-directory: components/restreamer/client
         env:
           CYPRESS_host: ${{ env.SERVER_IPV4 }}
-          CYPRESS_baseUrl: http://${{ env.SERVER_IPV4 }}
+          CYPRESS_baseUrl: "https://${{ secrets.CLOUDFLARE_DOMAIN }}"
