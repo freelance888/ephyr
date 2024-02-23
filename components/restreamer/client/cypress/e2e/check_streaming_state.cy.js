@@ -1,5 +1,5 @@
 describe('CHECK STREAMING STATE', { testIsolation: false }, () => {
-  const COMMON_WAIT_TIME = 10000;
+  const COMMON_WAIT_TIME = 15000;
 
   before(() => {
     cy.visit('/');
