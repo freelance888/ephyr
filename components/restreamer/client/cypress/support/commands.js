@@ -38,7 +38,7 @@ Cypress.Commands.add('clickAddBackupBtn', () => {
 // CLICK ADD BACKUP BTN
 Cypress.Commands.add('clickEditInputBtn', (inputNum) => {
   cy.get(
-    `:nth-child(${inputNum + 1}) > [data-testid="edit-input-modal:open"]`
+    `:nth-child(${inputNum + 1}) > [data-testid="edit-input-modal:open"]`,
   ).click();
 });
 
@@ -94,7 +94,7 @@ Cypress.Commands.add('deleteAllInputs', () => {
       `{
       "restreams":[],
       "version": "v1"
-    }`
+    }`,
     )
     .trigger('input');
   cy.get("button:contains('Replace')").click();
@@ -268,7 +268,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
       }
     }
   ]
-}`
+}`,
     )
     .trigger('input');
   cy.get("button:contains('Replace')").click();
@@ -278,7 +278,7 @@ Cypress.Commands.add('importJsonConf', (host) => {
 // FFMPEG management
 Cypress.Commands.add('runTestStream', (rtmp) => {
   cy.exec(
-    `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`
+    `ffmpeg -stream_loop -1 -re -nostdin -i ./cypress/data/test_video.mp4 -vcodec libx264 -preset:v ultrafast -acodec aac -f flv ${rtmp} >/dev/null 2>&1 &`,
   );
 });
 
@@ -294,68 +294,68 @@ Cypress.Commands.add('checkStartedAllStated', () => {
   cy.get('.e-circle[title="Serves failover live RTMP stream"]').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('.e-arrow-right[title="Accepts primary live RTMP stream"]').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('.e-arrow-right[title="Accepts backup1 live RTMP stream"]').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('.e-arrow-down[title="Pulls primary live RTMP stream"]').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid=SINGLE] .e-arrow-right').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid=RU] .e-arrow-right').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.wait(5000);
   cy.get('[data-testid=Teamspeak] .e-circle').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid=Twitter] .e-circle').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid="[Manual Start] FB"] .e-circle').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid="[Manual Start] YT"] .e-dot-circle').should(
     'have.css',
     'color',
-    brownColor
+    brownColor,
   );
 
   cy.get('[data-testid="File Record"] .e-circle').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 });
 
@@ -363,67 +363,67 @@ Cypress.Commands.add('checkStoppedAllStated', () => {
   cy.get('.e-dot-circle[title="Serves failover live RTMP stream"]').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('.e-arrow-right[title="Accepts primary live RTMP stream"]').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('.e-arrow-right[title="Accepts backup1 live RTMP stream"]').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('.e-arrow-down[title="Pulls primary live RTMP stream"]').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid=SINGLE] .e-arrow-right').should(
     'have.css',
     'color',
-    greenColor
+    greenColor,
   );
 
   cy.get('[data-testid=RU] .e-arrow-right').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.wait(5000);
   cy.get('[data-testid=Teamspeak] .e-dot-circle').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('[data-testid=Twitter] .e-dot-circle').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('[data-testid="[Manual Start] FB"] .e-dot-circle').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('[data-testid="[Manual Start] YT"] .e-dot-circle').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 
   cy.get('[data-testid="File Record"] .e-dot-circle').should(
     'have.css',
     'color',
-    redColor
+    redColor,
   );
 });

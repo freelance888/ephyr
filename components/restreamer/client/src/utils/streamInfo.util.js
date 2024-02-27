@@ -64,13 +64,13 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
       .reduce(
         (
           diffKeys,
-          [currentKey, { streamStat: currentStreamStat }] = current
+          [currentKey, { streamStat: currentStreamStat }] = current,
         ) => {
           // Compare the stream statistics of current endpoint with the first endpoint
           if (
             !isEqual(
               omit(currentStreamStat, excludedProps),
-              omit(firstStreamStat, excludedProps)
+              omit(firstStreamStat, excludedProps),
             )
           ) {
             // If there are differences, add the current key to the result array
@@ -79,7 +79,7 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
 
           return diffKeys;
         },
-        []
+        [],
       );
 
     // For currently playing file from playlist compare its stream info with
@@ -89,7 +89,7 @@ export const getEndpointsWithDiffStreams = (input, currentlyPlayingFile) => {
       if (
         !isEqual(
           omit(playlistFileSteamStat, excludedProps),
-          omit(firstStreamStat, excludedProps)
+          omit(firstStreamStat, excludedProps),
         )
       ) {
         endpointsWithDiffStreams = [...endpointsWithDiffStreams, name];
@@ -129,13 +129,13 @@ export function getPlaylistItemsWithDiffStreams(queue) {
           {
             name: currentFileName,
             file: { streamStat: currentStreamStat },
-          } = current
+          } = current,
         ) => {
           // Compare the streamStat objects of the current playlist item and the first playlist item
           if (
             !isEqual(
               omit(currentStreamStat, excludedProps),
-              omit(firstStreamStat, excludedProps)
+              omit(firstStreamStat, excludedProps),
             )
           ) {
             diffFiles = [...diffFiles, currentFileName];
@@ -143,7 +143,7 @@ export function getPlaylistItemsWithDiffStreams(queue) {
 
           return diffFiles;
         },
-        []
+        [],
       );
 
     // Return the list of playlist items with different stream information, or false if none found

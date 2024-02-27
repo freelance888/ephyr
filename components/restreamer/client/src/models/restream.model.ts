@@ -25,7 +25,7 @@ export class RestreamModel {
     if (!value) return;
 
     const withHls: boolean = value.input.endpoints.some(
-      (e) => e.kind === 'HLS'
+      (e) => e.kind === 'HLS',
     );
     let pullUrl: string | null = null;
 
@@ -42,7 +42,7 @@ export class RestreamModel {
       }
 
       const fileBackup = value.input.src.inputs?.find(
-        (x) => x.key === 'file_backup'
+        (x) => x.key === 'file_backup',
       );
       if (fileBackup) {
         this.fileId = fileBackup.endpoints[0].fileId;

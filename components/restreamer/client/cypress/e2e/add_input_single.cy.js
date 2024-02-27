@@ -27,7 +27,7 @@ describe('ADD SINGLE INPUT', { testIsolation: false }, () => {
   it('Assert', () => {
     cy.get("span:contains('/en/primary'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/en/primary'
+      'rtmp://' + Cypress.env('host') + '/en/primary',
     );
   });
 });

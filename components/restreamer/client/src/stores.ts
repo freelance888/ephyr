@@ -127,7 +127,7 @@ export class OutputModal implements Writable<OutputModalState> {
   /** @inheritdoc */
   subscribe(
     run: Subscriber<OutputModalState>,
-    invalidate?: Invalidator<OutputModalState>
+    invalidate?: Invalidator<OutputModalState>,
   ): Unsubscriber {
     return this.state.subscribe(run, invalidate);
   }
@@ -185,7 +185,7 @@ export class OutputModal implements Writable<OutputModalState> {
     label: string | null,
     preview_url: string | null,
     dst_url: string,
-    mix_urls: string[]
+    mix_urls: string[],
   ) {
     this.update((v) => {
       v.restream_id = restream_id;
@@ -334,7 +334,7 @@ export class ExportModal implements Writable<ExportModalState> {
   /** @inheritdoc */
   subscribe(
     run: Subscriber<ExportModalState>,
-    invalidate?: Invalidator<ExportModalState>
+    invalidate?: Invalidator<ExportModalState>,
   ): Unsubscriber {
     return this.state.subscribe(run, invalidate);
   }

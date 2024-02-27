@@ -5,7 +5,7 @@ export type SaveOrCloseHandlers = {
 
 export const saveOrCloseByKeys = (
   node: HTMLElement,
-  params: SaveOrCloseHandlers
+  params: SaveOrCloseHandlers,
 ) => {
   const keyPressEventName = 'keypress';
   const keyDownEventName = 'keydown';

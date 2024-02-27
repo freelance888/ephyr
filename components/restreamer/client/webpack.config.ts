@@ -18,12 +18,12 @@ function setEphyrDevHostPort(isDevServer: boolean): string | null {
     let port = process.env.EPHYR_RESTREAMER_CLIENT_HTTP_PORT;
     if (port === undefined) {
       console.warn(
-        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` env var set, use default `:80`'
+        'No `EPHYR_RESTREAMER_CLIENT_HTTP_PORT` env var set, use default `:80`',
       );
       port = '80';
     }
     console.log(
-      `Use host from browser and port \`${port}\` as backend server address`
+      `Use host from browser and port \`${port}\` as backend server address`,
     );
     return port;
   } else {

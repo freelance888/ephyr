@@ -38,19 +38,19 @@ describe('ADD MULTIPLE OUTPUT', { testIsolation: false }, () => {
   it('Assert', () => {
     cy.get("span:contains('[Manual Start] FB')").should(
       'have.text',
-      '[Manual Start] FB АЛЛАТРА ТВ България / @valeranedov'
+      '[Manual Start] FB АЛЛАТРА ТВ България / @valeranedov',
     );
     cy.get("span:contains('[Manual Start] YT')").should(
       'have.text',
-      '[Manual Start] YT Съзидателно Общество. AllatraUnites / @valeranedov'
+      '[Manual Start] YT Съзидателно Общество. AllatraUnites / @valeranedov',
     );
     cy.get("span:contains('rtmps://live-api')").should(
       'have.text',
-      'rtmps://live-api-s.facebook.com:443/rtmp/FB-348459623681583-'
+      'rtmps://live-api-s.facebook.com:443/rtmp/FB-348459623681583-',
     );
     cy.get("span:contains('rtmp://a.rtmp')").should(
       'have.text',
-      'rtmp://a.rtmp.youtube.com/live2/rwhetk-2s44'
+      'rtmp://a.rtmp.youtube.com/live2/rwhetk-2s44',
     );
   });
 });

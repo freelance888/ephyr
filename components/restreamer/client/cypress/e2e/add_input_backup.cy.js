@@ -29,15 +29,15 @@ describe('ADD BACKUP INPUT', { testIsolation: false }, () => {
   it('Assert', () => {
     cy.get("span:contains('/it/primary')").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/primary'
+      'rtmp://' + Cypress.env('host') + '/it/primary',
     );
     cy.get("span:contains('/it/backup1')").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/backup1'
+      'rtmp://' + Cypress.env('host') + '/it/backup1',
     );
     cy.get("span:contains('/it/backup2')").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/backup2'
+      'rtmp://' + Cypress.env('host') + '/it/backup2',
     );
   });
 });
