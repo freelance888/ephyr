@@ -12,25 +12,25 @@ actix-web-httpauth = "0.7"
 actix-web-static-files = "4.0"
 static-files = "0.2"
 anyhow = "1.0"
-argon2 = { version = "1.0", package = "rust-argon2", default-features = false }
+argon2 = { version = "2.1", package = "rust-argon2", default-features = false }
 askama = { version = "0.12", default-features = false }
 backoff = { version = "0.4", features = ["tokio"] }
-byteorder = "1.4"
+byteorder = "1.5"
 chrono = { version = "0.4", features = ["serde"] }
 ephyr-log = { version = "0.2", path = "../../common/log" }
 futures = "0.3"
 futures-signals = "0.3"
 graphql_client = "0.13"
-itertools = "0.11"
+itertools = "0.12"
 hex = "0.4"
 humantime = "2.1"
 libc = "0.2"
-nix = { version = "0.27", features = ["signal"] }
-num_cpus = "1.14"
+nix = { version = "0.28", features = ["signal"] }
+num_cpus = "1.16"
 once_cell = { version = "1.4", features = ["parking_lot"] }
 public-ip = "0.2"
 rand = "0.8"
-regex = "1.4"
+regex = "1.10"
 reqwest = { version = "0.11", features = ["json"], default-features = false }
 send_wrapper = { version = "0.6", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
@@ -39,25 +39,25 @@ serde_json = "1.0"
 smart-default = "0.7"
 clap = { version = "4", features = ["derive", "env"] }
 systemstat = "0.2"
-tap = "1.0.1"
-url = { version = "2.1", features = ["serde"] }
-uuid = { version = "1.1", features = ["serde", "v4"] }
+tap = "1.0"
+url = { version = "2.5", features = ["serde"] }
+uuid = { version = "1.7", features = ["serde", "v4"] }
 zeromq = "0.3"
 interprocess = { version = "1.2", features = ["tokio_support"] }
 tokio-stream = { version = "0.1", features = ["fs"] }
 lazy_static = "1.4"
 [dependencies.tsclientlib]
 git = "https://github.com/ReSpeak/tsclientlib"
-rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
+rev = "670222684ebe0e822aac7a121b916d8ddbb3a061" # branch = "master"
 [dependencies.tsproto-packets]
 git = "https://github.com/ReSpeak/tsclientlib"
-rev = "3ae4a618dc348d36eeaabc8fa018a408112498d9" # branch = "master"
+rev = "670222684ebe0e822aac7a121b916d8ddbb3a061" # branch = "master"
 [dependencies.derive_more]
 version = "0.99"
 features = ["as_ref", "deref", "display", "error", "from"]
 default-features = false
 [dependencies.tokio]
-version = "1.29"
+version = "1.36"
 features = ["fs", "io-util", "process", "sync", "time"]
 [dependencies.juniper]
 git = "https://github.com/graphql-rust/juniper"
