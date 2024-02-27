@@ -44,7 +44,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', { testIsolation: false }, () => {
   it('Set first teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple1';
     cy.get(
-      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]'
+      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]',
     )
       .invoke('val', teamspeakToPaste)
       .trigger('input');
@@ -57,7 +57,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', { testIsolation: false }, () => {
   it('Set second teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple2';
     cy.get(
-      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]'
+      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]',
     )
       .eq(1)
       .invoke('val', teamspeakToPaste)
@@ -71,7 +71,7 @@ describe('ADD MULTIPLE MIXIN OUTPUT', { testIsolation: false }, () => {
   it('Set third teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.multiple.com/Multiple3';
     cy.get(
-      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]'
+      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]',
     )
       .eq(2)
       .invoke('val', teamspeakToPaste)
@@ -93,19 +93,19 @@ describe('ADD MULTIPLE MIXIN OUTPUT', { testIsolation: false }, () => {
   it('Assert', () => {
     cy.get("span:contains('Teamspeak Multiple Test')").should(
       'have.text',
-      'Teamspeak Multiple Test'
+      'Teamspeak Multiple Test',
     );
     cy.get("span:contains('/Multiple1')").should(
       'have.text',
-      'ts://ts.multiple.com/Multiple1'
+      'ts://ts.multiple.com/Multiple1',
     );
     cy.get("span:contains('/Multiple2')").should(
       'have.text',
-      'ts://ts.multiple.com/Multiple2'
+      'ts://ts.multiple.com/Multiple2',
     );
     cy.get("span:contains('/Multiple3')").should(
       'have.text',
-      'ts://ts.multiple.com/Multiple3'
+      'ts://ts.multiple.com/Multiple3',
     );
     cy.get("span:contains('Teamspeak Multiple Test')")
       .parent()

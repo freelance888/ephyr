@@ -45,7 +45,7 @@ describe('ADD SINGLE OUTPUT', { testIsolation: false }, () => {
     cy.get("span:contains('Twitter')").should('have.text', 'Twitter');
     cy.get("span:contains('/it/main'):last").should(
       'have.text',
-      'rtmp://' + Cypress.env('host') + '/it/main'
+      'rtmp://' + Cypress.env('host') + '/it/main',
     );
   });
 });

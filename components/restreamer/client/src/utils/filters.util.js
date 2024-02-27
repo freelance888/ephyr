@@ -49,7 +49,7 @@ export const getAggregatedStreamsData = (reStreams) =>
         [ONLINE]: 0,
         [UNSTABLE]: 0,
       },
-    }
+    },
   );
 
 export const getReStreamOutputsCount = (reStream) =>
@@ -66,7 +66,7 @@ export const getReStreamOutputsCount = (reStream) =>
       [INITIALIZING]: 0,
       [ONLINE]: 0,
       [UNSTABLE]: 0,
-    }
+    },
   );
 
 export const toggleFilterStatus = (filters, filter) => {

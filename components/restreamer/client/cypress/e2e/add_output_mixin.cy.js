@@ -45,7 +45,7 @@ describe('ADD MIXIN OUTPUT', { testIsolation: false }, () => {
   it('Set teamspeak', () => {
     const teamspeakToPaste = 'ts://ts.single.com/Single';
     cy.get(
-      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]'
+      '[placeholder="ts://<teamspeak-host>:<port>/<channel>?name=<name>&identity=<identity>"]',
     )
       .invoke('val', teamspeakToPaste)
       .trigger('input');
@@ -59,7 +59,7 @@ describe('ADD MIXIN OUTPUT', { testIsolation: false }, () => {
     cy.get("span:contains('Teamspeak')").should('have.text', 'Teamspeak');
     cy.get("span:contains('/Single')").should(
       'have.text',
-      'ts://ts.single.com/Single'
+      'ts://ts.single.com/Single',
     );
   });
 });

@@ -75,6 +75,7 @@ export function sanitizeUrl(url: string): string {
 }
 
 const MixPage = 'mix';
+
 export function isMixPage(): boolean {
   return window.location.pathname === `/${MixPage}`;
 }
@@ -84,6 +85,7 @@ export const getMixPageUrl = (restreamId: string, outputId: string) => {
 };
 
 const FullStreamPage = 'full-stream';
+
 export function isFullStreamPage(): boolean {
   return window.location.pathname === `/${FullStreamPage}`;
 }
@@ -98,7 +100,7 @@ export const getFullStreamUrl = (restreamId: string) => {
 export function createGraphQlClient(
   apiUrl: string,
   onConnect: Function,
-  onDisconnect: Function
+  onDisconnect: Function,
 ): ApolloClient<unknown> {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const host = window.location.hostname;

@@ -4,3 +4,7 @@ export const createRtmpUrl = (key, name) => {
     : Cypress.env('host');
   return `rtmp://${host}/${key}/${name}`;
 };
+
+export const stopAllTestStreams = () => {
+  cy.exec('killall ffmpeg');
+};

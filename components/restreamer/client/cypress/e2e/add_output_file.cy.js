@@ -39,7 +39,7 @@ describe('ADD FILE OUTPUT', { testIsolation: false }, () => {
     cy.get("span:contains('File Record')").should('have.text', 'File Record');
     cy.get("a:contains('record.flv'):first").should(
       'have.text',
-      'file:///record.flv'
+      'file:///record.flv',
     );
   });
 });
