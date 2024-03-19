@@ -1,5 +1,5 @@
 <script lang="js">
-  import { createGraphQlClient, isYoutubeVideo } from '../utils/util';
+  import { createGraphQlClient, fetchServerHostFromBrowser, isYoutubeVideo } from '../utils/util';
 
   import {
     DisableOutput,
@@ -11,7 +11,7 @@
     ServerInfo,
     TuneDelay,
     TuneSidechain,
-    TuneVolume,
+    TuneVolume
   } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
@@ -23,7 +23,7 @@
   import {
     FILE_DOWNLOAD_ERROR,
     FILE_LOCAL,
-    isDownloadingState,
+    isDownloadingState
   } from '../utils/constants';
   import StreamInfoDiffTooltip from './common/StreamInfoDiffTooltip.svelte';
   import { getPlaylistItemsWithDiffStreams } from '../utils/streamInfo.util';
@@ -34,11 +34,12 @@
     RemoveOutput,
     TuneVolume,
     TuneDelay,
-    TuneSidechain,
+    TuneSidechain
   };
 
+  const serverUrl = fetchServerHostFromBrowser();
   const gqlClient = createGraphQlClient(
-    '/api',
+    `${serverUrl}/api`,
     () => (isOnline = true),
     () => (isOnline = false)
   );
@@ -50,7 +51,7 @@
   let isOnline = false;
   const restreamWithParent = subscribe(RestreamWithParent, {
     variables: { id: restreamId.toString() },
-    errorPolicy: 'all',
+    errorPolicy: 'all'
   });
   const info = subscribe(Info, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
@@ -60,7 +61,7 @@
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
   $: infoError = $info?.error;
-  $: isLoading = !isOnline || $restreamWithParent.loading;
+  $: isLoading = !isOnline || $restreamWithParent?.loading;
   $: canRenderMainComponent =
     isOnline && $restreamWithParent?.data && $info?.data && $filesInfo?.data;
 
@@ -89,21 +90,21 @@
 
   $: playlistQueue = playlist
     ? playlist.queue
-        .map((x) => ({
-          id: x.fileId,
-          name: x.name ?? x.fileId,
-          isPlaying: playlist.currentlyPlayingFile
-            ? playlist.currentlyPlayingFile.fileId === x.fileId
-            : false,
-          file: files.find((f) => f.fileId === x.fileId),
-          wasPlayed: x.wasPlayed,
-        }))
-        .map((x) => ({
-          ...x,
-          isLocal: x.file?.state === FILE_LOCAL,
-          isDownloading: isDownloadingState(x.file?.state),
-          isError: x.file?.state === FILE_DOWNLOAD_ERROR,
-        }))
+      .map((x) => ({
+        id: x.fileId,
+        name: x.name ?? x.fileId,
+        isPlaying: playlist.currentlyPlayingFile
+          ? playlist.currentlyPlayingFile.fileId === x.fileId
+          : false,
+        file: files.find((f) => f.fileId === x.fileId),
+        wasPlayed: x.wasPlayed
+      }))
+      .map((x) => ({
+        ...x,
+        isLocal: x.file?.state === FILE_LOCAL,
+        isDownloading: isDownloadingState(x.file?.state),
+        isError: x.file?.state === FILE_DOWNLOAD_ERROR
+      }))
     : [];
 
   $: currentlyPlayingFileId = playlist?.currentlyPlayingFile?.fileId;
@@ -125,8 +126,8 @@
     const filesNames = queue.filter((x) => x.file?.error).map((x) => x.name);
     return filesNames?.length
       ? `Can't get stream info from&colon; <br><strong>${filesNames.reduce(
-          (acc, cur) => (acc += '<br>' + cur)
-        )}</strong>`
+        (acc, cur) => (acc += '<br>' + cur)
+      )}</strong>`
       : '';
   };
 </script>
@@ -193,6 +194,7 @@
 
   .single-output
     padding: 16px
+
     :global(.volume input)
       width: 90% !important
 

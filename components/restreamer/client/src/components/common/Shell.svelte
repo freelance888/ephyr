@@ -63,7 +63,7 @@
       <footer class="uk-container">
         Developed for people with ❤ by
         <a href="https://github.com/ALLATRA-IT" target="_blank noreferrer"
-          >AllatRa IT</a
+        >AllatRa IT</a
         >
       </footer>
     </div>
@@ -96,10 +96,13 @@
 
   .initializing
     color: var(--warning-color)
+
   .online
     color: var(--success-color)
+
   .offline
     color: var(--danger-color)
+
   .unstable
     color: var(--secondary-warning-color)
 
@@ -118,6 +121,7 @@
 
   .split.horizontal
     max-height: 100vh !important;
+
   .primary
     overflow-y: auto !important;
 
@@ -128,6 +132,7 @@
       outline: none
       position: relative
       white-space: nowrap
+
       &:hover
         text-decoration: none
 
@@ -152,6 +157,7 @@
 
   .uk-button-primary
     background-color: #08c
+
     &:not([disabled]):hover
       background-color: #046
 
@@ -170,6 +176,7 @@
     pointer-events: none
     font-size: 1rem
     overflow-wrap: anywhere
+
     & > div
       padding-right: 14px
 
@@ -219,7 +226,7 @@
     max-width: 400px
 
   .has-error
-    color:  var(--danger-color)
+    color: var(--danger-color)
 
   .has-warning
     color: var(--warning-color)
@@ -236,6 +243,7 @@
     text-decoration: none
     font-size: 13px
     transition: 0.1s ease-in
+
     &:hover
       color: var(--primary-text-hover-color)
 </style>

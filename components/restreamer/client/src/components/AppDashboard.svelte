@@ -1,6 +1,6 @@
 <script lang="js">
   import Confirm from './common/Confirm.svelte';
-  import { createGraphQlClient, showError } from '../utils/util';
+  import { createGraphQlClient, fetchServerHostFromBrowser, showError } from '../utils/util';
   import { mutation, setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import { Statistics } from '../../api/dashboard.graphql';
@@ -11,11 +11,12 @@
   import { toggleFilterStatus } from '../utils/filters.util';
   import {
     EnableAllOutputsForClients,
-    DisableAllOutputsForClients,
+    DisableAllOutputsForClients
   } from '../../api/dashboard.graphql';
 
+  const serverUrl = fetchServerHostFromBrowser();
   const gqlClient = createGraphQlClient(
-    '/api-dashboard',
+    `${serverUrl}/api-dashboard`,
     () => (isOnline = true),
     () => (isOnline = false)
   );
@@ -94,10 +95,10 @@
 
     return allClients
       ? allClients.reduce(
-          (sum, client) =>
-            (sum += getTotalCountByClient(getItems(client), status)),
-          0
-        )
+        (sum, client) =>
+          (sum += getTotalCountByClient(getItems(client), status)),
+        0
+      )
       : [];
   }
 
@@ -162,11 +163,11 @@
                 data-testid="start-all-outputs"
                 title="Start all outputs of all restreams"
                 on:click={() => confirm(enableAllOutputsOfAllRestreams)}
-                ><span>Start All</span>
+              ><span>Start All</span>
               </button>
               <span slot="title">Start all outputs</span>
               <span slot="description"
-                >This will start all outputs of all restreams.
+              >This will start all outputs of all restreams.
               </span>
               <span slot="confirm">Start</span>
             </Confirm>
@@ -177,11 +178,11 @@
                 data-testid="stop-all-outputs"
                 title="Stop all outputs of all restreams"
                 on:click={() => confirm(disableAllOutputsOfAllRestreams)}
-                ><span>Stop All</span>
+              ><span>Stop All</span>
               </button>
               <span slot="title">Stop all outputs</span>
               <span slot="description"
-                >This will stop all outputs of all restreams.
+              >This will stop all outputs of all restreams.
               </span>
               <span slot="confirm">Stop</span>
             </Confirm>

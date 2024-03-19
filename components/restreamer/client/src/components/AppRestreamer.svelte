@@ -1,5 +1,5 @@
 <script lang="js">
-  import { createGraphQlClient } from '../utils/util';
+  import { createGraphQlClient, fetchServerHostFromBrowser } from '../utils/util';
 
   import { Info, State, ServerInfo } from '../../api/client.graphql';
   import { setClient, subscribe } from 'svelte-apollo';
@@ -7,8 +7,9 @@
   import Toolbar from './Toolbar.svelte';
   import PageAll from './All.svelte';
 
+  const serverUrl = fetchServerHostFromBrowser();
   const gqlClient = createGraphQlClient(
-    '/api',
+    `${serverUrl}/api`,
     () => (isOnline = true),
     () => (isOnline = false)
   );
@@ -19,10 +20,10 @@
   const state = subscribe(State, { errorPolicy: 'all' });
   const serverInfo = subscribe(ServerInfo, { errorPolicy: 'all' });
 
-  $: canRenderToolbar = isOnline && $info.data;
-  $: infoError = $info && $info.error;
-  $: isLoading = !isOnline || $state.loading;
-  $: canRenderMainComponent = isOnline && $state.data && $info.data;
+  $: canRenderToolbar = isOnline && $info?.data;
+  $: infoError = $info && $info?.error;
+  $: isLoading = !isOnline || $state?.loading;
+  $: canRenderMainComponent = isOnline && $state?.data && $info?.data;
   $: stateError = $state?.error;
   $: sInfo = $serverInfo?.data?.serverInfo;
   $: document.title = (isOnline ? '' : '🔴  ') + document.title;

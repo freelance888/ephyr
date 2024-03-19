@@ -1,11 +1,12 @@
 import clipboardCopy from 'clipboard-copy';
 import UIkit from 'uikit';
-import { SubscriptionClient } from 'subscriptions-transport-ws';
-import { ApolloClient } from '@apollo/client/core';
-import { WebSocketLink } from '@apollo/client/link/ws';
-import { InMemoryCache } from '@apollo/client/cache';
+import { ApolloClient, InMemoryCache } from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import take from 'lodash/take';
+import { createClient } from 'graphql-ws';
+import { ApolloLink, Observable } from '@apollo/client';
+import { print } from 'graphql';
+
 /**
  * Displays an error UI popup with the given error `message`.
  *
@@ -94,33 +95,56 @@ export const getFullStreamUrl = (restreamId: string) => {
   return `/${FullStreamPage}?restream-id=${restreamId}`;
 };
 
+export function fetchServerHostFromBrowser() {
+  const host = window.location.hostname;
+  let url = `${host}`;
+  let port: string = process.env.EPHYR_DEV_HOST_PORT || window.location.port;
+  console.log(`Env EPHYR_DEV_HOST_PORT: ${process.env.EPHYR_DEV_HOST_PORT}`);
+  if (port.length > 0) {
+    url = `${host}:${port}`;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${protocol}://${url}`;
+}
+
 /**
  * Creates graphQL client for specified apiUrl
  **/
 export function createGraphQlClient(
-  apiUrl: string,
+  url: string,
   onConnect: Function,
   onDisconnect: Function,
 ): ApolloClient<unknown> {
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const host = window.location.hostname;
-  let url = `${protocol}://${host}${apiUrl}`;
-
-  let port: string = process.env.EPHYR_DEV_HOST_PORT || window.location.port;
-  console.log(`Env EPHYR_DEV_HOST_PORT: ${process.env.EPHYR_DEV_HOST_PORT}`);
-  if (port.length > 0) {
-    url = `${protocol}://${host}:${port}${apiUrl}`;
-  }
-
   console.log(`Connecting to \`${url}\` backend...`);
-  const wsClient = new SubscriptionClient(url, { reconnect: true });
 
-  wsClient.onConnected(() => onConnect());
-  wsClient.onReconnected(() => onConnect());
-  wsClient.onDisconnected(() => onDisconnect());
+  let subscriptinClinet = createClient({
+    url,
+    on: {
+      connected: () => onConnect(),
+      closed: () => onDisconnect(),
+    },
+  });
+
+  const link = new ApolloLink(
+    (operation) =>
+      new Observable((observer) => {
+        // Start a subscription
+        const unsubscribe = subscriptinClinet.subscribe(
+          { query: print(operation.query), variables: operation.variables },
+          {
+            next: observer.next.bind(observer),
+            error: observer.error.bind(observer),
+            complete: observer.complete.bind(observer),
+          },
+        );
+        return () => {
+          unsubscribe();
+        };
+      }),
+  );
 
   return new ApolloClient({
-    link: new WebSocketLink(wsClient),
+    link,
     cache: new InMemoryCache(),
   });
 }

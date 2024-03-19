@@ -1,5 +1,5 @@
 <script lang="js">
-  import { createGraphQlClient, isYoutubeVideo } from '../utils/util';
+  import { createGraphQlClient, fetchServerHostFromBrowser, isYoutubeVideo } from '../utils/util';
   import { setClient, subscribe } from 'svelte-apollo';
   import Shell from './common/Shell.svelte';
   import Output from './Output.svelte';
@@ -7,14 +7,15 @@
     Output as Mix,
     TuneVolume,
     TuneDelay,
-    TuneSidechain,
+    TuneSidechain
   } from '../../api/mix.graphql';
   import YoutubePlayer from './common/YoutubePlayer.svelte';
 
   const mutations = { TuneVolume, TuneDelay, TuneSidechain };
 
+  const serverUrl = fetchServerHostFromBrowser();
   const gqlClient = createGraphQlClient(
-    '/api-mix',
+    `${serverUrl}/api-mix`,
     () => (isOnline = true),
     () => (isOnline = false)
   );
@@ -30,17 +31,17 @@
     errorPolicy: 'all',
     variables: {
       outputId: output_id,
-      restreamId: restream_id,
-    },
+      restreamId: restream_id
+    }
   });
 
   let title = document.title;
   $: document.title = (isOnline ? '' : '🔴  ') + title;
 
-  $: error = $mix && $mix.error;
-  $: isLoading = !isOnline || $mix.loading;
-  $: canRenderMainComponent = isOnline && $mix.data;
-  $: output = $mix.data && $mix.data.output;
+  $: error = $mix && $mix?.error;
+  $: isLoading = !isOnline || $mix?.loading;
+  $: canRenderMainComponent = isOnline && $mix?.data;
+  $: output = $mix?.data?.output;
 </script>
 
 <template>
@@ -82,7 +83,7 @@
       width: 90% !important
 
   .video-player
-      @extend .single-output
-      max-height: 800px
-      min-height: 150px
+    @extend .single-output
+    max-height: 800px
+    min-height: 150px
 </style>
